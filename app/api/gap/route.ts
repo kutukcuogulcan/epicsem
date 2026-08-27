@@ -1,0 +1,61 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import type { EngineId } from "@/types";
+import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeVisibility } from "@/lib/geo-engine";
+import { isDemoMode } from "@/lib/geo-providers";
+import { auditPagesForGap, buildGapMatrix } from "@/lib/gap-analysis";
+import { saveGapRun } from "@/lib/db";
+import { buildContentBriefs } from "@/lib/content-brief";
+
+const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
+
+const bodySchema = z.object({
+  brand: brandSchema,
+  competitors: z.array(brandSchema).max(6).default([]),
+  prompts: z.array(z.string().min(3)).min(1).max(10),
+  engines: z.array(z.enum(["openai", "anthropic", "google", "perplexity"])).default(ALL_ENGINES),
+  pageUrls: z.array(z.string().min(3)).min(1).max(10),
+});
+
+export async function POST(req: NextRequest) {
+  let parsed;
+  try {
+    parsed = bodySchema.parse(await req.json());
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Invalid request body" },
+      { status: 400 }
+    );
+  }
+
+  const { brand, competitors, prompts, engines, pageUrls } = parsed;
+
+  const [allRunsNested, audits] = await Promise.all([
+    Promise.all(prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))),
+    auditPagesForGap(pageUrls),
+  ]);
+  const allRuns = allRunsNested.flat();
+
+  const allBrands = [brand, ...competitors];
+  const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
+    .sort((a, b) => b.visibility - a.visibility)
+    .map((s, i) => ({ ...s, rank: i + 1 }));
+  const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
+  const gapMatrix = buildGapMatrix(audits, allRuns);
+  const demoMode = isDemoMode();
+  const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
+
+  try {
+    saveGapRun({ brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
+  } catch (dbErr) {
+    console.error("gap history write failed:", dbErr);
+  }
+
+  return NextResponse.json({
+    demoMode,
+    summaries,
+    sourceDistribution,
+    gapMatrix,
+    contentBriefs,
+  });
+}

@@ -1,0 +1,91 @@
+// GEO+SEO+AEO+AXO Tool — data model
+// SQLite for local dev. Swap provider to "postgresql" + DATABASE_URL for prod.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A tracked site/brand (the user's own site, or a competitor)
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String
+  isOwn       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  prompts     Prompt[]
+  seoAudits   SeoAudit[]
+  geoRuns     GeoRun[]
+}
+
+// A question/query used to probe AI engines (mirrors how Peec/Profound test GEO visibility)
+model Prompt {
+  id          String   @id @default(cuid())
+  projectId   String
+  text        String
+  intent      String   // "informational" | "commercial" | "comparison" | "branded"
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id])
+  geoRuns     GeoRun[]
+}
+
+// One SEO/AXO technical audit snapshot of a URL
+model SeoAudit {
+  id            String   @id @default(cuid())
+  projectId     String
+  url           String
+  score         Int      // 0-100 blended technical SEO score
+  aiCrawlScore  Int      // 0-100 AXO score: how accessible the page is to AI crawlers/agents
+  createdAt     DateTime @default(now())
+
+  project       Project    @relation(fields: [projectId], references: [id])
+  issues        SeoIssue[]
+}
+
+// Individual finding inside an audit
+model SeoIssue {
+  id          String   @id @default(cuid())
+  auditId     String
+  category    String   // "meta" | "headings" | "schema" | "crawlability" | "ai-crawlability" | "performance" | "content"
+  severity    String   // "critical" | "warning" | "info" | "pass"
+  title       String
+  detail      String
+  recommendation String
+
+  audit       SeoAudit @relation(fields: [auditId], references: [id])
+}
+
+// One execution of a Prompt against one AI engine (mirrors Peec's "chat")
+model GeoRun {
+  id           String   @id @default(cuid())
+  projectId    String
+  promptId     String
+  engine       String   // "openai" | "anthropic" | "google" | "perplexity"
+  model        String   // e.g. "gpt-4o", "claude-sonnet-4", "gemini-2.5-flash"
+  mentioned    Boolean  @default(false)
+  position     Int?     // rank among mentioned brands in the response, 1 = first
+  sentiment    Int?     // 0-100
+  responseText String
+  createdAt    DateTime @default(now())
+
+  project      Project    @relation(fields: [projectId], references: [id])
+  prompt       Prompt     @relation(fields: [promptId], references: [id])
+  citations    Citation[]
+}
+
+// A source URL cited/retrieved within a GeoRun response
+model Citation {
+  id         String   @id @default(cuid())
+  geoRunId   String
+  url        String
+  domain     String
+  isOwnDomain Boolean @default(false)
+
+  geoRun     GeoRun   @relation(fields: [geoRunId], references: [id])
+}
