@@ -4,6 +4,7 @@ import type { EngineId } from "@/types";
 import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeVisibility } from "@/lib/geo-engine";
 import { isDemoMode } from "@/lib/geo-providers";
 import { getPreviousGeoRun, saveGeoRun } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -15,6 +16,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
@@ -44,8 +48,8 @@ export async function POST(req: NextRequest) {
   try {
     // Save first, then look up the previous run — getPreviousGeoRun always skips the
     // most recent row, so it must run after the current run is already in the table.
-    saveGeoRun({ brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
-    previousRun = getPreviousGeoRun(brand.domain);
+    saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
+    previousRun = getPreviousGeoRun(user.id, brand.domain);
   } catch (dbErr) {
     console.error("geo history write failed:", dbErr);
   }

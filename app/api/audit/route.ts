@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { runSeoAudit } from "@/lib/seo-audit";
 import { getPreviousAuditRun, saveAuditRun } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 
 const bodySchema = z.object({ url: z.string().min(3) });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
@@ -17,8 +21,8 @@ export async function POST(req: NextRequest) {
     const result = await runSeoAudit(parsed.url);
     let previousRun = null;
     try {
-      saveAuditRun(result);
-      previousRun = getPreviousAuditRun(result.url);
+      saveAuditRun(user.id, result);
+      previousRun = getPreviousAuditRun(user.id, result.url);
     } catch (dbErr) {
       // Persistence is a bonus layer — a DB hiccup should never fail the audit itself.
       console.error("audit history write failed:", dbErr);

@@ -97,11 +97,23 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
 - **Türkçe pazar desteği** — `/geo` ve `/gap`'te TR örnek prompt seti; audit
   `<html lang>`/hreflang eksikliğini kontrol ediyor, `lang="tr"` tespit edilince
   üretilen Organization şemasına `"areaServed": "TR"` ekliyor.
+- **Hesap sistemi + çoklu kullanıcı izolasyonu** (2026-08-27) — e-posta/şifre ile
+  kayıt/giriş (`lib/auth.ts`, node:crypto `scrypt` ile hash'leme, DB'de session
+  token, httpOnly cookie — NextAuth değil, tek credentials provider için yeterince
+  küçük bir katman). Her audit/GEO/gap/monitor/client kaydı `user_id` ile ayrılıyor;
+  iki farklı hesap birbirinin verisini göremiyor (uçtan uca test edildi — bkz.
+  [[architecture]] proje hafızası). `middleware.ts` oturum çerezi yoksa `/audit`,
+  `/geo`, `/gap`, `/monitor`, `/clients`'a girişi `/login`'e yönlendiriyor; asıl
+  güvenlik sınırı her API route'unun başındaki `requireUser()` kontrolü.
+  `scripts/check-monitors.mjs` artık bir `CRON_SECRET` header'ıyla kimlik doğruluyor
+  (tek kullanıcıya değil, tüm hesapların sayfalarına bakması gerektiği için).
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
-- **Auth / çoklu kullanıcı / billing** — yok, tek kullanıcılık local araç (`/clients`
-  birden fazla müşteriyi ayırıyor ama kullanıcı hesabı/izin sistemi değil).
+- **Billing / plan limiti** — hesap sistemi var ama ödeme/abonelik/kullanım limiti
+  yok. `DEMO_MODE`'u kapatıp gerçek API anahtarlarını bağlamadan önce mutlaka bir
+  ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi sizin LLM
+  faturanıza yazılır.
 - **Çok sayfalı toplu tarama** — şu an tek URL denetliyor (gap analysis birden fazla
   URL alıyor ama tek tek girilmesi gerekiyor). Screaming Frog export'u (CSV) import
   edip toplu tarama roadmap'te.
@@ -144,32 +156,41 @@ değişmeden çalışır:
    deploy'da sıfırlanır).
 3. Environment variables: `.env.example`'daki değişkenleri kopyala (API anahtarları
    opsiyonel — boş bırakılırsa `DEMO_MODE` açık kalır; `SLACK_WEBHOOK_URL` AXO
-   uyarıları için opsiyonel).
+   uyarıları için opsiyonel; `CRON_SECRET` sadece adım 4'teki cron job'ı kullanacaksanız
+   gerekli — uzun rastgele bir string üretip buraya girin).
 4. `/monitor`'ün arkasındaki `scripts/check-monitors.mjs` kendi kendine tetiklenmiyor —
    Railway'de ayrı bir **Cron Job** servisi olarak (örn. saatte bir)
-   `node scripts/check-monitors.mjs` komutunu, `APP_URL` değişkenini deploy edilen
-   uygulamanın kendi URL'sine ayarlayarak eklemek gerekir.
+   `node scripts/check-monitors.mjs` komutunu, `APP_URL`'i deploy edilen uygulamanın
+   kendi URL'sine ve `CRON_SECRET`'ı 3. adımdaki ile aynı değere ayarlayarak eklemek
+   gerekir.
 
 ## Klasör yapısı
 
 ```
 app/
   page.tsx                    → giriş sayfası (konumlandırma + rakip karşılaştırması)
+  login/page.tsx               → giriş/kayıt formu (tek sayfa, mod değiştirme)
   audit/page.tsx               → SEO + AXO audit arayüzü (+ Fixes, + trend)
   geo/page.tsx                  → GEO/AEO görünürlük testi arayüzü (+ TR/EN prompt preset, + trend)
   gap/page.tsx                    → Gap Analysis arayüzü (+ içerik brief'leri, + PDF export)
   monitor/page.tsx                 → AXO izleme arayüzü (sayfa ekle/check now/alertler)
   clients/page.tsx                  → müşteri kaydı + audit/GEO/gap'e hızlı geçiş
-  api/audit/route.ts                → POST { url } -> SeoAuditResult + previousRun
-  api/geo/route.ts                    → POST { brand, competitors, prompts, engines } -> runs+summaries+previousRun
-  api/gap/route.ts                     → POST {...} -> gapMatrix + contentBriefs
-  api/monitor/route.ts                  → GET/POST/DELETE monitored pages
-  api/monitor/check/route.ts             → POST { pageId | all } -> re-audit + diff + alert
-  api/monitor/alerts/route.ts             → GET/POST alert list + acknowledge
-  api/clients/route.ts                     → GET/POST/DELETE clients
-  api/clients/[id]/route.ts                 → GET tek client (prefill için)
-  api/report/pdf/route.ts                    → POST {...} -> application/pdf (white-label rapor)
+  api/auth/signup/route.ts          → POST { email, password, name? } -> user + session cookie
+  api/auth/login/route.ts            → POST { email, password } -> user + session cookie
+  api/auth/logout/route.ts            → POST -> session'ı siler, cookie'yi temizler
+  api/auth/me/route.ts                 → GET -> mevcut kullanıcı ya da 401
+  api/audit/route.ts                → POST { url } -> SeoAuditResult + previousRun (auth gerekli)
+  api/geo/route.ts                    → POST { brand, competitors, prompts, engines } -> runs+summaries+previousRun (auth gerekli)
+  api/gap/route.ts                     → POST {...} -> gapMatrix + contentBriefs (auth gerekli)
+  api/monitor/route.ts                  → GET/POST/DELETE monitored pages (auth gerekli, kullanıcıya özel)
+  api/monitor/check/route.ts             → POST { pageId | all } -> re-audit + diff + alert (kullanıcı oturumu veya CRON_SECRET)
+  api/monitor/alerts/route.ts             → GET/POST alert list + acknowledge (auth gerekli)
+  api/clients/route.ts                     → GET/POST/DELETE clients (auth gerekli)
+  api/clients/[id]/route.ts                 → GET tek client (prefill için, auth gerekli)
+  api/report/pdf/route.ts                    → POST {...} -> application/pdf (white-label rapor, auth gerekli)
 lib/
+  auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
+  auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
   seo-audit.ts                   → asıl SEO+AXO motoru (+ localization check)
   robots.ts                      → robots.txt parser (user-agent bazlı)
   ai-bots.ts                     → takip edilen 12 AI/arama botu listesi
@@ -178,13 +199,15 @@ lib/
   content-brief.ts               → kaybedilen prompt'ları + audit boşluklarını brief'e çevirir
   monitor.ts                     → AXO yeniden-tarama + diff + Slack alert mantığı
   pdf-report.ts                  → pdfkit ile Epicsem markalı PDF rapor üretimi
-  db.ts                          → node:sqlite kalıcılık katmanı (audit/geo/gap/monitor/client tabloları)
+  db.ts                          → node:sqlite kalıcılık katmanı — her tablo user_id ile ayrılmış (çoklu kiracı)
   geo-engine.ts                  → prompt'ları motorlara koşturan + skorlayan orkestratör
   geo-providers.ts               → OpenAI/Anthropic/Google/Perplexity provider'ları (pluggable)
   geo-demo.ts                    → API key yokken kullanılan gerçekçi demo üretici
   geo-analyze.ts                 → yanıt metninden mention/position/sentiment/citation çıkarımı
+middleware.ts                    → oturum çerezi yoksa korumalı sayfalardan /login'e yönlendirir (Edge, cheap check)
 components/FixCard.tsx           → kopyala-butonlu fix kartı
-scripts/check-monitors.mjs       → /api/monitor/check'i tetikleyen bağımsız cron script'i
+components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component)
+scripts/check-monitors.mjs       → /api/monitor/check'i CRON_SECRET ile tetikleyen bağımsız cron script'i
 prisma/schema.prisma             → veri modelinin referans dokümantasyonu (artık node:sqlite kullanılıyor)
 types/index.ts                   → paylaşılan TypeScript tipleri
 ```
@@ -199,6 +222,11 @@ types/index.ts                   → paylaşılan TypeScript tipleri
 - [x] **Çoklu müşteri + white-label PDF rapor** (`/clients`, `/api/report/pdf`) — yapıldı.
 - [x] **Kapasız motor erişimi** — pozisyon zaten koddaydı, artık home sayfasında da mesajlaşıyor.
 - [x] **İçerik brief üretimi** (`/gap` → Content briefs) — yapıldı.
+- [x] **Hesap sistemi + çoklu kullanıcı izolasyonu** (2026-08-27) — yapıldı, SaaS'a
+  dönüşümün ilk ve en kritik adımıydı.
+- [ ] **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik. Stripe
+  entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
+  katmanı gerekiyor.
 1. **Peec AI verilerini gerçek referans olarak kullan** — Peec AI zaten bağlı;
    `list_model_channels` 21 farklı AI motor kanalı (OpenAI, Google, Anthropic,
    Perplexity, DeepSeek, Meta, xAI, Microsoft, Amazon, Mistral, Qwen) döndürüyor.

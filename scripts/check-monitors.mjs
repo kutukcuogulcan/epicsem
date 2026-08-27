@@ -4,22 +4,32 @@
  * you point an OS cron / Vercel Cron / GitHub Actions schedule at, since nothing
  * inside a serverless or dev-server process can reliably schedule itself.
  *
+ * This checks pages across EVERY signed-up user in one pass (that's the whole point
+ * of a background sweep in a multi-tenant app), so it authenticates with a shared
+ * CRON_SECRET header instead of a user session — set the same value in the app's
+ * CRON_SECRET env var and in whatever runs this script.
+ *
  * Usage:
- *   node scripts/check-monitors.mjs                          # http://localhost:3000
- *   APP_URL=https://epicsem.example.com node scripts/check-monitors.mjs
+ *   CRON_SECRET=... node scripts/check-monitors.mjs                          # http://localhost:3000
+ *   CRON_SECRET=... APP_URL=https://epicsem.example.com node scripts/check-monitors.mjs
  *
  * Example crontab entry (every 6 hours, against a deployed instance):
- *   0 star/6 * * *  APP_URL=https://epicsem.example.com node /path/to/scripts/check-monitors.mjs >> /var/log/epicsem-monitor.log 2>&1
+ *   0 star/6 * * *  CRON_SECRET=... APP_URL=https://epicsem.example.com node /path/to/scripts/check-monitors.mjs >> /var/log/epicsem-monitor.log 2>&1
  *   (replace "star" with an actual asterisk — kept spelled out here so this file
  *   doesn't get misread as a live cron table)
  */
 
 const appUrl = process.env.APP_URL || "http://localhost:3000";
+const cronSecret = process.env.CRON_SECRET;
 
 async function main() {
+  if (!cronSecret) {
+    console.error("[epicsem-monitor] CRON_SECRET is not set — refusing to run (it's what lets this script sweep every user's pages instead of just one signed-in user's).");
+    process.exit(1);
+  }
   const res = await fetch(`${appUrl}/api/monitor/check`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-cron-secret": cronSecret },
     body: JSON.stringify({ all: true }),
   });
   const data = await res.json();

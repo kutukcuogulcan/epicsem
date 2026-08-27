@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { buildReportPdf } from "@/lib/pdf-report";
+import { requireUser } from "@/lib/auth";
 
 const bodySchema = z.object({
   agencyName: z.string().optional(),
@@ -12,6 +13,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());

@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
+import LogoutButton from "./LogoutButton";
 
-export default function Nav() {
+export default async function Nav() {
+  const user = await getCurrentUser();
+
   return (
     <header className="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-10">
       <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between flex-wrap gap-y-2">
@@ -14,6 +18,14 @@ export default function Nav() {
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
           <Link href="/monitor" className="hover:text-accent transition-colors">Monitoring</Link>
           <Link href="/clients" className="hover:text-accent transition-colors">Clients</Link>
+          {user ? (
+            <div className="flex items-center gap-3 pl-2 border-l border-border">
+              <span className="text-xs text-ink/50">{user.email}</span>
+              <LogoutButton />
+            </div>
+          ) : (
+            <Link href="/login" className="text-accent hover:underline">Giriş yap</Link>
+          )}
         </nav>
       </div>
     </header>

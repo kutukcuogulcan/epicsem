@@ -14,7 +14,17 @@ import type {
  * fetch is blocked in some sandboxed/offline environments. node:sqlite is built into
  * Node 22+, needs no native download, and covers everything this MVP actually needs
  * (a handful of tables, no complex joins), so it's what actually runs the app.
+ *
+ * Every data table is scoped by user_id (see lib/auth.ts for the auth/session layer
+ * that produces it) — this became a multi-tenant SaaS on 2026-08-27, so nothing here
+ * is safe to query without a user id in hand.
  */
+
+// Bumping this drops and recreates every table — safe pre-launch (no real customer
+// data yet) and much simpler than hand-rolling ALTER TABLE migrations for a schema
+// that's still moving. Once there's real customer data, migrations need to become
+// additive (ALTER TABLE ADD COLUMN) instead of this reset.
+const SCHEMA_VERSION = 2;
 
 let db: DatabaseSync | null = null;
 
@@ -23,9 +33,45 @@ function getDb(): DatabaseSync {
   const dir = path.join(process.cwd(), "data");
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   db = new DatabaseSync(path.join(dir, "epicsem.db"));
+
+  const versionRow = db.prepare(`PRAGMA user_version`).get() as any;
+  const currentVersion = versionRow?.user_version ?? 0;
+  if (currentVersion < SCHEMA_VERSION) {
+    db.exec(`
+      DROP TABLE IF EXISTS alerts;
+      DROP TABLE IF EXISTS monitor_checks;
+      DROP TABLE IF EXISTS monitored_pages;
+      DROP TABLE IF EXISTS gap_runs;
+      DROP TABLE IF EXISTS geo_runs;
+      DROP TABLE IF EXISTS audit_runs;
+      DROP TABLE IF EXISTS clients;
+      DROP TABLE IF EXISTS sessions;
+      DROP TABLE IF EXISTS users;
+    `);
+    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+  }
+
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
     CREATE TABLE IF NOT EXISTS audit_runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
       url TEXT NOT NULL,
       score INTEGER NOT NULL,
       ai_crawl_score INTEGER NOT NULL,
@@ -36,10 +82,11 @@ function getDb(): DatabaseSync {
       result_json TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-    CREATE INDEX IF NOT EXISTS idx_audit_runs_url ON audit_runs(url);
+    CREATE INDEX IF NOT EXISTS idx_audit_runs_user_url ON audit_runs(user_id, url);
 
     CREATE TABLE IF NOT EXISTS geo_runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
       brand_name TEXT NOT NULL,
       brand_domain TEXT NOT NULL,
       demo_mode INTEGER NOT NULL,
@@ -47,10 +94,11 @@ function getDb(): DatabaseSync {
       source_distribution_json TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-    CREATE INDEX IF NOT EXISTS idx_geo_runs_domain ON geo_runs(brand_domain);
+    CREATE INDEX IF NOT EXISTS idx_geo_runs_user_domain ON geo_runs(user_id, brand_domain);
 
     CREATE TABLE IF NOT EXISTS gap_runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
       brand_name TEXT NOT NULL,
       brand_domain TEXT NOT NULL,
       gap_matrix_json TEXT NOT NULL,
@@ -58,14 +106,16 @@ function getDb(): DatabaseSync {
       demo_mode INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-    CREATE INDEX IF NOT EXISTS idx_gap_runs_domain ON gap_runs(brand_domain);
+    CREATE INDEX IF NOT EXISTS idx_gap_runs_user_domain ON gap_runs(user_id, brand_domain);
 
     CREATE TABLE IF NOT EXISTS monitored_pages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      url TEXT NOT NULL UNIQUE,
+      user_id INTEGER NOT NULL,
+      url TEXT NOT NULL,
       label TEXT,
       slack_webhook TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, url)
     );
 
     CREATE TABLE IF NOT EXISTS monitor_checks (
@@ -90,25 +140,79 @@ function getDb(): DatabaseSync {
 
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       domain TEXT NOT NULL,
       competitors_json TEXT NOT NULL DEFAULT '[]',
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE INDEX IF NOT EXISTS idx_clients_user ON clients(user_id);
   `);
   return db;
 }
 
+// ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
+
+export interface UserRow {
+  id: number;
+  email: string;
+  passwordHash: string;
+  name: string | null;
+  createdAt: string;
+}
+
+function rowToUser(row: any): UserRow {
+  return { id: row.id, email: row.email, passwordHash: row.password_hash, name: row.name, createdAt: row.created_at };
+}
+
+export function createUser(email: string, passwordHash: string, name: string | null): UserRow {
+  const d = getDb();
+  const info = d
+    .prepare(`INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)`)
+    .run(email, passwordHash, name);
+  const row = d.prepare(`SELECT * FROM users WHERE id = ?`).get(info.lastInsertRowid) as any;
+  return rowToUser(row);
+}
+
+export function findUserByEmail(email: string): UserRow | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT * FROM users WHERE email = ?`).get(email) as any;
+  return row ? rowToUser(row) : null;
+}
+
+export function findUserById(id: number): UserRow | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT * FROM users WHERE id = ?`).get(id) as any;
+  return row ? rowToUser(row) : null;
+}
+
+export function createSession(token: string, userId: number, expiresAt: string) {
+  const d = getDb();
+  d.prepare(`INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)`).run(token, userId, expiresAt);
+}
+
+export function getSession(token: string): { userId: number; expiresAt: string } | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT * FROM sessions WHERE token = ?`).get(token) as any;
+  return row ? { userId: row.user_id, expiresAt: row.expires_at } : null;
+}
+
+export function deleteSession(token: string) {
+  const d = getDb();
+  d.prepare(`DELETE FROM sessions WHERE token = ?`).run(token);
+}
+
 // ---------------- audit runs ----------------
 
-export function saveAuditRun(result: SeoAuditResult) {
+export function saveAuditRun(userId: number, result: SeoAuditResult) {
   const d = getDb();
   const blockedBots = result.meta.aiBotAccess.filter((b) => !b.allowed).length;
   d.prepare(
-    `INSERT INTO audit_runs (url, score, ai_crawl_score, word_count, has_schema, blocked_bots, issue_count, result_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO audit_runs (user_id, url, score, ai_crawl_score, word_count, has_schema, blocked_bots, issue_count, result_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
+    userId,
     result.url,
     result.score,
     result.aiCrawlScore,
@@ -147,29 +251,30 @@ function rowToAuditSummary(row: any): AuditRunSummary {
 }
 
 /**
- * The run before the one just inserted, for this exact URL — null on a page's first
- * ever recorded run (there's nothing to compare against yet, not "compare to itself").
+ * The run before the one just inserted, for this exact user+URL — null on a page's
+ * first ever recorded run (there's nothing to compare against yet, not "compare to
+ * itself").
  */
-export function getPreviousAuditRun(url: string): AuditRunSummary | null {
+export function getPreviousAuditRun(userId: number, url: string): AuditRunSummary | null {
   const d = getDb();
   const rows = d
-    .prepare(`SELECT * FROM audit_runs WHERE url = ? ORDER BY id DESC LIMIT 2`)
-    .all(url) as any[];
+    .prepare(`SELECT * FROM audit_runs WHERE user_id = ? AND url = ? ORDER BY id DESC LIMIT 2`)
+    .all(userId, url) as any[];
   if (rows.length < 2) return null;
   return rowToAuditSummary(rows[1]);
 }
 
-export function getAuditHistory(url: string, limit = 10): AuditRunSummary[] {
+export function getAuditHistory(userId: number, url: string, limit = 10): AuditRunSummary[] {
   const d = getDb();
   const rows = d
-    .prepare(`SELECT * FROM audit_runs WHERE url = ? ORDER BY id DESC LIMIT ?`)
-    .all(url, limit) as any[];
+    .prepare(`SELECT * FROM audit_runs WHERE user_id = ? AND url = ? ORDER BY id DESC LIMIT ?`)
+    .all(userId, url, limit) as any[];
   return rows.map(rowToAuditSummary);
 }
 
 // ---------------- geo runs ----------------
 
-export function saveGeoRun(params: {
+export function saveGeoRun(userId: number, params: {
   brandName: string;
   brandDomain: string;
   demoMode: boolean;
@@ -178,9 +283,10 @@ export function saveGeoRun(params: {
 }) {
   const d = getDb();
   d.prepare(
-    `INSERT INTO geo_runs (brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO geo_runs (user_id, brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json)
+     VALUES (?, ?, ?, ?, ?, ?)`
   ).run(
+    userId,
     params.brandName,
     params.brandDomain,
     params.demoMode ? 1 : 0,
@@ -198,11 +304,11 @@ export interface GeoRunRow {
   createdAt: string;
 }
 
-export function getPreviousGeoRun(brandDomain: string): GeoRunRow | null {
+export function getPreviousGeoRun(userId: number, brandDomain: string): GeoRunRow | null {
   const d = getDb();
   const rows = d
-    .prepare(`SELECT * FROM geo_runs WHERE brand_domain = ? ORDER BY id DESC LIMIT 2`)
-    .all(brandDomain) as any[];
+    .prepare(`SELECT * FROM geo_runs WHERE user_id = ? AND brand_domain = ? ORDER BY id DESC LIMIT 2`)
+    .all(userId, brandDomain) as any[];
   if (rows.length < 2) return null;
   const row = rows[1];
   return {
@@ -217,7 +323,7 @@ export function getPreviousGeoRun(brandDomain: string): GeoRunRow | null {
 
 // ---------------- gap runs ----------------
 
-export function saveGapRun(params: {
+export function saveGapRun(userId: number, params: {
   brandName: string;
   brandDomain: string;
   demoMode: boolean;
@@ -226,9 +332,10 @@ export function saveGapRun(params: {
 }) {
   const d = getDb();
   d.prepare(
-    `INSERT INTO gap_runs (brand_name, brand_domain, gap_matrix_json, summaries_json, demo_mode)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO gap_runs (user_id, brand_name, brand_domain, gap_matrix_json, summaries_json, demo_mode)
+     VALUES (?, ?, ?, ?, ?, ?)`
   ).run(
+    userId,
     params.brandName,
     params.brandDomain,
     JSON.stringify(params.gapMatrix),
@@ -241,6 +348,7 @@ export function saveGapRun(params: {
 
 export interface MonitoredPage {
   id: number;
+  userId: number;
   url: string;
   label: string | null;
   slackWebhook: string | null;
@@ -248,27 +356,43 @@ export interface MonitoredPage {
 }
 
 function rowToMonitoredPage(row: any): MonitoredPage {
-  return { id: row.id, url: row.url, label: row.label, slackWebhook: row.slack_webhook, createdAt: row.created_at };
+  return {
+    id: row.id,
+    userId: row.user_id,
+    url: row.url,
+    label: row.label,
+    slackWebhook: row.slack_webhook,
+    createdAt: row.created_at,
+  };
 }
 
-export function addMonitoredPage(url: string, label?: string, slackWebhook?: string): MonitoredPage {
+export function addMonitoredPage(userId: number, url: string, label?: string, slackWebhook?: string): MonitoredPage {
   const d = getDb();
   d.prepare(
-    `INSERT INTO monitored_pages (url, label, slack_webhook) VALUES (?, ?, ?)
-     ON CONFLICT(url) DO UPDATE SET label = excluded.label, slack_webhook = excluded.slack_webhook`
-  ).run(url, label ?? null, slackWebhook ?? null);
-  const row = d.prepare(`SELECT * FROM monitored_pages WHERE url = ?`).get(url) as any;
+    `INSERT INTO monitored_pages (user_id, url, label, slack_webhook) VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, url) DO UPDATE SET label = excluded.label, slack_webhook = excluded.slack_webhook`
+  ).run(userId, url, label ?? null, slackWebhook ?? null);
+  const row = d.prepare(`SELECT * FROM monitored_pages WHERE user_id = ? AND url = ?`).get(userId, url) as any;
   return rowToMonitoredPage(row);
 }
 
-export function listMonitoredPages(): MonitoredPage[] {
+export function listMonitoredPages(userId: number): MonitoredPage[] {
+  const d = getDb();
+  const rows = d.prepare(`SELECT * FROM monitored_pages WHERE user_id = ? ORDER BY id DESC`).all(userId) as any[];
+  return rows.map(rowToMonitoredPage);
+}
+
+/** Cron-only: every monitored page across every user. Never expose this to a per-user API response. */
+export function listAllMonitoredPages(): MonitoredPage[] {
   const d = getDb();
   const rows = d.prepare(`SELECT * FROM monitored_pages ORDER BY id DESC`).all() as any[];
   return rows.map(rowToMonitoredPage);
 }
 
-export function removeMonitoredPage(id: number) {
+export function removeMonitoredPage(userId: number, id: number) {
   const d = getDb();
+  const owned = d.prepare(`SELECT id FROM monitored_pages WHERE id = ? AND user_id = ?`).get(id, userId);
+  if (!owned) return;
   d.prepare(`DELETE FROM alerts WHERE monitored_page_id = ?`).run(id);
   d.prepare(`DELETE FROM monitor_checks WHERE monitored_page_id = ?`).run(id);
   d.prepare(`DELETE FROM monitored_pages WHERE id = ?`).run(id);
@@ -322,12 +446,16 @@ export function createAlert(pageId: number, message: string) {
   d.prepare(`INSERT INTO alerts (monitored_page_id, message) VALUES (?, ?)`).run(pageId, message);
 }
 
-export function listAlerts(includeAcknowledged = false): (Alert & { url: string })[] {
+export function listAlerts(userId: number, includeAcknowledged = false): (Alert & { url: string })[] {
   const d = getDb();
   const sql = includeAcknowledged
-    ? `SELECT alerts.*, monitored_pages.url as page_url FROM alerts JOIN monitored_pages ON monitored_pages.id = alerts.monitored_page_id ORDER BY alerts.id DESC`
-    : `SELECT alerts.*, monitored_pages.url as page_url FROM alerts JOIN monitored_pages ON monitored_pages.id = alerts.monitored_page_id WHERE acknowledged = 0 ORDER BY alerts.id DESC`;
-  const rows = d.prepare(sql).all() as any[];
+    ? `SELECT alerts.*, monitored_pages.url as page_url FROM alerts
+       JOIN monitored_pages ON monitored_pages.id = alerts.monitored_page_id
+       WHERE monitored_pages.user_id = ? ORDER BY alerts.id DESC`
+    : `SELECT alerts.*, monitored_pages.url as page_url FROM alerts
+       JOIN monitored_pages ON monitored_pages.id = alerts.monitored_page_id
+       WHERE monitored_pages.user_id = ? AND acknowledged = 0 ORDER BY alerts.id DESC`;
+  const rows = d.prepare(sql).all(userId) as any[];
   return rows.map((row) => ({
     id: row.id,
     monitoredPageId: row.monitored_page_id,
@@ -338,15 +466,19 @@ export function listAlerts(includeAcknowledged = false): (Alert & { url: string 
   }));
 }
 
-export function acknowledgeAlert(id: number) {
+export function acknowledgeAlert(userId: number, id: number) {
   const d = getDb();
-  d.prepare(`UPDATE alerts SET acknowledged = 1 WHERE id = ?`).run(id);
+  d.prepare(
+    `UPDATE alerts SET acknowledged = 1
+     WHERE id = ? AND monitored_page_id IN (SELECT id FROM monitored_pages WHERE user_id = ?)`
+  ).run(id, userId);
 }
 
 // ---------------- clients ----------------
 
 export interface Client {
   id: number;
+  userId: number;
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
@@ -357,6 +489,7 @@ export interface Client {
 function rowToClient(row: any): Client {
   return {
     id: row.id,
+    userId: row.user_id,
     name: row.name,
     domain: row.domain,
     competitors: JSON.parse(row.competitors_json),
@@ -365,7 +498,7 @@ function rowToClient(row: any): Client {
   };
 }
 
-export function createClient(params: {
+export function createClient(userId: number, params: {
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
@@ -373,25 +506,25 @@ export function createClient(params: {
 }): Client {
   const d = getDb();
   const info = d
-    .prepare(`INSERT INTO clients (name, domain, competitors_json, notes) VALUES (?, ?, ?, ?)`)
-    .run(params.name, params.domain, JSON.stringify(params.competitors), params.notes ?? null);
+    .prepare(`INSERT INTO clients (user_id, name, domain, competitors_json, notes) VALUES (?, ?, ?, ?, ?)`)
+    .run(userId, params.name, params.domain, JSON.stringify(params.competitors), params.notes ?? null);
   const row = d.prepare(`SELECT * FROM clients WHERE id = ?`).get(info.lastInsertRowid) as any;
   return rowToClient(row);
 }
 
-export function listClients(): Client[] {
+export function listClients(userId: number): Client[] {
   const d = getDb();
-  const rows = d.prepare(`SELECT * FROM clients ORDER BY id DESC`).all() as any[];
+  const rows = d.prepare(`SELECT * FROM clients WHERE user_id = ? ORDER BY id DESC`).all(userId) as any[];
   return rows.map(rowToClient);
 }
 
-export function getClient(id: number): Client | null {
+export function getClient(userId: number, id: number): Client | null {
   const d = getDb();
-  const row = d.prepare(`SELECT * FROM clients WHERE id = ?`).get(id) as any;
+  const row = d.prepare(`SELECT * FROM clients WHERE id = ? AND user_id = ?`).get(id, userId) as any;
   return row ? rowToClient(row) : null;
 }
 
-export function deleteClient(id: number) {
+export function deleteClient(userId: number, id: number) {
   const d = getDb();
-  d.prepare(`DELETE FROM clients WHERE id = ?`).run(id);
+  d.prepare(`DELETE FROM clients WHERE id = ? AND user_id = ?`).run(id, userId);
 }

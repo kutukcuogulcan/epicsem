@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, deleteClient, listClients } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 
 export async function GET() {
-  return NextResponse.json({ clients: listClients() });
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+  return NextResponse.json({ clients: listClients(user.id) });
 }
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
@@ -15,25 +18,31 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = createSchema.parse(await req.json());
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
   }
-  const client = createClient(parsed);
+  const client = createClient(user.id, parsed);
   return NextResponse.json({ client });
 }
 
 const deleteSchema = z.object({ id: z.number() });
 
 export async function DELETE(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = deleteSchema.parse(await req.json());
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
   }
-  deleteClient(parsed.id);
+  deleteClient(user.id, parsed.id);
   return NextResponse.json({ ok: true });
 }

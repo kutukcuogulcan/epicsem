@@ -6,6 +6,7 @@ import { isDemoMode } from "@/lib/geo-providers";
 import { auditPagesForGap, buildGapMatrix } from "@/lib/gap-analysis";
 import { saveGapRun } from "@/lib/db";
 import { buildContentBriefs } from "@/lib/content-brief";
+import { requireUser } from "@/lib/auth";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -18,6 +19,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
   const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
 
   try {
-    saveGapRun({ brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
+    saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
   } catch (dbErr) {
     console.error("gap history write failed:", dbErr);
   }

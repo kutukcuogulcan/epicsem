@@ -1,20 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { acknowledgeAlert, listAlerts } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 
 export async function GET() {
-  return NextResponse.json({ alerts: listAlerts() });
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+  return NextResponse.json({ alerts: listAlerts(user.id) });
 }
 
 const bodySchema = z.object({ id: z.number() });
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
   }
-  acknowledgeAlert(parsed.id);
+  acknowledgeAlert(user.id, parsed.id);
   return NextResponse.json({ ok: true });
 }
