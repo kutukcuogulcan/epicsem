@@ -100,7 +100,22 @@ export default function GapPage() {
 
   async function runAnalysis(e: React.FormEvent) {
     e.preventDefault();
-    if (!brand.name || !brand.domain || prompts.length === 0 || pageUrls.length === 0) return;
+    if (!brand.name || !brand.domain) {
+      setError("Enter your brand name and domain.");
+      return;
+    }
+    if (prompts.length === 0) {
+      setError("Enter at least one prompt.");
+      return;
+    }
+    if (pageUrls.length === 0) {
+      setError("Enter at least one page URL to audit.");
+      return;
+    }
+    if (engines.length === 0) {
+      setError("Pick at least one engine.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setSummaries(null);
@@ -118,6 +133,10 @@ export default function GapPage() {
           pageUrls,
         }),
       });
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Analysis failed");
       setSummaries(data.summaries);
@@ -150,12 +169,14 @@ export default function GapPage() {
               value={brand.name}
               onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))}
               placeholder="Brand name"
+              required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={brand.domain}
               onChange={(e) => setBrand((b) => ({ ...b, domain: e.target.value }))}
               placeholder="brand-domain.com"
+              required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>

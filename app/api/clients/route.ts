@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, deleteClient, listClients } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
 
 export async function GET() {
   const user = await requireUser();
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     parsed = createSchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
   const client = createClient(user.id, parsed);
   return NextResponse.json({ client });
@@ -41,7 +42,7 @@ export async function DELETE(req: NextRequest) {
   try {
     parsed = deleteSchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
   deleteClient(user.id, parsed.id);
   return NextResponse.json({ ok: true });

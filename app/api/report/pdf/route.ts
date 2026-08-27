@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { buildReportPdf } from "@/lib/pdf-report";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
 
 const bodySchema = z.object({
   agencyName: z.string().optional(),
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
   const doc = buildReportPdf({

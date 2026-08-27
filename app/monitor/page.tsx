@@ -37,8 +37,16 @@ export default function MonitorPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  function redirectToLogin() {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+  }
+
   async function refresh() {
     const [pagesRes, alertsRes] = await Promise.all([fetch("/api/monitor"), fetch("/api/monitor/alerts")]);
+    if (pagesRes.status === 401 || alertsRes.status === 401) {
+      redirectToLogin();
+      return;
+    }
     const pagesData = await pagesRes.json();
     const alertsData = await alertsRes.json();
     setPages(pagesData.pages ?? []);
@@ -51,7 +59,10 @@ export default function MonitorPage() {
 
   async function addPage(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    if (!url.trim()) {
+      setError("Enter a URL to monitor.");
+      return;
+    }
     setBusy("add");
     setError(null);
     try {
@@ -60,6 +71,10 @@ export default function MonitorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, label: label || undefined, slackWebhook: slackWebhook || undefined }),
       });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not add page");
       setUrl("");
@@ -76,11 +91,15 @@ export default function MonitorPage() {
   async function removePage(id: number) {
     setBusy(`remove-${id}`);
     try {
-      await fetch("/api/monitor", {
+      const res = await fetch("/api/monitor", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
       await refresh();
     } finally {
       setBusy(null);
@@ -96,6 +115,10 @@ export default function MonitorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(id ? { pageId: id } : { all: true }),
       });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Check failed");
       await refresh();
@@ -107,11 +130,15 @@ export default function MonitorPage() {
   }
 
   async function ackAlert(id: number) {
-    await fetch("/api/monitor/alerts", {
+    const res = await fetch("/api/monitor/alerts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    if (res.status === 401) {
+      redirectToLogin();
+      return;
+    }
     await refresh();
   }
 
@@ -153,6 +180,7 @@ export default function MonitorPage() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="yourdomain.com/key-page"
+            required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent sm:col-span-1"
           />
           <input

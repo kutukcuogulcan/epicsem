@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { addMonitoredPage, getLatestMonitorCheck, listMonitoredPages, removeMonitoredPage } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
 
 export async function GET() {
   const user = await requireUser();
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     parsed = addSchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
   const page = addMonitoredPage(user.id, parsed.url, parsed.label, parsed.slackWebhook || undefined);
   return NextResponse.json({ page });
@@ -44,7 +45,7 @@ export async function DELETE(req: NextRequest) {
   try {
     parsed = deleteSchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
   removeMonitoredPage(user.id, parsed.id);
   return NextResponse.json({ ok: true });

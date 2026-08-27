@@ -5,6 +5,8 @@ import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptA
 import { isDemoMode } from "@/lib/geo-providers";
 import { getPreviousGeoRun, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -19,14 +21,21 @@ export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
+  // GEO runs fan out to N prompts × M engines — each real (non-demo) run costs LLM
+  // API spend, so this gets a tighter cap than a plain audit.
+  const limitResult = rateLimit(`geo:${user.id}`, 15, 60 * 60 * 1000);
+  if (!limitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit reached — up to 15 GEO tests per hour. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
+    );
+  }
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Invalid request body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
   const { brand, competitors, prompts, engines } = parsed;

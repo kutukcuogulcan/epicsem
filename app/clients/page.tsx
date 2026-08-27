@@ -26,8 +26,16 @@ export default function ClientsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  function redirectToLogin() {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+  }
+
   async function refresh() {
     const res = await fetch("/api/clients");
+    if (res.status === 401) {
+      redirectToLogin();
+      return;
+    }
     const data = await res.json();
     setClients(data.clients ?? []);
   }
@@ -42,7 +50,10 @@ export default function ClientsPage() {
 
   async function addClient(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !domain.trim()) return;
+    if (!name.trim() || !domain.trim()) {
+      setError("Enter a client name and domain.");
+      return;
+    }
     setBusy("add");
     setError(null);
     try {
@@ -56,6 +67,10 @@ export default function ClientsPage() {
           notes: notes || undefined,
         }),
       });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not save client");
       setName("");
@@ -73,11 +88,15 @@ export default function ClientsPage() {
   async function removeClient(id: number) {
     setBusy(`remove-${id}`);
     try {
-      await fetch("/api/clients", {
+      const res = await fetch("/api/clients", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
       await refresh();
     } finally {
       setBusy(null);
@@ -101,12 +120,14 @@ export default function ClientsPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Client / brand name"
+            required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
           <input
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             placeholder="client-domain.com"
+            required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>

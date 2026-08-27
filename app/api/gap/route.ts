@@ -7,6 +7,8 @@ import { auditPagesForGap, buildGapMatrix } from "@/lib/gap-analysis";
 import { saveGapRun } from "@/lib/db";
 import { buildContentBriefs } from "@/lib/content-brief";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -22,14 +24,21 @@ export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
+  // Gap analysis runs both a GEO fan-out AND a per-page audit crawl — most
+  // expensive single action in the app, so it gets the tightest cap.
+  const limitResult = rateLimit(`gap:${user.id}`, 10, 60 * 60 * 1000);
+  if (!limitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit reached — up to 10 gap analyses per hour. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
+    );
+  }
+
   let parsed;
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Invalid request body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
   const { brand, competitors, prompts, engines, pageUrls } = parsed;

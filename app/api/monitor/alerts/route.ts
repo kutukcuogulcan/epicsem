@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { acknowledgeAlert, listAlerts } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
 
 export async function GET() {
   const user = await requireUser();
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid body" }, { status: 400 });
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
   acknowledgeAlert(user.id, parsed.id);
   return NextResponse.json({ ok: true });

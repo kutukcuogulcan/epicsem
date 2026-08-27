@@ -55,7 +55,10 @@ export default function AuditPage() {
 
   async function runAudit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    if (!url.trim()) {
+      setError("Enter a URL to audit.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -66,6 +69,10 @@ export default function AuditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Audit failed");
       setResult(data);
@@ -120,6 +127,7 @@ export default function AuditPage() {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="example.com"
+          required
           className="flex-1 rounded-lg bg-panel border border-border px-4 py-2.5 text-sm outline-none focus:border-accent"
         />
         <button

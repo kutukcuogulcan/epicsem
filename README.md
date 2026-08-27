@@ -107,22 +107,34 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
   güvenlik sınırı her API route'unun başındaki `requireUser()` kontrolü.
   `scripts/check-monitors.mjs` artık bir `CRON_SECRET` header'ıyla kimlik doğruluyor
   (tek kullanıcıya değil, tüm hesapların sayfalarına bakması gerektiği için).
+- **Uçtan uca QA geçişi + üretim sertleştirme** (2026-08-27) — `/audit`, `/geo`,
+  `/gap`, `/monitor`, `/clients` formlarındaki sessiz no-op validasyonlar gerçek
+  hata mesajlarına çevrildi; her sayfa artık süresi dolmuş oturumda (401) otomatik
+  `/login`'e yönlendiriyor; API route'larındaki ham Zod hata dump'ları
+  (`lib/zod-error.ts`) okunabilir tek satırlık mesajlara çevrildi; `/api/audit`,
+  `/api/geo`, `/api/gap`, `/api/monitor/check`, `/api/auth/login`,
+  `/api/auth/signup` artık bellek-içi rate limiting ile korunuyor
+  (`lib/rate-limit.ts` — kullanıcı/IP başına saatlik limit; login/signup brute-force
+  koruması için IP başına). Tek instance için yeterli — yatay ölçeklenirse
+  paylaşımlı bir store'a (Redis vb.) taşınması gerekir, bilinçli bir sınır.
+- **Gerçek zamanlı scheduler artık canlıda** (2026-08-27) — Railway'de ayrı bir
+  `epicsem-cron-v2` servisi `node scripts/check-monitors.mjs`'i 6 saatte bir
+  (`0 */6 * * *`) çalıştırıyor; `/api/monitor/check`'in "sayfa yok" durumu artık
+  hata değil boş sonuç döndürüyor (cron'un ilk günlerde, henüz kimse sayfa
+  eklememişken sahte "failed" görünmesini engellemek için).
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
 - **Billing / plan limiti** — hesap sistemi var ama ödeme/abonelik/kullanım limiti
   yok. `DEMO_MODE`'u kapatıp gerçek API anahtarlarını bağlamadan önce mutlaka bir
   ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi sizin LLM
-  faturanıza yazılır.
+  faturanıza yazılır. Rate limiting kötüye kullanımı yavaşlatır ama bir plan/kota
+  sistemi değildir.
 - **Çok sayfalı toplu tarama** — şu an tek URL denetliyor (gap analysis birden fazla
   URL alıyor ama tek tek girilmesi gerekiyor). Screaming Frog export'u (CSV) import
   edip toplu tarama roadmap'te.
 - **Gerçek sentiment modeli** — şu an anahtar kelime sözlüğüne dayalı kaba bir skor;
   üretimde bunu bir LLM-hakem çağrısına (küçük, ucuz bir model) çevirmek gerekir.
-- **Gerçek zamanlı scheduler** — `/monitor`'un "yeniden tara" mantığı hazır ama
-  kendi kendine periyodik çalışmıyor; `scripts/check-monitors.mjs`'i harici bir
-  cron'a (OS crontab, Vercel Cron, GitHub Actions) bağlamanız gerekiyor — bkz. o
-  dosyanın başındaki örnek.
 
 ## Kurulum
 
@@ -159,10 +171,18 @@ değişmeden çalışır:
    uyarıları için opsiyonel; `CRON_SECRET` sadece adım 4'teki cron job'ı kullanacaksanız
    gerekli — uzun rastgele bir string üretip buraya girin).
 4. `/monitor`'ün arkasındaki `scripts/check-monitors.mjs` kendi kendine tetiklenmiyor —
-   Railway'de ayrı bir **Cron Job** servisi olarak (örn. saatte bir)
-   `node scripts/check-monitors.mjs` komutunu, `APP_URL`'i deploy edilen uygulamanın
-   kendi URL'sine ve `CRON_SECRET`'ı 3. adımdaki ile aynı değere ayarlayarak eklemek
-   gerekir.
+   Railway'de aynı repodan **ikinci bir servis** oluşturup (asıl web servisiyle aynı
+   proje/environment içinde) şöyle ayarlamak gerekiyor:
+   - **Build command**: `npm install` (bu servis Next.js'i build etmiyor, sadece
+     script'i çalıştırıyor — `npm run build`'u atlamak deploy'u hızlandırır).
+   - **Start command**: `node scripts/check-monitors.mjs`
+   - **Cron schedule**: örn. `0 */6 * * *` (6 saatte bir; Railway'in minimum aralığı
+     5 dakika).
+   - **Restart policy**: `NEVER` (bu bir kereye mahsus çalışıp çıkan bir script,
+     sürekli servis değil — crash'te yeniden başlatılmasına gerek yok).
+   - Variables: `APP_URL` = web servisinin genel URL'si (`https://...up.railway.app`),
+     `CRON_SECRET` = 3. adımdaki ile **aynı** değer.
+   - Bu proje (`epicsem`) içinde canlıda bu servis `epicsem-cron-v2` adıyla kurulu.
 
 ## Klasör yapısı
 
@@ -200,6 +220,8 @@ lib/
   monitor.ts                     → AXO yeniden-tarama + diff + Slack alert mantığı
   pdf-report.ts                  → pdfkit ile Epicsem markalı PDF rapor üretimi
   db.ts                          → node:sqlite kalıcılık katmanı — her tablo user_id ile ayrılmış (çoklu kiracı)
+  rate-limit.ts                  → bellek-içi sliding-window rate limiter (login/signup IP, audit/geo/gap/monitor kullanıcı başına)
+  zod-error.ts                   → ham ZodError dump'ını okunabilir "alan: mesaj" satırına çevirir
   geo-engine.ts                  → prompt'ları motorlara koşturan + skorlayan orkestratör
   geo-providers.ts               → OpenAI/Anthropic/Google/Perplexity provider'ları (pluggable)
   geo-demo.ts                    → API key yokken kullanılan gerçekçi demo üretici
@@ -224,6 +246,10 @@ types/index.ts                   → paylaşılan TypeScript tipleri
 - [x] **İçerik brief üretimi** (`/gap` → Content briefs) — yapıldı.
 - [x] **Hesap sistemi + çoklu kullanıcı izolasyonu** (2026-08-27) — yapıldı, SaaS'a
   dönüşümün ilk ve en kritik adımıydı.
+- [x] **Uçtan uca QA + rate limiting** (2026-08-27) — yapıldı, bkz. yukarıdaki
+  "Bugün ne çalışıyor" bölümü.
+- [x] **Gerçek zamanlı scheduler canlıda** (2026-08-27) — yapıldı, Railway'de
+  `epicsem-cron-v2` servisi 6 saatte bir çalışıyor.
 - [ ] **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik. Stripe
   entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
   katmanı gerekiyor.
@@ -234,9 +260,6 @@ types/index.ts                   → paylaşılan TypeScript tipleri
    sonraki adım.
 2. **Screaming Frog CSV import** → zaten kullandığınız bir araç; toplu site taramasını
    sıfırdan yazmak yerine oradan import etmek daha hızlı bir yol.
-3. **Gerçek zamanlı scheduler** → `scripts/check-monitors.mjs`'i bir hosting
-   platformunun (Vercel Cron, GitHub Actions) zamanlayıcısına bağlamak — kod hazır,
-   sadece bağlanması gerekiyor.
 
 ## Kaynaklar
 
