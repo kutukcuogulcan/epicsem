@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import type {
+  BulkImportResult,
   GapRow,
   GeoVisibilitySummary,
   SeoAuditResult,
@@ -137,6 +138,18 @@ function getDb(): DatabaseSync {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (monitored_page_id) REFERENCES monitored_pages(id)
     );
+
+    CREATE TABLE IF NOT EXISTS import_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      filename TEXT NOT NULL,
+      row_count INTEGER NOT NULL,
+      summary_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_import_runs_user ON import_runs(user_id);
 
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -548,4 +561,49 @@ export function getClient(userId: number, id: number): Client | null {
 export function deleteClient(userId: number, id: number) {
   const d = getDb();
   d.prepare(`DELETE FROM clients WHERE id = ? AND user_id = ?`).run(id, userId);
+}
+
+// ---------------- bulk (Screaming Frog) import runs ----------------
+
+export interface ImportRunSummary {
+  id: number;
+  filename: string;
+  rowCount: number;
+  summary: BulkImportResult["summary"];
+  createdAt: string;
+}
+
+function rowToImportRunSummary(row: any): ImportRunSummary {
+  return {
+    id: row.id,
+    filename: row.filename,
+    rowCount: row.row_count,
+    summary: JSON.parse(row.summary_json),
+    createdAt: row.created_at,
+  };
+}
+
+export function saveImportRun(userId: number, result: BulkImportResult): number {
+  const d = getDb();
+  const info = d
+    .prepare(
+      `INSERT INTO import_runs (user_id, filename, row_count, summary_json, result_json) VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(userId, result.filename, result.summary.totalRows, JSON.stringify(result.summary), JSON.stringify(result));
+  return Number(info.lastInsertRowid);
+}
+
+export function listImportRuns(userId: number, limit = 20): ImportRunSummary[] {
+  const d = getDb();
+  const rows = d
+    .prepare(`SELECT id, filename, row_count, summary_json, created_at FROM import_runs WHERE user_id = ? ORDER BY id DESC LIMIT ?`)
+    .all(userId, limit) as any[];
+  return rows.map(rowToImportRunSummary);
+}
+
+/** Ownership-checked — returns null instead of another user's import data. */
+export function getImportRun(userId: number, id: number): BulkImportResult | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT result_json FROM import_runs WHERE id = ? AND user_id = ?`).get(id, userId) as any;
+  return row ? JSON.parse(row.result_json) : null;
 }

@@ -112,3 +112,48 @@ export interface GapRow {
   citedDomain: number;
   verdict: GapVerdict;
 }
+
+/** One row from an imported Screaming Frog CSV, after mapping + issue detection. */
+export interface BulkImportRow {
+  url: string;
+  statusCode: number | null;
+  indexable: boolean | null;
+  title: string | null;
+  titleLength: number | null;
+  metaDescription: string | null;
+  metaDescriptionLength: number | null;
+  h1: string | null;
+  h1Count: number;
+  wordCount: number | null;
+  canonical: string | null;
+  metaRobots: string | null;
+  /** Issue codes, e.g. "missing-title", "thin-content", "duplicate-title", "broken". */
+  issues: string[];
+}
+
+export interface BulkImportSummary {
+  totalRows: number;
+  missingTitle: number;
+  duplicateTitles: number;
+  titleTooLong: number;
+  missingMetaDescription: number;
+  duplicateMetaDescriptions: number;
+  metaDescriptionTooLong: number;
+  missingH1: number;
+  multipleH1: number;
+  thinContent: number;
+  brokenLinks: number;
+  redirects: number;
+  nonIndexable: number;
+  noindexTag: number;
+}
+
+export interface BulkImportResult {
+  filename: string;
+  importedAt: string;
+  columns: string[];
+  summary: BulkImportSummary;
+  rows: BulkImportRow[];
+  duplicateTitleGroups: { value: string; urls: string[] }[];
+  duplicateMetaGroups: { value: string; urls: string[] }[];
+}

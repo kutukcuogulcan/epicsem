@@ -1,4 +1,4 @@
-import type { SeoAuditResult } from "@/types";
+import type { BulkImportResult, SeoAuditResult } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 
 /**
@@ -86,6 +86,60 @@ export function buildContentBriefPrompt(brief: ContentBrief, brandName?: string)
 
   lines.push("");
   lines.push("Read the current page first so you don't duplicate what's already there. Output the revised page content as markdown for me to review — don't publish anywhere automatically.");
+
+  return lines.join("\n");
+}
+
+/**
+ * From a bulk Screaming Frog CSV import — a full-site technical sweep instead of one
+ * page. Row counts can run into the thousands, so this deliberately summarizes (counts
+ * + a capped sample of URLs per issue) rather than dumping every row — an agent working
+ * in the actual repo/CMS can re-derive the rest from the codebase itself.
+ */
+const SAMPLE_CAP = 15;
+
+function sampleUrls(rows: BulkImportResult["rows"], issueCode: string): string[] {
+  return rows.filter((r) => r.issues.includes(issueCode)).slice(0, SAMPLE_CAP).map((r) => r.url);
+}
+
+export function buildBulkImportFixPrompt(result: BulkImportResult): string {
+  const s = result.summary;
+  const lines: string[] = [];
+  lines.push(
+    `I imported a Screaming Frog crawl (${result.filename}, ${s.totalRows} URLs) into Epicsem. Here's the aggregated technical SEO findings — help me fix what's safe to fix in bulk across this codebase/CMS, and flag anything that needs a per-page editorial decision instead of a mechanical fix.`
+  );
+  lines.push("");
+  lines.push(
+    `Summary: ${s.missingTitle} missing titles, ${s.duplicateTitles} URLs sharing a duplicate title, ${s.titleTooLong} titles over 60 chars, ${s.missingMetaDescription} missing meta descriptions, ${s.duplicateMetaDescriptions} URLs sharing a duplicate meta description, ${s.metaDescriptionTooLong} meta descriptions over 160 chars, ${s.missingH1} missing H1, ${s.multipleH1} pages with multiple H1s, ${s.thinContent} pages under ~200 words, ${s.brokenLinks} broken (4xx/5xx) URLs, ${s.redirects} redirects, ${s.nonIndexable} non-indexable URLs, ${s.noindexTag} URLs with a noindex tag.`
+  );
+
+  const section = (label: string, code: string, hint: string) => {
+    const sample = sampleUrls(result.rows, code);
+    if (sample.length === 0) return;
+    lines.push("");
+    lines.push(`${label} — ${hint} (showing up to ${SAMPLE_CAP} of ${sample.length === SAMPLE_CAP ? "possibly more" : sample.length}):`);
+    for (const url of sample) lines.push(`- ${url}`);
+  };
+
+  section("Broken URLs (4xx/5xx)", "broken", "find and fix the source of these links/redirects, or confirm they should 410/be removed from sitemaps and internal links");
+  section("Missing titles", "missing-title", "generate a unique, accurate 50-60 char title per page from that page's own existing content — do not invent facts");
+  section("Missing meta descriptions", "missing-meta-description", "generate a 140-160 char summary per page from that page's own existing content");
+  section("Missing H1", "missing-h1", "add one clear H1 per page matching the page's actual topic");
+  section("Thin content (<200 words)", "thin-content", "flag for editorial review — don't auto-generate filler content, that's the opposite of what this fixes");
+  section("Pages with multiple H1s", "multiple-h1", "keep one, demote the rest to H2/H3 as appropriate to the page structure");
+
+  if (result.duplicateTitleGroups.length > 0) {
+    lines.push("");
+    lines.push(`Duplicate title groups (${result.duplicateTitleGroups.length} distinct titles reused across multiple URLs) — each group needs titles differentiated based on what's actually different about those pages:`);
+    for (const g of result.duplicateTitleGroups.slice(0, SAMPLE_CAP)) {
+      lines.push(`- "${g.value}" used on: ${g.urls.slice(0, 5).join(", ")}${g.urls.length > 5 ? ` (+${g.urls.length - 5} more)` : ""}`);
+    }
+  }
+
+  lines.push("");
+  lines.push(
+    "Work through these by category, starting with broken links and missing titles/meta descriptions (highest impact, lowest risk). For anything requiring new written content, generate it only from facts already present in this repo/CMS for that page — never invent statistics, pricing, or claims. Batch your changes by directory/section rather than one commit per URL, and run this project's existing build/lint before finishing."
+  );
 
   return lines.join("\n");
 }

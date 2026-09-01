@@ -9,7 +9,7 @@ import { SESSION_COOKIE } from "@/lib/auth-cookie-name";
  * deliberately dumb (no DB access, no node:sqlite import) so it can run in the Edge
  * middleware runtime without pulling in Node-only APIs.
  */
-const PROTECTED_PREFIXES = ["/audit", "/geo", "/gap", "/monitor", "/clients"];
+const PROTECTED_PREFIXES = ["/audit", "/geo", "/gap", "/monitor", "/clients", "/import"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -27,5 +27,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/audit/:path*", "/geo/:path*", "/gap/:path*", "/monitor/:path*", "/clients/:path*"],
+  matcher: ["/audit/:path*", "/geo/:path*", "/gap/:path*", "/monitor/:path*", "/clients/:path*", "/import/:path*"],
 };

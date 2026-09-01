@@ -17,6 +17,7 @@ export default async function Nav() {
           <Link href="/geo" className="hover:text-accent transition-colors">GEO/AEO Visibility</Link>
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
           <Link href="/monitor" className="hover:text-accent transition-colors">Monitoring</Link>
+          <Link href="/import" className="hover:text-accent transition-colors">Bulk Import</Link>
           <Link href="/clients" className="hover:text-accent transition-colors">Clients</Link>
           <Link href="/prompts" className="hover:text-accent transition-colors">Claude Code Prompts</Link>
           {user ? (

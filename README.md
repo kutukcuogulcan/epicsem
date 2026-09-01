@@ -146,6 +146,15 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
     Code"** butonu eklendi — o çalıştırmanın gerçek bulgularıyla (uydurma veri değil)
     doldurulmuş, kopyala-yapıştır'a hazır kişisel bir prompt üretiyor
     (`lib/claude-code-prompt.ts`, `components/PromptBlock.tsx`).
+  - **2026-09-01** — Yeni **`/import`** sayfası: Screaming Frog CSV import (Export →
+    Internal → All). Arvow dahil tek-URL araçların hiçbirinin yapmadığı toplu site
+    taraması: eksik/yinelenen title & meta description, ince içerik (<200 kelime),
+    kırık linkler (4xx/5xx), eksik/çoklu H1, noindex sayfaları — binlerce URL'de tek
+    seferde tespit ediyor. Sütun isimleri versiyona göre esnek eşleniyor (sadece
+    "Address" zorunlu), CSV parser bağımlılıksız yazıldı (`lib/screaming-frog-import.ts`).
+    Bulgular `import_runs` tablosunda saklanıyor (geçmiş taramalar tekrar açılabilir),
+    ve toplu bulguları özetleyen bir **"Fix with Claude Code"** prompt'u da üretiyor
+    (`buildBulkImportFixPrompt`, `lib/claude-code-prompt.ts`).
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
@@ -154,9 +163,11 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
   ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi sizin LLM
   faturanıza yazılır. Rate limiting kötüye kullanımı yavaşlatır ama bir plan/kota
   sistemi değildir.
-- **Çok sayfalı toplu tarama** — şu an tek URL denetliyor (gap analysis birden fazla
-  URL alıyor ama tek tek girilmesi gerekiyor). Screaming Frog export'u (CSV) import
-  edip toplu tarama roadmap'te.
+- **Çok sayfalı toplu tarama** — `/audit` ve `/gap` hâlâ tek URL alıyor; `/import` ile
+  Screaming Frog CSV'sinden toplu teknik bulgu çıkarılabiliyor ama bu bir crawler değil
+  — yine de önce Screaming Frog ile taramanız gerekiyor. Epicsem'in kendi çoklu-sayfa
+  crawler'ı yok (bilinçli: Screaming Frog zaten var ve daha iyi, tekerleği yeniden
+  icat etmemek için onun export'unu okumayı seçtik).
 - **Gerçek sentiment modeli** — şu an anahtar kelime sözlüğüne dayalı kaba bir skor;
   üretimde bunu bir LLM-hakem çağrısına (küçük, ucuz bir model) çevirmek gerekir.
 
@@ -220,6 +231,7 @@ app/
   monitor/page.tsx                 → AXO izleme arayüzü (sayfa ekle/check now/alertler/trend grafiği)
   clients/page.tsx                  → müşteri kaydı + audit/GEO/gap'e hızlı geçiş
   prompts/page.tsx                   → Claude Code SEO prompt kütüphanesi (girişsiz, herkese açık)
+  import/page.tsx                     → Screaming Frog CSV import arayüzü (özet kutuları, filtrelenebilir tablo, geçmiş taramalar)
   api/auth/signup/route.ts          → POST { email, password, name? } -> user + session cookie
   api/auth/login/route.ts            → POST { email, password } -> user + session cookie
   api/auth/logout/route.ts            → POST -> session'ı siler, cookie'yi temizler
@@ -234,6 +246,7 @@ app/
   api/clients/[id]/route.ts                 → GET tek client (prefill için, auth gerekli)
   api/report/pdf/route.ts                    → POST {...} -> application/pdf (white-label rapor, auth gerekli)
   api/monitor/history/route.ts                → GET ?pageId= -> kronolojik SEO/AXO skor geçmişi (trend grafiği için, auth gerekli)
+  api/import/screaming-frog/route.ts           → POST multipart/form-data{file} -> BulkImportResult; GET (liste) / GET ?id= (tek taramayı geri getir) (auth gerekli)
 lib/
   auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
   auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
@@ -253,7 +266,8 @@ lib/
   geo-demo.ts                    → API key yokken (veya Meta AI/Copilot için her zaman) kullanılan gerçekçi demo üretici
   geo-analyze.ts                 → yanıt metninden mention/position/sentiment/citation çıkarımı
   prompt-library.ts              → /prompts sayfasındaki statik Claude Code prompt kütüphanesi (kategorilere ayrılmış)
-  claude-code-prompt.ts          → gerçek audit/gap sonucundan kişisel "Fix with Claude Code" prompt'u üretir
+  claude-code-prompt.ts          → gerçek audit/gap/bulk-import sonucundan kişisel "Fix with Claude Code" prompt'u üretir
+  screaming-frog-import.ts       → bağımsızlık gerektirmeyen CSV parser + sütun eşleme + toplu SEO issue tespiti
 middleware.ts                    → oturum çerezi yoksa korumalı sayfalardan /login'e yönlendirir (Edge, cheap check)
 components/FixCard.tsx           → kopyala-butonlu fix kartı
 components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component)
@@ -291,13 +305,15 @@ types/index.ts                   → paylaşılan TypeScript tipleri
 - [ ] **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik. Stripe
   entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
   katmanı gerekiyor.
+- [x] **Screaming Frog CSV import** (`/import`) (2026-09-01) — yapıldı; toplu teknik
+  SEO taraması (title/meta/H1/thin content/broken links/noindex), geçmiş taramalar
+  `import_runs`'ta saklanıyor, özetten "Fix with Claude Code" prompt'u üretiyor.
 - [ ] **Canlıya deploy güncellemesi bekliyor** — 27 Ağustos'taki QA/rate-limiting
-  commit'i ve şimdiki motor/trend/prompt commit'i GitHub'da ama Railway'deki
-  `epicsem-web-v3` hâlâ eski kodu çalıştırıyor; iki ayrı Railway/GitHub izin
-  sorunu kullanıcı onayı bekliyor (bkz. proje hafızası [[architecture]]).
-1. **Screaming Frog CSV import** → zaten kullandığınız bir araç; toplu site taramasını
-   sıfırdan yazmak yerine oradan import etmek daha hızlı bir yol.
-2. **Arvow tarzı otomatik içerik üretimi + CMS yayını (autoblog)** — Arvow'un asıl
+  commit'i, 31 Ağustos'taki motor/trend/prompt commit'i ve şimdiki bulk-import
+  commit'i GitHub'da ama Railway'deki `epicsem-web-v3` hâlâ eski kodu çalıştırıyor;
+  iki ayrı Railway/GitHub izin sorunu kullanıcı onayı bekliyor (bkz. proje hafızası
+  [[architecture]]).
+1. **Arvow tarzı otomatik içerik üretimi + CMS yayını (autoblog)** — Arvow'un asıl
    çekirdek özelliği ve en büyük iş; bilinçli olarak ertelendi (bkz. proje hafızası).
    Yapılırsa Arvow'un "ince içerik" ve "şeffaf olmayan kredi sistemi" eleştirilerinden
    kaçınacak şekilde: gerçek audit/gap verisinden beslenen brief-first üretim ve net,
