@@ -122,6 +122,30 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
   (`0 */6 * * *`) çalıştırıyor; `/api/monitor/check`'in "sayfa yok" durumu artık
   hata değil boş sonuç döndürüyor (cron'un ilk günlerde, henüz kimse sayfa
   eklememişken sahte "failed" görünmesini engellemek için).
+- **GEO motor listesi 4'ten 8'e çıktı + AXO trend grafiği + Claude Code prompt
+  kütüphanesi** (2026-08-31) — Arvow'u (arvow.com) referans alıp hem güçlü yönlerini
+  hem de kullanıcı yorumlarındaki gerçek şikayetlerini (ince içerik, zayıf yayın-sonrası
+  izleme, kafa karıştırıcı fiyatlandırma) inceledikten sonra, zaten güçlü olduğumuz
+  GEO/AXO tarafını derinleştirme yönünde ilerledik:
+  - `/geo` ve `/gap`'e **DeepSeek** ve **Grok (xAI)** gerçek API entegrasyonu (OpenAI
+    uyumlu REST API'ler, `DEEPSEEK_API_KEY`/`XAI_API_KEY` ile), artı **Meta AI** ve
+    **Microsoft Copilot** — bu ikisinin herkese açık bir chat-completion API'si
+    olmadığı için her zaman (açıkça etiketlenmiş) demo modunda çalışıyorlar, ama GEO
+    dashboard'unda gerçek/sık atıf yapılan yüzeyler olarak yine de listeleniyorlar.
+    `lib/geo-providers.ts`, `lib/geo-demo.ts`, `lib/geo-engine.ts`.
+  - `/monitor`'a her sayfa için **SEO/AXO trend grafiği** ("Trend" butonu, recharts
+    LineChart) — Arvow'un "yayın sonrası izleme çok zayıf" eleştirisine karşı bizim
+    zaten var olan avantajımızı görünür kılıyor. `lib/db.ts`'e
+    `getMonitorCheckHistory()` + yeni `/api/monitor/history` route'u.
+  - Yeni **`/prompts`** sayfası (girişsiz, herkese açık) — Claude Code'u (veya dosya
+    erişimi olan herhangi bir kodlama ajanını) doğrudan bir web sitesi kod tabanında
+    SEO işi yaptırmak için özgün, kategorilere ayrılmış prompt kütüphanesi (teknik SEO,
+    AXO crawler erişimi, schema üretimi, LLM citation reverse-engineering, gap
+    analizinden içerik brief'i, dahili linkleme, programatik SEO, öncelikli içerik).
+    `lib/prompt-library.ts`. Ayrıca `/audit` ve `/gap` sonuçlarına **"Fix with Claude
+    Code"** butonu eklendi — o çalıştırmanın gerçek bulgularıyla (uydurma veri değil)
+    doldurulmuş, kopyala-yapıştır'a hazır kişisel bir prompt üretiyor
+    (`lib/claude-code-prompt.ts`, `components/PromptBlock.tsx`).
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
@@ -193,8 +217,9 @@ app/
   audit/page.tsx               → SEO + AXO audit arayüzü (+ Fixes, + trend)
   geo/page.tsx                  → GEO/AEO görünürlük testi arayüzü (+ TR/EN prompt preset, + trend)
   gap/page.tsx                    → Gap Analysis arayüzü (+ içerik brief'leri, + PDF export)
-  monitor/page.tsx                 → AXO izleme arayüzü (sayfa ekle/check now/alertler)
+  monitor/page.tsx                 → AXO izleme arayüzü (sayfa ekle/check now/alertler/trend grafiği)
   clients/page.tsx                  → müşteri kaydı + audit/GEO/gap'e hızlı geçiş
+  prompts/page.tsx                   → Claude Code SEO prompt kütüphanesi (girişsiz, herkese açık)
   api/auth/signup/route.ts          → POST { email, password, name? } -> user + session cookie
   api/auth/login/route.ts            → POST { email, password } -> user + session cookie
   api/auth/logout/route.ts            → POST -> session'ı siler, cookie'yi temizler
@@ -208,6 +233,7 @@ app/
   api/clients/route.ts                     → GET/POST/DELETE clients (auth gerekli)
   api/clients/[id]/route.ts                 → GET tek client (prefill için, auth gerekli)
   api/report/pdf/route.ts                    → POST {...} -> application/pdf (white-label rapor, auth gerekli)
+  api/monitor/history/route.ts                → GET ?pageId= -> kronolojik SEO/AXO skor geçmişi (trend grafiği için, auth gerekli)
 lib/
   auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
   auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
@@ -223,12 +249,15 @@ lib/
   rate-limit.ts                  → bellek-içi sliding-window rate limiter (login/signup IP, audit/geo/gap/monitor kullanıcı başına)
   zod-error.ts                   → ham ZodError dump'ını okunabilir "alan: mesaj" satırına çevirir
   geo-engine.ts                  → prompt'ları motorlara koşturan + skorlayan orkestratör
-  geo-providers.ts               → OpenAI/Anthropic/Google/Perplexity provider'ları (pluggable)
-  geo-demo.ts                    → API key yokken kullanılan gerçekçi demo üretici
+  geo-providers.ts               → 8 motor provider'ı (OpenAI/Anthropic/Google/Perplexity/DeepSeek/xAI gerçek API; Meta AI/Copilot her zaman demo — genel API'leri yok)
+  geo-demo.ts                    → API key yokken (veya Meta AI/Copilot için her zaman) kullanılan gerçekçi demo üretici
   geo-analyze.ts                 → yanıt metninden mention/position/sentiment/citation çıkarımı
+  prompt-library.ts              → /prompts sayfasındaki statik Claude Code prompt kütüphanesi (kategorilere ayrılmış)
+  claude-code-prompt.ts          → gerçek audit/gap sonucundan kişisel "Fix with Claude Code" prompt'u üretir
 middleware.ts                    → oturum çerezi yoksa korumalı sayfalardan /login'e yönlendirir (Edge, cheap check)
 components/FixCard.tsx           → kopyala-butonlu fix kartı
 components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component)
+components/PromptBlock.tsx       → aç/kapa + kopyala butonlu prompt kartı (/prompts, /audit, /gap'te kullanılıyor)
 scripts/check-monitors.mjs       → /api/monitor/check'i CRON_SECRET ile tetikleyen bağımsız cron script'i
 prisma/schema.prisma             → veri modelinin referans dokümantasyonu (artık node:sqlite kullanılıyor)
 types/index.ts                   → paylaşılan TypeScript tipleri
@@ -250,16 +279,29 @@ types/index.ts                   → paylaşılan TypeScript tipleri
   "Bugün ne çalışıyor" bölümü.
 - [x] **Gerçek zamanlı scheduler canlıda** (2026-08-27) — yapıldı, Railway'de
   `epicsem-cron-v2` servisi 6 saatte bir çalışıyor.
+- [x] **GEO motor listesi 4 → 8** (2026-08-31) — DeepSeek + xAI gerçek API, Meta
+  AI + Copilot demo-only. Peec AI'ın `list_model_channels`'ında görünen Amazon/
+  Mistral/Qwen gibi daha küçük motorlar hâlâ eklenebilir ama şu an gerçek API'leri
+  ya da anlamlı bir GEO payı yok — düşük öncelik.
+- [x] **AXO trend grafiği** (`/monitor` → "Trend" butonu) (2026-08-31) — yapıldı.
+- [x] **Claude Code SEO prompt kütüphanesi** (`/prompts` + `/audit` ve `/gap`'te
+  "Fix with Claude Code") (2026-08-31) — yapıldı; arvow.com'u referans alıp hem
+  güçlü yönlerinden ilham aldık hem de kullanıcı şikayetlerindeki (ince içerik,
+  zayıf izleme) boşlukları bilinçli olarak farklı çözdük.
 - [ ] **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik. Stripe
   entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
   katmanı gerekiyor.
-1. **Peec AI verilerini gerçek referans olarak kullan** — Peec AI zaten bağlı;
-   `list_model_channels` 21 farklı AI motor kanalı (OpenAI, Google, Anthropic,
-   Perplexity, DeepSeek, Meta, xAI, Microsoft, Amazon, Mistral, Qwen) döndürüyor.
-   Bizim `geo-providers.ts`'teki 4 motoru bu listeye göre genişletmek gerçekçi bir
-   sonraki adım.
-2. **Screaming Frog CSV import** → zaten kullandığınız bir araç; toplu site taramasını
+- [ ] **Canlıya deploy güncellemesi bekliyor** — 27 Ağustos'taki QA/rate-limiting
+  commit'i ve şimdiki motor/trend/prompt commit'i GitHub'da ama Railway'deki
+  `epicsem-web-v3` hâlâ eski kodu çalıştırıyor; iki ayrı Railway/GitHub izin
+  sorunu kullanıcı onayı bekliyor (bkz. proje hafızası [[architecture]]).
+1. **Screaming Frog CSV import** → zaten kullandığınız bir araç; toplu site taramasını
    sıfırdan yazmak yerine oradan import etmek daha hızlı bir yol.
+2. **Arvow tarzı otomatik içerik üretimi + CMS yayını (autoblog)** — Arvow'un asıl
+   çekirdek özelliği ve en büyük iş; bilinçli olarak ertelendi (bkz. proje hafızası).
+   Yapılırsa Arvow'un "ince içerik" ve "şeffaf olmayan kredi sistemi" eleştirilerinden
+   kaçınacak şekilde: gerçek audit/gap verisinden beslenen brief-first üretim ve net,
+   kullanım bazlı fiyatlandırma.
 
 ## Kaynaklar
 

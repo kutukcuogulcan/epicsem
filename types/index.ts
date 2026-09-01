@@ -61,7 +61,15 @@ export interface AiBotAccess {
   allowed: boolean;
 }
 
-export type EngineId = "openai" | "anthropic" | "google" | "perplexity";
+export type EngineId =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "perplexity"
+  | "deepseek"
+  | "xai"
+  | "meta"
+  | "microsoft";
 
 export interface GeoRunResult {
   engine: EngineId;

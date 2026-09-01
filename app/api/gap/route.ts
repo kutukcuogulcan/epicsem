@@ -16,7 +16,7 @@ const bodySchema = z.object({
   brand: brandSchema,
   competitors: z.array(brandSchema).max(6).default([]),
   prompts: z.array(z.string().min(3)).min(1).max(10),
-  engines: z.array(z.enum(["openai", "anthropic", "google", "perplexity"])).default(ALL_ENGINES),
+  engines: z.array(z.enum(["openai", "anthropic", "google", "perplexity", "deepseek", "xai", "meta", "microsoft"])).default(ALL_ENGINES),
   pageUrls: z.array(z.string().min(3)).min(1).max(10),
 });
 

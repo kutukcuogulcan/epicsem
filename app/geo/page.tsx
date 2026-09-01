@@ -18,7 +18,17 @@ const ENGINE_LABEL: Record<EngineId, string> = {
   anthropic: "Claude (Anthropic)",
   google: "Gemini (Google)",
   perplexity: "Perplexity",
+  deepseek: "DeepSeek",
+  xai: "Grok (xAI)",
+  meta: "Meta AI (demo only)",
+  microsoft: "Copilot (demo only)",
 };
+
+// Pre-checked by default — the four engines with a real API integration. DeepSeek/Grok
+// have real integrations too but are opt-in by default to keep a first run fast; Meta AI
+// and Copilot have no public API at all (see lib/geo-providers.ts) so they always run
+// simulated — still useful to include since they're real, commonly-cited GEO surfaces.
+const DEFAULT_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity"];
 
 const EN_PROMPT_PRESET = "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]";
 const TR_PROMPT_PRESET =
@@ -50,7 +60,7 @@ export default function GeoPage() {
   const [promptsText, setPromptsText] = useState(
     "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]"
   );
-  const [engines, setEngines] = useState<EngineId[]>(["openai", "anthropic", "google", "perplexity"]);
+  const [engines, setEngines] = useState<EngineId[]>(DEFAULT_ENGINES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<GeoRunResult[] | null>(null);

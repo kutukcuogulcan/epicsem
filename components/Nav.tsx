@@ -18,6 +18,7 @@ export default async function Nav() {
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
           <Link href="/monitor" className="hover:text-accent transition-colors">Monitoring</Link>
           <Link href="/clients" className="hover:text-accent transition-colors">Clients</Link>
+          <Link href="/prompts" className="hover:text-accent transition-colors">Claude Code Prompts</Link>
           {user ? (
             <div className="flex items-center gap-3 pl-2 border-l border-border">
               <span className="text-xs text-ink/50">{user.email}</span>

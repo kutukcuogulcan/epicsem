@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface MonitorCheck {
   id: number;
@@ -36,9 +37,33 @@ export default function MonitorPage() {
   const [slackWebhook, setSlackWebhook] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expandedTrend, setExpandedTrend] = useState<number | null>(null);
+  const [trendData, setTrendData] = useState<Record<number, MonitorCheck[]>>({});
+  const [trendLoading, setTrendLoading] = useState<number | null>(null);
 
   function redirectToLogin() {
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+  }
+
+  async function toggleTrend(pageId: number) {
+    if (expandedTrend === pageId) {
+      setExpandedTrend(null);
+      return;
+    }
+    setExpandedTrend(pageId);
+    if (trendData[pageId]) return;
+    setTrendLoading(pageId);
+    try {
+      const res = await fetch(`/api/monitor/history?pageId=${pageId}`);
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
+      const data = await res.json();
+      setTrendData((prev) => ({ ...prev, [pageId]: data.history ?? [] }));
+    } finally {
+      setTrendLoading(null);
+    }
   }
 
   async function refresh() {
@@ -235,6 +260,14 @@ export default function MonitorPage() {
                     >
                       {busy === `check-${p.id}` ? "Checking…" : "Check now"}
                     </button>
+                    {p.latestCheck && (
+                      <button
+                        onClick={() => toggleTrend(p.id)}
+                        className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted"
+                      >
+                        {expandedTrend === p.id ? "Hide trend" : "Trend"}
+                      </button>
+                    )}
                     <button
                       onClick={() => removePage(p.id)}
                       disabled={busy === `remove-${p.id}`}
@@ -257,6 +290,39 @@ export default function MonitorPage() {
                   </div>
                 ) : (
                   <div className="mt-2 text-xs text-ink/30">Not checked yet — click "Check now" for a baseline.</div>
+                )}
+
+                {expandedTrend === p.id && (
+                  <div className="mt-3 rounded-lg bg-muted p-3">
+                    {trendLoading === p.id && <div className="text-xs text-ink/40">Loading trend…</div>}
+                    {trendLoading !== p.id && (trendData[p.id]?.length ?? 0) < 2 && (
+                      <div className="text-xs text-ink/40">
+                        Not enough history yet — run "Check now" a few more times (ideally on different days) to see a
+                        trend line here. AXO monitoring's whole point is catching a drop over time, not just a snapshot.
+                      </div>
+                    )}
+                    {trendLoading !== p.id && (trendData[p.id]?.length ?? 0) >= 2 && (
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={trendData[p.id].map((c) => ({
+                              date: new Date(c.createdAt).toLocaleDateString(),
+                              SEO: c.score,
+                              AXO: c.aiCrawlScore,
+                            }))}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e0f5" />
+                            <XAxis dataKey="date" stroke="#8a8398" fontSize={11} />
+                            <YAxis stroke="#8a8398" fontSize={11} domain={[0, 100]} />
+                            <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e0f5", color: "#1e1b29" }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="SEO" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3 }} />
+                            <Line type="monotone" dataKey="AXO" stroke="#a78bfa" strokeWidth={2} dot={{ r: 3 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             ))}

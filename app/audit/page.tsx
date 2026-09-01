@@ -5,6 +5,8 @@ import type { SeoAuditResult, IssueCategory } from "@/types";
 import ScoreGauge from "@/components/ScoreGauge";
 import IssueCard from "@/components/IssueCard";
 import FixCard from "@/components/FixCard";
+import PromptBlock from "@/components/PromptBlock";
+import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
   meta: "Meta & titles",
@@ -151,6 +153,12 @@ export default function AuditPage() {
               Download PDF report
             </button>
           </div>
+
+          <PromptBlock
+            title="Fix with Claude Code"
+            description="A prompt pre-filled with this exact audit's findings — paste it into Claude Code running in your site's repo to fix what's safe to fix automatically."
+            prompt={buildAuditFixPrompt(result)}
+          />
           <div className="card flex flex-wrap items-center gap-8">
             <ScoreGauge label="Technical SEO score" score={result.score} colorClass="text-seo" />
             <ScoreGauge label="AI crawlability (AXO) score" score={result.aiCrawlScore} colorClass="text-accent" />

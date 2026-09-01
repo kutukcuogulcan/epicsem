@@ -3,13 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
+import PromptBlock from "@/components/PromptBlock";
+import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
   openai: "ChatGPT (OpenAI)",
   anthropic: "Claude (Anthropic)",
   google: "Gemini (Google)",
   perplexity: "Perplexity",
+  deepseek: "DeepSeek",
+  xai: "Grok (xAI)",
+  meta: "Meta AI (demo only)",
+  microsoft: "Copilot (demo only)",
 };
+
+const DEFAULT_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity"];
 
 const EN_PROMPT_PRESET = "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]";
 const TR_PROMPT_PRESET =
@@ -41,7 +49,7 @@ export default function GapPage() {
     "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]"
   );
   const [pageUrlsText, setPageUrlsText] = useState("");
-  const [engines, setEngines] = useState<EngineId[]>(["openai", "anthropic", "google", "perplexity"]);
+  const [engines, setEngines] = useState<EngineId[]>(DEFAULT_ENGINES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<GeoVisibilitySummary[] | null>(null);
@@ -390,6 +398,13 @@ export default function GapPage() {
                     </ul>
                   </div>
                 )}
+
+                <PromptBlock
+                  bare
+                  title="Fix with Claude Code"
+                  description="A prompt pre-filled with this page's exact gaps — paste it into Claude Code running in your site's repo."
+                  prompt={buildContentBriefPrompt(brief, brand.name)}
+                />
               </div>
             ))}
           </div>

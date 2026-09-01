@@ -8,7 +8,7 @@ export interface BrandInput {
   domain: string;
 }
 
-const ALL_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity"];
+const ALL_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity", "deepseek", "xai", "meta", "microsoft"];
 
 /** Runs one prompt across every configured engine (or the demo simulator) and analyzes each response. */
 export async function runPromptAcrossEngines(

@@ -433,6 +433,27 @@ export function saveMonitorCheck(pageId: number, score: number, aiCrawlScore: nu
   ).run(pageId, score, aiCrawlScore, JSON.stringify(blockedBots));
 }
 
+/**
+ * Chronological (oldest→newest) score history for one monitored page, for the trend
+ * chart on /monitor — this is the "post-publish monitoring over time" view that's the
+ * whole point of AXO monitoring, not just a snapshot of the latest check.
+ * Ownership-checked: returns [] for a pageId the calling user doesn't own instead of
+ * throwing, same defensive style as removeMonitoredPage.
+ */
+export function getMonitorCheckHistory(userId: number, pageId: number, limit = 60): MonitorCheck[] {
+  const d = getDb();
+  const owned = d.prepare(`SELECT id FROM monitored_pages WHERE id = ? AND user_id = ?`).get(pageId, userId);
+  if (!owned) return [];
+  const rows = d
+    .prepare(
+      `SELECT * FROM (
+         SELECT * FROM monitor_checks WHERE monitored_page_id = ? ORDER BY id DESC LIMIT ?
+       ) ORDER BY id ASC`
+    )
+    .all(pageId, limit) as any[];
+  return rows.map(rowToMonitorCheck);
+}
+
 export interface Alert {
   id: number;
   monitoredPageId: number;

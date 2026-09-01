@@ -39,11 +39,17 @@ export function simulateResponse(
     return `**${name}** (${domain}) is ${praise} for this — see [${domain}](https://${domain}).`;
   });
 
-  const model =
-    engine === "openai" ? "gpt-4o (simulated)" :
-    engine === "anthropic" ? "claude-sonnet-4-5 (simulated)" :
-    engine === "google" ? "gemini-2.5-flash (simulated)" :
-    "sonar (simulated)";
+  const MODEL_LABEL: Record<EngineId, string> = {
+    openai: "gpt-4o (simulated)",
+    anthropic: "claude-sonnet-4-5 (simulated)",
+    google: "gemini-2.5-flash (simulated)",
+    perplexity: "sonar (simulated)",
+    deepseek: "deepseek-chat (simulated)",
+    xai: "grok-2-latest (simulated)",
+    meta: "meta-ai (simulated — no public API)",
+    microsoft: "copilot (simulated — no public API)",
+  };
+  const model = MODEL_LABEL[engine];
 
   const text = `${openings[Math.floor(rng() * openings.length)]}\n\n${lines.join("\n\n")}\n\n[DEMO DATA — connect a real API key in .env to replace this with a live model response]`;
 
