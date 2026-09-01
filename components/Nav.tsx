@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
 
 export default async function Nav() {
   const user = await getCurrentUser();
+  const isDemoFallback = isOpenAccessEnabled() && user?.email === DEMO_EMAIL;
 
   return (
     <header className="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-10">
@@ -21,7 +22,12 @@ export default async function Nav() {
           <Link href="/import" className="hover:text-accent transition-colors">Bulk Import</Link>
           <Link href="/clients" className="hover:text-accent transition-colors">Clients</Link>
           <Link href="/prompts" className="hover:text-accent transition-colors">Claude Code Prompts</Link>
-          {user ? (
+          {isDemoFallback ? (
+            <div className="flex items-center gap-3 pl-2 border-l border-border">
+              <span className="text-xs text-warn font-medium">Demo modu · giriş şart değil</span>
+              <Link href="/login" className="text-xs text-accent hover:underline">Hesapla gir</Link>
+            </div>
+          ) : user ? (
             <div className="flex items-center gap-3 pl-2 border-l border-border">
               <span className="text-xs text-ink/50">{user.email}</span>
               <LogoutButton />

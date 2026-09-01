@@ -16,6 +16,13 @@ export function middleware(req: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (!isProtected) return NextResponse.next();
 
+  // Temporary open-access switch for pre-launch testing (DEMO_OPEN_ACCESS=true on
+  // Render) — see lib/auth.ts's isOpenAccessEnabled()/getCurrentUser() for the
+  // server-side half (falls back to a shared demo account). Read directly from
+  // process.env here rather than importing lib/auth.ts, which pulls in node:crypto
+  // and isn't Edge-safe.
+  if (process.env.DEMO_OPEN_ACCESS === "true") return NextResponse.next();
+
   const hasCookie = req.cookies.has(SESSION_COOKIE);
   if (!hasCookie) {
     const url = req.nextUrl.clone();
