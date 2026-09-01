@@ -433,6 +433,29 @@ export async function getPreviousGeoRun(userId: number, brandDomain: string): Pr
   };
 }
 
+/**
+ * Chronological (oldest→newest) run history for this brand — powers the /geo trend
+ * chart (visibility over time, one line per brand), as opposed to getPreviousGeoRun's
+ * single most-recent-vs-current comparison used for the "Δ visibility" column.
+ */
+export async function listGeoRunHistory(userId: number, brandDomain: string, limit = 20): Promise<GeoRunRow[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT * FROM (
+       SELECT * FROM geo_runs WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC LIMIT $3
+     ) AS recent ORDER BY id ASC`,
+    [userId, brandDomain, limit]
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    brandName: row.brand_name,
+    brandDomain: row.brand_domain,
+    demoMode: !!row.demo_mode,
+    summaries: JSON.parse(row.summaries_json),
+    createdAt: toIso(row.created_at),
+  }));
+}
+
 // ---------------- gap runs ----------------
 
 export async function saveGapRun(userId: number, params: {

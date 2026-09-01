@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { EngineId } from "@/types";
 import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeVisibility } from "@/lib/geo-engine";
 import { isDemoMode } from "@/lib/geo-providers";
-import { getPreviousGeoRun, saveGeoRun } from "@/lib/db";
+import { getPreviousGeoRun, listGeoRunHistory, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -66,11 +66,13 @@ export async function POST(req: NextRequest) {
   const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
 
   let previousRun = null;
+  let history: Awaited<ReturnType<typeof listGeoRunHistory>> = [];
   try {
-    // Save first, then look up the previous run — getPreviousGeoRun always skips the
-    // most recent row, so it must run after the current run is already in the table.
+    // Save first, then look up history — getPreviousGeoRun/listGeoRunHistory both read
+    // from the table this just wrote to, so they must run after the insert.
     await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
     previousRun = await getPreviousGeoRun(user.id, brand.domain);
+    history = await listGeoRunHistory(user.id, brand.domain, 20);
   } catch (dbErr) {
     console.error("geo history write failed:", dbErr);
   }
@@ -81,5 +83,18 @@ export async function POST(req: NextRequest) {
     summaries,
     sourceDistribution,
     previousRun,
+    history,
   });
+}
+
+/** GET /api/geo?domain=brand-domain.com — trend history for the /geo chart, without re-running a test. */
+export async function GET(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
+  const domain = req.nextUrl.searchParams.get("domain");
+  if (!domain) return NextResponse.json({ error: "domain query param is required" }, { status: 400 });
+
+  const history = await listGeoRunHistory(user.id, domain, 20);
+  return NextResponse.json({ history });
 }

@@ -6,6 +6,8 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,6 +15,17 @@ import {
 } from "recharts";
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
+
+interface GeoHistoryRun {
+  id: number;
+  brandName: string;
+  brandDomain: string;
+  demoMode: boolean;
+  summaries: GeoVisibilitySummary[];
+  createdAt: string;
+}
+
+const TREND_COLORS = ["#7c3aed", "#059669", "#dc2626", "#d97706", "#2563eb", "#db2777"];
 
 const ENGINE_LABEL: Record<EngineId, string> = {
   openai: "ChatGPT (OpenAI)",
@@ -72,6 +85,7 @@ export default function GeoPage() {
   const [previousSummaries, setPreviousSummaries] = useState<GeoVisibilitySummary[] | null>(null);
   const [previousRunAt, setPreviousRunAt] = useState<string | null>(null);
   const [clientId, setClientId] = useState<number | null>(null);
+  const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -117,6 +131,7 @@ export default function GeoPage() {
     setSourceDistribution(null);
     setPreviousSummaries(null);
     setPreviousRunAt(null);
+    setHistory(null);
     try {
       const res = await fetch("/api/geo", {
         method: "POST",
@@ -142,6 +157,7 @@ export default function GeoPage() {
         setPreviousSummaries(data.previousRun.summaries);
         setPreviousRunAt(data.previousRun.createdAt);
       }
+      if (Array.isArray(data.history)) setHistory(data.history);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -154,6 +170,23 @@ export default function GeoPage() {
     Visibility: Math.round(s.visibility * 100),
     "Share of voice": Math.round(s.shareOfVoice * 100),
   }));
+
+  // Trend chart: one line per brand in the CURRENT comparison, plotted across every
+  // historical run recorded for this domain — a brand that wasn't tracked in an older
+  // run just has no point there (connectNulls skips the gap instead of dropping to 0).
+  const trendData = useMemo(() => {
+    if (!history || history.length < 2) return null;
+    return history.map((h) => {
+      const point: Record<string, string | number> = {
+        date: new Date(h.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      };
+      h.summaries.forEach((s) => {
+        point[s.brand] = Math.round(s.visibility * 100);
+      });
+      return point;
+    });
+  }, [history]);
+  const trendBrands = summaries?.map((s) => s.brand) ?? [];
 
   return (
     <div className="space-y-8">
@@ -341,6 +374,37 @@ export default function GeoPage() {
                 ? `Compared against the previous run for this brand (${new Date(previousRunAt ?? "").toLocaleString()}).`
                 : "First recorded run for this brand — run it again later to see period-over-period trend here."}
             </p>
+          </div>
+        </div>
+      )}
+
+      {trendData && (
+        <div className="card">
+          <h2 className="font-medium mb-1">Visibility trend</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            Visibility per brand across every recorded run for this domain ({trendData.length} runs).
+          </p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e0f5" />
+                <XAxis dataKey="date" stroke="#8a8398" fontSize={12} />
+                <YAxis stroke="#8a8398" fontSize={12} unit="%" />
+                <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e0f5", color: "#1e1b29" }} />
+                <Legend />
+                {trendBrands.map((b, i) => (
+                  <Line
+                    key={b}
+                    type="monotone"
+                    dataKey={b}
+                    stroke={TREND_COLORS[i % TREND_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}
