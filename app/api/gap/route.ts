@@ -9,6 +9,7 @@ import { buildContentBriefs } from "@/lib/content-brief";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -42,12 +43,22 @@ export async function POST(req: NextRequest) {
   }
 
   const { brand, competitors, prompts, engines, pageUrls } = parsed;
+  const demoMode = isDemoMode();
+
+  const plannedQueries = prompts.length * engines.length;
+  if (!demoMode) {
+    const quota = checkQuota(user.id, "engineQueries", plannedQueries);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, plannedQueries) }, { status: 402 });
+    }
+  }
 
   const [allRunsNested, audits] = await Promise.all([
     Promise.all(prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))),
     auditPagesForGap(pageUrls),
   ]);
   const allRuns = allRunsNested.flat();
+  if (!demoMode) consumeQuota(user.id, "engineQueries", plannedQueries);
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
@@ -55,7 +66,6 @@ export async function POST(req: NextRequest) {
     .map((s, i) => ({ ...s, rank: i + 1 }));
   const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
   const gapMatrix = buildGapMatrix(audits, allRuns);
-  const demoMode = isDemoMode();
   const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
 
   try {

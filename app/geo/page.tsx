@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
+import UsageMeter from "@/components/UsageMeter";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
   openai: "ChatGPT (OpenAI)",
@@ -162,6 +163,7 @@ export default function GeoPage() {
           Runs your prompts against ChatGPT, Claude, Gemini and Perplexity, then measures whether your brand is
           mentioned, where it ranks against competitors, and which sources get cited.
         </p>
+        <UsageMeter metric="engineQueries" />
       </div>
 
       <form onSubmit={runTest} className="space-y-5">

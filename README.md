@@ -169,14 +169,24 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
     autoblog modelinden bilinçli bir kaçınma. WordPress bağlantıları Application
     Password ile kuruluyor (gerçek şifre değil, `cms_connections` tablosu), üretilen
     taslaklar `content_drafts`'ta saklanıyor ve tekrar açılıp yayınlanabiliyor.
+  - **2026-09-01** — **Kullanım limiti güvenlik katmanı** (billing DEĞİL — ödeme yok,
+    bilinçli olarak). `/api/geo`, `/api/gap` ve `/api/content/generate`'e aylık kota
+    eklendi: `free` planda ayda 300 AI motor sorgusu (`prompt × engine` — `/geo` ve
+    `/gap` ortak havuzda) ve 20 içerik üretimi (`lib/plans.ts`, `usage_counters`
+    tablosu). Kritik nokta: kota SADECE `DEMO_MODE` kapalıyken ve gerçek bir sağlayıcı
+    çağrısı yapılacakken sayılıyor — demo modda hiçbir şey ücretlendirilmediği için
+    demo koşuları kotayı tüketmiyor (`lib/usage-guard.ts`, `isDemoMode()` kontrolü her
+    üç route'ta da). Limit aşılırsa 402 + "ay başında sıfırlanır" mesajı dönüyor;
+    `/geo`, `/gap`, `/content` sayfalarında küçük bir `UsageMeter` bu ayki kullanımı
+    gösteriyor. `users.plan` kolonu (`GET /api/usage`) ileride gerçek ücretli
+    planlar eklenebilsin diye var — şu an herkes `free`'de, plan değiştirme UI'ı yok.
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
-- **Billing / plan limiti** — hesap sistemi var ama ödeme/abonelik/kullanım limiti
-  yok. `DEMO_MODE`'u kapatıp gerçek API anahtarlarını bağlamadan önce mutlaka bir
-  ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi (ve artık
-  `/content`'teki içerik üretimi) sizin LLM faturanıza yazılır. Rate limiting kötüye
-  kullanımı yavaşlatır ama bir plan/kota sistemi değildir.
+- **Gerçek billing / ödeme sistemi** — kullanım limiti var (yukarı bakın) ama Stripe
+  entegrasyonu, ücretli plan satın alma, fatura, deneme süresi yok. Bu bilinçli bir
+  sonraki adım: fiyatlandırma/plan isimleri iş kararı gerektiriyor, kod tarafı hazır
+  (`lib/plans.ts`'e yeni bir plan eklemek + `users.plan`'ı güncellemek yeterli).
 - **WordPress dışında CMS yok** — `/content` şu an sadece WordPress REST API'sine
   (Application Password ile) draft gönderiyor. Webflow, Shopify, headless CMS'ler
   (Contentful, Sanity vb.) roadmap'te değil; agency'lerin en yaygın kullandığı CMS
@@ -271,6 +281,7 @@ app/
   api/content/publish/route.ts                     → POST {draftId, connectionId} -> WordPress'e DRAFT olarak gönderir (auth gerekli)
   api/cms/connections/route.ts                      → GET/POST/DELETE WordPress bağlantıları (app password maskelenerek döner) (auth gerekli)
   api/cms/connections/test/route.ts                  → POST {siteUrl, wpUsername, wpAppPassword} -> kaydetmeden bağlantıyı test eder (auth gerekli)
+  api/usage/route.ts                                   → GET -> plan + bu ayki kullanım (engineQueries, contentGenerations) (auth gerekli)
 lib/
   auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
   auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
@@ -294,10 +305,13 @@ lib/
   screaming-frog-import.ts       → bağımsızlık gerektirmeyen CSV parser + sütun eşleme + toplu SEO issue tespiti
   content-generator.ts           → ContentBrief'ten gerçek LLM (veya demo) ile makale üretimi — [NEEDS: ...] placeholder kuralıyla uydurma veri engelleniyor
   wordpress.ts                   → WordPress REST API: bağlantı testi + her zaman "draft" statüsünde yayınlama + bağımsız markdown→HTML dönüştürücü
+  plans.ts                       → plan/limit tanımları (şu an sadece "free"; billing değil, güvenlik katmanı)
+  usage-guard.ts                 → checkQuota/consumeQuota — sadece demo olmayan çağrılarda kota tüketir
 middleware.ts                    → oturum çerezi yoksa korumalı sayfalardan /login'e yönlendirir (Edge, cheap check)
 components/FixCard.tsx           → kopyala-butonlu fix kartı
 components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component)
 components/PromptBlock.tsx       → aç/kapa + kopyala butonlu prompt kartı (/prompts, /audit, /gap'te kullanılıyor)
+components/UsageMeter.tsx         → salt-okunur "bu ay X/Y kullanıldı" göstergesi (/geo, /gap, /content'te)
 scripts/check-monitors.mjs       → /api/monitor/check'i CRON_SECRET ile tetikleyen bağımsız cron script'i
 prisma/schema.prisma             → veri modelinin referans dokümantasyonu (artık node:sqlite kullanılıyor)
 types/index.ts                   → paylaşılan TypeScript tipleri
@@ -342,15 +356,18 @@ types/index.ts                   → paylaşılan TypeScript tipleri
   otomatik autoblog modelinden bilinçli olarak kaçınıldı. WordPress bağlantıları
   Application Password ile (`cms_connections` tablosu), taslaklar `content_drafts`'ta
   saklanıyor.
+- [x] **Kullanım limiti güvenlik katmanı** (`/api/geo`, `/api/gap`,
+  `/api/content/generate`; `UsageMeter` bileşeni) (2026-09-01) — yapıldı. Billing/
+  ödeme YOK (bilinçli) — sadece aylık kota: 300 AI motor sorgusu + 20 içerik üretimi,
+  `free` planda, sadece gerçek (demo olmayan) çağrılarda sayılıyor.
 - [ ] **Canlıya deploy güncellemesi bekliyor** — 27 Ağustos'taki QA/rate-limiting
-  commit'i, 31 Ağustos'taki motor/trend/prompt commit'i, bulk-import commit'i ve
-  şimdiki content-generation commit'i GitHub'da ama Railway'deki `epicsem-web-v3`
-  hâlâ eski kodu çalıştırıyor; iki ayrı Railway/GitHub izin sorunu kullanıcı onayı
-  bekliyor (bkz. proje hafızası [[architecture]]).
-1. **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik, özellikle
-  artık gerçek LLM çağrısı yapan bir içerik üretim özelliği eklendiğine göre. Stripe
-  entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
-  katmanı gerekiyor.
+  commit'i, 31 Ağustos'taki motor/trend/prompt commit'i, bulk-import commit'i,
+  content-generation commit'i ve şimdiki kullanım-limiti commit'i GitHub'da ama
+  Railway'deki `epicsem-web-v3` hâlâ eski kodu çalıştırıyor; iki ayrı Railway/GitHub
+  izin sorunu kullanıcı onayı bekliyor (bkz. proje hafızası [[architecture]]).
+1. **Gerçek Stripe billing** — ücretli plan satın alma, fatura, deneme süresi.
+  Fiyatlandırma/plan isimleri bir iş kararı olduğu için kullanıcı onayı bekliyor;
+  kod tarafı (`lib/plans.ts`, `users.plan`) buna hazır.
 
 ## Kaynaklar
 

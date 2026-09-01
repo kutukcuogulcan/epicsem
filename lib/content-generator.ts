@@ -1,6 +1,6 @@
 import type { EngineId, GeneratedArticle } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
-import { PROVIDERS } from "@/lib/geo-providers";
+import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 
 /**
  * AI content generation grounded in a real ContentBrief — a page's actual gap-analysis
@@ -114,7 +114,10 @@ function demoArticle(brief: ContentBrief, brand: BrandRef): GeneratedArticle {
 }
 
 export async function generateArticleFromBrief(brief: ContentBrief, brand: BrandRef): Promise<GeneratedArticle> {
-  const provider = pickProvider();
+  // Respect the global DEMO_MODE override the same way lib/geo-engine.ts does — a key
+  // being present shouldn't force a real (billable) call if DEMO_MODE=true was set
+  // deliberately. Route callers use this same check to decide whether to enforce quota.
+  const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return demoArticle(brief, brand);
 
   const prompt = buildGenerationPrompt(brief, brand);

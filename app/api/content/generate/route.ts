@@ -5,6 +5,8 @@ import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromBrief } from "@/lib/content-generator";
 import { saveContentDraft } from "@/lib/db";
+import { isDemoMode } from "@/lib/geo-providers";
+import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
 // Mirrors lib/content-brief.ts's ContentBrief shape — sent inline by the client since
 // briefs are computed on the fly by /api/gap and never persisted on their own.
@@ -38,6 +40,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
+  const demoMode = isDemoMode();
+  if (!demoMode) {
+    const quota = checkQuota(user.id, "contentGenerations", 1);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quotaExceededMessage("contentGenerations", quota, 1) }, { status: 402 });
+    }
+  }
+
   try {
     const article = await generateArticleFromBrief(
       {
@@ -50,6 +60,7 @@ export async function POST(req: NextRequest) {
       },
       { name: parsed.brandName, domain: parsed.brandDomain }
     );
+    if (!demoMode) consumeQuota(user.id, "contentGenerations", 1);
     const draft = saveContentDraft(user.id, parsed.url, article);
     return NextResponse.json({ draft });
   } catch (err) {

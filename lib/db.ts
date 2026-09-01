@@ -28,7 +28,7 @@ import type {
 // data yet) and much simpler than hand-rolling ALTER TABLE migrations for a schema
 // that's still moving. Once there's real customer data, migrations need to become
 // additive (ALTER TABLE ADD COLUMN) instead of this reset.
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 let db: DatabaseSync | null = null;
 
@@ -48,6 +48,10 @@ function getDb(): DatabaseSync {
       DROP TABLE IF EXISTS gap_runs;
       DROP TABLE IF EXISTS geo_runs;
       DROP TABLE IF EXISTS audit_runs;
+      DROP TABLE IF EXISTS import_runs;
+      DROP TABLE IF EXISTS cms_connections;
+      DROP TABLE IF EXISTS content_drafts;
+      DROP TABLE IF EXISTS usage_counters;
       DROP TABLE IF EXISTS clients;
       DROP TABLE IF EXISTS sessions;
       DROP TABLE IF EXISTS users;
@@ -61,7 +65,18 @@ function getDb(): DatabaseSync {
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       name TEXT,
+      plan TEXT NOT NULL DEFAULT 'free',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS usage_counters (
+      user_id INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      metric TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, period, metric),
+      FOREIGN KEY (user_id) REFERENCES users(id)
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -746,4 +761,39 @@ export function markDraftPublished(userId: number, id: number, params: { connect
     `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = ?, published_post_url = ?, published_edit_url = ?
      WHERE id = ? AND user_id = ?`
   ).run(params.connectionId, params.postUrl, params.editUrl, id, userId);
+}
+
+// ---------------- usage limits (see lib/plans.ts for the actual limit numbers) ----------------
+//
+// This is deliberately NOT a billing system — no Stripe, no payment, no plan upgrade
+// flow. It's a safety counter so a real (non-demo) LLM call always has a ceiling once
+// DEMO_MODE is off and real provider keys are connected. Every user is on 'free' today;
+// the period key (calendar month, UTC) means the counter just starts over each month
+// with no cleanup job needed — old rows are cheap and harmless to leave behind.
+
+export function currentUsagePeriod(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export function getUserPlan(userId: number): string {
+  const d = getDb();
+  const row = d.prepare(`SELECT plan FROM users WHERE id = ?`).get(userId) as any;
+  return row?.plan ?? "free";
+}
+
+export function getUsageCount(userId: number, metric: string, period: string = currentUsagePeriod()): number {
+  const d = getDb();
+  const row = d
+    .prepare(`SELECT count FROM usage_counters WHERE user_id = ? AND period = ? AND metric = ?`)
+    .get(userId, period, metric) as any;
+  return row?.count ?? 0;
+}
+
+export function incrementUsage(userId: number, metric: string, amount: number, period: string = currentUsagePeriod()) {
+  const d = getDb();
+  d.prepare(
+    `INSERT INTO usage_counters (user_id, period, metric, count) VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, period, metric) DO UPDATE SET count = count + excluded.count, updated_at = datetime('now')`
+  ).run(userId, period, metric, amount);
 }

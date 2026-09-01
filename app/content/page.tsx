@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { CmsConnection, ContentDraft } from "@/types";
+import UsageMeter from "@/components/UsageMeter";
 
 interface DraftListItem {
   id: number;
@@ -154,6 +155,7 @@ export default function ContentStudioPage() {
           is left as an explicit <code>[NEEDS: …]</code> placeholder instead of an invented fact. Publishing always
           creates a <strong>WordPress draft</strong>, never a live post — review and hit publish yourself in WordPress.
         </p>
+        <UsageMeter metric="contentGenerations" />
       </div>
 
       <div className="card space-y-4">

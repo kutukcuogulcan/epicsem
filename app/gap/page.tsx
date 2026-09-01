@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
+import UsageMeter from "@/components/UsageMeter";
 import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
@@ -191,6 +192,7 @@ export default function GapPage() {
           technically sound, is it open to AI crawlers, and — the question neither number alone answers —
           does any AI engine actually cite it?
         </p>
+        <UsageMeter metric="engineQueries" />
       </div>
 
       <form onSubmit={runAnalysis} className="space-y-5">
