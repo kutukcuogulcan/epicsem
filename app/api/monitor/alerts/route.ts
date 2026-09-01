@@ -7,7 +7,7 @@ import { readableZodError } from "@/lib/zod-error";
 export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  return NextResponse.json({ alerts: listAlerts(user.id) });
+  return NextResponse.json({ alerts: await listAlerts(user.id) });
 }
 
 const bodySchema = z.object({ id: z.number() });
@@ -22,6 +22,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
-  acknowledgeAlert(user.id, parsed.id);
+  await acknowledgeAlert(user.id, parsed.id);
   return NextResponse.json({ ok: true });
 }

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   // nothing, so it isn't metered. See lib/plans.ts for why there's no payment step here.
   const plannedQueries = prompts.length * engines.length;
   if (!demoMode) {
-    const quota = checkQuota(user.id, "engineQueries", plannedQueries);
+    const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, plannedQueries) }, { status: 402 });
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))
     )
   ).flat();
-  if (!demoMode) consumeQuota(user.id, "engineQueries", plannedQueries);
+  if (!demoMode) await consumeQuota(user.id, "engineQueries", plannedQueries);
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
   try {
     // Save first, then look up the previous run — getPreviousGeoRun always skips the
     // most recent row, so it must run after the current run is already in the table.
-    saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
-    previousRun = getPreviousGeoRun(user.id, brand.domain);
+    await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
+    previousRun = await getPreviousGeoRun(user.id, brand.domain);
   } catch (dbErr) {
     console.error("geo history write failed:", dbErr);
   }

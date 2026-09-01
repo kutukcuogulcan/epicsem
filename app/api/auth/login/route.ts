@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const user = login(parsed.email, parsed.password);
+    const user = await login(parsed.email, parsed.password);
     await createSessionCookie(user.id);
     return NextResponse.json({ user });
   } catch (err) {

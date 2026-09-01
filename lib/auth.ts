@@ -41,20 +41,20 @@ export interface AuthUser {
   name: string | null;
 }
 
-export function signup(email: string, password: string, name?: string): AuthUser {
+export async function signup(email: string, password: string, name?: string): Promise<AuthUser> {
   const normalized = email.trim().toLowerCase();
   if (!normalized || !normalized.includes("@")) throw new Error("Geçerli bir e-posta girin");
   if (password.length < 8) throw new Error("Şifre en az 8 karakter olmalı");
-  const existing = findUserByEmail(normalized);
+  const existing = await findUserByEmail(normalized);
   if (existing) throw new Error("Bu e-posta zaten kayıtlı");
   const passwordHash = hashPassword(password);
-  const user = dbCreateUser(normalized, passwordHash, name?.trim() || null);
+  const user = await dbCreateUser(normalized, passwordHash, name?.trim() || null);
   return { id: user.id, email: user.email, name: user.name };
 }
 
-export function login(email: string, password: string): AuthUser {
+export async function login(email: string, password: string): Promise<AuthUser> {
   const normalized = email.trim().toLowerCase();
-  const user = findUserByEmail(normalized);
+  const user = await findUserByEmail(normalized);
   if (!user || !verifyPassword(password, user.passwordHash)) {
     throw new Error("E-posta veya şifre hatalı");
   }
@@ -64,7 +64,7 @@ export function login(email: string, password: string): AuthUser {
 export async function createSessionCookie(userId: number) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  dbCreateSession(token, userId, expiresAt.toISOString());
+  await dbCreateSession(token, userId, expiresAt.toISOString());
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -80,7 +80,7 @@ export async function clearSessionCookie() {
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) {
     try {
-      dbDeleteSession(token);
+      await dbDeleteSession(token);
     } catch {
       // best-effort — clearing the cookie below is what actually logs the browser out
     }
@@ -92,10 +92,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = dbGetSession(token);
+  const session = await dbGetSession(token);
   if (!session) return null;
   if (new Date(session.expiresAt).getTime() < Date.now()) return null;
-  const user = findUserById(session.userId);
+  const user = await findUserById(session.userId);
   if (!user) return null;
   return { id: user.id, email: user.email, name: user.name };
 }

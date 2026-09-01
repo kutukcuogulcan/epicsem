@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   let pages;
   if (isCron) {
-    const all = listAllMonitoredPages();
+    const all = await listAllMonitoredPages();
     pages = parsed.all || !parsed.pageId ? all : all.filter((p) => p.id === parsed.pageId);
   } else {
     const user = await requireUser();
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const mine = listMonitoredPages(user.id);
+    const mine = await listMonitoredPages(user.id);
     pages = parsed.all || !parsed.pageId ? mine : mine.filter((p) => p.id === parsed.pageId);
   }
 

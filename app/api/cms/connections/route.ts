@@ -14,7 +14,7 @@ const bodySchema = z.object({
 export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  return NextResponse.json({ connections: listCmsConnections(user.id) });
+  return NextResponse.json({ connections: await listCmsConnections(user.id) });
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
-  const connection = createCmsConnection(user.id, parsed);
+  const connection = await createCmsConnection(user.id, parsed);
   return NextResponse.json({ connection });
 }
 
@@ -40,6 +40,6 @@ export async function DELETE(req: NextRequest) {
   const id = Number(idParam);
   if (!idParam || !Number.isFinite(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
-  deleteCmsConnection(user.id, id);
+  await deleteCmsConnection(user.id, id);
   return NextResponse.json({ ok: true });
 }

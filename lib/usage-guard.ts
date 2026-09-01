@@ -16,15 +16,15 @@ export interface QuotaCheck {
   plan: string;
 }
 
-export function checkQuota(userId: number, metric: UsageMetric, amount: number): QuotaCheck {
-  const plan = getUserPlan(userId);
+export async function checkQuota(userId: number, metric: UsageMetric, amount: number): Promise<QuotaCheck> {
+  const plan = await getUserPlan(userId);
   const limit = limitsForPlan(plan)[metric];
-  const used = getUsageCount(userId, metric);
+  const used = await getUsageCount(userId, metric);
   return { allowed: used + amount <= limit, used, limit, plan };
 }
 
-export function consumeQuota(userId: number, metric: UsageMetric, amount: number) {
-  incrementUsage(userId, metric, amount);
+export async function consumeQuota(userId: number, metric: UsageMetric, amount: number) {
+  await incrementUsage(userId, metric, amount);
 }
 
 export function quotaExceededMessage(metric: UsageMetric, quota: QuotaCheck, requested: number): string {

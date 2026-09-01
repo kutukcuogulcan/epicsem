@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   const plannedQueries = prompts.length * engines.length;
   if (!demoMode) {
-    const quota = checkQuota(user.id, "engineQueries", plannedQueries);
+    const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, plannedQueries) }, { status: 402 });
     }
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     auditPagesForGap(pageUrls),
   ]);
   const allRuns = allRunsNested.flat();
-  if (!demoMode) consumeQuota(user.id, "engineQueries", plannedQueries);
+  if (!demoMode) await consumeQuota(user.id, "engineQueries", plannedQueries);
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
 
   try {
-    saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
+    await saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
   } catch (dbErr) {
     console.error("gap history write failed:", dbErr);
   }

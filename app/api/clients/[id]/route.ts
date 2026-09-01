@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
   const { id } = await params;
-  const client = getClient(user.id, Number(id));
+  const client = await getClient(user.id, Number(id));
   if (!client) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ client });
 }

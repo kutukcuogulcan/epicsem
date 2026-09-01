@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
     let id: number | null = null;
     try {
-      id = saveImportRun(user.id, result);
+      id = await saveImportRun(user.id, result);
     } catch (dbErr) {
       console.error("import run save failed:", dbErr);
     }
@@ -65,10 +65,10 @@ export async function GET(req: NextRequest) {
   if (idParam) {
     const id = Number(idParam);
     if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-    const run = getImportRun(user.id, id);
+    const run = await getImportRun(user.id, id);
     if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(run);
   }
 
-  return NextResponse.json({ runs: listImportRuns(user.id) });
+  return NextResponse.json({ runs: await listImportRuns(user.id) });
 }

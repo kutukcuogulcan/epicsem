@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const demoMode = isDemoMode();
   if (!demoMode) {
-    const quota = checkQuota(user.id, "contentGenerations", 1);
+    const quota = await checkQuota(user.id, "contentGenerations", 1);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("contentGenerations", quota, 1) }, { status: 402 });
     }
@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
       },
       { name: parsed.brandName, domain: parsed.brandDomain }
     );
-    if (!demoMode) consumeQuota(user.id, "contentGenerations", 1);
-    const draft = saveContentDraft(user.id, parsed.url, article);
+    if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
+    const draft = await saveContentDraft(user.id, parsed.url, article);
     return NextResponse.json({ draft });
   } catch (err) {
     return NextResponse.json(

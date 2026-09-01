@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
-  const draft = getContentDraft(user.id, parsed.draftId);
+  const draft = await getContentDraft(user.id, parsed.draftId);
   if (!draft) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 
-  const connection = getCmsConnectionSecret(user.id, parsed.connectionId);
+  const connection = await getCmsConnectionSecret(user.id, parsed.connectionId);
   if (!connection) return NextResponse.json({ error: "WordPress connection not found" }, { status: 404 });
 
   try {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       bodyMarkdown: draft.article.bodyMarkdown,
       excerpt: draft.article.metaDescription,
     });
-    markDraftPublished(user.id, draft.id, {
+    await markDraftPublished(user.id, draft.id, {
       connectionId: connection.id,
       postUrl: result.postUrl,
       editUrl: result.editUrl,

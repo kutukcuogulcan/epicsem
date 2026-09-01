@@ -32,19 +32,19 @@ export async function checkMonitoredPage(page: MonitoredPage): Promise<CheckResu
   const audit = await runSeoAudit(page.url);
   const blockedBots = audit.meta.aiBotAccess.filter((b) => !b.allowed).map((b) => b.bot);
 
-  const previous = getLatestMonitorCheck(page.id);
+  const previous = await getLatestMonitorCheck(page.id);
   const previousBlocked = new Set(previous?.blockedBots ?? []);
   const currentBlocked = new Set(blockedBots);
 
   const newlyBlocked = blockedBots.filter((b) => !previousBlocked.has(b));
   const newlyUnblocked = (previous?.blockedBots ?? []).filter((b) => !currentBlocked.has(b));
 
-  saveMonitorCheck(page.id, audit.score, audit.aiCrawlScore, blockedBots);
+  await saveMonitorCheck(page.id, audit.score, audit.aiCrawlScore, blockedBots);
 
   let alertRaised = false;
   if (previous && newlyBlocked.length > 0) {
     const message = `⚠️ ${page.label ?? page.url}: ${newlyBlocked.join(", ")} newly blocked in robots.txt (was allowed as of the last check). If this wasn't deliberate, this page just went dark to those AI engines.`;
-    createAlert(page.id, message);
+    await createAlert(page.id, message);
     alertRaised = true;
     await sendSlackAlert(page.slackWebhook, message);
   }

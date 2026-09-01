@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     const result = await runSeoAudit(parsed.url);
     let previousRun = null;
     try {
-      saveAuditRun(user.id, result);
-      previousRun = getPreviousAuditRun(user.id, result.url);
+      await saveAuditRun(user.id, result);
+      previousRun = await getPreviousAuditRun(user.id, result.url);
     } catch (dbErr) {
       // Persistence is a bonus layer — a DB hiccup should never fail the audit itself.
       console.error("audit history write failed:", dbErr);

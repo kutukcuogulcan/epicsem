@@ -7,7 +7,7 @@ import { readableZodError } from "@/lib/zod-error";
 export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  return NextResponse.json({ clients: listClients(user.id) });
+  return NextResponse.json({ clients: await listClients(user.id) });
 }
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
-  const client = createClient(user.id, parsed);
+  const client = await createClient(user.id, parsed);
   return NextResponse.json({ client });
 }
 
@@ -44,6 +44,6 @@ export async function DELETE(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
-  deleteClient(user.id, parsed.id);
+  await deleteClient(user.id, parsed.id);
   return NextResponse.json({ ok: true });
 }

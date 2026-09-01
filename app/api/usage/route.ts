@@ -9,13 +9,17 @@ export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
-  const plan = getUserPlan(user.id);
+  const plan = await getUserPlan(user.id);
   const limits = limitsForPlan(plan);
+  const [engineUsed, contentUsed] = await Promise.all([
+    getUsageCount(user.id, "engineQueries"),
+    getUsageCount(user.id, "contentGenerations"),
+  ]);
 
   return NextResponse.json({
     plan,
     demoMode: isDemoMode(),
-    engineQueries: { used: getUsageCount(user.id, "engineQueries"), limit: limits.engineQueries },
-    contentGenerations: { used: getUsageCount(user.id, "contentGenerations"), limit: limits.contentGenerations },
+    engineQueries: { used: engineUsed, limit: limits.engineQueries },
+    contentGenerations: { used: contentUsed, limit: limits.contentGenerations },
   });
 }

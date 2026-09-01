@@ -8,10 +8,12 @@ export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
-  const pages = listMonitoredPages(user.id).map((page) => ({
-    ...page,
-    latestCheck: getLatestMonitorCheck(page.id),
-  }));
+  const pages = await Promise.all(
+    (await listMonitoredPages(user.id)).map(async (page) => ({
+      ...page,
+      latestCheck: await getLatestMonitorCheck(page.id),
+    }))
+  );
   return NextResponse.json({ pages });
 }
 
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
-  const page = addMonitoredPage(user.id, parsed.url, parsed.label, parsed.slackWebhook || undefined);
+  const page = await addMonitoredPage(user.id, parsed.url, parsed.label, parsed.slackWebhook || undefined);
   return NextResponse.json({ page });
 }
 
@@ -47,6 +49,6 @@ export async function DELETE(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
-  removeMonitoredPage(user.id, parsed.id);
+  await removeMonitoredPage(user.id, parsed.id);
   return NextResponse.json({ ok: true });
 }

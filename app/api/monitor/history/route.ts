@@ -16,6 +16,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "pageId query param is required" }, { status: 400 });
   }
 
-  const history = getMonitorCheckHistory(user.id, pageId);
+  const history = await getMonitorCheckHistory(user.id, pageId);
   return NextResponse.json({ history });
 }

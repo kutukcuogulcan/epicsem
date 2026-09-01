@@ -82,11 +82,15 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
   "cited / blocked / strong but invisible / needs-work" olarak sınıflandırıyor
   (`lib/gap-analysis.ts`, `app/api/gap/route.ts`), altında da içerik brief'lerini
   üretiyor (`lib/content-brief.ts`).
-- **Kalıcılık (node:sqlite)** — her audit/GEO/gap koşusu `data/epicsem.db`'ye
-  yazılıyor (Node 22+'nin yerleşik `node:sqlite` modülüyle — native binary indirme
-  gerekmiyor, Prisma'nın engine fetch sorununu tamamen atlıyor). `/audit` ve `/geo`
-  aynı URL/marka için ikinci koşuda "önceki koşuya göre" trend farkını gösteriyor
-  (`lib/db.ts`).
+- **Kalıcılık (Postgres)** — her audit/GEO/gap koşusu, kullanıcı, oturum ve içerik
+  taslağı `DATABASE_URL`'deki Postgres'e yazılıyor (`pg` paketiyle, async bir
+  connection pool — bkz. `lib/db.ts`). 2026-09-01'de node:sqlite'tan buraya taşındı:
+  tek makinede geliştirme için sqlite sorunsuzdu, ama gerçek bir SaaS olarak canlıda
+  7/24 çalışmak, kalıcı ve ağ üzerinden erişilebilir bir veritabanı gerektiriyordu —
+  serverless platformlarda (Vercel gibi) yerel dosya kalıcı değil, VM/konteyner
+  tabanlı platformlarda da (Render, Railway, VPS) tek bir dosyaya kilitlenmek yatay
+  ölçeklenmeyi engelliyordu. `/audit` ve `/geo` aynı URL/marka için ikinci koşuda
+  "önceki koşuya göre" trend farkını gösteriyor.
 - **`/monitor`** — takip edilen sayfaları yeniden tarayıp önceki `robots.txt`
   taramasıyla kıyaslıyor, yeni engellenen bir AI botu varsa alert oluşturuyor (+
   opsiyonel Slack webhook). `scripts/check-monitors.mjs` ile bir OS cron/Vercel
@@ -208,44 +212,40 @@ cp .env.example .env
 # eklerseniz DEMO_MODE otomatik kapanır ve gerçek modellere sorulur.
 # SLACK_WEBHOOK_URL eklerseniz AXO monitoring alertleri Slack'e de düşer (opsiyonel).
 
-npm run dev            # http://localhost:3000 — data/epicsem.db ilk istekte otomatik oluşur
+npm run dev            # http://localhost:3000 — DATABASE_URL'deki Postgres'e ilk istekte tablo oluşturur
 ```
 
-Node **22.5+** gerekir (kalıcılık katmanı `node:sqlite`'a dayanıyor — bkz. `engines`
-alanı `package.json`'da). `prisma/schema.prisma` hâlâ veri modelinin referans
-dokümantasyonu olarak duruyor ama `db:generate`/`db:push` artık gerekli değil.
+Node **22.5+** gerekir. Yerel geliştirme için herhangi bir Postgres yeterli (Docker,
+`apt install postgresql`, ya da Neon/Supabase gibi ücretsiz bir bulut Postgres) —
+`.env.example`'daki `DATABASE_URL`'i ona göre ayarlayın.
 
-## Deploy (Railway)
+## Deploy (Render)
 
-Kalıcılık katmanı dosya tabanlı SQLite (`data/epicsem.db`, `process.cwd()/data`) olduğu
-için **sunucusuz (serverless) platformlar** (Vercel gibi) her deploy'da diski sıfırlar —
-geçmiş/trend verisi kaybolur. Railway kalıcı disk (volume) sunduğu için kod hiç
-değişmeden çalışır:
+2026-09-01'de Railway'den Render'a geçildi — Railway'in GitHub App'i bu repoya erişim
+iznini kaybetmişti (tek seferlik bir GitHub ayarı, geri alınabilirdi) ama esas karar
+Railway'e özel kalmamaktı. Kalıcılık katmanı artık Postgres olduğu için (bkz. yukarı)
+kod herhangi bir platformda (Render, Railway, bir VPS) değişmeden çalışır — Render
+tercih edildi çünkü tek hesapta web servisi + yönetilen Postgres + cron job'ı bir arada
+sunuyor.
 
-1. Railway'de yeni proje → bu repo'dan (veya zip'ten) deploy et. Build/start komutları
-   Nixpacks tarafından `package.json`'dan otomatik algılanır (`npm run build`,
-   `npm run start`); `next start` Railway'in verdiği `PORT` değişkenini otomatik kullanır.
-2. **Volume ekle**: proje ayarlarından bir persistent volume oluşturup **`/app/data`**
-   yoluna mount et (Railway'de kod `/app` altına deploy edilir, `lib/db.ts` de
-   `process.cwd()/data` yani `/app/data`'yı kullanıyor — yol eşleşmezse veritabanı her
-   deploy'da sıfırlanır).
-3. Environment variables: `.env.example`'daki değişkenleri kopyala (API anahtarları
-   opsiyonel — boş bırakılırsa `DEMO_MODE` açık kalır; `SLACK_WEBHOOK_URL` AXO
-   uyarıları için opsiyonel; `CRON_SECRET` sadece adım 4'teki cron job'ı kullanacaksanız
-   gerekli — uzun rastgele bir string üretip buraya girin).
+1. Render'da yeni bir **Postgres** instance'ı oluştur — bağlantı string'i otomatik
+   üretilir.
+2. Bu repodan bir **Web Service** oluştur (build: `npm install && npm run build`,
+   start: `npm start`); Render `PORT` değişkenini otomatik enjekte eder, `next start`
+   onu otomatik kullanır.
+3. Environment variables: `DATABASE_URL` = 1. adımdaki Postgres'in internal connection
+   string'i; `.env.example`'daki geri kalanları kopyala (API anahtarları opsiyonel —
+   boş bırakılırsa `DEMO_MODE` açık kalır; `SLACK_WEBHOOK_URL` AXO uyarıları için
+   opsiyonel; `CRON_SECRET` sadece 4. adımdaki cron job'ı kullanacaksanız gerekli —
+   uzun rastgele bir string üretip buraya girin).
 4. `/monitor`'ün arkasındaki `scripts/check-monitors.mjs` kendi kendine tetiklenmiyor —
-   Railway'de aynı repodan **ikinci bir servis** oluşturup (asıl web servisiyle aynı
-   proje/environment içinde) şöyle ayarlamak gerekiyor:
+   Render'da aynı hesapta bir **Cron Job** oluşturup şöyle ayarlamak gerekiyor:
    - **Build command**: `npm install` (bu servis Next.js'i build etmiyor, sadece
-     script'i çalıştırıyor — `npm run build`'u atlamak deploy'u hızlandırır).
-   - **Start command**: `node scripts/check-monitors.mjs`
-   - **Cron schedule**: örn. `0 */6 * * *` (6 saatte bir; Railway'in minimum aralığı
-     5 dakika).
-   - **Restart policy**: `NEVER` (bu bir kereye mahsus çalışıp çıkan bir script,
-     sürekli servis değil — crash'te yeniden başlatılmasına gerek yok).
-   - Variables: `APP_URL` = web servisinin genel URL'si (`https://...up.railway.app`),
+     script'i çalıştırıyor).
+   - **Command**: `node scripts/check-monitors.mjs`
+   - **Schedule**: örn. `0 */6 * * *` (6 saatte bir).
+   - Variables: `APP_URL` = web servisinin genel URL'si (`https://...onrender.com`),
      `CRON_SECRET` = 3. adımdaki ile **aynı** değer.
-   - Bu proje (`epicsem`) içinde canlıda bu servis `epicsem-cron-v2` adıyla kurulu.
 
 ## Klasör yapısı
 
@@ -284,7 +284,7 @@ app/
   api/usage/route.ts                                   → GET -> plan + bu ayki kullanım (engineQueries, contentGenerations) (auth gerekli)
 lib/
   auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
-  auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
+  auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in lib/db.ts'i (ve pg'yi) import etmemesi için ayrı dosya
   seo-audit.ts                   → asıl SEO+AXO motoru (+ localization check)
   robots.ts                      → robots.txt parser (user-agent bazlı)
   ai-bots.ts                     → takip edilen 12 AI/arama botu listesi
@@ -293,7 +293,7 @@ lib/
   content-brief.ts               → kaybedilen prompt'ları + audit boşluklarını brief'e çevirir
   monitor.ts                     → AXO yeniden-tarama + diff + Slack alert mantığı
   pdf-report.ts                  → pdfkit ile Epicsem markalı PDF rapor üretimi
-  db.ts                          → node:sqlite kalıcılık katmanı — her tablo user_id ile ayrılmış (çoklu kiracı)
+  db.ts                          → Postgres (pg) kalıcılık katmanı — her tablo user_id ile ayrılmış (çoklu kiracı)
   rate-limit.ts                  → bellek-içi sliding-window rate limiter (login/signup IP, audit/geo/gap/monitor kullanıcı başına)
   zod-error.ts                   → ham ZodError dump'ını okunabilir "alan: mesaj" satırına çevirir
   geo-engine.ts                  → prompt'ları motorlara koşturan + skorlayan orkestratör
@@ -313,7 +313,6 @@ components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component
 components/PromptBlock.tsx       → aç/kapa + kopyala butonlu prompt kartı (/prompts, /audit, /gap'te kullanılıyor)
 components/UsageMeter.tsx         → salt-okunur "bu ay X/Y kullanıldı" göstergesi (/geo, /gap, /content'te)
 scripts/check-monitors.mjs       → /api/monitor/check'i CRON_SECRET ile tetikleyen bağımsız cron script'i
-prisma/schema.prisma             → veri modelinin referans dokümantasyonu (artık node:sqlite kullanılıyor)
 types/index.ts                   → paylaşılan TypeScript tipleri
 ```
 
@@ -321,7 +320,10 @@ types/index.ts                   → paylaşılan TypeScript tipleri
 
 - [x] **Fix üretimi** (`/audit` → Fixes bölümü) — yapıldı.
 - [x] **Gap matrix** (`/gap` sayfası) — yapıldı.
-- [x] **Kalıcılık + trend** (node:sqlite, `/audit` ve `/geo`'da "önceki koşuya göre") — yapıldı.
+- [x] **Kalıcılık + trend** (Postgres, `/audit` ve `/geo`'da "önceki koşuya göre") — yapıldı.
+- [x] **SaaS altyapısı: Postgres'e geçiş + Railway'den ayrılma** (2026-09-01) — node:sqlite
+  dosya tabanlı kalıcılıktan `pg` ile Postgres'e geçildi (bkz. `lib/db.ts`); artık
+  herhangi bir hosting platformunda (serverless dahil) değişmeden çalışıyor.
 - [x] **Sürekli AXO izleme + Slack alert** (`/monitor`) — yapıldı.
 - [x] **Türkiye pazarına özel derinlik** (TR prompt preset, hreflang/lang check, TR schema hint) — yapıldı.
 - [x] **Çoklu müşteri + white-label PDF rapor** (`/clients`, `/api/report/pdf`) — yapıldı.

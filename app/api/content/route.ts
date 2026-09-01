@@ -10,10 +10,10 @@ export async function GET(req: NextRequest) {
   if (idParam) {
     const id = Number(idParam);
     if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-    const draft = getContentDraft(user.id, id);
+    const draft = await getContentDraft(user.id, id);
     if (!draft) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ draft });
   }
 
-  return NextResponse.json({ drafts: listContentDrafts(user.id) });
+  return NextResponse.json({ drafts: await listContentDrafts(user.id) });
 }
