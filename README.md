@@ -155,14 +155,32 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
     Bulgular `import_runs` tablosunda saklanıyor (geçmiş taramalar tekrar açılabilir),
     ve toplu bulguları özetleyen bir **"Fix with Claude Code"** prompt'u da üretiyor
     (`buildBulkImportFixPrompt`, `lib/claude-code-prompt.ts`).
+  - **2026-09-01** — Yeni **`/content`** (Content Studio) sayfası + `/gap`'te
+    "Generate article" butonu: Arvow'un çekirdek özelliği olan AI içerik üretimi +
+    otomatik yayın, iki bilinçli farkla. (1) Üretim SERBEST konu girişi almıyor —
+    sadece gerçek bir ContentBrief'ten (bir /gap koşusunun kaybedilen prompt'ları +
+    audit'in bulduğu somut içerik boşlukları) besleniyor; model gerekçelendiremediği
+    her gerçeği uydurmak yerine `[NEEDS: ...]` placeholder'ı bırakıyor
+    (`lib/content-generator.ts`, aynı prompt/model altyapısını — `lib/geo-providers.ts`
+    — GEO testi dışında ilk kez kullanıyor). (2) Yayın her zaman WordPress REST API
+    üzerinden **draft** statüsünde gidiyor, kodda değiştirilebilir bir seçenek bile
+    değil — asla otomatik `publish` değil (`lib/wordpress.ts`). Bu, Arvow'a yönelik
+    "ince/otomatik-yayınlanan içerik" şikayetlerinin kaynağı olan tam otomatik
+    autoblog modelinden bilinçli bir kaçınma. WordPress bağlantıları Application
+    Password ile kuruluyor (gerçek şifre değil, `cms_connections` tablosu), üretilen
+    taslaklar `content_drafts`'ta saklanıyor ve tekrar açılıp yayınlanabiliyor.
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
 - **Billing / plan limiti** — hesap sistemi var ama ödeme/abonelik/kullanım limiti
   yok. `DEMO_MODE`'u kapatıp gerçek API anahtarlarını bağlamadan önce mutlaka bir
-  ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi sizin LLM
-  faturanıza yazılır. Rate limiting kötüye kullanımı yavaşlatır ama bir plan/kota
-  sistemi değildir.
+  ödeme/limit katmanı eklenmeli, yoksa siteye gelen herkesin GEO testi (ve artık
+  `/content`'teki içerik üretimi) sizin LLM faturanıza yazılır. Rate limiting kötüye
+  kullanımı yavaşlatır ama bir plan/kota sistemi değildir.
+- **WordPress dışında CMS yok** — `/content` şu an sadece WordPress REST API'sine
+  (Application Password ile) draft gönderiyor. Webflow, Shopify, headless CMS'ler
+  (Contentful, Sanity vb.) roadmap'te değil; agency'lerin en yaygın kullandığı CMS
+  olduğu için önce WordPress'e odaklanıldı.
 - **Çok sayfalı toplu tarama** — `/audit` ve `/gap` hâlâ tek URL alıyor; `/import` ile
   Screaming Frog CSV'sinden toplu teknik bulgu çıkarılabiliyor ama bu bir crawler değil
   — yine de önce Screaming Frog ile taramanız gerekiyor. Epicsem'in kendi çoklu-sayfa
@@ -232,6 +250,7 @@ app/
   clients/page.tsx                  → müşteri kaydı + audit/GEO/gap'e hızlı geçiş
   prompts/page.tsx                   → Claude Code SEO prompt kütüphanesi (girişsiz, herkese açık)
   import/page.tsx                     → Screaming Frog CSV import arayüzü (özet kutuları, filtrelenebilir tablo, geçmiş taramalar)
+  content/page.tsx                     → Content Studio: WordPress bağlantı yönetimi + taslak geçmişi + yayınlama
   api/auth/signup/route.ts          → POST { email, password, name? } -> user + session cookie
   api/auth/login/route.ts            → POST { email, password } -> user + session cookie
   api/auth/logout/route.ts            → POST -> session'ı siler, cookie'yi temizler
@@ -247,6 +266,11 @@ app/
   api/report/pdf/route.ts                    → POST {...} -> application/pdf (white-label rapor, auth gerekli)
   api/monitor/history/route.ts                → GET ?pageId= -> kronolojik SEO/AXO skor geçmişi (trend grafiği için, auth gerekli)
   api/import/screaming-frog/route.ts           → POST multipart/form-data{file} -> BulkImportResult; GET (liste) / GET ?id= (tek taramayı geri getir) (auth gerekli)
+  api/content/generate/route.ts                 → POST ContentBrief+brand -> GeneratedArticle, DB'ye kaydeder (auth gerekli)
+  api/content/route.ts                            → GET (taslak listesi) / GET ?id= (tek taslak) (auth gerekli)
+  api/content/publish/route.ts                     → POST {draftId, connectionId} -> WordPress'e DRAFT olarak gönderir (auth gerekli)
+  api/cms/connections/route.ts                      → GET/POST/DELETE WordPress bağlantıları (app password maskelenerek döner) (auth gerekli)
+  api/cms/connections/test/route.ts                  → POST {siteUrl, wpUsername, wpAppPassword} -> kaydetmeden bağlantıyı test eder (auth gerekli)
 lib/
   auth.ts                        → e-posta/şifre + session (scrypt hash, DB'de token, httpOnly cookie)
   auth-cookie-name.ts            → sadece cookie adı — middleware.ts'in node:sqlite'ı import etmemesi için ayrı dosya
@@ -268,6 +292,8 @@ lib/
   prompt-library.ts              → /prompts sayfasındaki statik Claude Code prompt kütüphanesi (kategorilere ayrılmış)
   claude-code-prompt.ts          → gerçek audit/gap/bulk-import sonucundan kişisel "Fix with Claude Code" prompt'u üretir
   screaming-frog-import.ts       → bağımsızlık gerektirmeyen CSV parser + sütun eşleme + toplu SEO issue tespiti
+  content-generator.ts           → ContentBrief'ten gerçek LLM (veya demo) ile makale üretimi — [NEEDS: ...] placeholder kuralıyla uydurma veri engelleniyor
+  wordpress.ts                   → WordPress REST API: bağlantı testi + her zaman "draft" statüsünde yayınlama + bağımsız markdown→HTML dönüştürücü
 middleware.ts                    → oturum çerezi yoksa korumalı sayfalardan /login'e yönlendirir (Edge, cheap check)
 components/FixCard.tsx           → kopyala-butonlu fix kartı
 components/LogoutButton.tsx      → Nav'daki çıkış butonu (client component)
@@ -302,22 +328,29 @@ types/index.ts                   → paylaşılan TypeScript tipleri
   "Fix with Claude Code") (2026-08-31) — yapıldı; arvow.com'u referans alıp hem
   güçlü yönlerinden ilham aldık hem de kullanıcı şikayetlerindeki (ince içerik,
   zayıf izleme) boşlukları bilinçli olarak farklı çözdük.
-- [ ] **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik. Stripe
-  entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
-  katmanı gerekiyor.
 - [x] **Screaming Frog CSV import** (`/import`) (2026-09-01) — yapıldı; toplu teknik
   SEO taraması (title/meta/H1/thin content/broken links/noindex), geçmiş taramalar
   `import_runs`'ta saklanıyor, özetten "Fix with Claude Code" prompt'u üretiyor.
+- [x] **AI içerik üretimi + WordPress draft yayını** (`/content` Content Studio,
+  `/gap`'te "Generate article" butonu) (2026-09-01) — yapıldı. Arvow'un çekirdek
+  özelliği, iki bilinçli farkla: (1) üretim her zaman gerçek bir ContentBrief'ten
+  besleniyor (gerçek audit/gap bulguları — serbest konu girişi yok), model
+  gerekçelendiremediği her gerçeği uydurmak yerine `[NEEDS: ...]` placeholder'ı
+  bırakıyor (`lib/content-generator.ts`); (2) yayın her zaman WordPress'e
+  **draft** olarak gidiyor, asla otomatik `publish` değil (`lib/wordpress.ts`) —
+  Arvow'un "ince/otomatik-yayınlanan içerik" şikayetlerinin kaynağı olan tam
+  otomatik autoblog modelinden bilinçli olarak kaçınıldı. WordPress bağlantıları
+  Application Password ile (`cms_connections` tablosu), taslaklar `content_drafts`'ta
+  saklanıyor.
 - [ ] **Canlıya deploy güncellemesi bekliyor** — 27 Ağustos'taki QA/rate-limiting
-  commit'i, 31 Ağustos'taki motor/trend/prompt commit'i ve şimdiki bulk-import
-  commit'i GitHub'da ama Railway'deki `epicsem-web-v3` hâlâ eski kodu çalıştırıyor;
-  iki ayrı Railway/GitHub izin sorunu kullanıcı onayı bekliyor (bkz. proje hafızası
-  [[architecture]]).
-1. **Arvow tarzı otomatik içerik üretimi + CMS yayını (autoblog)** — Arvow'un asıl
-   çekirdek özelliği ve en büyük iş; bilinçli olarak ertelendi (bkz. proje hafızası).
-   Yapılırsa Arvow'un "ince içerik" ve "şeffaf olmayan kredi sistemi" eleştirilerinden
-   kaçınacak şekilde: gerçek audit/gap verisinden beslenen brief-first üretim ve net,
-   kullanım bazlı fiyatlandırma.
+  commit'i, 31 Ağustos'taki motor/trend/prompt commit'i, bulk-import commit'i ve
+  şimdiki content-generation commit'i GitHub'da ama Railway'deki `epicsem-web-v3`
+  hâlâ eski kodu çalıştırıyor; iki ayrı Railway/GitHub izin sorunu kullanıcı onayı
+  bekliyor (bkz. proje hafızası [[architecture]]).
+1. **Billing / plan limiti** — SaaS olarak satmadan önceki asıl eksik, özellikle
+  artık gerçek LLM çağrısı yapan bir içerik üretim özelliği eklendiğine göre. Stripe
+  entegrasyonu + plan/kullanım limiti + `DEMO_MODE` kapatılmadan önce bir koruma
+  katmanı gerekiyor.
 
 ## Kaynaklar
 

@@ -56,6 +56,8 @@ export default function GapPage() {
   const [gapMatrix, setGapMatrix] = useState<GapRow[] | null>(null);
   const [contentBriefs, setContentBriefs] = useState<ContentBrief[] | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [generatingUrl, setGeneratingUrl] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -82,6 +84,28 @@ export default function GapPage() {
 
   function updateCompetitor(i: number, field: keyof BrandRow, value: string) {
     setCompetitors((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+  }
+
+  async function generateArticle(brief: ContentBrief) {
+    setGeneratingUrl(brief.url);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/content/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...brief, brandName: brand.name, brandDomain: brand.domain }),
+      });
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Content generation failed");
+      window.location.href = `/content?draftId=${data.draft.id}`;
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Something went wrong");
+      setGeneratingUrl(null);
+    }
   }
 
   async function downloadPdf() {
@@ -405,9 +429,25 @@ export default function GapPage() {
                   description="A prompt pre-filled with this page's exact gaps — paste it into Claude Code running in your site's repo."
                   prompt={buildContentBriefPrompt(brief, brand.name)}
                 />
+
+                <div className="border-t border-border pt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-ink/50">
+                    Or let Epicsem draft it — grounded only in this brief's real data, published as a WordPress
+                    draft for you to review, never auto-published.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => generateArticle(brief)}
+                    disabled={generatingUrl === brief.url}
+                    className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
+                  >
+                    {generatingUrl === brief.url ? "Generating…" : "Generate article"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
+          {generateError && <div className="card border-danger/40 text-danger text-sm">{generateError}</div>}
         </div>
       )}
     </div>

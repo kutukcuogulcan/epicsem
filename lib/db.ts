@@ -3,7 +3,10 @@ import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import type {
   BulkImportResult,
+  CmsConnection,
+  ContentDraft,
   GapRow,
+  GeneratedArticle,
   GeoVisibilitySummary,
   SeoAuditResult,
   SourceDomainStat,
@@ -150,6 +153,32 @@ function getDb(): DatabaseSync {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
     CREATE INDEX IF NOT EXISTS idx_import_runs_user ON import_runs(user_id);
+
+    CREATE TABLE IF NOT EXISTS cms_connections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      site_url TEXT NOT NULL,
+      wp_username TEXT NOT NULL,
+      wp_app_password TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_cms_connections_user ON cms_connections(user_id);
+
+    CREATE TABLE IF NOT EXISTS content_drafts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      source_url TEXT NOT NULL,
+      article_json TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      published_connection_id INTEGER,
+      published_post_url TEXT,
+      published_edit_url TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_content_drafts_user ON content_drafts(user_id);
 
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -606,4 +635,115 @@ export function getImportRun(userId: number, id: number): BulkImportResult | nul
   const d = getDb();
   const row = d.prepare(`SELECT result_json FROM import_runs WHERE id = ? AND user_id = ?`).get(id, userId) as any;
   return row ? JSON.parse(row.result_json) : null;
+}
+
+// ---------------- CMS connections (WordPress) ----------------
+//
+// wp_app_password is stored as plain text, same as monitored_pages.slack_webhook above —
+// this is a single-tenant-per-row SQLite file on the app's own Railway volume, not a
+// shared multi-app database, and a WordPress "Application Password" is itself a scoped,
+// individually-revocable credential (not the user's real WP login), so this is the same
+// risk class as the webhook URLs already stored this way. list/getMasked never return the
+// raw value to the client — only publishToWordPress (server-side only) reads it in full.
+
+function maskSecret(secret: string): string {
+  if (secret.length <= 4) return "••••";
+  return `••••${secret.slice(-4)}`;
+}
+
+function rowToCmsConnection(row: any): CmsConnection {
+  return {
+    id: row.id,
+    label: row.label,
+    siteUrl: row.site_url,
+    wpUsername: row.wp_username,
+    wpAppPasswordMasked: maskSecret(row.wp_app_password),
+    createdAt: row.created_at,
+  };
+}
+
+export function createCmsConnection(userId: number, params: {
+  label: string;
+  siteUrl: string;
+  wpUsername: string;
+  wpAppPassword: string;
+}): CmsConnection {
+  const d = getDb();
+  const info = d
+    .prepare(`INSERT INTO cms_connections (user_id, label, site_url, wp_username, wp_app_password) VALUES (?, ?, ?, ?, ?)`)
+    .run(userId, params.label, params.siteUrl, params.wpUsername, params.wpAppPassword);
+  const row = d.prepare(`SELECT * FROM cms_connections WHERE id = ?`).get(info.lastInsertRowid) as any;
+  return rowToCmsConnection(row);
+}
+
+export function listCmsConnections(userId: number): CmsConnection[] {
+  const d = getDb();
+  const rows = d.prepare(`SELECT * FROM cms_connections WHERE user_id = ? ORDER BY id DESC`).all(userId) as any[];
+  return rows.map(rowToCmsConnection);
+}
+
+/** Server-side only (publish flow) — includes the raw app password. Never send this to the client. */
+export interface CmsConnectionSecret {
+  id: number;
+  siteUrl: string;
+  wpUsername: string;
+  wpAppPassword: string;
+}
+
+export function getCmsConnectionSecret(userId: number, id: number): CmsConnectionSecret | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT * FROM cms_connections WHERE id = ? AND user_id = ?`).get(id, userId) as any;
+  if (!row) return null;
+  return { id: row.id, siteUrl: row.site_url, wpUsername: row.wp_username, wpAppPassword: row.wp_app_password };
+}
+
+export function deleteCmsConnection(userId: number, id: number) {
+  const d = getDb();
+  d.prepare(`DELETE FROM cms_connections WHERE id = ? AND user_id = ?`).run(id, userId);
+}
+
+// ---------------- content drafts (generated articles) ----------------
+
+function rowToContentDraft(row: any): ContentDraft {
+  return {
+    id: row.id,
+    sourceUrl: row.source_url,
+    article: JSON.parse(row.article_json),
+    status: row.status,
+    publishedPostUrl: row.published_post_url,
+    publishedEditUrl: row.published_edit_url,
+    createdAt: row.created_at,
+  };
+}
+
+export function saveContentDraft(userId: number, sourceUrl: string, article: GeneratedArticle): ContentDraft {
+  const d = getDb();
+  const info = d
+    .prepare(`INSERT INTO content_drafts (user_id, source_url, article_json) VALUES (?, ?, ?)`)
+    .run(userId, sourceUrl, JSON.stringify(article));
+  const row = d.prepare(`SELECT * FROM content_drafts WHERE id = ?`).get(info.lastInsertRowid) as any;
+  return rowToContentDraft(row);
+}
+
+export function listContentDrafts(userId: number, limit = 30): ContentDraft[] {
+  const d = getDb();
+  const rows = d
+    .prepare(`SELECT * FROM content_drafts WHERE user_id = ? ORDER BY id DESC LIMIT ?`)
+    .all(userId, limit) as any[];
+  return rows.map(rowToContentDraft);
+}
+
+export function getContentDraft(userId: number, id: number): ContentDraft | null {
+  const d = getDb();
+  const row = d.prepare(`SELECT * FROM content_drafts WHERE id = ? AND user_id = ?`).get(id, userId) as any;
+  return row ? rowToContentDraft(row) : null;
+}
+
+/** Ownership-checked — only marks the draft published if the calling user actually owns it. */
+export function markDraftPublished(userId: number, id: number, params: { connectionId: number; postUrl: string; editUrl: string }) {
+  const d = getDb();
+  d.prepare(
+    `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = ?, published_post_url = ?, published_edit_url = ?
+     WHERE id = ? AND user_id = ?`
+  ).run(params.connectionId, params.postUrl, params.editUrl, id, userId);
 }

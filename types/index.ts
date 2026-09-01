@@ -157,3 +157,41 @@ export interface BulkImportResult {
   duplicateTitleGroups: { value: string; urls: string[] }[];
   duplicateMetaGroups: { value: string; urls: string[] }[];
 }
+
+/**
+ * AI content generation + draft-first CMS publishing — Arvow's core feature, deliberately
+ * built to avoid the two weaknesses documented against it: content is always grounded in a
+ * real ContentBrief (real audit/gap data, "no invented facts" — see lib/content-generator.ts),
+ * and publishing always lands as a WordPress DRAFT, never auto-published (see lib/wordpress.ts).
+ */
+export interface GeneratedArticle {
+  title: string;
+  metaDescription: string;
+  bodyMarkdown: string;
+  /** Facts the model couldn't ground and left as [NEEDS: ...] placeholders instead of inventing. */
+  openPlaceholders: string[];
+  demoMode: boolean;
+  model: string;
+}
+
+export type ContentDraftStatus = "draft" | "published-to-wp";
+
+export interface ContentDraft {
+  id: number;
+  sourceUrl: string;
+  article: GeneratedArticle;
+  status: ContentDraftStatus;
+  publishedPostUrl: string | null;
+  publishedEditUrl: string | null;
+  createdAt: string;
+}
+
+/** Safe-to-return-to-the-client view of a saved CMS connection — app password is masked. */
+export interface CmsConnection {
+  id: number;
+  label: string;
+  siteUrl: string;
+  wpUsername: string;
+  wpAppPasswordMasked: string;
+  createdAt: string;
+}

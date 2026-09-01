@@ -16,6 +16,7 @@ export default async function Nav() {
           <Link href="/audit" className="hover:text-accent transition-colors">SEO + AXO Audit</Link>
           <Link href="/geo" className="hover:text-accent transition-colors">GEO/AEO Visibility</Link>
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
+          <Link href="/content" className="hover:text-accent transition-colors">Content Studio</Link>
           <Link href="/monitor" className="hover:text-accent transition-colors">Monitoring</Link>
           <Link href="/import" className="hover:text-accent transition-colors">Bulk Import</Link>
           <Link href="/clients" className="hover:text-accent transition-colors">Clients</Link>
