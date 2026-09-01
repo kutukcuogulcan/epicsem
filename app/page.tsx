@@ -27,25 +27,6 @@ const pillars = [
   },
 ];
 
-const gaps = [
-  {
-    competitor: "Peec AI",
-    note: "Strong visibility tracking, but tells you what's happening without telling you how to fix it — no technical audit layer underneath. Self-serve plans also cap tracked models at 3, with paid add-ons per extra engine.",
-  },
-  {
-    competitor: "Seobility",
-    note: "GEO features are bolted onto an existing SEO suite; ChatGPT/Gemini tracking is still \"coming soon\" as of this analysis.",
-  },
-  {
-    competitor: "SerpApi",
-    note: "Raw AI Overview / search data via API — powerful, but it's infrastructure, not a finished dashboard a marketer can read.",
-  },
-  {
-    competitor: "geo-tool.com / Semust",
-    note: "One-off free scores or ads-first dashboards — no combined technical SEO + continuous AI-visibility tracking in one place.",
-  },
-];
-
 const built = [
   { tag: "Fix layer", body: "Missing meta description, Organization/FAQPage schema — generated from the page's own content, not invented. See /audit → Fixes." },
   { tag: "Gap matrix", body: "Crosses the SEO/AXO audit against real GEO citations per page: cited, blocked, or strong-but-invisible. See /gap." },
@@ -92,22 +73,7 @@ export default function Home() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-medium">Where the existing tools fall short</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {gaps.map((g) => (
-            <div key={g.competitor} className="card">
-              <div className="font-medium text-sm">{g.competitor}</div>
-              <p className="mt-2 text-sm text-ink/60">{g.note}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-ink/40">
-          Based on a review of serpapi.com, geo-tool.com, seobility.net's GEO tool, semust.com and Peec AI (Aug 2026).
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium">What's actually built to close those gaps</h2>
+        <h2 className="text-lg font-medium">What's built</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {built.map((b) => (
             <div key={b.tag} className="card">
