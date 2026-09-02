@@ -1,87 +1,156 @@
 import Link from "next/link";
 
-const pillars = [
+const GROUPS = [
   {
-    tag: "SEO",
-    color: "text-seo",
-    title: "Technical foundation",
-    body: "Title/meta, headings, structured data, robots.txt & sitemap, content depth — the classic ranking factors that still gate everything else.",
+    title: "Analiz & Test",
+    description: "Bir sayfanın teknik olarak sağlam olup olmadığını ve AI motorlarında gerçekten görünüp görünmediğini ölç.",
+    tone: "text-accent",
+    items: [
+      { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği." },
+      { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör." },
+      { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur." },
+    ],
   },
   {
-    tag: "AXO",
-    color: "text-accent",
-    title: "Agent accessibility",
-    body: "Can GPTBot, ClaudeBot, PerplexityBot and Google-Extended actually reach your pages? Most audits skip this; it's checked first here.",
+    title: "Otomasyon",
+    description: "Bir kere kur, arkasında çalışsın — elle kontrol etmene gerek kalmasın.",
+    tone: "text-warn",
+    items: [
+      { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir." },
+      { label: "Bulk Import", href: "/import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör." },
+      { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress'e yayınlar." },
+    ],
   },
   {
-    tag: "AEO",
-    color: "text-geo",
-    title: "Answer-readiness",
-    body: "Answer-first content structure, FAQPage schema, and direct-answer patterns that make a page easy for an LLM to lift and cite.",
-  },
-  {
-    tag: "GEO",
-    color: "text-warn",
-    title: "AI visibility tracking",
-    body: "Run real prompts against ChatGPT, Claude, Gemini and Perplexity. See if you're mentioned, where you rank against competitors, and who gets cited instead.",
+    title: "Yönetim",
+    description: "Birden fazla müşteri yönetiyorsan, her birinin markasını bir kere kaydet, her yerde tekrar kullan.",
+    tone: "text-seo",
+    items: [
+      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, Epicsem markalı PDF rapor indir." },
+      { label: "Sınırsız motor", href: "/geo", body: "OpenAI, Anthropic, Google, Perplexity hepsi dahil — hangi modelin müşterin için önemli olduğunu test etmek için motor başına ek ücret yok." },
+    ],
   },
 ];
 
-const built = [
-  { tag: "Fix layer", body: "Missing meta description, Organization/FAQPage schema — generated from the page's own content, not invented. See /audit → Fixes." },
-  { tag: "Gap matrix", body: "Crosses the SEO/AXO audit against real GEO citations per page: cited, blocked, or strong-but-invisible. See /gap." },
-  { tag: "Content briefs", body: "The prompts a brand is losing, turned into concrete headings/FAQ targets — closes the loop from diagnosis to what to write next." },
-  { tag: "AXO monitoring", body: "Tracks key pages over time and alerts (Slack) the moment a previously-allowed AI crawler gets blocked in robots.txt. See /monitor." },
-  { tag: "Multi-client", body: "Save each client's brand/competitors once, reuse across audit/GEO/gap runs, export an Epicsem-branded PDF report. See /clients." },
-  { tag: "Uncapped engines", body: "OpenAI, Anthropic, Google, Perplexity are all first-class and included — no per-engine paywall to test the model that actually matters to a client." },
+const STEPS = [
+  { n: "1", title: "Marka ve rakiplerini gir", body: "Marka adı, domain ve varsa rakiplerin — Clients'a kaydedersen bir daha yazmana gerek kalmaz." },
+  { n: "2", title: "Gerçek testi çalıştır", body: "Denetim gerçek sayfanı tarar; GEO testi gerçek promptları ChatGPT/Claude/Gemini/Perplexity'e gönderir." },
+  { n: "3", title: "Somut aksiyon al", body: "Fix önerileri, kaybedilen promptlardan içerik brief'i, ve indirilebilir PDF rapor — hepsi bu çalışmanın kendi verisinden, uydurma değil." },
+];
+
+const FAQ = [
+  {
+    q: "Şu an kullanmak ücretsiz mi?",
+    a: "Evet — şu an test aşamasındayız, panele hesap açmadan girip deneyebilirsin. İleride ücretli plana geçildiğinde mevcut kullanıcılar önceden bilgilendirilir.",
+  },
+  {
+    q: "GEO/AEO test sonuçları gerçek mi, simülasyon mu?",
+    a: "Şu an AI sağlayıcı (OpenAI, Anthropic vb.) anahtarı tanımlı olmadığı için sistem demo modunda çalışıyor: sonuçlar gerçekçi ama simüle — ekranda net şekilde \"demo mode\" olarak işaretleniyor. Gerçek anahtarlar eklendiğinde promptlar gerçekten o motorlara gönderilir.",
+  },
+  {
+    q: "Hangi AI motorlarını test ediyor?",
+    a: "ChatGPT (OpenAI), Claude (Anthropic), Gemini (Google) ve Perplexity ilk sınıf destekleniyor; DeepSeek ve Grok de test edilebiliyor.",
+  },
+  {
+    q: "Ajans olarak birden fazla müşteri yönetebilir miyim?",
+    a: "Evet. Clients sayfasından her müşterinin marka/rakip bilgisini bir kere kaydedip audit, GEO ve gap analizlerinde tekrar tekrar kullanabilirsin.",
+  },
+  {
+    q: "Verilerim nerede saklanıyor?",
+    a: "Kendi hesabına bağlı Postgres veritabanında — her koşu (audit, GEO testi, gap analizi) kendi hesabınla ilişkilendirilir, başka kullanıcılar göremez.",
+  },
 ];
 
 export default function Home() {
   return (
-    <div className="space-y-16">
-      <section className="space-y-4">
-        <p className="text-sm uppercase tracking-widest text-ink/40">Basic SEO, extended for the AI era</p>
-        <h1 className="text-4xl font-semibold tracking-tight max-w-2xl">
-          One score for classic search. One score for whether AI engines even see you.
+    <div className="space-y-20">
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-accent/[0.06] via-geo/10 to-transparent px-6 sm:px-10 py-16 sm:py-20">
+        <p className="text-sm uppercase tracking-widest text-accent font-medium">Ajansınız için SEO + AI görünürlük paneli</p>
+        <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-tight max-w-3xl">
+          Google&apos;da sırala, <span className="text-accent">AI motorlarında</span> görün.
         </h1>
-        <p className="text-ink/60 max-w-2xl">
-          Epicsem runs a real technical SEO audit and a real prompt-based AI-visibility test — ChatGPT, Claude,
-          Gemini, Perplexity — from the same dashboard, so you're not stitching together four subscriptions to
-          answer one question: <em>are we findable, on Google and on AI?</em>
+        <p className="mt-4 text-ink/60 max-w-2xl text-base sm:text-lg">
+          Epicsem, klasik teknik SEO denetimini ve ChatGPT / Claude / Gemini / Perplexity üzerinde gerçek prompt
+          testlerini aynı panelde çalıştırır — markanın sadece Google&apos;da değil, birine AI&apos;ya soru
+          sorduğunda da hatırlanıp hatırlanmadığını gösterir.
         </p>
-        <div className="flex gap-3 pt-2">
-          <Link href="/audit" className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
-            Run an SEO + AXO audit
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
+            Panele git — ücretsiz dene
           </Link>
-          <Link href="/geo" className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
-            Test AI visibility
-          </Link>
-          <Link href="/gap" className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
-            Find the gap
+          <Link href="#nasil-calisir" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
+            Nasıl çalışır?
           </Link>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {pillars.map((p) => (
-          <div key={p.tag} className="card">
-            <div className={`text-xs font-semibold tracking-wide ${p.color}`}>{p.tag}</div>
-            <div className="mt-1 font-medium">{p.title}</div>
-            <p className="mt-2 text-sm text-ink/60">{p.body}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium">What's built</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {built.map((b) => (
-            <div key={b.tag} className="card">
-              <div className="text-xs font-semibold tracking-wide text-accent">{b.tag}</div>
-              <p className="mt-2 text-sm text-ink/60">{b.body}</p>
+      <section className="space-y-8">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-semibold tracking-tight">Tek panel, üç iş</h2>
+          <p className="mt-2 text-ink/60">Denetim, otomasyon ve müşteri yönetimi — hepsi aynı yerde, birbirinin verisini kullanarak.</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {GROUPS.map((group) => (
+            <div key={group.title} className="card space-y-4">
+              <div>
+                <div className={`text-xs font-semibold tracking-wide uppercase ${group.tone}`}>{group.title}</div>
+                <p className="mt-1 text-sm text-ink/50">{group.description}</p>
+              </div>
+              <div className="space-y-3 pt-1 border-t border-border">
+                {group.items.map((item) => (
+                  <Link key={item.label} href={item.href} className="block group/item pt-3 first:pt-3">
+                    <div className="text-sm font-medium group-hover/item:text-accent transition-colors">{item.label}</div>
+                    <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
+                  </Link>
+                ))}
+              </div>
             </div>
           ))}
         </div>
+      </section>
+
+      <section id="nasil-calisir" className="space-y-8 scroll-mt-24">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-semibold tracking-tight">Nasıl çalışır?</h2>
+          <p className="mt-2 text-ink/60">Üç adımda kurulum — kod yazmana, entegrasyon beklemene gerek yok.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {STEPS.map((step) => (
+            <div key={step.n} className="card">
+              <div className="w-8 h-8 rounded-full bg-accent/10 text-accent font-semibold flex items-center justify-center text-sm">
+                {step.n}
+              </div>
+              <div className="mt-3 font-medium">{step.title}</div>
+              <p className="mt-2 text-sm text-ink/60">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-6">
+        <h2 className="text-2xl font-semibold tracking-tight">Sık sorulanlar</h2>
+        <div className="divide-y divide-border border-t border-b border-border">
+          {FAQ.map((item) => (
+            <details key={item.q} className="group py-4">
+              <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-medium">
+                {item.q}
+                <span className="text-ink/30 group-open:rotate-45 transition-transform text-lg leading-none">+</span>
+              </summary>
+              <p className="mt-2 text-sm text-ink/60 max-w-2xl">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-12 sm:py-14 text-center space-y-4">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Markanı Google&apos;da ve AI motorlarında test et</h2>
+        <p className="text-white/80 max-w-xl mx-auto">Şu an ücretsiz test modunda — hesap açmana bile gerek yok.</p>
+        <Link
+          href="/audit"
+          className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Panele git
+        </Link>
       </section>
     </div>
   );
