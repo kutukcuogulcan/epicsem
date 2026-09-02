@@ -7,6 +7,7 @@ import IssueCard from "@/components/IssueCard";
 import FixCard from "@/components/FixCard";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
+import Breadcrumb from "@/components/Breadcrumb";
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
   meta: "Meta & titles",
@@ -117,6 +118,7 @@ export default function AuditPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Audit" }]} />
         <h1 className="text-2xl font-semibold">SEO + AXO Audit</h1>
         <p className="text-ink/60 text-sm">
           Checks the fundamentals (title, meta, headings, schema, sitemap) plus whether AI crawlers —

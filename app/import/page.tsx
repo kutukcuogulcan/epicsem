@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { BulkImportResult } from "@/types";
 import PromptBlock from "@/components/PromptBlock";
 import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
+import Breadcrumb from "@/components/Breadcrumb";
 
 interface RunListItem {
   id: number;
@@ -132,6 +133,7 @@ export default function ImportPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Bulk Import" }]} />
         <h1 className="text-2xl font-semibold">Bulk Site Import (Screaming Frog)</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Epicsem's own audit checks one URL at a time — for a full site sweep, export{" "}

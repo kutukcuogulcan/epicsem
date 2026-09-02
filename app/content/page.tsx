@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CmsConnection, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
+import Breadcrumb from "@/components/Breadcrumb";
 
 interface DraftListItem {
   id: number;
@@ -148,6 +149,7 @@ export default function ContentStudioPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Content Studio" }]} />
         <h1 className="text-2xl font-semibold">Content Studio</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Articles generated on <a href="/gap" className="text-accent hover:underline">Gap Analysis</a> land here.

@@ -15,6 +15,9 @@ import {
 } from "recharts";
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
+import Breadcrumb from "@/components/Breadcrumb";
+import StatCard from "@/components/StatCard";
+import ScoreBadge from "@/components/ScoreBadge";
 
 interface GeoHistoryRun {
   id: number;
@@ -56,13 +59,6 @@ const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
   Other: "bg-ink/20",
 };
 
-function sentimentColor(score: number | null) {
-  if (score == null) return "text-ink/40";
-  if (score >= 70) return "text-seo";
-  if (score >= 50) return "text-warn";
-  return "text-danger";
-}
-
 interface BrandRow {
   name: string;
   domain: string;
@@ -86,6 +82,8 @@ export default function GeoPage() {
   const [previousRunAt, setPreviousRunAt] = useState<string | null>(null);
   const [clientId, setClientId] = useState<number | null>(null);
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
+  const [runResultsFilter, setRunResultsFilter] = useState("");
+  const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -132,6 +130,8 @@ export default function GeoPage() {
     setPreviousSummaries(null);
     setPreviousRunAt(null);
     setHistory(null);
+    setRunResultsFilter("");
+    setRunEngineFilter("all");
     try {
       const res = await fetch("/api/geo", {
         method: "POST",
@@ -188,9 +188,20 @@ export default function GeoPage() {
   }, [history]);
   const trendBrands = summaries?.map((s) => s.brand) ?? [];
 
+  // The three headline numbers, own-brand only — mirrors the stat-card row real
+  // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
+  // of making you read them out of the comparison table below.
+  const ownSummary = summaries?.find((s) => s.domain === brand.domain) ?? summaries?.[0] ?? null;
+  const filteredRuns = runs?.filter(
+    (r) =>
+      (runEngineFilter === "all" || r.engine === runEngineFilter) &&
+      (runResultsFilter.trim() === "" || r.promptText.toLowerCase().includes(runResultsFilter.trim().toLowerCase()))
+  );
+
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "GEO/AEO Visibility" }]} />
         <h1 className="text-2xl font-semibold">GEO / AEO Visibility Test</h1>
         <p className="text-ink/60 text-sm">
           Runs your prompts against ChatGPT, Claude, Gemini and Perplexity, then measures whether your brand is
@@ -312,6 +323,36 @@ export default function GeoPage() {
         </div>
       )}
 
+      {summaries && ownSummary && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard
+            label="Visibility"
+            value={`${Math.round(ownSummary.visibility * 100)}%`}
+            description={`${ownSummary.brand} kaç promptta görünüyor`}
+            tone={ownSummary.visibility >= 0.5 ? "seo" : ownSummary.visibility >= 0.2 ? "warn" : "danger"}
+          />
+          <StatCard
+            label="Sentiment"
+            value={ownSummary.avgSentiment != null ? String(ownSummary.avgSentiment) : "—"}
+            description="AI seni ne kadar olumlu tanımlıyor"
+            tone={
+              ownSummary.avgSentiment == null
+                ? "ink"
+                : ownSummary.avgSentiment >= 70
+                  ? "seo"
+                  : ownSummary.avgSentiment >= 50
+                    ? "warn"
+                    : "danger"
+            }
+          />
+          <StatCard
+            label="Prompts"
+            value={String(prompts.length)}
+            description={`${engines.length} motor üzerinden test edildi`}
+          />
+        </div>
+      )}
+
       {summaries && (
         <div className="card">
           <h2 className="font-medium mb-4">Visibility & share of voice</h2>
@@ -351,11 +392,14 @@ export default function GeoPage() {
                     <tr key={s.brand} className="border-t border-border">
                       <td className="py-2 pr-4 text-ink/40">{s.rank}</td>
                       <td className="py-2 pr-4 font-medium">{s.brand}</td>
-                      <td className="py-2 pr-4">{Math.round(s.visibility * 100)}%</td>
-                      <td className="py-2 pr-4">{Math.round(s.shareOfVoice * 100)}%</td>
-                      <td className={`py-2 pr-4 ${sentimentColor(s.avgSentiment)}`}>
-                        <span className="mr-1.5">●</span>
-                        {s.avgSentiment ?? "—"}
+                      <td className="py-2 pr-4">
+                        <ScoreBadge score={Math.round(s.visibility * 100)} display={`${Math.round(s.visibility * 100)}%`} />
+                      </td>
+                      <td className="py-2 pr-4">
+                        <ScoreBadge score={Math.round(s.shareOfVoice * 100)} display={`${Math.round(s.shareOfVoice * 100)}%`} />
+                      </td>
+                      <td className="py-2 pr-4">
+                        <ScoreBadge score={s.avgSentiment} kind="sentiment" />
                       </td>
                       <td className="py-2 pr-4">{s.avgPosition ? `#${s.avgPosition.toFixed(1)}` : "—"}</td>
                       <td className="py-2 pr-4">{s.citationCount}</td>
@@ -453,24 +497,59 @@ export default function GeoPage() {
 
       {runs && (
         <div className="space-y-3">
-          <h2 className="font-medium">Individual runs</h2>
-          {runs.map((r, i) => (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-medium">
+              Individual runs <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
+            </h2>
+            <div className="flex items-center gap-2">
+              <input
+                value={runResultsFilter}
+                onChange={(e) => {
+                  setRunResultsFilter(e.target.value);
+                  setExpanded(null);
+                }}
+                placeholder="Search prompts…"
+                className="rounded-lg bg-muted border border-border px-3 py-1.5 text-xs outline-none focus:border-accent w-48"
+              />
+              <select
+                value={runEngineFilter}
+                onChange={(e) => {
+                  setRunEngineFilter(e.target.value as EngineId | "all");
+                  setExpanded(null);
+                }}
+                className="rounded-lg bg-muted border border-border px-2 py-1.5 text-xs outline-none focus:border-accent"
+              >
+                <option value="all">All engines</option>
+                {Array.from(new Set(runs.map((r) => r.engine))).map((eng) => (
+                  <option key={eng} value={eng}>
+                    {ENGINE_LABEL[eng]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {filteredRuns?.length === 0 && (
+            <div className="card text-sm text-ink/40 text-center py-6">No runs match this filter.</div>
+          )}
+          {filteredRuns?.map((r, i) => (
             <div key={i} className="card">
               <button
                 type="button"
                 onClick={() => setExpanded(expanded === i ? null : i)}
-                className="w-full flex items-center justify-between text-left"
+                className="w-full flex items-center justify-between text-left gap-4"
               >
-                <div className="text-sm">
+                <div className="text-sm min-w-0">
                   <span className="font-medium">{ENGINE_LABEL[r.engine]}</span>
                   <span className="text-ink/40"> · {r.model}</span>
                   <span className="text-ink/40"> · &ldquo;{r.promptText}&rdquo;</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className={r.mentioned ? "text-seo" : "text-ink/30"}>
-                    {r.mentioned ? `Mentioned (#${r.position})` : "Not mentioned"}
+                <div className="flex items-center gap-3 text-xs shrink-0">
+                  {r.sentiment != null && <ScoreBadge score={r.sentiment} kind="sentiment" />}
+                  <span
+                    className={`badge ${r.mentioned ? "badge-pass" : "bg-ink/5 text-ink/40"}`}
+                  >
+                    {r.mentioned ? `Mentioned #${r.position}` : "Not mentioned"}
                   </span>
-                  {r.sentiment != null && <span className="text-ink/50">sentiment {r.sentiment}</span>}
                 </div>
               </button>
               {expanded === i && (

@@ -1,5 +1,6 @@
 import { CATEGORY_LABEL, getPromptsByCategory, type PromptCategory } from "@/lib/prompt-library";
 import PromptBlock from "@/components/PromptBlock";
+import Breadcrumb from "@/components/Breadcrumb";
 
 export const metadata = {
   title: "Claude Code SEO Prompts — Epicsem",
@@ -14,6 +15,7 @@ export default function PromptsPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Prompts" }]} />
         <h1 className="text-2xl font-semibold">Claude Code SEO Prompts</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           A free library of prompts for running SEO work directly inside your website's own codebase with Claude

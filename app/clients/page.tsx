@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Breadcrumb from "@/components/Breadcrumb";
 
 interface BrandRow {
   name: string;
@@ -106,6 +107,7 @@ export default function ClientsPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Clients" }]} />
         <h1 className="text-2xl font-semibold">Clients</h1>
         <p className="text-ink/60 text-sm">
           Save each client's brand and competitor set once — jump straight into a pre-filled Audit, GEO test, or

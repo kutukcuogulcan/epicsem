@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import Breadcrumb from "@/components/Breadcrumb";
 
 interface MonitorCheck {
   id: number;
@@ -170,6 +171,7 @@ export default function MonitorPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO Monitoring" }]} />
         <h1 className="text-2xl font-semibold">AXO Monitoring</h1>
         <p className="text-ink/60 text-sm">
           robots.txt and CDN bot-blocking can change silently — a WAF update, a CDN default flip. Track key pages

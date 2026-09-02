@@ -5,6 +5,8 @@ import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
+import Breadcrumb from "@/components/Breadcrumb";
+import StatCard from "@/components/StatCard";
 import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
@@ -186,6 +188,7 @@ export default function GapPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gap Analysis" }]} />
         <h1 className="text-2xl font-semibold">Gap Analysis</h1>
         <p className="text-ink/60 text-sm">
           Crosses your SEO + AXO audit against the GEO visibility test: for each page you list, is it
@@ -328,14 +331,17 @@ export default function GapPage() {
       )}
 
       {summaries && (
-        <div className="card">
-          <h2 className="font-medium mb-3">Visibility summary</h2>
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+        <div className="space-y-3">
+          <h2 className="font-medium">Visibility summary</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {summaries.map((s) => (
-              <div key={s.brand}>
-                <span className="font-medium">{s.brand}</span>
-                <span className="text-ink/50"> — visibility {Math.round(s.visibility * 100)}%, SOV {Math.round(s.shareOfVoice * 100)}%</span>
-              </div>
+              <StatCard
+                key={s.brand}
+                label={s.brand}
+                value={`${Math.round(s.visibility * 100)}%`}
+                description={`Share of voice ${Math.round(s.shareOfVoice * 100)}%`}
+                tone={s.rank === 1 ? "seo" : "accent"}
+              />
             ))}
           </div>
         </div>
