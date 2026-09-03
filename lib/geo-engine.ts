@@ -1,4 +1,4 @@
-import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
+import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility } from "@/types";
 import { PROVIDERS, isDemoMode } from "./geo-providers";
 import { simulateResponse } from "./geo-demo";
 import { analyzeResponse } from "./geo-analyze";
@@ -10,14 +10,22 @@ export interface BrandInput {
 
 const ALL_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity", "deepseek", "xai", "meta", "microsoft"];
 
+/** A prompt "names" the brand when its own text contains the brand name — vs. a discovery-style
+ * prompt ("en iyi ... markaları") someone who's never heard of the brand would plausibly ask. */
+export function isBrandedPrompt(promptText: string, brandName: string): boolean {
+  return promptText.toLowerCase().includes(brandName.toLowerCase());
+}
+
 /** Runs one prompt across every configured engine (or the demo simulator) and analyzes each response. */
 export async function runPromptAcrossEngines(
   promptText: string,
   brand: BrandInput,
   competitors: BrandInput[],
-  engines: EngineId[] = ALL_ENGINES
+  engines: EngineId[] = ALL_ENGINES,
+  topic: string = "Genel"
 ): Promise<GeoRunResult[]> {
   const demo = isDemoMode();
+  const branded = isBrandedPrompt(promptText, brand.name);
 
   const results = await Promise.all(
     engines.map(async (engineId): Promise<GeoRunResult> => {
@@ -47,6 +55,8 @@ export async function runPromptAcrossEngines(
         engine: engineId,
         model,
         promptText,
+        topic,
+        branded,
         mentioned: analyzed.mentioned,
         position: analyzed.position,
         sentiment: analyzed.sentiment,
@@ -57,6 +67,29 @@ export async function runPromptAcrossEngines(
   );
 
   return results;
+}
+
+/** Own-brand visibility broken down by prompt topic — mentioned is always computed against the
+ * primary brand (see analyzeResponse call above), so it can be rolled up directly per topic. */
+export function summarizeByTopic(runs: GeoRunResult[]): TopicVisibility[] {
+  const byTopic = new Map<string, GeoRunResult[]>();
+  for (const run of runs) {
+    const key = run.topic || "Genel";
+    if (!byTopic.has(key)) byTopic.set(key, []);
+    byTopic.get(key)!.push(run);
+  }
+
+  return Array.from(byTopic.entries())
+    .map(([topic, topicRuns]) => {
+      const mentionedCount = topicRuns.filter((r) => r.mentioned).length;
+      return {
+        topic,
+        visibility: topicRuns.length ? mentionedCount / topicRuns.length : 0,
+        mentionedCount,
+        totalCount: topicRuns.length,
+      };
+    })
+    .sort((a, b) => b.totalCount - a.totalCount);
 }
 
 /** Aggregates a set of GeoRunResults (across prompts/engines) into per-brand visibility metrics. */

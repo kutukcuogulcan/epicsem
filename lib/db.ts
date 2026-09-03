@@ -8,6 +8,7 @@ import type {
   GeoVisibilitySummary,
   SeoAuditResult,
   SourceDomainStat,
+  TopicVisibility,
 } from "@/types";
 
 /**
@@ -29,7 +30,7 @@ import type {
 // data yet) and much simpler than hand-rolling ALTER TABLE migrations for a schema
 // that's still moving. Once there's real customer data, migrations need to become
 // additive (ALTER TABLE ADD COLUMN) instead of this reset.
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 let pool: Pool | null = null;
 
@@ -156,6 +157,7 @@ async function initSchema(): Promise<void> {
       demo_mode INTEGER NOT NULL,
       summaries_json TEXT NOT NULL,
       source_distribution_json TEXT NOT NULL,
+      topic_breakdown_json TEXT NOT NULL DEFAULT '[]',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_geo_runs_user_domain ON geo_runs(user_id, brand_domain);
@@ -390,11 +392,12 @@ export async function saveGeoRun(userId: number, params: {
   demoMode: boolean;
   summaries: GeoVisibilitySummary[];
   sourceDistribution: SourceDomainStat[];
+  topicBreakdown: TopicVisibility[];
 }): Promise<void> {
   await ensureSchema();
   await exec(
-    `INSERT INTO geo_runs (user_id, brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO geo_runs (user_id, brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json, topic_breakdown_json)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       userId,
       params.brandName,
@@ -402,6 +405,7 @@ export async function saveGeoRun(userId: number, params: {
       params.demoMode ? 1 : 0,
       JSON.stringify(params.summaries),
       JSON.stringify(params.sourceDistribution),
+      JSON.stringify(params.topicBreakdown),
     ]
   );
 }
@@ -412,6 +416,7 @@ export interface GeoRunRow {
   brandDomain: string;
   demoMode: boolean;
   summaries: GeoVisibilitySummary[];
+  topicBreakdown: TopicVisibility[];
   createdAt: string;
 }
 
@@ -429,6 +434,7 @@ export async function getPreviousGeoRun(userId: number, brandDomain: string): Pr
     brandDomain: row.brand_domain,
     demoMode: !!row.demo_mode,
     summaries: JSON.parse(row.summaries_json),
+    topicBreakdown: row.topic_breakdown_json ? JSON.parse(row.topic_breakdown_json) : [],
     createdAt: toIso(row.created_at),
   };
 }
@@ -452,6 +458,7 @@ export async function listGeoRunHistory(userId: number, brandDomain: string, lim
     brandDomain: row.brand_domain,
     demoMode: !!row.demo_mode,
     summaries: JSON.parse(row.summaries_json),
+    topicBreakdown: row.topic_breakdown_json ? JSON.parse(row.topic_breakdown_json) : [],
     createdAt: toIso(row.created_at),
   }));
 }

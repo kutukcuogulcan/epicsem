@@ -15,12 +15,15 @@ export interface PlanLimits {
   engineQueries: number;
   /** /api/content/generate calls per calendar month. */
   contentGenerations: number;
+  /** /api/geo/suggest-prompts calls per calendar month — one LLM call each. */
+  promptSuggestions: number;
 }
 
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
   free: {
     engineQueries: 300,
     contentGenerations: 20,
+    promptSuggestions: 30,
   },
 };
 

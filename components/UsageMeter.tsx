@@ -7,11 +7,13 @@ interface UsageData {
   demoMode: boolean;
   engineQueries: { used: number; limit: number };
   contentGenerations: { used: number; limit: number };
+  promptSuggestions: { used: number; limit: number };
 }
 
 const METRIC_LABEL = {
   engineQueries: "AI motor sorgusu",
   contentGenerations: "içerik üretimi",
+  promptSuggestions: "prompt önerisi",
 } as const;
 
 /** Read-only usage indicator — fetches /api/usage. Renders nothing while loading or signed out. */

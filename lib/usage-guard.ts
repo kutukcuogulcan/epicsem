@@ -27,7 +27,13 @@ export async function consumeQuota(userId: number, metric: UsageMetric, amount: 
   await incrementUsage(userId, metric, amount);
 }
 
+const METRIC_LABEL: Record<UsageMetric, string> = {
+  engineQueries: "AI motor sorgusu",
+  contentGenerations: "içerik üretimi",
+  promptSuggestions: "prompt önerisi",
+};
+
 export function quotaExceededMessage(metric: UsageMetric, quota: QuotaCheck, requested: number): string {
-  const label = metric === "engineQueries" ? "AI motor sorgusu" : "içerik üretimi";
+  const label = METRIC_LABEL[metric] ?? metric;
   return `Aylık kullanım limitine ulaşıldı: ${quota.used}/${quota.limit} ${label} (bu işlem ${requested} daha gerektiriyor). Kota her ayın başında (UTC) sıfırlanır.`;
 }

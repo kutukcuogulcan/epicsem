@@ -75,6 +75,10 @@ export interface GeoRunResult {
   engine: EngineId;
   model: string;
   promptText: string;
+  /** User-assigned category for this prompt (e.g. "Fiyat", "Karşılaştırma") — "Genel" when none was given. Powers the per-topic visibility breakdown. */
+  topic: string;
+  /** Whether the prompt text itself names the brand (vs. a discovery-style prompt someone who's never heard of the brand would ask). */
+  branded: boolean;
   mentioned: boolean;
   position: number | null;
   sentiment: number | null;
@@ -91,6 +95,14 @@ export interface GeoVisibilitySummary {
   avgSentiment: number | null;
   citationCount: number;
   rank?: number;
+}
+
+/** Own-brand visibility broken down by prompt topic — the per-category gap view (mirrors Peec AI's per-topic opportunity rollups). */
+export interface TopicVisibility {
+  topic: string;
+  visibility: number; // 0-1
+  mentionedCount: number;
+  totalCount: number;
 }
 
 export type SourceDomainType = "You" | "Competitor" | "Reference" | "UGC" | "Other";

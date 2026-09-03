@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
+import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
@@ -64,6 +64,22 @@ interface BrandRow {
   domain: string;
 }
 
+interface PromptInput {
+  text: string;
+  topic: string;
+}
+
+// "Fiyat: X ürünü ne kadar tutar?" → { topic: "Fiyat", text: "X ürünü ne kadar tutar?" }.
+// The prefix must be short (≤3 words) so a normal prompt that happens to contain a colon
+// (a URL, a ratio, a quote) isn't misread as a topic tag — falls back to "Genel" otherwise.
+function parsePromptLine(line: string): PromptInput {
+  const m = line.match(/^([^:]{1,24}):\s*(.+)$/);
+  if (m && m[1].trim().split(/\s+/).length <= 3) {
+    return { topic: m[1].trim(), text: m[2].trim() };
+  }
+  return { topic: "Genel", text: line };
+}
+
 export default function GeoPage() {
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
@@ -76,6 +92,9 @@ export default function GeoPage() {
   const [runs, setRuns] = useState<GeoRunResult[] | null>(null);
   const [summaries, setSummaries] = useState<GeoVisibilitySummary[] | null>(null);
   const [sourceDistribution, setSourceDistribution] = useState<SourceDomainStat[] | null>(null);
+  const [topicBreakdown, setTopicBreakdown] = useState<TopicVisibility[] | null>(null);
+  const [brandedSplit, setBrandedSplit] = useState<{ branded: number; discovery: number } | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [previousSummaries, setPreviousSummaries] = useState<GeoVisibilitySummary[] | null>(null);
@@ -100,12 +119,45 @@ export default function GeoPage() {
   }, []);
 
   const prompts = useMemo(
-    () => promptsText.split("\n").map((p) => p.trim()).filter(Boolean),
+    () => promptsText.split("\n").map((p) => p.trim()).filter(Boolean).map(parsePromptLine),
     [promptsText]
   );
 
   function updateCompetitor(i: number, field: keyof BrandRow, value: string) {
     setCompetitors((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+  }
+
+  // Fills the textarea with brand-grounded prompts from /api/geo/suggest-prompts (LLM-backed,
+  // demo-template fallback) instead of a new user staring at a blank "one prompt per line" box.
+  async function suggestPrompts() {
+    if (!brand.name || !brand.domain) {
+      setError("Prompt önerisi için önce marka adı ve alan adını girin.");
+      return;
+    }
+    setSuggesting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/geo/suggest-prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand,
+          competitors: competitors.filter((c) => c.name && c.domain),
+        }),
+      });
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Prompt suggestion failed");
+      const lines = (data.suggestions as { topic: string; text: string }[]).map((s) => `${s.topic}: ${s.text}`);
+      setPromptsText(lines.join("\n"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSuggesting(false);
+    }
   }
 
   async function runTest(e: React.FormEvent) {
@@ -127,6 +179,8 @@ export default function GeoPage() {
     setRuns(null);
     setSummaries(null);
     setSourceDistribution(null);
+    setTopicBreakdown(null);
+    setBrandedSplit(null);
     setPreviousSummaries(null);
     setPreviousRunAt(null);
     setHistory(null);
@@ -152,6 +206,8 @@ export default function GeoPage() {
       setRuns(data.runs);
       setSummaries(data.summaries);
       setSourceDistribution(data.sourceDistribution);
+      if (Array.isArray(data.topicBreakdown)) setTopicBreakdown(data.topicBreakdown);
+      if (data.brandedSplit) setBrandedSplit(data.brandedSplit);
       setDemoMode(data.demoMode);
       if (data.previousRun) {
         setPreviousSummaries(data.previousRun.summaries);
@@ -264,6 +320,15 @@ export default function GeoPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-sm">Prompts (one per line)</h2>
             <div className="flex gap-2 text-xs">
+              <button
+                type="button"
+                onClick={suggestPrompts}
+                disabled={suggesting}
+                className="text-accent hover:underline disabled:opacity-50"
+              >
+                {suggesting ? "Öneriler hazırlanıyor…" : "✨ Prompt öner"}
+              </button>
+              <span className="text-ink/20">·</span>
               <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
                 EN example
               </button>
@@ -280,9 +345,14 @@ export default function GeoPage() {
             className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
           />
           <p className="text-xs text-ink/30">
+            Bir satırı <code>Konu: prompt metni</code> şeklinde yazarsanız (örn. <code>Fiyat: X ne kadar tutar?</code>)
+            sonuçlarda konu bazında görünürlük kırılımı çıkar — konu vermezseniz &ldquo;Genel&rdquo; sayılır.
+          </p>
+          <p className="text-xs text-ink/30">
             Turkish-market tip: LLMs often answer a Turkish question with a different citation mix than the
             English equivalent — test both if your audience is Turkish, don't assume the English result transfers.
           </p>
+          <UsageMeter metric="promptSuggestions" />
         </div>
 
         <div className="card space-y-3">
@@ -324,7 +394,7 @@ export default function GeoPage() {
       )}
 
       {summaries && ownSummary && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Visibility"
             value={`${Math.round(ownSummary.visibility * 100)}%`}
@@ -350,6 +420,13 @@ export default function GeoPage() {
             value={String(prompts.length)}
             description={`${engines.length} motor üzerinden test edildi`}
           />
+          {brandedSplit && (
+            <StatCard
+              label="Marka bilinen / keşif"
+              value={`${brandedSplit.branded} / ${brandedSplit.discovery}`}
+              description="Markanı zaten bilen vs. kategoriyi araştıran sorular"
+            />
+          )}
         </div>
       )}
 
@@ -495,6 +572,35 @@ export default function GeoPage() {
         </div>
       )}
 
+      {topicBreakdown && topicBreakdown.length > 1 && (
+        <div className="card">
+          <h2 className="font-medium">Konu bazında görünürlük</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            {ownSummary?.brand ?? "Markanız"} her prompt konusunda ne kadar görünüyor — hangi konularda görünmez
+            olduğunuzu gösterir (Peec AI&apos;deki topic/tag kırılımına benzer).
+          </p>
+          <div className="space-y-2">
+            {topicBreakdown.map((t) => {
+              const pct = Math.round(t.visibility * 100);
+              return (
+                <div key={t.topic} className="flex items-center gap-3 text-sm">
+                  <div className="w-36 truncate text-ink/70">{t.topic}</div>
+                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${pct >= 50 ? "bg-seo" : pct >= 20 ? "bg-warn" : "bg-danger"}`}
+                      style={{ width: `${Math.max(4, pct)}%` }}
+                    />
+                  </div>
+                  <div className="w-24 text-right text-ink/50 text-xs">
+                    {pct}% ({t.mentionedCount}/{t.totalCount})
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {runs && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -541,6 +647,7 @@ export default function GeoPage() {
                 <div className="text-sm min-w-0">
                   <span className="font-medium">{ENGINE_LABEL[r.engine]}</span>
                   <span className="text-ink/40"> · {r.model}</span>
+                  {r.topic && r.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/50 ml-2">{r.topic}</span>}
                   <span className="text-ink/40"> · &ldquo;{r.promptText}&rdquo;</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs shrink-0">

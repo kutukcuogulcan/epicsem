@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { EngineId } from "@/types";
-import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeVisibility } from "@/lib/geo-engine";
+import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeByTopic, summarizeVisibility } from "@/lib/geo-engine";
 import { isDemoMode } from "@/lib/geo-providers";
 import { getPreviousGeoRun, listGeoRunHistory, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -11,10 +11,20 @@ import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guar
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
+const promptSchema = z.object({
+  text: z.string().min(3),
+  topic: z.string().min(1).max(60).default("Genel"),
+});
+
 const bodySchema = z.object({
   brand: brandSchema,
   competitors: z.array(brandSchema).max(6).default([]),
-  prompts: z.array(z.string().min(3)).min(1).max(10),
+  // Accepts either a plain string (legacy/simple callers, defaults to "Genel") or a
+  // {text, topic} object — the /geo page parses "Konu: prompt metni" lines into the latter.
+  prompts: z
+    .array(z.union([z.string().min(3).transform((text) => ({ text, topic: "Genel" })), promptSchema]))
+    .min(1)
+    .max(10),
   engines: z.array(z.enum(["openai", "anthropic", "google", "perplexity", "deepseek", "xai", "meta", "microsoft"])).default(ALL_ENGINES),
 });
 
@@ -54,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const allRuns = (
     await Promise.all(
-      prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))
+      prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines as EngineId[], p.topic))
     )
   ).flat();
   if (!demoMode) await consumeQuota(user.id, "engineQueries", plannedQueries);
@@ -64,13 +74,19 @@ export async function POST(req: NextRequest) {
     .sort((a, b) => b.visibility - a.visibility)
     .map((s, i) => ({ ...s, rank: i + 1 }));
   const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
+  const topicBreakdown = summarizeByTopic(allRuns);
+  const brandedCount = allRuns.filter((r) => r.branded).length;
+  const brandedSplit = {
+    branded: brandedCount,
+    discovery: allRuns.length - brandedCount,
+  };
 
   let previousRun = null;
   let history: Awaited<ReturnType<typeof listGeoRunHistory>> = [];
   try {
     // Save first, then look up history — getPreviousGeoRun/listGeoRunHistory both read
     // from the table this just wrote to, so they must run after the insert.
-    await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution });
+    await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution, topicBreakdown });
     previousRun = await getPreviousGeoRun(user.id, brand.domain);
     history = await listGeoRunHistory(user.id, brand.domain, 20);
   } catch (dbErr) {
@@ -82,6 +98,8 @@ export async function POST(req: NextRequest) {
     runs: allRuns,
     summaries,
     sourceDistribution,
+    topicBreakdown,
+    brandedSplit,
     previousRun,
     history,
   });

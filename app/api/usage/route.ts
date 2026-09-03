@@ -11,9 +11,10 @@ export async function GET() {
 
   const plan = await getUserPlan(user.id);
   const limits = limitsForPlan(plan);
-  const [engineUsed, contentUsed] = await Promise.all([
+  const [engineUsed, contentUsed, suggestUsed] = await Promise.all([
     getUsageCount(user.id, "engineQueries"),
     getUsageCount(user.id, "contentGenerations"),
+    getUsageCount(user.id, "promptSuggestions"),
   ]);
 
   return NextResponse.json({
@@ -21,5 +22,6 @@ export async function GET() {
     demoMode: isDemoMode(),
     engineQueries: { used: engineUsed, limit: limits.engineQueries },
     contentGenerations: { used: contentUsed, limit: limits.contentGenerations },
+    promptSuggestions: { used: suggestUsed, limit: limits.promptSuggestions },
   });
 }
