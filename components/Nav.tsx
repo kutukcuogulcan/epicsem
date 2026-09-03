@@ -2,28 +2,31 @@ import Link from "next/link";
 import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
 
+// Same copy as app/page.tsx's GROUPS section (kept in sync deliberately) — the nav
+// dropdown is usually the first place someone checks what a product does, so it
+// shouldn't say less than the homepage does two scrolls down.
 const PRODUCT_GROUPS = [
   {
     title: "Analiz & Test",
     items: [
-      { href: "/audit", label: "SEO + AXO Audit" },
-      { href: "/geo", label: "GEO/AEO Visibility" },
-      { href: "/gap", label: "Gap Analysis" },
+      { href: "/audit", label: "SEO + AXO Audit", body: "Title/meta, başlıklar, schema, robots.txt & sitemap — ve AI crawler'ların (GPTBot, ClaudeBot, PerplexityBot) sayfaya erişip erişemediği." },
+      { href: "/geo", label: "GEO/AEO Visibility", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede görün." },
+      { href: "/gap", label: "Gap Analysis", body: "Denetim ile GEO sonucunu çaprazlar: teknik olarak sağlam ama AI'da hiç anılmayan sayfaları bulur." },
     ],
   },
   {
     title: "Otomasyon",
     items: [
-      { href: "/monitor", label: "AXO Monitoring" },
-      { href: "/import", label: "Bulk Import" },
-      { href: "/content", label: "Content Studio" },
+      { href: "/monitor", label: "AXO Monitoring", body: "Kritik sayfaları izler, bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir." },
+      { href: "/import", label: "Bulk Import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör." },
+      { href: "/content", label: "Content Studio", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress'e yayınlar." },
     ],
   },
   {
     title: "Yönetim",
     items: [
-      { href: "/clients", label: "Clients" },
-      { href: "/prompts", label: "Claude Code Prompts" },
+      { href: "/clients", label: "Clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, PDF rapor indir." },
+      { href: "/prompts", label: "Claude Code Prompts", body: "Kendi kod tabanında Claude Code ile çalıştırabileceğin, gerçek audit/gap verisine dayanan ücretsiz prompt kütüphanesi." },
     ],
   },
 ];
@@ -55,18 +58,17 @@ export default async function Nav() {
               </svg>
             </button>
             <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 top-full pt-3 z-30">
-              <div className="w-[560px] bg-panel border border-border rounded-xl shadow-lg p-6 grid grid-cols-3 gap-6">
+              <div className="w-[760px] bg-panel border border-border rounded-xl shadow-lg p-6 grid grid-cols-3 gap-6">
                 {PRODUCT_GROUPS.map((group) => (
                   <div key={group.title}>
                     <div className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">{group.title}</div>
-                    <div className="space-y-1">
+                    <div className="space-y-3">
                       {group.items.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className="block text-sm py-1 text-ink/70 hover:text-accent transition-colors"
-                        >
-                          {item.label}
+                        <Link key={item.href} href={item.href} className="block group/item">
+                          <div className="text-sm font-medium text-ink group-hover/item:text-accent transition-colors">
+                            {item.label}
+                          </div>
+                          <p className="mt-0.5 text-xs text-ink/50 leading-snug">{item.body}</p>
                         </Link>
                       ))}
                     </div>
