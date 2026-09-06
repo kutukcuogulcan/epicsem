@@ -23,8 +23,8 @@ const SCENARIO_STEPS = [
     body: "Aynı kayıt, GEO testi ve Gap Analysis linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
   },
   {
-    title: "Rapor müşteri adına indirilir",
-    body: "Her koşudan sonra Epicsem markalı PDF, o müşteriyle ilişkilendirilmiş olarak indirilir.",
+    title: "Rapor kendi ajans adınızla indirilir",
+    body: "Audit veya Gap'te \"Ajans adınız\" kutusuna yazılan isim, o müşteriyle ilişkilendirilmiş PDF'in üst kısmında Epicsem yerine görünür.",
   },
 ];
 
@@ -41,6 +41,10 @@ const FAQ_ITEMS = [
     q: "Aynı müşteriyi birden fazla araçta nasıl kullanırım?",
     a: "Bir müşteriyi kaydettikten sonra kart üzerindeki Audit, GEO test ve Gap analysis linklerine tıkladığında o aracın formu marka/domain/rakip bilgisiyle otomatik dolu açılır — yeniden yazmana gerek kalmaz.",
   },
+  {
+    q: "PDF raporda kendi ajans adım görünebilir mi?",
+    a: "Evet. Audit veya Gap Analysis sonuç ekranında \"Ajans adınız\" kutusuna kendi ajans/marka adınızı yazmanız yeterli — indirilen PDF'in üst kısmında Epicsem yerine o isim görünür. İsim hesabınıza değil tarayıcınıza kaydedilir.",
+  },
 ];
 
 const FEATURES = [
@@ -48,7 +52,7 @@ const FEATURES = [
   { title: "Notlar", body: "Hesap contact'ı, sözleşme kapsamı veya hatırlamak istediğiniz her şeyi müşteri kaydına ekleyin." },
   { title: "Sınırsız rakip", body: "Her müşteri için istediğiniz kadar rakip ekleyip karşılaştırmalarda kullanabilirsiniz." },
   { title: "Kendi hesabınıza özel", body: "Kayıtlı müşteriler yalnızca sizin hesabınızla ilişkilendirilir, başka kullanıcılar göremez." },
-  { title: "Markalı PDF ile teslim", body: "Her koşudan Epicsem markalı bir PDF üretip müşterinize kendi ajansınızın çıktısı olarak gönderin." },
+  { title: "Kendi markanızla PDF teslimi", body: "\"Ajans adınız\" kutusuna kendi adınızı yazın — PDF'in üst kısmında Epicsem yerine sizin adınız görünsün, müşteriye kendi ajansınızın çıktısı olarak gönderin." },
   { title: "Geçmiş tek yerde", body: "Bir müşteri için yapılan her audit, GEO testi ve gap analizi otomatik olarak o kayda bağlanır." },
 ];
 

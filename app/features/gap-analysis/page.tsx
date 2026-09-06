@@ -56,7 +56,7 @@ const FEATURES = [
   { title: "4 net verdict etiketi", body: "Blocked, Invisible, Cited, Needs work — her sayfanın durumu tek bakışta anlaşılır." },
   { title: "Otomatik content brief", body: "Kaybedilen promptlar, somut başlık ve FAQ önerilerine çevrilir — uydurma değil, bu koşunun kendi verisinden." },
   { title: "Content Studio entegrasyonu", body: "\"Generate article\" ile brief tek tıkla bir WordPress taslağına dönüşür." },
-  { title: "Markalı PDF rapor", body: "Gap matrix ve content brief'ler, Epicsem markalı bir PDF olarak müşteriyle paylaşılır." },
+  { title: "Kendi markanızla PDF rapor", body: "\"Ajans adınız\" kutusuna adınızı yazın — gap matrix ve content brief'ler, sizin adınızın göründüğü bir PDF olarak müşteriyle paylaşılsın." },
   { title: "Gerçek 4 motorla test", body: "ChatGPT, Claude, Gemini ve Perplexity'e gerçek promptlar gönderilir." },
 ];
 

@@ -47,7 +47,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Sonucu müşterime nasıl gönderebilirim?",
-    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile Epicsem markalı, indirilebilir bir PDF alabilirsin. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
+    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile indirilebilir bir PDF alabilirsin. \"Ajans adınız\" kutusuna kendi ajans/marka adını yazarsan PDF'te Epicsem yerine o isim görünür. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
   },
 ];
 
@@ -57,7 +57,7 @@ const FEATURES = [
   { title: "Sayfanın kendi verisinden fix", body: "Önerilen düzeltmeler sadece taranan sayfanın içeriğinden üretilir, hiçbir istatistik uydurulmaz." },
   { title: "Claude Code prompt'u", body: "Bulunan sorunları özetleyen, kendi reponuzda çalıştırabileceğiniz bir prompt tek tıkla oluşturulur." },
   { title: "Trend karşılaştırması", body: "Aynı URL'yi tekrar taradığınızda SEO/AXO skorundaki ve engellenen bot sayısındaki değişimi görürsünüz." },
-  { title: "Markalı PDF rapor", body: "Sonucu Epicsem markalı, indirilebilir bir PDF olarak müşterinize gönderin." },
+  { title: "Kendi markanızla PDF rapor", body: "\"Ajans adınız\" kutusuna kendi adınızı yazın, indirilebilir PDF'te Epicsem yerine sizin adınız görünsün." },
 ];
 
 export default function SeoAxoAuditLandingPage() {

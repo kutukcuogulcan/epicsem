@@ -20,8 +20,8 @@ const SCENARIO_STEPS = [
     body: "Aynı kayıt, GEO testi ve Gap Analysis linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
   },
   {
-    title: "Rapor müşteri adına indirilir",
-    body: "Her koşudan sonra Epicsem markalı PDF, o müşteriyle ilişkilendirilmiş olarak indirilir.",
+    title: "Rapor kendi ajans adınızla indirilir",
+    body: "Audit veya Gap'te \"Ajans adınız\" kutusuna kendi ajans adınızı yazdıysanız, indirilen PDF'te Epicsem yerine sizin adınız görünür.",
   },
 ];
 
@@ -37,6 +37,10 @@ const FAQ_ITEMS = [
   {
     q: "Aynı müşteriyi birden fazla araçta nasıl kullanırım?",
     a: "Bir müşteriyi kaydettikten sonra kart üzerindeki Audit, GEO test ve Gap analysis linklerine tıkladığında o aracın formu marka/domain/rakip bilgisiyle otomatik dolu açılır — yeniden yazmana gerek kalmaz.",
+  },
+  {
+    q: "PDF raporda kendi ajans adım görünebilir mi?",
+    a: "Evet. Audit veya Gap Analysis sonuç ekranında, \"Download PDF report\" butonunun yanındaki \"Ajans adınız\" kutusuna kendi ajans/marka adını yazman yeterli — indirdiğin PDF'in üst kısmında Epicsem yerine o isim görünür. Bu isim hesabına değil, tarayıcına kaydedilir; aynı cihazdan tekrar geldiğinde otomatik dolu gelir.",
   },
 ];
 
@@ -259,8 +263,9 @@ export default function ClientsPage() {
               koşuda dropdown'dan seç.
             </li>
             <li>
-              <span className="text-ink">Kendi markanla rapor çıkar —</span> her koşudan Epicsem markalı,
-              indirilebilir bir PDF üretebilirsin — müşteriye kendi ajansının çıktısı olarak gönderirsin.
+              <span className="text-ink">Kendi markanla rapor çıkar —</span> Audit veya Gap'teki &quot;Ajans adınız&quot;
+              kutusuna kendi adını yaz, indirilebilir PDF&apos;te Epicsem yerine o isim görünsün — müşteriye kendi
+              ajansının çıktısı olarak gönderirsin.
             </li>
             <li>
               <span className="text-ink">Geçmiş tek yerde —</span> o müşteri için yapılan her audit, GEO testi

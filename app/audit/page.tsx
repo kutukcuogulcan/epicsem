@@ -10,6 +10,7 @@ import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import { useAgencyName } from "@/lib/use-agency-name";
 
 const SCENARIO_STEPS = [
   {
@@ -49,7 +50,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Sonucu müşterime nasıl gönderebilirim?",
-    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile Epicsem markalı, indirilebilir bir PDF alabilirsin. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
+    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile indirilebilir bir PDF alabilirsin. \"Ajans adınız\" kutusuna kendi ajans/marka adını yazarsan PDF'in üst kısmında Epicsem yerine o isim görünür — bu isim tarayıcında hatırlanır, tekrar yazmana gerek kalmaz. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
   },
 ];
 
@@ -88,6 +89,7 @@ export default function AuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SeoAuditResult | null>(null);
   const [previousRun, setPreviousRun] = useState<PreviousAuditRun | null>(null);
+  const [agencyName, setAgencyName] = useAgencyName();
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -137,6 +139,7 @@ export default function AuditPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        agencyName: agencyName.trim() || undefined,
         clientName: result.meta.title || result.url,
         clientDomain: result.url,
         audit: result,
@@ -191,7 +194,13 @@ export default function AuditPage() {
 
       {result && (
         <div className="space-y-8">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <input
+              value={agencyName}
+              onChange={(e) => setAgencyName(e.target.value)}
+              placeholder="Ajans adınız (opsiyonel — PDF'te görünür)"
+              className="w-64 rounded-lg bg-panel border border-border px-3 py-1.5 text-xs outline-none focus:border-accent"
+            />
             <button
               onClick={downloadPdf}
               className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"

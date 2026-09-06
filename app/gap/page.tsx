@@ -9,6 +9,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import { useAgencyName } from "@/lib/use-agency-name";
 
 const SCENARIO_STEPS = [
   {
@@ -105,6 +106,7 @@ export default function GapPage() {
   const [demoMode, setDemoMode] = useState(false);
   const [generatingUrl, setGeneratingUrl] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [agencyName, setAgencyName] = useAgencyName();
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -161,6 +163,7 @@ export default function GapPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        agencyName: agencyName.trim() || undefined,
         clientName: brand.name,
         clientDomain: brand.domain,
         geo: summaries ? { summaries } : null,
@@ -364,7 +367,13 @@ export default function GapPage() {
       )}
 
       {gapMatrix && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <input
+            value={agencyName}
+            onChange={(e) => setAgencyName(e.target.value)}
+            placeholder="Ajans adınız (opsiyonel — PDF'te görünür)"
+            className="w-64 rounded-lg bg-panel border border-border px-3 py-1.5 text-xs outline-none focus:border-accent"
+          />
           <button
             onClick={downloadPdf}
             className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"

@@ -26,7 +26,7 @@ const GROUPS = [
     description: "Birden fazla müşteri yönetiyorsan, her birinin markasını bir kere kaydet, her yerde tekrar kullan.",
     tone: "text-seo",
     items: [
-      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, Epicsem markalı PDF rapor indir.", landingHref: "/features/clients" },
+      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, kendi ajans adınla PDF rapor indir.", landingHref: "/features/clients" },
       { label: "Sınırsız motor", href: "/geo", body: "OpenAI, Anthropic, Google, Perplexity hepsi dahil — hangi modelin müşterin için önemli olduğunu test etmek için motor başına ek ücret yok." },
     ],
   },
