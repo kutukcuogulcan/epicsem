@@ -214,7 +214,25 @@ export default function ClientsPage() {
       )}
 
       {clients && clients.length === 0 && (
-        <div className="card text-sm text-ink/50">No clients saved yet — add one above.</div>
+        <div className="card space-y-3">
+          <div className="text-sm font-medium">Neden burada müşteri kaydetmelisin?</div>
+          <ul className="space-y-2 text-sm text-ink/60">
+            <li>
+              <span className="text-ink">Tekrar yazmazsın —</span> 5-10 müşteri yönetiyorsan, her audit/GEO
+              testinde marka adı + rakip listesini yeniden girmek zaman kaybı. Bir kere kaydet, sonraki her
+              koşuda dropdown'dan seç.
+            </li>
+            <li>
+              <span className="text-ink">Kendi markanla rapor çıkar —</span> her koşudan Epicsem markalı,
+              indirilebilir bir PDF üretebilirsin — müşteriye kendi ajansının çıktısı olarak gönderirsin.
+            </li>
+            <li>
+              <span className="text-ink">Geçmiş tek yerde —</span> o müşteri için yapılan her audit, GEO testi
+              ve gap analizi otomatik olarak buraya bağlanır; "geçen ay neydi" diye eski sekmeleri aramazsın.
+            </li>
+          </ul>
+          <p className="text-xs text-ink/40 pt-1">İlk müşterini yukarıdan ekleyerek başla.</p>
+        </div>
       )}
     </div>
   );

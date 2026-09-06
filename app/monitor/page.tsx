@@ -333,7 +333,25 @@ export default function MonitorPage() {
       )}
 
       {pages && pages.length === 0 && (
-        <div className="card text-sm text-ink/50">No pages monitored yet — add one above to start tracking AI crawler access over time.</div>
+        <div className="card space-y-3">
+          <div className="text-sm font-medium">Bir sayfayı neden izlemeye değer?</div>
+          <ul className="space-y-2 text-sm text-ink/60">
+            <li>
+              <span className="text-ink">Engelleme sessizce olur —</span> robots.txt'i sen değiştirmesen bile bir
+              WAF/CDN güncellemesi ya da yeni bir güvenlik kuralı, GPTBot veya ClaudeBot'u fark etmeden
+              engelleyebilir.
+            </li>
+            <li>
+              <span className="text-ink">Genelde haftalar sonra fark edilir —</span> tek işaret genelde AI
+              görünürlüğünde açıklanamayan bir düşüş oluyor; burada engelleme olduğu an Slack'e haber gelir.
+            </li>
+            <li>
+              <span className="text-ink">Müşteri sitelerinde özellikle kritik —</span> siteyi sen yönetmiyorsan,
+              bir engellemeyi müşteriden önce sen fark edip haber vermiş olursun.
+            </li>
+          </ul>
+          <p className="text-xs text-ink/40 pt-1">İzlenecek ilk sayfayı yukarıdan ekle.</p>
+        </div>
       )}
     </div>
   );
