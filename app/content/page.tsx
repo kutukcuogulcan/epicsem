@@ -5,6 +5,30 @@ import type { CmsConnection, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Gap Analysis bir boşluk bulur",
+    body: "\"En iyi mobilya markaları hangileri?\" promptunda hiçbir sayfa anılmıyor bulgusu content brief'e dönüşür.",
+  },
+  {
+    title: "\"Generate article\" tıklanır",
+    body: "Brief, Content Studio'ya gönderilir ve taslak otomatik oluşturulur.",
+  },
+  {
+    title: "Uydurma yerine [NEEDS: ...] işaretlenir",
+    body: "Modelin dayanak bulamadığı bir istatistik varsa, onu uydurmak yerine açıkça [NEEDS: gerçek rakam] olarak bırakılır.",
+  },
+  {
+    title: "İnsan incelemesi yapılır",
+    body: "Taslak, [NEEDS: ...] alanları doldurulup gözden geçirilir.",
+  },
+  {
+    title: "WordPress taslağı olarak yayınlanır",
+    body: "\"Publish as WordPress draft\" ile içerik canlıya değil, WordPress'te bir taslak olarak gönderilir — yayına alma kararı kullanıcıya kalır.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -362,6 +386,8 @@ export default function ContentStudioPage() {
           )}
         </div>
       </div>
+
+      <ExampleScenario heading="Kaybedilen bir prompt, yayına hazır bir taslağa dönüşüyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

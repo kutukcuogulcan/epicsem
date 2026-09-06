@@ -4,6 +4,26 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Müşteri bir kere kaydedilir",
+    body: "Marka adı, domain ve iki rakip /clients'a kaydedilir.",
+  },
+  {
+    title: "Audit tek tıkla önceden dolu açılır",
+    body: "Müşteri kartındaki \"Audit\" linkine tıklanınca, denetim formu domain otomatik dolu şekilde açılır.",
+  },
+  {
+    title: "Aynı marka GEO ve Gap'te de kullanılır",
+    body: "Aynı kayıt, GEO testi ve Gap Analysis linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
+  },
+  {
+    title: "Rapor müşteri adına indirilir",
+    body: "Her koşudan sonra Epicsem markalı PDF, o müşteriyle ilişkilendirilmiş olarak indirilir.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -250,6 +270,8 @@ export default function ClientsPage() {
           <p className="text-xs text-ink/40 pt-1">İlk müşterini yukarıdan ekleyerek başla.</p>
         </div>
       )}
+
+      <ExampleScenario heading="Bir ajans 5 müşteriyi tek panelde yönetiyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

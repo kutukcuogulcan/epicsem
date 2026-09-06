@@ -2,12 +2,32 @@ import { CATEGORY_LABEL, getPromptsByCategory, type PromptCategory } from "@/lib
 import PromptBlock from "@/components/PromptBlock";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
 
 export const metadata = {
   title: "Claude Code SEO Prompts — Epicsem",
   description:
     "A free library of Claude Code prompts for technical SEO, AXO crawler access, schema, GEO citation gaps, and content briefs — grounded in real audit data, not generic templates.",
 };
+
+const SCENARIO_STEPS = [
+  {
+    title: "Kategoriye göre prompt seçilir",
+    body: "Kütüphaneden \"AI crawler erişimi\" kategorisindeki bir prompt seçilir.",
+  },
+  {
+    title: "Prompt kopyalanır",
+    body: "Prompt metni, hazır şablon olarak kopyalanır — hiçbir hesap gerekmez.",
+  },
+  {
+    title: "Kendi reposunda Claude Code'a yapıştırılır",
+    body: "Kullanıcı, kendi site kodunun kök dizininde çalışan Claude Code'a promptu yapıştırır.",
+  },
+  {
+    title: "Genel şablon kendi siteye uygulanır",
+    body: "Claude Code kendi dosyalarını okuyup şablonu siteye özel şekilde uygular — Epicsem'in kendi verisi olmadan da kullanılabilir.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -57,6 +77,8 @@ export default function PromptsPage() {
           </div>
         </div>
       ))}
+
+      <ExampleScenario heading="Bir geliştirici genel bir şablonla kendi sitesini düzeltiyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

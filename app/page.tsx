@@ -8,7 +8,7 @@ const GROUPS = [
     items: [
       { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
       { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör.", landingHref: "/features/geo-visibility" },
-      { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur." },
+      { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
     ],
   },
   {
@@ -16,9 +16,9 @@ const GROUPS = [
     description: "Bir kere kur, arkasında çalışsın — elle kontrol etmene gerek kalmasın.",
     tone: "text-warn",
     items: [
-      { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir." },
-      { label: "Bulk Import", href: "/import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör." },
-      { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress'e yayınlar." },
+      { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir.", landingHref: "/features/axo-monitoring" },
+      { label: "Bulk Import", href: "/import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör.", landingHref: "/features/bulk-import" },
+      { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress'e yayınlar.", landingHref: "/features/content-studio" },
     ],
   },
   {
@@ -26,7 +26,7 @@ const GROUPS = [
     description: "Birden fazla müşteri yönetiyorsan, her birinin markasını bir kere kaydet, her yerde tekrar kullan.",
     tone: "text-seo",
     items: [
-      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, Epicsem markalı PDF rapor indir." },
+      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, Epicsem markalı PDF rapor indir.", landingHref: "/features/clients" },
       { label: "Sınırsız motor", href: "/geo", body: "OpenAI, Anthropic, Google, Perplexity hepsi dahil — hangi modelin müşterin için önemli olduğunu test etmek için motor başına ek ücret yok." },
     ],
   },

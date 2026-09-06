@@ -8,6 +8,30 @@ import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Marka, rakip ve sayfa URL'leri girilir",
+    body: "Marka bilgisi, promptlar ve denetlenecek sayfa URL'leri (ör. ana sayfa ve en çok trafik alan blog yazısı) girilir.",
+  },
+  {
+    title: "Audit + GEO aynı anda çaprazlanır",
+    body: "Her sayfa için teknik SEO/AXO skoru ile GEO testinin o sayfayı gerçekten anıp anmadığı aynı tabloda birleştirilir.",
+  },
+  {
+    title: "\"Strong but invisible\" etiketi çıkar",
+    body: "Bir blog yazısı teknik olarak sağlam, hiçbir crawler engellenmemiş, ama hiçbir AI yanıtında anılmıyor — \"Invisible\" olarak işaretlenir.",
+  },
+  {
+    title: "Content brief otomatik üretilir",
+    body: "Sayfanın kaybettiği promptlar somut başlık/FAQ önerilerine çevrilir.",
+  },
+  {
+    title: "Content Studio'ya gönderilir",
+    body: "\"Generate article\" ile brief, Content Studio'da bir WordPress taslağına dönüşür.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -478,6 +502,8 @@ export default function GapPage() {
           {generateError && <div className="card border-danger/40 text-danger text-sm">{generateError}</div>}
         </div>
       )}
+
+      <ExampleScenario heading="Bir mobilya markası 'sağlam ama görünmez' sayfasını buluyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

@@ -6,6 +6,30 @@ import PromptBlock from "@/components/PromptBlock";
 import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Screaming Frog ile site taranır",
+    body: "Kullanıcı kendi Screaming Frog'unda siteyi tarar ve \"Internal → All\" olarak CSV dışa aktarır.",
+  },
+  {
+    title: "CSV /import'a yüklenir",
+    body: "Dosya sürükle-bırak ile yüklenir, 25MB'a kadar dosyalar kabul edilir.",
+  },
+  {
+    title: "Site genelinde sorunlar tek seferde çıkar",
+    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi tek bir özet tabloda.",
+  },
+  {
+    title: "Fix prompt'u kategoriye göre gruplanır",
+    body: "\"Fix with Claude Code\" ile her sorun kategorisi için örnek URL'li bir prompt üretilir.",
+  },
+  {
+    title: "Geliştirici toplu düzeltme yapar",
+    body: "Prompt, sitenin reposunda çalışan Claude Code'a yapıştırılır ve sorunlar toplu şekilde düzeltilir.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -292,6 +316,8 @@ export default function ImportPage() {
           )}
         </div>
       )}
+
+      <ExampleScenario heading="50 sayfalık bir site, tek CSV ile toplu taranıyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

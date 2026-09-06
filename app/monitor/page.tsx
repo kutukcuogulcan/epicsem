@@ -4,6 +4,30 @@ import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Kritik sayfa izlemeye eklenir",
+    body: "Müşterinin en çok trafik alan ürün sayfası /monitor'e eklenir.",
+  },
+  {
+    title: "İlk kontrol baseline oluşturur",
+    body: "\"Check now\" ile SEO 80, AXO 90, hiçbir bot engellenmemiş şeklinde bir başlangıç kaydı oluşur.",
+  },
+  {
+    title: "Bir CDN güncellemesi robots.txt'i değiştirir",
+    body: "İki hafta sonra ajans bir güvenlik kuralı ekler; bu, fark edilmeden GPTBot'u engeller.",
+  },
+  {
+    title: "Sıradaki kontrolde engelleme yakalanır",
+    body: "Bir sonraki kontrolde AXO skoru 90'dan 40'a düşer ve GPTBot \"Blocked\" olarak işaretlenir — Slack'e anında bildirim gider.",
+  },
+  {
+    title: "Sorun görünürlük düşmeden çözülür",
+    body: "Ajans, müşteri fark etmeden robots.txt'i geri düzeltir — AI görünürlüğünde haftalar sonra fark edilecek bir düşüş hiç yaşanmaz.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -369,6 +393,8 @@ export default function MonitorPage() {
           <p className="text-xs text-ink/40 pt-1">İzlenecek ilk sayfayı yukarıdan ekle.</p>
         </div>
       )}
+
+      <ExampleScenario heading="Bir müşteri sitesinde sessiz bir engelleme yakalanıyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>
