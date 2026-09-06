@@ -3,6 +3,22 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Müşteri bilgim nerede saklanıyor?",
+    a: "Kendi hesabına bağlı Postgres veritabanında, sadece senin hesabınla ilişkilendirilmiş olarak — başka Epicsem kullanıcıları göremez.",
+  },
+  {
+    q: "Bir müşteriyi sildiğimde o müşteri için yapılmış audit/GEO sonuçları da silinir mi?",
+    a: "Hayır. Kayıtlı müşteri sadece bir marka/rakip/not kısayolu — audit, GEO testi ve gap analizi sonuçları alan adına (domain) bağlı olarak ayrı saklanır ve müşteri kaydını silmek onları etkilemez.",
+  },
+  {
+    q: "Aynı müşteriyi birden fazla araçta nasıl kullanırım?",
+    a: "Bir müşteriyi kaydettikten sonra kart üzerindeki Audit, GEO test ve Gap analysis linklerine tıkladığında o aracın formu marka/domain/rakip bilgisiyle otomatik dolu açılır — yeniden yazmana gerek kalmaz.",
+  },
+];
 
 interface BrandRow {
   name: string;
@@ -234,6 +250,8 @@ export default function ClientsPage() {
           <p className="text-xs text-ink/40 pt-1">İlk müşterini yukarıdan ekleyerek başla.</p>
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

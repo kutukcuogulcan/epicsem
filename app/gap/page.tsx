@@ -7,6 +7,26 @@ import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Gap Analysis tam olarak neyi karşılaştırıyor?",
+    a: "Her sayfa için Audit'in ölçtüğü teknik sağlamlığı ve AI crawler erişimini, GEO testinin o sayfayı gerçekten anıp anmadığıyla çaprazlar. Yalnız birini okuduğunda göremeyeceğin şeyi gösterir: teknik olarak sağlam ama hiç anılmayan bir sayfa.",
+  },
+  {
+    q: "\"Blocked\", \"Invisible\", \"Cited\", \"Needs work\" etiketleri ne anlama geliyor?",
+    a: "Blocked: sayfa AI crawler'lara kapalı. Invisible: teknik olarak sağlam ve erişilebilir ama hiçbir AI yanıtında anılmıyor. Cited: en az bir AI yanıtında anılıyor. Needs work: kısmi teknik veya erişim sorunları var.",
+  },
+  {
+    q: "İçerik brief'leri (Content Briefs) nereden geliyor?",
+    a: "Girdiğin promptlardan hangilerinin hiçbir sayfanı bulamadığını tespit edip, o kaybedilen promptları somut bir başlık/FAQ önerisine çeviriyor. Buradan \"Generate article\" ile Content Studio'da bir WordPress taslağına dönüştürebilirsin.",
+  },
+  {
+    q: "Audit ve GEO'yu ayrı ayrı çalıştırmak yetmez mi?",
+    a: "Ayrı ayrı okuduğunda ikisi de yarım bir cevap verir: Audit \"teknik olarak sağlam\" der, GEO \"anılıyor mu\" der. Gap Analysis ikisini aynı satırda birleştirip asıl soruyu cevaplar: sağlam olduğu halde neden anılmıyor?",
+  },
+];
 import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
@@ -458,6 +478,8 @@ export default function GapPage() {
           {generateError && <div className="card border-danger/40 text-danger text-sm">{generateError}</div>}
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

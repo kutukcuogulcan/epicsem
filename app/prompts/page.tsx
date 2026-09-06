@@ -1,12 +1,28 @@
 import { CATEGORY_LABEL, getPromptsByCategory, type PromptCategory } from "@/lib/prompt-library";
 import PromptBlock from "@/components/PromptBlock";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
 
 export const metadata = {
   title: "Claude Code SEO Prompts — Epicsem",
   description:
     "A free library of Claude Code prompts for technical SEO, AXO crawler access, schema, GEO citation gaps, and content briefs — grounded in real audit data, not generic templates.",
 };
+
+const FAQ_ITEMS = [
+  {
+    q: "Bu promptları nasıl kullanırım?",
+    a: "Bir prompt kartındaki metni kopyala, kendi site kodunun/deponun kök dizininde çalışan Claude Code'a (veya shell + dosya erişimi olan başka bir kodlama ajanına) yapıştır — ajan senin gerçek dosyalarını okuyup değişiklik yapar.",
+  },
+  {
+    q: "Neden boş şablon, benim verilerimle doldurulmuş değil?",
+    a: "Burası genel amaçlı, herkesin kullanabileceği statik bir şablon kütüphanesi. Kendi gerçek bulgularınla önceden doldurulmuş bir prompt istiyorsan Audit veya Gap Analysis'i çalıştır — ikisinde de sonuç sayfasında \"Fix with Claude Code\" butonu var, o senin domainine ve o koşunun gerçek sonuçlarına göre otomatik oluşturulmuş bir prompt üretir.",
+  },
+  {
+    q: "Ücretli mi, hesap açmam gerekiyor mu?",
+    a: "Hayır — bu sayfa tamamen ücretsiz ve herkese açık, giriş yapmana veya hesap oluşturmana gerek yok.",
+  },
+];
 
 export default function PromptsPage() {
   const grouped = getPromptsByCategory();
@@ -41,6 +57,8 @@ export default function PromptsPage() {
           </div>
         </div>
       ))}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

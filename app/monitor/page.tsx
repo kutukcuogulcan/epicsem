@@ -3,6 +3,22 @@
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Ne sıklıkla kontrol ediliyor, otomatik mi?",
+    a: "Arayüzden istediğin an \"Check now\" ile manuel tetikleyebilirsin. Otomatik, zamanlanmış kontrol için kendi cron job'unu scripts/check-monitors.mjs ve bir CRON_SECRET ile kurabilirsin — bu, /api/monitor/check'i tüm kullanıcıların izlenen sayfaları için tek seferde tarar.",
+  },
+  {
+    q: "Bir engelleme tespit edilince ne oluyor?",
+    a: "Daha önce izinli olan bir AI crawler robots.txt'te engellenmişse, sayfaya özel bir Slack webhook'una (yoksa .env'deki varsayılana) anında bildirim gider ve site içinde \"Active alerts\" olarak da görünür.",
+  },
+  {
+    q: "Trend grafiğini görmek için kaç kontrol gerekiyor?",
+    a: "En az 2 kayıtlı kontrol gerekiyor. Farklı günlerde birkaç kez \"Check now\" çalıştırdıkça SEO ve AXO skorlarının zaman içindeki değişimini gösteren bir çizgi grafik açılıyor.",
+  },
+];
 
 interface MonitorCheck {
   id: number;
@@ -353,6 +369,8 @@ export default function MonitorPage() {
           <p className="text-xs text-ink/40 pt-1">İzlenecek ilk sayfayı yukarıdan ekle.</p>
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

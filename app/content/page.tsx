@@ -4,6 +4,26 @@ import { useEffect, useState } from "react";
 import type { CmsConnection, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "İçerik uyduruluyor mu, nereden geliyor?",
+    a: "Hayır. Her taslak sadece Gap Analysis'teki gerçek bir content brief'e dayanır. Modelin dayanak bulamadığı bir bilgi varsa, onu uydurmak yerine açıkça [NEEDS: ...] şeklinde işaretleyip sana bırakır.",
+  },
+  {
+    q: "Yayınladığımda direkt canlıya mı çıkıyor?",
+    a: "Hayır — yayınlama her zaman WordPress'te bir taslak (draft) oluşturur, asla otomatik yayına almaz. İncelemeyi ve yayına alma kararını sen WordPress üzerinden veriyorsun.",
+  },
+  {
+    q: "Birden fazla müşterinin WordPress'ine bağlanabilir miyim?",
+    a: "Evet — her müşteri için ayrı bir bağlantı (site adresi, kullanıcı adı, application password) kaydedebilir, taslağı yayınlarken hangi bağlantıyı kullanacağını seçebilirsin.",
+  },
+  {
+    q: "Aylık kaç içerik üretebilirim?",
+    a: "Ücretsiz planda ayda 20 içerik üretimi hakkın var. Demo modda (API anahtarı tanımlı değilken) üretim bu kotadan düşmez.",
+  },
+];
 
 interface DraftListItem {
   id: number;
@@ -342,6 +362,8 @@ export default function ContentStudioPage() {
           )}
         </div>
       </div>
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

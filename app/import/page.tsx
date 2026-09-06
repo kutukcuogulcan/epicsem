@@ -5,6 +5,22 @@ import type { BulkImportResult } from "@/types";
 import PromptBlock from "@/components/PromptBlock";
 import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Hangi dosyayı yükleyebilirim?",
+    a: "Screaming Frog'da Internal → All olarak dışa aktardığın CSV dosyasını, 25MB'a kadar. Başka bir crawler'ın CSV'si aynı sütun isimlerini kullanmıyorsa doğru eşlenmeyebilir.",
+  },
+  {
+    q: "Bunun Audit'ten farkı ne?",
+    a: "Audit tek bir URL'yi anlık olarak tarar. Bulk Import ise daha önce Screaming Frog'la taranmış tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları tek seferde, tüm site genelinde gösterir.",
+  },
+  {
+    q: "Bulunan sorunları nasıl düzeltirim?",
+    a: "\"Fix with Claude Code\" ile her sorun kategorisine göre gruplanmış, örnek URL'li bir prompt üretilir — bunu kendi site kodun/deposu üzerinde çalışan Claude Code'a yapıştırıp toplu düzeltebilirsin.",
+  },
+];
 
 interface RunListItem {
   id: number;
@@ -276,6 +292,8 @@ export default function ImportPage() {
           )}
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

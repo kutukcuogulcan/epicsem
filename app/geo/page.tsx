@@ -18,6 +18,30 @@ import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import ScoreBadge from "@/components/ScoreBadge";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Hangi AI motorlarını gerçekten test ediyor?",
+    a: "ChatGPT (OpenAI), Claude (Anthropic), Gemini (Google) ve Perplexity gerçek API entegrasyonuyla çalışır; DeepSeek ve Grok da gerçek entegre. Meta AI ve Microsoft Copilot'un genel API'si olmadığı için bu ikisi her zaman simüle çalışır — ekranda \"demo only\" olarak işaretli.",
+  },
+  {
+    q: "Sonuçlar gerçek mi, simülasyon mu?",
+    a: "İlgili motorun API anahtarı tanımlıysa gerçek bir sorgu gönderilir. Tanımlı değilse sistem demo modda çalışır ve sonuçlar gerçekçi ama simüle edilmiştir — bu durum ekranda açıkça \"demo mode\" olarak belirtilir.",
+  },
+  {
+    q: "\"Konu: prompt metni\" etiketlemesi ne işe yarar?",
+    a: "Bir satırı Konu: prompt metni şeklinde yazarsan (örn. Fiyat: X ne kadar tutar?) sonuçlarda hangi konularda görünür, hangi konularda görünmez olduğunu ayrı ayrı gösteren bir kırılım çıkar. Konu vermezsen \"Genel\" sayılır.",
+  },
+  {
+    q: "Marka-bilinen (branded) ve keşif (discovery) prompt farkı ne?",
+    a: "Marka-bilinen bir prompt markanı adıyla soruyor (\"X güvenilir mi?\"); keşif promptu ise markanı hiç duymamış birinin sorabileceği genel bir kategori sorusu (\"bu alanda en iyi araçlar hangileri?\"). İkisi ayrı ölçülür çünkü ikisi farklı bir şey söyler: biri seni zaten bilenler, diğeri seni henüz keşfetmemiş olanlar için görünürlüğünü gösterir.",
+  },
+  {
+    q: "Aylık kaç sorgu hakkım var?",
+    a: "Ücretsiz planda GEO/AEO ve Gap Analysis birlikte, ayda toplam 300 AI motor sorgusu (prompt sayısı × motor sayısı) içeriyor. Demo modda hiçbir sorgu bu kotadan düşmez.",
+  },
+];
 
 interface GeoHistoryRun {
   id: number;
@@ -680,6 +704,8 @@ export default function GeoPage() {
           ))}
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

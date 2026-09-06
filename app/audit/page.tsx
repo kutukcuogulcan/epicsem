@@ -8,6 +8,26 @@ import FixCard from "@/components/FixCard";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import Breadcrumb from "@/components/Breadcrumb";
+import FAQSection from "@/components/FAQSection";
+
+const FAQ_ITEMS = [
+  {
+    q: "Bu denetim tam olarak neyi kontrol ediyor?",
+    a: "Title/meta açıklaması, başlık (H1) yapısı, structured data (schema), robots.txt & sitemap varlığı — ve ayrıca GPTBot, ClaudeBot, PerplexityBot, Google-Extended gibi AI crawler'ların sayfaya gerçekten erişip erişemediği.",
+  },
+  {
+    q: "SEO skoru ile AXO skoru arasındaki fark ne?",
+    a: "SEO skoru klasik teknik sağlamlığı ölçer (başlıklar, meta, schema). AXO skoru özellikle AI motorlarının crawler'larının sayfaya erişip erişemediğini ölçer — bir site teknik olarak sağlam olup SEO'da yüksek puan alırken, robots.txt'i GPTBot'u engellediği için AXO'da düşük çıkabilir.",
+  },
+  {
+    q: "Önerilen düzeltmeler nereden geliyor, uyduruluyor mu?",
+    a: "Hayır — fix önerileri (meta açıklaması, Organization/FAQ şeması) sadece taranan sayfanın kendi içeriğinden üretiliyor. Model bir şeye dayanak bulamazsa onu üretmiyor.",
+  },
+  {
+    q: "Sonucu müşterime nasıl gönderebilirim?",
+    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile Epicsem markalı, indirilebilir bir PDF alabilirsin. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
+  },
+];
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
   meta: "Meta & titles",
@@ -226,6 +246,8 @@ export default function AuditPage() {
           ))}
         </div>
       )}
+
+      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }
