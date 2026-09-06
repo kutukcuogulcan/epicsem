@@ -9,6 +9,30 @@ import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Domain girilir",
+    body: "Site sahibi kendi domainini /audit'e girer ve taramayı başlatır.",
+  },
+  {
+    title: "İki farklı skor çıkar",
+    body: "Teknik SEO skoru 82/100 — title, meta, schema düzgün. Ama AXO skoru 35/100: robots.txt dosyası GPTBot'u ve ClaudeBot'u engelliyor.",
+  },
+  {
+    title: "Fix prompt'u üretilir",
+    body: "\"Fix with Claude Code\" ile robots.txt'teki engeli kaldıracak somut bir prompt oluşturulur — hiçbir şey uydurulmaz, sadece taranan sayfanın kendi verisine dayanır.",
+  },
+  {
+    title: "Geliştirici düzeltmeyi uygular",
+    body: "Prompt, sitenin kendi reposunda çalışan Claude Code'a yapıştırılır, robots.txt güncellenir ve yayına alınır.",
+  },
+  {
+    title: "Sonraki koşuda ilerleme görülür",
+    body: "Bir hafta sonra tekrar audit çalıştırıldığında AXO skoru 35'ten 88'e çıkar, engellenen bot sayısı 0'a iner — bu ilerleme indirilebilir bir PDF rapor olarak müşteriyle paylaşılır.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -246,6 +270,8 @@ export default function AuditPage() {
           ))}
         </div>
       )}
+
+      <ExampleScenario heading="Bir mobilya e-ticaret sitesi audit'ten geçiyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

@@ -6,8 +6,8 @@ const GROUPS = [
     description: "Bir sayfanın teknik olarak sağlam olup olmadığını ve AI motorlarında gerçekten görünüp görünmediğini ölç.",
     tone: "text-accent",
     items: [
-      { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği." },
-      { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör." },
+      { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
+      { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör.", landingHref: "/features/geo-visibility" },
       { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur." },
     ],
   },
@@ -98,10 +98,17 @@ export default function Home() {
               </div>
               <div className="space-y-3 pt-1 border-t border-border">
                 {group.items.map((item) => (
-                  <Link key={item.label} href={item.href} className="block group/item pt-3 first:pt-3">
-                    <div className="text-sm font-medium group-hover/item:text-accent transition-colors">{item.label}</div>
-                    <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
-                  </Link>
+                  <div key={item.label} className="pt-3 first:pt-3">
+                    <Link href={item.href} className="block group/item">
+                      <div className="text-sm font-medium group-hover/item:text-accent transition-colors">{item.label}</div>
+                      <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
+                    </Link>
+                    {"landingHref" in item && item.landingHref && (
+                      <Link href={item.landingHref} className="mt-1 inline-block text-xs text-accent hover:underline">
+                        Örnekle gör →
+                      </Link>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

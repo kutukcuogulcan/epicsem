@@ -19,6 +19,30 @@ import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
+import ExampleScenario from "@/components/ExampleScenario";
+
+const SCENARIO_STEPS = [
+  {
+    title: "Marka ve rakipler girilir",
+    body: "Marka adı, domain ve iki rakip eklenir.",
+  },
+  {
+    title: "Prompt önerisi istenir",
+    body: "\"✨ Prompt öner\" ile hem markayı adıyla soran hem de kategoriyi genel soran promptlar otomatik oluşturulur; \"Fiyat: X ne kadar tutar?\" gibi konu etiketleriyle işaretlenir.",
+  },
+  {
+    title: "Test dört motora gönderilir",
+    body: "ChatGPT, Claude, Gemini ve Perplexity'e aynı promptlar gönderilir.",
+  },
+  {
+    title: "Sonuç: marka-bilinende görünür, keşifte görünmez",
+    body: "Marka adıyla sorulan promptlarda %90 görünürlük çıkar, ama \"bu kategoride en iyi markalar hangileri?\" gibi keşif promptlarında %10'un altında kalır — markayı henüz bilmeyen biri AI'dan onu hiç duymuyor.",
+  },
+  {
+    title: "Konu kırılımı zayıf noktayı gösterir",
+    body: "\"Fiyat\" konulu promptlarda görünürlük en düşük çıkar — bu bulgu hangi içeriğin öncelikli üretilmesi gerektiğini gösterir.",
+  },
+];
 
 const FAQ_ITEMS = [
   {
@@ -704,6 +728,8 @@ export default function GeoPage() {
           ))}
         </div>
       )}
+
+      <ExampleScenario heading="Bir mobilya markası GEO testiyle görünmezliğini keşfediyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

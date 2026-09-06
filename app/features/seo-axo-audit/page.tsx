@@ -1,0 +1,108 @@
+import Link from "next/link";
+import Breadcrumb from "@/components/Breadcrumb";
+import ExampleScenario from "@/components/ExampleScenario";
+import FAQSection from "@/components/FAQSection";
+
+export const metadata = {
+  title: "SEO + AXO Denetimi — Siteniz Google'da ve AI'da Görünüyor mu? | Epicsem",
+  description:
+    "Klasik teknik SEO taramasının yanında GPTBot, ClaudeBot, PerplexityBot ve Google-Extended gibi AI crawler'ların sitenize gerçekten erişip erişemediğini ücretsiz kontrol edin.",
+};
+
+const SCENARIO_STEPS = [
+  {
+    title: "Domain girilir",
+    body: "Site sahibi kendi domainini /audit'e girer ve taramayı başlatır.",
+  },
+  {
+    title: "İki farklı skor çıkar",
+    body: "Teknik SEO skoru 82/100 — title, meta, schema düzgün. Ama AXO skoru 35/100: robots.txt dosyası GPTBot'u ve ClaudeBot'u engelliyor.",
+  },
+  {
+    title: "Fix prompt'u üretilir",
+    body: "\"Fix with Claude Code\" ile robots.txt'teki engeli kaldıracak somut bir prompt oluşturulur — hiçbir şey uydurulmaz, sadece taranan sayfanın kendi verisine dayanır.",
+  },
+  {
+    title: "Geliştirici düzeltmeyi uygular",
+    body: "Prompt, sitenin kendi reposunda çalışan Claude Code'a yapıştırılır, robots.txt güncellenir ve yayına alınır.",
+  },
+  {
+    title: "Sonraki koşuda ilerleme görülür",
+    body: "Bir hafta sonra tekrar audit çalıştırıldığında AXO skoru 35'ten 88'e çıkar, engellenen bot sayısı 0'a iner — bu ilerleme indirilebilir bir PDF rapor olarak müşteriyle paylaşılır.",
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: "Bu denetim tam olarak neyi kontrol ediyor?",
+    a: "Title/meta açıklaması, başlık (H1) yapısı, structured data (schema), robots.txt & sitemap varlığı — ve ayrıca GPTBot, ClaudeBot, PerplexityBot, Google-Extended gibi AI crawler'ların sayfaya gerçekten erişip erişemediği.",
+  },
+  {
+    q: "SEO skoru ile AXO skoru arasındaki fark ne?",
+    a: "SEO skoru klasik teknik sağlamlığı ölçer (başlıklar, meta, schema). AXO skoru özellikle AI motorlarının crawler'larının sayfaya erişip erişemediğini ölçer — bir site teknik olarak sağlam olup SEO'da yüksek puan alırken, robots.txt'i GPTBot'u engellediği için AXO'da düşük çıkabilir.",
+  },
+  {
+    q: "Önerilen düzeltmeler nereden geliyor, uyduruluyor mu?",
+    a: "Hayır — fix önerileri (meta açıklaması, Organization/FAQ şeması) sadece taranan sayfanın kendi içeriğinden üretiliyor. Model bir şeye dayanak bulamazsa onu üretmiyor.",
+  },
+  {
+    q: "Sonucu müşterime nasıl gönderebilirim?",
+    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile Epicsem markalı, indirilebilir bir PDF alabilirsin. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
+  },
+];
+
+const FEATURES = [
+  { title: "Teknik SEO + AXO, tek taramada", body: "Title, meta, başlık yapısı, schema, robots.txt/sitemap — hepsi tek bir URL taramasında." },
+  { title: "AI crawler erişim tablosu", body: "GPTBot, ClaudeBot, PerplexityBot ve Google-Extended'in sayfaya erişip erişemediğini ayrı ayrı gör." },
+  { title: "Sayfanın kendi verisinden fix", body: "Önerilen düzeltmeler sadece taranan sayfanın içeriğinden üretilir, hiçbir istatistik uydurulmaz." },
+  { title: "Claude Code prompt'u", body: "Bulunan sorunları özetleyen, kendi reponuzda çalıştırabileceğiniz bir prompt tek tıkla oluşturulur." },
+  { title: "Trend karşılaştırması", body: "Aynı URL'yi tekrar taradığınızda SEO/AXO skorundaki ve engellenen bot sayısındaki değişimi görürsünüz." },
+  { title: "Markalı PDF rapor", body: "Sonucu Epicsem markalı, indirilebilir bir PDF olarak müşterinize gönderin." },
+];
+
+export default function SeoAxoAuditLandingPage() {
+  return (
+    <div className="space-y-10">
+      <div className="space-y-4">
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Denetimi" }]} />
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
+          Siteniz Google&apos;da iyi olabilir — ama AI&apos;da hiç görünmüyor olabilir.
+        </h1>
+        <p className="text-ink/60 text-base max-w-2xl">
+          Klasik SEO araçları title, meta ve başlık yapısını kontrol eder ama ChatGPT&apos;nin, Claude&apos;un veya
+          Perplexity&apos;nin crawler&apos;ının sitenize erişip erişemediğini ölçmez. Epicsem&apos;in SEO + AXO
+          Audit&apos;i ikisini birden tek taramada gösterir: teknik SEO sağlamlığı ve AI crawler erişimi.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
+            Ücretsiz denetim yap
+          </Link>
+          <Link href="/features/geo-visibility" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
+            GEO/AEO Görünürlük&apos;ü incele
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="card">
+            <div className="font-medium text-sm">{f.title}</div>
+            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
+          </div>
+        ))}
+      </div>
+
+      <ExampleScenario heading="Bir mobilya e-ticaret sitesi audit'ten geçiyor" steps={SCENARIO_STEPS} />
+
+      <FAQSection items={FAQ_ITEMS} />
+
+      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
+        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Sitenizi şimdi ücretsiz denetleyin</h2>
+        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
+        <Link href="/audit" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
+          Denetimi başlat
+        </Link>
+      </div>
+    </div>
+  );
+}
