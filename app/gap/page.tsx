@@ -238,9 +238,9 @@ export default function GapPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gap Analysis" }]} />
         <h1 className="text-2xl font-semibold">Gap Analysis</h1>
         <p className="text-ink/60 text-sm">
-          Crosses your SEO + AXO audit against the GEO visibility test: for each page you list, is it
-          technically sound, is it open to AI crawlers, and — the question neither number alone answers —
-          does any AI engine actually cite it?
+          SEO + AXO denetiminizi GEO görünürlük testiyle çaprazlar: listelediğiniz her sayfa teknik olarak sağlam
+          mı, AI crawler&apos;lara açık mı — ve ikisinin tek başına cevaplayamadığı soru: herhangi bir AI motoru
+          bu sayfayı gerçekten anıyor mu?
         </p>
         <UsageMeter metric="engineQueries" />
       </div>

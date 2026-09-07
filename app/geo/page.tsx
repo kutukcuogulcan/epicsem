@@ -308,8 +308,8 @@ export default function GeoPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "GEO/AEO Visibility" }]} />
         <h1 className="text-2xl font-semibold">GEO / AEO Visibility Test</h1>
         <p className="text-ink/60 text-sm">
-          Runs your prompts against ChatGPT, Claude, Gemini and Perplexity, then measures whether your brand is
-          mentioned, where it ranks against competitors, and which sources get cited.
+          Promptlarınızı ChatGPT, Claude, Gemini ve Perplexity&apos;e gönderir; markanızın anılıp anılmadığını,
+          rakiplere göre nerede durduğunu ve hangi kaynakların referans gösterildiğini ölçer.
         </p>
         <UsageMeter metric="engineQueries" />
       </div>

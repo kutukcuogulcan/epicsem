@@ -214,9 +214,10 @@ export default function MonitorPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO Monitoring" }]} />
         <h1 className="text-2xl font-semibold">AXO Monitoring</h1>
         <p className="text-ink/60 text-sm">
-          robots.txt and CDN bot-blocking can change silently — a WAF update, a CDN default flip. Track key pages
-          here and get an alert the moment a previously-allowed AI crawler (GPTBot, ClaudeBot, PerplexityBot,
-          Google-Extended…) gets blocked, instead of finding out from a visibility drop weeks later.
+          robots.txt ve CDN bot engellemesi sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılan
+          ayar değişikliği. Kritik sayfalarınızı buraya ekleyin, daha önce izinli olan bir AI crawler (GPTBot,
+          ClaudeBot, PerplexityBot, Google-Extended…) engellendiği anda haber alın — haftalar sonra bir
+          görünürlük düşüşünden fark etmek yerine.
         </p>
       </div>
 

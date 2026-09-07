@@ -168,8 +168,8 @@ export default function AuditPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Audit" }]} />
         <h1 className="text-2xl font-semibold">SEO + AXO Audit</h1>
         <p className="text-ink/60 text-sm">
-          Checks the fundamentals (title, meta, headings, schema, sitemap) plus whether AI crawlers —
-          GPTBot, ClaudeBot, PerplexityBot, Google-Extended — can actually reach the page.
+          Title, meta, başlıklar, schema ve sitemap gibi temelleri kontrol eder — ayrıca GPTBot, ClaudeBot,
+          PerplexityBot, Google-Extended gibi AI crawler&apos;ların sayfaya gerçekten erişip erişemediğini gösterir.
         </p>
       </div>
 

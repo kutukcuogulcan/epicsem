@@ -150,8 +150,9 @@ export default function ClientsPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Clients" }]} />
         <h1 className="text-2xl font-semibold">Clients</h1>
         <p className="text-ink/60 text-sm">
-          Save each client's brand and competitor set once — jump straight into a pre-filled Audit, GEO test, or
-          Gap Analysis instead of retyping it every time, and generate an Epicsem-branded PDF report from any run.
+          Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
+          dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
+          bir PDF rapor üretin.
         </p>
       </div>
 

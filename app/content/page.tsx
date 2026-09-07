@@ -196,10 +196,11 @@ export default function ContentStudioPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Content Studio" }]} />
         <h1 className="text-2xl font-semibold">Content Studio</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
-          Articles generated on <a href="/gap" className="text-accent hover:underline">Gap Analysis</a> land here.
-          Every draft is grounded only in that page's real audit/gap findings — anything the model couldn't ground
-          is left as an explicit <code>[NEEDS: …]</code> placeholder instead of an invented fact. Publishing always
-          creates a <strong>WordPress draft</strong>, never a live post — review and hit publish yourself in WordPress.
+          <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
+          buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
+          bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
+          bırakılır. Yayınlama her zaman bir <strong>WordPress taslağı</strong> oluşturur, asla canlı bir gönderi
+          değil — inceleyip yayına almayı siz WordPress&apos;ten yaparsınız.
         </p>
         <UsageMeter metric="contentGenerations" />
       </div>

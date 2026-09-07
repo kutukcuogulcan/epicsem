@@ -54,10 +54,11 @@ export default function PromptsPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Prompts" }]} />
         <h1 className="text-2xl font-semibold">Claude Code SEO Prompts</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
-          A free library of prompts for running SEO work directly inside your website's own codebase with Claude
-          Code (or any coding agent with shell + file access) — technical fixes, AI crawler access, schema
-          generation, GEO citation gaps, content briefs, internal linking, and more. Every prompt is built to stay
-          grounded in what's actually in your repo — no invented statistics, no thin auto-generated pages.
+          Kendi sitenizin kodunda Claude Code (veya shell + dosya erişimi olan başka bir kodlama ajanı) ile SEO
+          işleri yapmak için ücretsiz bir prompt kütüphanesi — teknik düzeltmeler, AI crawler erişimi, schema
+          üretimi, GEO citation boşlukları, content brief&apos;leri, internal linking ve daha fazlası. Her prompt,
+          reponuzda gerçekten var olana dayanacak şekilde tasarlandı — uydurma istatistik yok, ince otomatik
+          üretilmiş sayfa yok.
         </p>
         <p className="text-ink/40 text-xs max-w-3xl">
           These are static templates you fill in yourself. For a prompt pre-filled with your own real findings, run

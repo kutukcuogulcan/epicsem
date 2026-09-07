@@ -176,11 +176,11 @@ export default function ImportPage() {
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Bulk Import" }]} />
         <h1 className="text-2xl font-semibold">Bulk Site Import (Screaming Frog)</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
-          Epicsem's own audit checks one URL at a time — for a full site sweep, export{" "}
-          <span className="text-ink/80">Internal → All</span> as CSV from Screaming Frog and drop it here. Epicsem
-          maps the columns, flags missing/duplicate titles &amp; meta descriptions, thin content, broken links,
-          missing H1s and noindex pages across every URL in the crawl — something no single-page tool (Arvow
-          included) does at all.
+          Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
+          <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
+          buraya bırakın. Epicsem sütunları eşler, taramadaki her URL genelinde eksik/tekrarlayan title &amp; meta
+          açıklamaları, thin content, kırık linkler, eksik H1&apos;ler ve noindex sayfaları işaretler — tek sayfalık
+          hiçbir aracın (Arvow dahil) yapamadığı bir şey.
         </p>
       </div>
 
