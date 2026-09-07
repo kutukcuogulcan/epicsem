@@ -9,14 +9,14 @@ export type PromptCategory =
   | "golden-content";
 
 export const CATEGORY_LABEL: Record<PromptCategory, string> = {
-  "technical-fix": "Technical SEO",
-  axo: "AI Crawler Access (AXO)",
+  "technical-fix": "Teknik SEO",
+  axo: "AI Crawler Erişimi (AXO)",
   schema: "Schema / Structured Data",
-  "geo-citation": "GEO / LLM Citations",
-  "content-brief": "Content Briefs",
+  "geo-citation": "GEO / LLM Atıfları",
+  "content-brief": "İçerik Brifleri",
   "internal-linking": "Internal Linking",
-  "programmatic-seo": "Programmatic SEO",
-  "golden-content": "Priority Content",
+  "programmatic-seo": "Programatik SEO",
+  "golden-content": "Öncelikli İçerik",
 };
 
 export interface PromptTemplate {
@@ -43,9 +43,9 @@ export const PROMPT_LIBRARY: PromptTemplate[] = [
   {
     id: "technical-audit-fix",
     category: "technical-fix",
-    title: "Technical SEO audit + fix",
+    title: "Teknik SEO denetimi + düzeltme",
     description:
-      "Point this at any website codebase. The agent crawls the route/page structure itself, finds the standard technical issues, and fixes the ones that are safe to fix without a human decision.",
+      "Bunu herhangi bir web sitesi kod tabanına yönlendirin. Ajan route/sayfa yapısını kendisi tarar, standart teknik sorunları bulur ve insan kararı gerektirmeyip güvenle düzeltilebilecek olanları düzeltir.",
     prompt: `You are doing a technical SEO pass on this codebase. Work in this order:
 
 1. Discover the page/route structure (framework-appropriate: app/pages router, static site generator config, or plain HTML files — inspect the repo first, don't assume).
@@ -60,9 +60,9 @@ Do not invent facts about the site's content, business, or audience — every fi
   {
     id: "axo-crawler-access",
     category: "axo",
-    title: "AI crawler access repair (AXO)",
+    title: "AI crawler erişimi onarımı (AXO)",
     description:
-      "Specifically for the failure mode Epicsem's /audit and /monitor catch: robots.txt or a WAF/CDN rule silently blocking GPTBot, ClaudeBot, PerplexityBot, or Google-Extended.",
+      "Özellikle Epicsem'in /audit ve /monitor'ünün yakaladığı hata modu için: robots.txt ya da bir WAF/CDN kuralının GPTBot, ClaudeBot, PerplexityBot veya Google-Extended'ı sessizce engellemesi.",
     prompt: `Check whether this site's robots.txt, meta robots tags, or any CDN/WAF config file in this repo (Cloudflare rules, nginx config, vercel.json, netlify.toml, etc.) blocks any of these AI crawler user-agents: GPTBot, ChatGPT-User, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, CCBot, Bytespider, Amazonbot.
 
 1. List every place in the repo that references robots.txt rules, User-Agent blocks, or bot-blocking middleware.
@@ -74,9 +74,9 @@ Do not invent facts about the site's content, business, or audience — every fi
   {
     id: "schema-generator",
     category: "schema",
-    title: "JSON-LD schema generator for a page type",
+    title: "Bir sayfa türü için JSON-LD schema üretici",
     description:
-      "Generates and wires in real structured data (Organization, Article, FAQPage, Product, BreadcrumbList) from a page's own content — the same principle as Epicsem's audit Fixes: nothing invented, only what's already on the page.",
+      "Sayfanın kendi içeriğinden gerçek structured data (Organization, Article, FAQPage, Product, BreadcrumbList) üretir ve bağlar — Epicsem'in denetim Düzeltmeleri'yle aynı prensip: hiçbir şey uydurulmaz, sadece sayfada zaten var olan kullanılır.",
     prompt: `For [paste a URL or a file path to the page component], generate JSON-LD structured data:
 
 1. Read the page's actual rendered content — headings, body text, any existing FAQ-style Q&A, breadcrumb trail, author/date info, price/availability if it's a product page.
@@ -88,9 +88,9 @@ Do not invent facts about the site's content, business, or audience — every fi
   {
     id: "llm-citation-gap",
     category: "geo-citation",
-    title: "LLM citation reverse-engineering",
+    title: "LLM atıflarını tersine mühendislik",
     description:
-      "Takes Epicsem's own /geo or /gap output (paste the JSON or the on-screen results) and works out, page by page, what a competitor's cited page has that yours doesn't.",
+      "Epicsem'in kendi /geo veya /gap çıktısını alır (JSON'u ya da ekrandaki sonuçları yapıştırın) ve sayfa sayfa, rakibin atıf alan sayfasında olup sizinkinde olmayanı ortaya çıkarır.",
     prompt: `I ran a GEO visibility test in Epicsem and here are the results (paste the JSON export or a summary of: which prompts my brand [BRAND] won/lost, which competitor domains got cited instead, and the source-distribution breakdown):
 
 [PASTE EPICSEM GEO/GAP RESULTS HERE]
@@ -106,9 +106,9 @@ Do not guess at the competitor's actual traffic or rankings — this is about co
   {
     id: "content-brief-from-gap",
     category: "content-brief",
-    title: "Turn a gap analysis into a content brief",
+    title: "Bir gap analizini içerik brifine dönüştür",
     description:
-      "Feeds Epicsem's /gap page's own Content Briefs section (the prompts a page is losing + the audit's content gaps) into a structured brief the agent can then draft from — this is the step Arvow's reviewers complained produces \"thin\" content when skipped.",
+      "Epicsem'in /gap sayfasındaki Content Briefs bölümünü (sayfanın kaybettiği promptlar + denetimin bulduğu içerik eksikleri) ajanın taslak çıkarabileceği yapılandırılmış bir brife dönüştürür — atlandığında Arvow'un incelemecilerinin \"ince\" içerik ürettiğinden şikayet ettiği adım tam olarak bu.",
     prompt: `Here is one content brief from an Epicsem gap analysis run — a page that's technically fine but isn't winning AI citations yet:
 
 [PASTE ONE CONTENT BRIEF: url, verdict, contentGaps, suggestedHeadings]
@@ -123,9 +123,9 @@ Using only this brief and the page's own existing content (read the actual curre
   {
     id: "internal-linking-audit",
     category: "internal-linking",
-    title: "Internal linking / orphan page audit",
+    title: "Internal linking / öksüz sayfa denetimi",
     description:
-      "Finds pages with no (or very few) internal links pointing to them — the single highest-leverage, purely-mechanical SEO fix, and one a coding agent can actually verify correctly by reading the whole codebase.",
+      "Kendisine hiç (ya da çok az) internal link işaret eden sayfaları bulur — en yüksek etkili, tamamen mekanik SEO düzeltmesi, ve bir kodlama ajanının tüm kod tabanını okuyarak gerçekten doğru şekilde doğrulayabileceği türden bir iş.",
     prompt: `Build a map of every page/route in this site and every internal link between them:
 
 1. Enumerate all pages (from the router config, a content directory, or a sitemap file — whichever this repo actually has).
@@ -138,9 +138,9 @@ Using only this brief and the page's own existing content (read the actual curre
   {
     id: "programmatic-seo-pages",
     category: "programmatic-seo",
-    title: "Programmatic SEO page set (from real data only)",
+    title: "Programatik SEO sayfa seti (yalnızca gerçek veriden)",
     description:
-      "For scaling a page template across a list of entities — cities, integrations, comparisons — grounded strictly in structured data that already exists in the repo, not generated filler.",
+      "Bir sayfa şablonunu bir varlık listesi üzerinde ölçeklendirmek için — şehirler, entegrasyonlar, karşılaştırmalar — üretilmiş doldurma değil, sıkı sıkıya repoda zaten var olan structured data'ya dayanır.",
     prompt: `I want to generate a page for each item in [this data file / this array / this list — point at the actual data source, e.g. a JSON file of cities, integrations, or products in this repo].
 
 1. First find or design a single page template component that has real, distinct content slots (not just a title swap) — at minimum: a specific fact or two unique to that entity, not just the entity's name substituted into a generic paragraph.
@@ -152,9 +152,9 @@ Using only this brief and the page's own existing content (read the actual curre
   {
     id: "golden-content-piece",
     category: "golden-content",
-    title: "Golden content piece for one priority keyword",
+    title: "Tek bir öncelikli kelime için altın içerik parçası",
     description:
-      "One comprehensive, answer-first, citation-worthy page for a single high-priority keyword or question — the deliberate opposite of the programmatic-scale prompt above: quality over breadth for the terms that matter most.",
+      "Tek bir yüksek öncelikli kelime ya da soru için kapsamlı, cevap-önce, atıf almaya değer bir sayfa — yukarıdaki programatik-ölçek promptunun bilinçli tersi: en çok önem taşıyan terimler için genişlik yerine kalite.",
     prompt: `Target keyword/question: [paste one specific, high-priority keyword or the exact question your customers ask]
 
 Before writing anything:

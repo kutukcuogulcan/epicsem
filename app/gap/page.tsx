@@ -21,8 +21,8 @@ const SCENARIO_STEPS = [
     body: "Her sayfa için teknik SEO/AXO skoru ile GEO testinin o sayfayı gerçekten anıp anmadığı aynı tabloda birleştirilir.",
   },
   {
-    title: "\"Strong but invisible\" etiketi çıkar",
-    body: "Bir blog yazısı teknik olarak sağlam, hiçbir crawler engellenmemiş, ama hiçbir AI yanıtında anılmıyor — \"Invisible\" olarak işaretlenir.",
+    title: "\"Sağlam ama görünmez\" etiketi çıkar",
+    body: "Bir blog yazısı teknik olarak sağlam, hiçbir crawler engellenmemiş, ama hiçbir AI yanıtında anılmıyor — \"Sağlam ama görünmez\" olarak işaretlenir.",
   },
   {
     title: "Content brief otomatik üretilir",
