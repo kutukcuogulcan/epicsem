@@ -25,7 +25,7 @@ export default function FixCard({ fix }: { fix: GeneratedFix }) {
           onClick={copy}
           className="text-xs font-medium rounded-md border border-border px-2.5 py-1 hover:bg-muted transition-colors"
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? "Kopyalandı" : "Kopyala"}
         </button>
       </div>
       <p className="mt-2 text-sm text-ink/60">{fix.note}</p>

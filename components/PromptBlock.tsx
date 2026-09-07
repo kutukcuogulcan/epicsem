@@ -45,7 +45,7 @@ export default function PromptBlock({
           onClick={() => setOpen((o) => !o)}
           className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted shrink-0"
         >
-          {open ? "Hide" : "Show prompt"}
+          {open ? "Gizle" : "Prompt'u göster"}
         </button>
       </div>
       {open && (
@@ -58,7 +58,7 @@ export default function PromptBlock({
             onClick={copy}
             className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90"
           >
-            {copied ? "Copied!" : "Copy prompt"}
+            {copied ? "Kopyalandı!" : "Prompt'u kopyala"}
           </button>
         </div>
       )}

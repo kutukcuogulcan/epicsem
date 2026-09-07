@@ -126,7 +126,7 @@ export default function MonitorPage() {
   async function addPage(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) {
-      setError("Enter a URL to monitor.");
+      setError("İzlenecek bir URL girin.");
       return;
     }
     setBusy("add");
@@ -142,13 +142,13 @@ export default function MonitorPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not add page");
+      if (!res.ok) throw new Error(data.error ?? "Sayfa eklenemedi");
       setUrl("");
       setLabel("");
       setSlackWebhook("");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setBusy(null);
     }
@@ -186,10 +186,10 @@ export default function MonitorPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Check failed");
+      if (!res.ok) throw new Error(data.error ?? "Kontrol başarısız oldu");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setBusy(null);
     }
@@ -211,8 +211,8 @@ export default function MonitorPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO Monitoring" }]} />
-        <h1 className="text-2xl font-semibold">AXO Monitoring</h1>
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO İzleme" }]} />
+        <h1 className="text-2xl font-semibold">AXO İzleme</h1>
         <p className="text-ink/60 text-sm">
           robots.txt ve CDN bot engellemesi sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılan
           ayar değişikliği. Kritik sayfalarınızı buraya ekleyin, daha önce izinli olan bir AI crawler (GPTBot,
@@ -223,7 +223,7 @@ export default function MonitorPage() {
 
       {alerts && alerts.length > 0 && (
         <div className="space-y-2">
-          <h2 className="font-medium text-sm text-danger">Active alerts</h2>
+          <h2 className="font-medium text-sm text-danger">Aktif uyarılar</h2>
           {alerts.map((a) => (
             <div key={a.id} className="card border-danger/40 flex items-start justify-between gap-4">
               <div className="text-sm">
@@ -234,7 +234,7 @@ export default function MonitorPage() {
                 onClick={() => ackAlert(a.id)}
                 className="text-xs text-ink/50 hover:text-ink border border-border rounded-lg px-3 py-1.5 shrink-0"
               >
-                Acknowledge
+                Onayla
               </button>
             </div>
           ))}
@@ -242,25 +242,25 @@ export default function MonitorPage() {
       )}
 
       <form onSubmit={addPage} className="card space-y-3">
-        <h2 className="font-medium text-sm">Add a page to monitor</h2>
+        <h2 className="font-medium text-sm">İzlenecek bir sayfa ekle</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="yourdomain.com/key-page"
+            placeholder="sizindomaininiz.com/kritik-sayfa"
             required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent sm:col-span-1"
           />
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Label (optional)"
+            placeholder="Etiket (opsiyonel)"
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
           <input
             value={slackWebhook}
             onChange={(e) => setSlackWebhook(e.target.value)}
-            placeholder="Slack webhook URL (optional — falls back to SLACK_WEBHOOK_URL in .env)"
+            placeholder="Slack webhook URL (opsiyonel — verilmezse .env'deki SLACK_WEBHOOK_URL kullanılır)"
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>
@@ -269,7 +269,7 @@ export default function MonitorPage() {
           disabled={busy === "add"}
           className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {busy === "add" ? "Adding…" : "Add page"}
+          {busy === "add" ? "Ekleniyor…" : "Sayfa ekle"}
         </button>
       </form>
 
@@ -278,13 +278,13 @@ export default function MonitorPage() {
       {pages && pages.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium">Monitored pages ({pages.length})</h2>
+            <h2 className="font-medium">İzlenen sayfalar ({pages.length})</h2>
             <button
               onClick={() => checkNow()}
               disabled={busy === "check-all"}
               className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
             >
-              {busy === "check-all" ? "Checking all…" : "Check all now"}
+              {busy === "check-all" ? "Hepsi kontrol ediliyor…" : "Hepsini şimdi kontrol et"}
             </button>
           </div>
           <div className="space-y-3">
@@ -301,14 +301,14 @@ export default function MonitorPage() {
                       disabled={busy === `check-${p.id}`}
                       className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
                     >
-                      {busy === `check-${p.id}` ? "Checking…" : "Check now"}
+                      {busy === `check-${p.id}` ? "Kontrol ediliyor…" : "Şimdi kontrol et"}
                     </button>
                     {p.latestCheck && (
                       <button
                         onClick={() => toggleTrend(p.id)}
                         className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted"
                       >
-                        {expandedTrend === p.id ? "Hide trend" : "Trend"}
+                        {expandedTrend === p.id ? "Trendi gizle" : "Trend"}
                       </button>
                     )}
                     <button
@@ -316,7 +316,7 @@ export default function MonitorPage() {
                       disabled={busy === `remove-${p.id}`}
                       className="text-xs text-danger/70 hover:text-danger px-2"
                     >
-                      Remove
+                      Kaldır
                     </button>
                   </div>
                 </div>
@@ -326,22 +326,23 @@ export default function MonitorPage() {
                     <span>AXO {p.latestCheck.aiCrawlScore}</span>
                     <span className={p.latestCheck.blockedBots.length > 0 ? "text-danger" : "text-seo"}>
                       {p.latestCheck.blockedBots.length > 0
-                        ? `Blocked: ${p.latestCheck.blockedBots.join(", ")}`
-                        : "No AI crawlers blocked"}
+                        ? `Engellenen: ${p.latestCheck.blockedBots.join(", ")}`
+                        : "Engellenen AI crawler yok"}
                     </span>
-                    <span>Last checked {new Date(p.latestCheck.createdAt).toLocaleString()}</span>
+                    <span>Son kontrol {new Date(p.latestCheck.createdAt).toLocaleString()}</span>
                   </div>
                 ) : (
-                  <div className="mt-2 text-xs text-ink/30">Not checked yet — click "Check now" for a baseline.</div>
+                  <div className="mt-2 text-xs text-ink/30">Henüz kontrol edilmedi — bir başlangıç kaydı için "Şimdi kontrol et"e tıklayın.</div>
                 )}
 
                 {expandedTrend === p.id && (
                   <div className="mt-3 rounded-lg bg-muted p-3">
-                    {trendLoading === p.id && <div className="text-xs text-ink/40">Loading trend…</div>}
+                    {trendLoading === p.id && <div className="text-xs text-ink/40">Trend yükleniyor…</div>}
                     {trendLoading !== p.id && (trendData[p.id]?.length ?? 0) < 2 && (
                       <div className="text-xs text-ink/40">
-                        Not enough history yet — run "Check now" a few more times (ideally on different days) to see a
-                        trend line here. AXO monitoring's whole point is catching a drop over time, not just a snapshot.
+                        Henüz yeterli geçmiş yok — burada bir trend çizgisi görmek için "Şimdi kontrol et"i birkaç
+                        kez daha (tercihen farklı günlerde) çalıştırın. AXO izlemenin amacı zaman içindeki bir
+                        düşüşü yakalamak, sadece bir anlık görüntü değil.
                       </div>
                     )}
                     {trendLoading !== p.id && (trendData[p.id]?.length ?? 0) >= 2 && (

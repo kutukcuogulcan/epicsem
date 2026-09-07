@@ -55,14 +55,14 @@ const FAQ_ITEMS = [
 ];
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
-  meta: "Meta & titles",
-  headings: "Headings",
+  meta: "Meta & title",
+  headings: "Başlıklar",
   schema: "Structured data",
   crawlability: "Crawlability",
-  "ai-crawlability": "AI crawler access (AXO)",
-  performance: "Performance",
-  content: "Content depth",
-  localization: "Language & localization",
+  "ai-crawlability": "AI crawler erişimi (AXO)",
+  performance: "Performans",
+  content: "İçerik derinliği",
+  localization: "Dil & yerelleştirme",
 };
 
 interface PreviousAuditRun {
@@ -73,12 +73,12 @@ interface PreviousAuditRun {
 }
 
 function TrendChip({ label, delta, lowerIsBetter = false }: { label: string; delta: number; lowerIsBetter?: boolean }) {
-  if (delta === 0) return <span className="text-ink/40">{label} unchanged</span>;
+  if (delta === 0) return <span className="text-ink/40">{label} değişmedi</span>;
   const improved = lowerIsBetter ? delta < 0 : delta > 0;
   return (
     <span className={improved ? "text-seo" : "text-danger"}>
       {label} {delta > 0 ? "+" : ""}
-      {delta} vs last run
+      {delta} (önceki koşuya göre)
     </span>
   );
 }
@@ -105,7 +105,7 @@ export default function AuditPage() {
   async function runAudit(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) {
-      setError("Enter a URL to audit.");
+      setError("Taranacak bir URL girin.");
       return;
     }
     setLoading(true);
@@ -123,11 +123,11 @@ export default function AuditPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Audit failed");
+      if (!res.ok) throw new Error(data.error ?? "Denetim başarısız oldu");
       setResult(data);
       setPreviousRun(data.previousRun ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }
@@ -186,7 +186,7 @@ export default function AuditPage() {
           disabled={loading}
           className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? "Auditing…" : "Run audit"}
+          {loading ? "Taranıyor…" : "Denetimi başlat"}
         </button>
       </form>
 
@@ -205,47 +205,47 @@ export default function AuditPage() {
               onClick={downloadPdf}
               className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"
             >
-              Download PDF report
+              PDF rapor indir
             </button>
           </div>
 
           <PromptBlock
             title="Fix with Claude Code"
-            description="A prompt pre-filled with this exact audit's findings — paste it into Claude Code running in your site's repo to fix what's safe to fix automatically."
+            description="Bu denetimin bulgularıyla önceden doldurulmuş bir prompt — sitenizin reposunda çalışan Claude Code'a yapıştırın, güvenle otomatik düzeltilebilecekleri düzeltsin."
             prompt={buildAuditFixPrompt(result)}
           />
           <div className="card flex flex-wrap items-center gap-8">
-            <ScoreGauge label="Technical SEO score" score={result.score} colorClass="text-seo" />
-            <ScoreGauge label="AI crawlability (AXO) score" score={result.aiCrawlScore} colorClass="text-accent" />
+            <ScoreGauge label="Teknik SEO skoru" score={result.score} colorClass="text-seo" />
+            <ScoreGauge label="AI crawlability (AXO) skoru" score={result.aiCrawlScore} colorClass="text-accent" />
             <div className="text-sm text-ink/60 space-y-1">
               <div><span className="text-ink/40">URL:</span> {result.url}</div>
-              <div><span className="text-ink/40">Title:</span> {result.meta.title ?? "—"}</div>
-              <div><span className="text-ink/40">Word count:</span> ~{result.meta.wordCount}</div>
-              <div><span className="text-ink/40">Structured data:</span> {result.meta.hasSchema ? result.meta.schemaTypes.join(", ") : "none"}</div>
+              <div><span className="text-ink/40">Başlık:</span> {result.meta.title ?? "—"}</div>
+              <div><span className="text-ink/40">Kelime sayısı:</span> ~{result.meta.wordCount}</div>
+              <div><span className="text-ink/40">Structured data:</span> {result.meta.hasSchema ? result.meta.schemaTypes.join(", ") : "yok"}</div>
               {previousRun && (
                 <div className="flex flex-wrap gap-x-4 pt-1 text-xs">
                   <TrendChip label="SEO" delta={result.score - previousRun.score} />
                   <TrendChip label="AXO" delta={result.aiCrawlScore - previousRun.aiCrawlScore} />
                   <TrendChip
-                    label="Blocked bots"
+                    label="Engellenen bot"
                     delta={result.meta.aiBotAccess.filter((b) => !b.allowed).length - previousRun.blockedBots}
                     lowerIsBetter
                   />
                 </div>
               )}
               {!previousRun && (
-                <div className="pt-1 text-xs text-ink/30">First recorded run for this URL — future runs will show a trend here.</div>
+                <div className="pt-1 text-xs text-ink/30">Bu URL için ilk kaydedilen koşu — sonraki koşularda burada bir trend görünecek.</div>
               )}
             </div>
           </div>
 
           <div className="card">
-            <h2 className="font-medium mb-3">AI crawler access</h2>
+            <h2 className="font-medium mb-3">AI crawler erişimi</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               {result.meta.aiBotAccess.map((b) => (
                 <div key={b.bot} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
                   <span>{b.bot} <span className="text-ink/40">({b.engine})</span></span>
-                  <span className={b.allowed ? "text-seo" : "text-danger"}>{b.allowed ? "Allowed" : "Blocked"}</span>
+                  <span className={b.allowed ? "text-seo" : "text-danger"}>{b.allowed ? "İzinli" : "Engelli"}</span>
                 </div>
               ))}
             </div>
@@ -254,9 +254,9 @@ export default function AuditPage() {
           {result.fixes.length > 0 && (
             <div className="space-y-3">
               <div>
-                <h2 className="font-medium">Fixes</h2>
+                <h2 className="font-medium">Düzeltmeler</h2>
                 <p className="text-sm text-ink/50">
-                  Generated from this page's own content — nothing invented. Review before publishing, then paste.
+                  Bu sayfanın kendi içeriğinden üretildi — hiçbir şey uydurulmadı. Yayınlamadan önce gözden geçirip yapıştırın.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

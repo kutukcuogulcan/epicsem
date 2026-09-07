@@ -54,35 +54,35 @@ interface RunListItem {
 }
 
 const ISSUE_LABEL: Record<string, string> = {
-  broken: "Broken (4xx/5xx)",
-  redirect: "Redirect",
-  "missing-title": "Missing title",
-  "title-too-long": "Title too long",
-  "duplicate-title": "Duplicate title",
-  "missing-meta-description": "Missing meta description",
-  "meta-description-too-long": "Meta description too long",
-  "duplicate-meta-description": "Duplicate meta description",
-  "missing-h1": "Missing H1",
-  "multiple-h1": "Multiple H1s",
-  "thin-content": "Thin content",
-  "non-indexable": "Non-indexable",
-  "noindex-tag": "Noindex tag",
+  broken: "Kırık (4xx/5xx)",
+  redirect: "Yönlendirme",
+  "missing-title": "Eksik title",
+  "title-too-long": "Title çok uzun",
+  "duplicate-title": "Tekrarlayan title",
+  "missing-meta-description": "Eksik meta açıklaması",
+  "meta-description-too-long": "Meta açıklaması çok uzun",
+  "duplicate-meta-description": "Tekrarlayan meta açıklaması",
+  "missing-h1": "Eksik H1",
+  "multiple-h1": "Birden çok H1",
+  "thin-content": "Yetersiz içerik",
+  "non-indexable": "İndekslenemez",
+  "noindex-tag": "Noindex etiketi",
 };
 
 const SUMMARY_LABEL: Record<string, string> = {
-  missingTitle: "Missing title",
-  duplicateTitles: "URLs with duplicate title",
-  titleTooLong: "Title too long",
-  missingMetaDescription: "Missing meta description",
-  duplicateMetaDescriptions: "URLs with duplicate meta description",
-  metaDescriptionTooLong: "Meta description too long",
-  missingH1: "Missing H1",
-  multipleH1: "Multiple H1s",
-  thinContent: "Thin content (<200 words)",
-  brokenLinks: "Broken (4xx/5xx)",
-  redirects: "Redirects",
-  nonIndexable: "Non-indexable",
-  noindexTag: "Noindex tag",
+  missingTitle: "Eksik title",
+  duplicateTitles: "Tekrarlayan title'lı URL",
+  titleTooLong: "Title çok uzun",
+  missingMetaDescription: "Eksik meta açıklaması",
+  duplicateMetaDescriptions: "Tekrarlayan meta açıklamalı URL",
+  metaDescriptionTooLong: "Meta açıklaması çok uzun",
+  missingH1: "Eksik H1",
+  multipleH1: "Birden çok H1",
+  thinContent: "Yetersiz içerik (<200 kelime)",
+  brokenLinks: "Kırık (4xx/5xx)",
+  redirects: "Yönlendirmeler",
+  nonIndexable: "İndekslenemez",
+  noindexTag: "Noindex etiketi",
 };
 
 const ROWS_SHOWN = 300;
@@ -115,7 +115,7 @@ export default function ImportPage() {
 
   async function upload(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Only .csv files are supported — export 'Internal → All' from Screaming Frog.");
+      setError("Yalnızca .csv dosyaları destekleniyor — Screaming Frog'dan 'Internal → All' olarak dışa aktarın.");
       return;
     }
     setLoading(true);
@@ -131,10 +131,10 @@ export default function ImportPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Import failed");
+      if (!res.ok) throw new Error(data.error ?? "İçe aktarma başarısız oldu");
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }
@@ -150,11 +150,11 @@ export default function ImportPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not load import");
+      if (!res.ok) throw new Error(data.error ?? "İçe aktarma yüklenemedi");
       setResult(data);
       setIssueFilter("all");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }
@@ -173,8 +173,8 @@ export default function ImportPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Bulk Import" }]} />
-        <h1 className="text-2xl font-semibold">Bulk Site Import (Screaming Frog)</h1>
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Toplu İçe Aktarma" }]} />
+        <h1 className="text-2xl font-semibold">Toplu Site İçe Aktarma (Screaming Frog)</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
           <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
@@ -213,16 +213,16 @@ export default function ImportPage() {
           }}
         />
         <p className="text-sm text-ink/70">
-          {loading ? "Parsing…" : "Drop a Screaming Frog CSV export here, or click to choose a file"}
+          {loading ? "Ayrıştırılıyor…" : "Bir Screaming Frog CSV dışa aktarımını buraya bırakın, ya da dosya seçmek için tıklayın"}
         </p>
-        <p className="text-xs text-ink/40 mt-1">.csv only, up to 25MB</p>
+        <p className="text-xs text-ink/40 mt-1">Yalnızca .csv, 25MB'a kadar</p>
       </div>
 
       {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
 
       {history.length > 0 && !result && (
         <div className="card space-y-2">
-          <h2 className="font-medium text-sm">Previous imports</h2>
+          <h2 className="font-medium text-sm">Önceki içe aktarmalar</h2>
           <div className="space-y-1">
             {history.map((h) => (
               <button
@@ -231,7 +231,7 @@ export default function ImportPage() {
                 className="w-full flex items-center justify-between text-sm rounded-lg hover:bg-muted px-3 py-2 text-left"
               >
                 <span>{h.filename}</span>
-                <span className="text-ink/40 text-xs">{h.rowCount} URLs · {new Date(h.createdAt).toLocaleString()}</span>
+                <span className="text-ink/40 text-xs">{h.rowCount} URL · {new Date(h.createdAt).toLocaleString()}</span>
               </button>
             ))}
           </div>
@@ -243,7 +243,7 @@ export default function ImportPage() {
           <div className="card space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="font-medium">{result.filename}</h2>
-              <span className="text-xs text-ink/40">{result.summary.totalRows} URLs · imported {new Date(result.importedAt).toLocaleString()}</span>
+              <span className="text-xs text-ink/40">{result.summary.totalRows} URL · içe aktarıldı {new Date(result.importedAt).toLocaleString()}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {issueCounts.map(([key, value]) => (
@@ -255,27 +255,27 @@ export default function ImportPage() {
                 />
               ))}
               {issueCounts.length === 0 && (
-                <div className="text-sm text-seo col-span-full">No issues detected — this crawl came back clean.</div>
+                <div className="text-sm text-seo col-span-full">Herhangi bir sorun tespit edilmedi — bu tarama temiz döndü.</div>
               )}
             </div>
           </div>
 
           <PromptBlock
             title="Fix with Claude Code"
-            description="A prompt summarizing every issue this crawl found, grouped by category with sample URLs — paste it into Claude Code running in your site's repo/CMS to fix what's safe to fix in bulk."
+            description="Bu taramanın bulduğu her sorunu kategoriye göre gruplayıp örnek URL'lerle özetleyen bir prompt — sitenizin repo/CMS'inde çalışan Claude Code'a yapıştırın ve toplu düzeltmesi güvenli olanları düzeltin."
             prompt={buildBulkImportFixPrompt(result)}
           />
 
           {filteredRows.length > 0 && (
             <div className="card space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="font-medium">URLs with issues ({result.rows.filter((r) => r.issues.length > 0).length})</h2>
+                <h2 className="font-medium">Sorunlu URL'ler ({result.rows.filter((r) => r.issues.length > 0).length})</h2>
                 <select
                   value={issueFilter}
                   onChange={(e) => setIssueFilter(e.target.value)}
                   className="text-xs rounded-lg bg-panel border border-border px-2 py-1.5 outline-none"
                 >
-                  <option value="all">All issues</option>
+                  <option value="all">Tüm sorunlar</option>
                   {Object.entries(ISSUE_LABEL).map(([code, label]) => (
                     <option key={code} value={code}>{label}</option>
                   ))}
@@ -286,10 +286,10 @@ export default function ImportPage() {
                   <thead>
                     <tr className="text-left text-ink/40 border-b border-border">
                       <th className="py-2 pr-3">URL</th>
-                      <th className="py-2 pr-3">Status</th>
+                      <th className="py-2 pr-3">Durum</th>
                       <th className="py-2 pr-3">Title</th>
-                      <th className="py-2 pr-3">Words</th>
-                      <th className="py-2">Issues</th>
+                      <th className="py-2 pr-3">Kelime</th>
+                      <th className="py-2">Sorunlar</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -297,7 +297,7 @@ export default function ImportPage() {
                       <tr key={row.url} className="border-b border-border/50 align-top">
                         <td className="py-2 pr-3 max-w-xs truncate" title={row.url}>{row.url}</td>
                         <td className="py-2 pr-3">{row.statusCode ?? "—"}</td>
-                        <td className="py-2 pr-3 max-w-xs truncate" title={row.title ?? ""}>{row.title ?? <span className="text-danger">missing</span>}</td>
+                        <td className="py-2 pr-3 max-w-xs truncate" title={row.title ?? ""}>{row.title ?? <span className="text-danger">yok</span>}</td>
                         <td className="py-2 pr-3">{row.wordCount ?? "—"}</td>
                         <td className="py-2 text-ink/60">
                           {row.issues.map((i) => ISSUE_LABEL[i] ?? i).join(", ")}
@@ -308,7 +308,7 @@ export default function ImportPage() {
                 </table>
                 {filteredRows.length > ROWS_SHOWN && (
                   <p className="text-xs text-ink/40 pt-2">
-                    Showing first {ROWS_SHOWN} of {filteredRows.length} matching URLs — narrow with the filter above to see more specific results.
+                    {filteredRows.length} eşleşen URL'den ilk {ROWS_SHOWN} tanesi gösteriliyor — daha spesifik sonuçlar için yukarıdaki filtreyi daraltın.
                   </p>
                 )}
               </div>

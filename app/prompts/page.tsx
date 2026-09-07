@@ -5,9 +5,9 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
 export const metadata = {
-  title: "Claude Code SEO Prompts — Epicsem",
+  title: "Claude Code SEO Promptları — Epicsem",
   description:
-    "A free library of Claude Code prompts for technical SEO, AXO crawler access, schema, GEO citation gaps, and content briefs — grounded in real audit data, not generic templates.",
+    "Teknik SEO, AXO crawler erişimi, schema, GEO atıf boşlukları ve içerik brifleri için ücretsiz bir Claude Code prompt kütüphanesi — genel şablonlar değil, gerçek denetim verisine dayanır.",
 };
 
 const SCENARIO_STEPS = [
@@ -51,8 +51,8 @@ export default function PromptsPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Prompts" }]} />
-        <h1 className="text-2xl font-semibold">Claude Code SEO Prompts</h1>
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Promptları" }]} />
+        <h1 className="text-2xl font-semibold">Claude Code SEO Promptları</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Kendi sitenizin kodunda Claude Code (veya shell + dosya erişimi olan başka bir kodlama ajanı) ile SEO
           işleri yapmak için ücretsiz bir prompt kütüphanesi — teknik düzeltmeler, AI crawler erişimi, schema
@@ -61,10 +61,10 @@ export default function PromptsPage() {
           üretilmiş sayfa yok.
         </p>
         <p className="text-ink/40 text-xs max-w-3xl">
-          These are static templates you fill in yourself. For a prompt pre-filled with your own real findings, run
-          an <a href="/audit" className="text-accent hover:underline">audit</a> or a{" "}
-          <a href="/gap" className="text-accent hover:underline">gap analysis</a> first — both have a "Fix with
-          Claude Code" button that generates one from that specific result.
+          Bunlar kendinizin dolduracağı statik şablonlardır. Kendi gerçek bulgularınızla önceden doldurulmuş bir
+          prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> ya da bir{" "}
+          <a href="/gap" className="text-accent hover:underline">gap analysis</a> çalıştırın — ikisinde de o
+          spesifik sonuçtan bir tane üreten bir "Fix with Claude Code" butonu var.
         </p>
       </div>
 

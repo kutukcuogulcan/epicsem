@@ -40,8 +40,8 @@ const FAQ_ITEMS = [
     a: "Her sayfa için Audit'in ölçtüğü teknik sağlamlığı ve AI crawler erişimini, GEO testinin o sayfayı gerçekten anıp anmadığıyla çaprazlar. Yalnız birini okuduğunda göremeyeceğin şeyi gösterir: teknik olarak sağlam ama hiç anılmayan bir sayfa.",
   },
   {
-    q: "\"Blocked\", \"Invisible\", \"Cited\", \"Needs work\" etiketleri ne anlama geliyor?",
-    a: "Blocked: sayfa AI crawler'lara kapalı. Invisible: teknik olarak sağlam ve erişilebilir ama hiçbir AI yanıtında anılmıyor. Cited: en az bir AI yanıtında anılıyor. Needs work: kısmi teknik veya erişim sorunları var.",
+    q: "\"AI'ya kapalı\", \"Sağlam ama görünmez\", \"Anılıyor\", \"İyileştirme gerekli\" etiketleri ne anlama geliyor?",
+    a: "AI'ya kapalı: sayfa AI crawler'lara kapalı. Sağlam ama görünmez: teknik olarak sağlam ve erişilebilir ama hiçbir AI yanıtında anılmıyor. Anılıyor: en az bir AI yanıtında anılıyor. İyileştirme gerekli: kısmi teknik veya erişim sorunları var.",
   },
   {
     q: "İçerik brief'leri (Content Briefs) nereden geliyor?",
@@ -61,8 +61,8 @@ const ENGINE_LABEL: Record<EngineId, string> = {
   perplexity: "Perplexity",
   deepseek: "DeepSeek",
   xai: "Grok (xAI)",
-  meta: "Meta AI (demo only)",
-  microsoft: "Copilot (demo only)",
+  meta: "Meta AI (sadece demo)",
+  microsoft: "Copilot (sadece demo)",
 };
 
 const DEFAULT_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity"];
@@ -72,10 +72,10 @@ const TR_PROMPT_PRESET =
   "[kategori] için en iyi markalar hangileri?\nİstanbul'da [kategori] konusunda hangi firmayı önerirsiniz?\n[marka] güvenilir mi?\n[marka] ile [rakip] arasındaki fark ne?";
 
 const VERDICT_LABEL: Record<GapRow["verdict"], string> = {
-  blocked: "Blocked from AI",
-  invisible: "Strong but invisible",
-  cited: "Cited",
-  "needs-work": "Needs work",
+  blocked: "AI'ya kapalı",
+  invisible: "Sağlam ama görünmez",
+  cited: "Anılıyor",
+  "needs-work": "İyileştirme gerekli",
 };
 
 const VERDICT_BADGE: Record<GapRow["verdict"], string> = {
@@ -149,10 +149,10 @@ export default function GapPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Content generation failed");
+      if (!res.ok) throw new Error(data.error ?? "İçerik üretimi başarısız oldu");
       window.location.href = `/content?draftId=${data.draft.id}`;
     } catch (err) {
-      setGenerateError(err instanceof Error ? err.message : "Something went wrong");
+      setGenerateError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
       setGeneratingUrl(null);
     }
   }
@@ -220,13 +220,13 @@ export default function GapPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Analysis failed");
+      if (!res.ok) throw new Error(data.error ?? "Analiz başarısız oldu");
       setSummaries(data.summaries);
       setGapMatrix(data.gapMatrix);
       setContentBriefs(data.contentBriefs);
       setDemoMode(data.demoMode);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }
@@ -247,19 +247,19 @@ export default function GapPage() {
 
       <form onSubmit={runAnalysis} className="space-y-5">
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Your brand</h2>
+          <h2 className="font-medium text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               value={brand.name}
               onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))}
-              placeholder="Brand name"
+              placeholder="Marka adı"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={brand.domain}
               onChange={(e) => setBrand((b) => ({ ...b, domain: e.target.value }))}
-              placeholder="brand-domain.com"
+              placeholder="marka-domaini.com"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
@@ -268,13 +268,13 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Competitors (optional)</h2>
+            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
               className="text-xs text-accent hover:underline"
             >
-              + Add competitor
+              + Rakip ekle
             </button>
           </div>
           {competitors.map((c, i) => (
@@ -282,13 +282,13 @@ export default function GapPage() {
               <input
                 value={c.name}
                 onChange={(e) => updateCompetitor(i, "name", e.target.value)}
-                placeholder="Competitor name"
+                placeholder="Rakip adı"
                 className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
               />
               <input
                 value={c.domain}
                 onChange={(e) => updateCompetitor(i, "domain", e.target.value)}
-                placeholder="competitor-domain.com"
+                placeholder="rakip-domaini.com"
                 className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
               />
             </div>
@@ -297,10 +297,10 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Prompts (one per line)</h2>
+            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
-                EN example
+                EN örnek
               </button>
               <span className="text-ink/20">·</span>
               <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-accent hover:underline">
@@ -317,18 +317,18 @@ export default function GapPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Your key pages to audit (one URL per line)</h2>
+          <h2 className="font-medium text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
           <textarea
             value={pageUrlsText}
             onChange={(e) => setPageUrlsText(e.target.value)}
             rows={3}
-            placeholder={"yourdomain.com\nyourdomain.com/blog/your-best-article"}
+            placeholder={"sizindomaininiz.com\nsizindomaininiz.com/blog/en-iyi-yaziniz"}
             className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
           />
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Engines</h2>
+          <h2 className="font-medium text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -352,7 +352,7 @@ export default function GapPage() {
           disabled={loading}
           className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? "Analyzing…" : `Analyze ${pageUrls.length || 0} page(s) against ${prompts.length} prompt(s)`}
+          {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
         </button>
       </form>
 
@@ -360,9 +360,9 @@ export default function GapPage() {
 
       {demoMode && gapMatrix && (
         <div className="card border-warn/40 text-warn text-sm">
-          Running in <strong>demo mode</strong> — GEO citations are simulated at the domain/homepage level, so
-          deeper pages will usually show 0 exact-URL citations here even when the domain is being cited overall.
-          Add real API keys in <code>.env</code> for citations with real page paths.
+          <strong>Demo modda</strong> çalışıyor — GEO atıfları domain/anasayfa seviyesinde simüle edilir, bu yüzden
+          domain genel olarak anılıyor olsa bile derin sayfalarda genelde 0 tam-URL atfı görürsünüz. Gerçek sayfa
+          yollu atıflar için <code>.env</code>&apos;e gerçek API anahtarları ekleyin.
         </div>
       )}
 
@@ -378,21 +378,21 @@ export default function GapPage() {
             onClick={downloadPdf}
             className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"
           >
-            Download PDF report
+            PDF rapor indir
           </button>
         </div>
       )}
 
       {summaries && (
         <div className="space-y-3">
-          <h2 className="font-medium">Visibility summary</h2>
+          <h2 className="font-medium">Görünürlük özeti</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {summaries.map((s) => (
               <StatCard
                 key={s.brand}
                 label={s.brand}
                 value={`${Math.round(s.visibility * 100)}%`}
-                description={`Share of voice ${Math.round(s.shareOfVoice * 100)}%`}
+                description={`Pazar payı ${Math.round(s.shareOfVoice * 100)}%`}
                 tone={s.rank === 1 ? "seo" : "accent"}
               />
             ))}
@@ -402,19 +402,19 @@ export default function GapPage() {
 
       {gapMatrix && (
         <div className="card">
-          <h2 className="font-medium">Gap matrix</h2>
-          <p className="text-sm text-ink/50 mb-4">Per-page cross-analysis of technical health vs. actual AI citation.</p>
+          <h2 className="font-medium">Gap matrisi</h2>
+          <p className="text-sm text-ink/50 mb-4">Her sayfa için teknik sağlık ile gerçek AI atfının karşılaştırması.</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-ink/40 text-left">
                 <tr>
-                  <th className="py-2 pr-4">Page</th>
+                  <th className="py-2 pr-4">Sayfa</th>
                   <th className="py-2 pr-4">SEO</th>
                   <th className="py-2 pr-4">AXO</th>
-                  <th className="py-2 pr-4">Blocked bots</th>
-                  <th className="py-2 pr-4">Cited (page)</th>
-                  <th className="py-2 pr-4">Cited (domain)</th>
-                  <th className="py-2 pr-4">Verdict</th>
+                  <th className="py-2 pr-4">Engellenen bot</th>
+                  <th className="py-2 pr-4">Anıldı (sayfa)</th>
+                  <th className="py-2 pr-4">Anıldı (domain)</th>
+                  <th className="py-2 pr-4">Değerlendirme</th>
                 </tr>
               </thead>
               <tbody>
@@ -435,9 +435,10 @@ export default function GapPage() {
             </table>
           </div>
           <p className="mt-3 text-xs text-ink/30">
-            "Strong but invisible" = good SEO/AXO scores, not blocked, but no AI engine cited it in this run —
-            the page that's technically ready but isn't winning citations yet. That's usually a content-shape
-            problem (not answer-first enough, no FAQ schema), not a technical one — check the audit's Fixes section.
+            "Sağlam ama görünmez" = SEO/AXO skorları iyi, engelli değil, ama bu koşuda hiçbir AI motoru sayfayı
+            anmadı — teknik olarak hazır ama henüz atıf kazanmayan sayfa. Bunun sebebi genelde içerik biçimidir
+            (yeterince "cevap-önce" değil, FAQ schema yok), teknik bir sorun değil — denetimin Düzeltmeler
+            bölümüne bakın.
           </p>
         </div>
       )}
@@ -445,10 +446,10 @@ export default function GapPage() {
       {contentBriefs && contentBriefs.length > 0 && (
         <div className="space-y-3">
           <div>
-            <h2 className="font-medium">Content briefs</h2>
+            <h2 className="font-medium">İçerik brifleri</h2>
             <p className="text-sm text-ink/50">
-              For each page that isn't winning yet: the prompts it's losing in this run, and the concrete content
-              gaps the audit found. Built from this run's own data — nothing invented.
+              Henüz kazanmayan her sayfa için: bu koşuda kaybettiği promptlar ve denetimin bulduğu somut içerik
+              eksikleri. Bu koşunun kendi verisinden üretildi — hiçbir şey uydurulmadı.
             </p>
           </div>
           <div className="space-y-3">
@@ -462,7 +463,7 @@ export default function GapPage() {
 
                 {brief.contentGaps.length > 0 && (
                   <div>
-                    <div className="text-xs font-medium text-ink/60 mb-1">Content gaps</div>
+                    <div className="text-xs font-medium text-ink/60 mb-1">İçerik eksikleri</div>
                     <ul className="text-xs text-ink/60 space-y-1 list-disc list-inside">
                       {brief.contentGaps.map((g, i) => (
                         <li key={i}>{g}</li>
@@ -474,7 +475,7 @@ export default function GapPage() {
                 {brief.suggestedHeadings.length > 0 && (
                   <div>
                     <div className="text-xs font-medium text-ink/60 mb-1">
-                      Prompts this brand isn't winning — turn these into headings/FAQ entries
+                      Bu markanın kazanmadığı promptlar — bunları başlık/FAQ maddelerine dönüştürün
                     </div>
                     <ul className="text-xs text-accent space-y-1 list-disc list-inside">
                       {brief.suggestedHeadings.map((h, i) => (
@@ -487,14 +488,14 @@ export default function GapPage() {
                 <PromptBlock
                   bare
                   title="Fix with Claude Code"
-                  description="A prompt pre-filled with this page's exact gaps — paste it into Claude Code running in your site's repo."
+                  description="Bu sayfanın tam eksikleriyle önceden doldurulmuş bir prompt — sitenizin reposunda çalışan Claude Code'a yapıştırın."
                   prompt={buildContentBriefPrompt(brief, brand.name)}
                 />
 
                 <div className="border-t border-border pt-3 flex items-center justify-between gap-3">
                   <p className="text-xs text-ink/50">
-                    Or let Epicsem draft it — grounded only in this brief's real data, published as a WordPress
-                    draft for you to review, never auto-published.
+                    Ya da Epicsem sizin için taslak hazırlasın — yalnızca bu brifin gerçek verisine dayanır,
+                    incelemeniz için bir WordPress taslağı olarak yayınlanır, asla otomatik yayınlanmaz.
                   </p>
                   <button
                     type="button"
@@ -502,7 +503,7 @@ export default function GapPage() {
                     disabled={generatingUrl === brief.url}
                     className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
                   >
-                    {generatingUrl === brief.url ? "Generating…" : "Generate article"}
+                    {generatingUrl === brief.url ? "Oluşturuluyor…" : "Makale oluştur"}
                   </button>
                 </div>
               </div>

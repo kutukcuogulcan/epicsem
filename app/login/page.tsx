@@ -29,11 +29,11 @@ export default function LoginPage() {
         body: JSON.stringify(mode === "login" ? { email, password } : { email, password, name }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Something went wrong");
+      if (!res.ok) throw new Error(data.error ?? "Bir şeyler ters gitti");
       router.push(nextPath);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }

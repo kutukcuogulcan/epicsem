@@ -85,8 +85,8 @@ const ENGINE_LABEL: Record<EngineId, string> = {
   perplexity: "Perplexity",
   deepseek: "DeepSeek",
   xai: "Grok (xAI)",
-  meta: "Meta AI (demo only)",
-  microsoft: "Copilot (demo only)",
+  meta: "Meta AI (sadece demo)",
+  microsoft: "Copilot (sadece demo)",
 };
 
 // Pre-checked by default — the four engines with a real API integration. DeepSeek/Grok
@@ -105,6 +105,14 @@ const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
   Reference: "bg-accent",
   UGC: "bg-warn",
   Other: "bg-ink/20",
+};
+
+const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
+  You: "Siz",
+  Competitor: "Rakip",
+  Reference: "Referans",
+  UGC: "Kullanıcı içeriği",
+  Other: "Diğer",
 };
 
 interface BrandRow {
@@ -198,11 +206,11 @@ export default function GeoPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Prompt suggestion failed");
+      if (!res.ok) throw new Error(data.error ?? "Prompt önerisi başarısız oldu");
       const lines = (data.suggestions as { topic: string; text: string }[]).map((s) => `${s.topic}: ${s.text}`);
       setPromptsText(lines.join("\n"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setSuggesting(false);
     }
@@ -250,7 +258,7 @@ export default function GeoPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Test failed");
+      if (!res.ok) throw new Error(data.error ?? "Test başarısız oldu");
       setRuns(data.runs);
       setSummaries(data.summaries);
       setSourceDistribution(data.sourceDistribution);
@@ -263,7 +271,7 @@ export default function GeoPage() {
       }
       if (Array.isArray(data.history)) setHistory(data.history);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setLoading(false);
     }
@@ -271,8 +279,8 @@ export default function GeoPage() {
 
   const chartData = summaries?.map((s) => ({
     name: s.brand,
-    Visibility: Math.round(s.visibility * 100),
-    "Share of voice": Math.round(s.shareOfVoice * 100),
+    "Görünürlük": Math.round(s.visibility * 100),
+    "Pazar payı": Math.round(s.shareOfVoice * 100),
   }));
 
   // Trend chart: one line per brand in the CURRENT comparison, plotted across every
@@ -316,19 +324,19 @@ export default function GeoPage() {
 
       <form onSubmit={runTest} className="space-y-5">
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Your brand</h2>
+          <h2 className="font-medium text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               value={brand.name}
               onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))}
-              placeholder="Brand name"
+              placeholder="Marka adı"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={brand.domain}
               onChange={(e) => setBrand((b) => ({ ...b, domain: e.target.value }))}
-              placeholder="brand-domain.com"
+              placeholder="marka-domaini.com"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
@@ -337,13 +345,13 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Competitors (optional)</h2>
+            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
               className="text-xs text-accent hover:underline"
             >
-              + Add competitor
+              + Rakip ekle
             </button>
           </div>
           {competitors.map((c, i) => (
@@ -351,13 +359,13 @@ export default function GeoPage() {
               <input
                 value={c.name}
                 onChange={(e) => updateCompetitor(i, "name", e.target.value)}
-                placeholder="Competitor name"
+                placeholder="Rakip adı"
                 className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
               />
               <input
                 value={c.domain}
                 onChange={(e) => updateCompetitor(i, "domain", e.target.value)}
-                placeholder="competitor-domain.com"
+                placeholder="rakip-domaini.com"
                 className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
               />
             </div>
@@ -366,7 +374,7 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Prompts (one per line)</h2>
+            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button
                 type="button"
@@ -378,7 +386,7 @@ export default function GeoPage() {
               </button>
               <span className="text-ink/20">·</span>
               <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
-                EN example
+                EN örnek
               </button>
               <span className="text-ink/20">·</span>
               <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-accent hover:underline">
@@ -397,14 +405,15 @@ export default function GeoPage() {
             sonuçlarda konu bazında görünürlük kırılımı çıkar — konu vermezseniz &ldquo;Genel&rdquo; sayılır.
           </p>
           <p className="text-xs text-ink/30">
-            Turkish-market tip: LLMs often answer a Turkish question with a different citation mix than the
-            English equivalent — test both if your audience is Turkish, don't assume the English result transfers.
+            Türkiye pazarı ipucu: LLM&apos;ler Türkçe bir soruyu İngilizce eşdeğerinden farklı bir kaynak
+            karışımıyla yanıtlayabiliyor — hedef kitleniz Türkiye ise ikisini de test edin, İngilizce sonucun
+            aynen geçerli olacağını varsaymayın.
           </p>
           <UsageMeter metric="promptSuggestions" />
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Engines</h2>
+          <h2 className="font-medium text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -428,7 +437,7 @@ export default function GeoPage() {
           disabled={loading}
           className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? "Running…" : `Run ${prompts.length} prompt(s) × ${engines.length} engine(s)`}
+          {loading ? "Çalışıyor…" : `${prompts.length} prompt × ${engines.length} motoru çalıştır`}
         </button>
       </form>
 
@@ -436,21 +445,22 @@ export default function GeoPage() {
 
       {demoMode && summaries && (
         <div className="card border-warn/40 text-warn text-sm">
-          Running in <strong>demo mode</strong> — no LLM API keys are configured, so responses below are simulated
-          (clearly marked) to show how the dashboard works. Add real keys in <code>.env</code> to get live results.
+          <strong>Demo modda</strong> çalışıyor — hiçbir LLM API anahtarı tanımlı değil, bu yüzden aşağıdaki
+          yanıtlar simüle edilmiştir (açıkça işaretli) ve panelin nasıl çalıştığını gösterir. Gerçek sonuçlar için
+          <code>.env</code>&apos;e gerçek anahtarlar ekleyin.
         </div>
       )}
 
       {summaries && ownSummary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="Visibility"
+            label="Görünürlük"
             value={`${Math.round(ownSummary.visibility * 100)}%`}
             description={`${ownSummary.brand} kaç promptta görünüyor`}
             tone={ownSummary.visibility >= 0.5 ? "seo" : ownSummary.visibility >= 0.2 ? "warn" : "danger"}
           />
           <StatCard
-            label="Sentiment"
+            label="Duygu tonu"
             value={ownSummary.avgSentiment != null ? String(ownSummary.avgSentiment) : "—"}
             description="AI seni ne kadar olumlu tanımlıyor"
             tone={
@@ -464,7 +474,7 @@ export default function GeoPage() {
             }
           />
           <StatCard
-            label="Prompts"
+            label="Promptlar"
             value={String(prompts.length)}
             description={`${engines.length} motor üzerinden test edildi`}
           />
@@ -480,7 +490,7 @@ export default function GeoPage() {
 
       {summaries && (
         <div className="card">
-          <h2 className="font-medium mb-4">Visibility & share of voice</h2>
+          <h2 className="font-medium mb-4">Görünürlük ve pazar payı</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -489,8 +499,8 @@ export default function GeoPage() {
                 <YAxis stroke="#8a8398" fontSize={12} unit="%" />
                 <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e0f5", color: "#1e1b29" }} />
                 <Legend />
-                <Bar dataKey="Visibility" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Share of voice" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Görünürlük" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Pazar payı" fill="#a78bfa" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -500,13 +510,13 @@ export default function GeoPage() {
               <thead className="text-ink/40 text-left">
                 <tr>
                   <th className="py-2 pr-4">#</th>
-                  <th className="py-2 pr-4">Brand</th>
-                  <th className="py-2 pr-4">Visibility</th>
-                  <th className="py-2 pr-4">SOV</th>
-                  <th className="py-2 pr-4">Sentiment</th>
-                  <th className="py-2 pr-4">Position</th>
-                  <th className="py-2 pr-4">Citations</th>
-                  {previousSummaries && <th className="py-2 pr-4">Δ visibility</th>}
+                  <th className="py-2 pr-4">Marka</th>
+                  <th className="py-2 pr-4">Görünürlük</th>
+                  <th className="py-2 pr-4">Pazar payı</th>
+                  <th className="py-2 pr-4">Duygu tonu</th>
+                  <th className="py-2 pr-4">Pozisyon</th>
+                  <th className="py-2 pr-4">Atıf</th>
+                  {previousSummaries && <th className="py-2 pr-4">Δ görünürlük</th>}
                 </tr>
               </thead>
               <tbody>
@@ -530,7 +540,7 @@ export default function GeoPage() {
                       <td className="py-2 pr-4">{s.citationCount}</td>
                       {previousSummaries && (
                         <td className={`py-2 pr-4 ${delta == null ? "text-ink/30" : delta > 0 ? "text-seo" : delta < 0 ? "text-danger" : "text-ink/40"}`}>
-                          {delta == null ? "new" : `${delta > 0 ? "+" : ""}${delta}pp`}
+                          {delta == null ? "yeni" : `${delta > 0 ? "+" : ""}${delta}pp`}
                         </td>
                       )}
                     </tr>
@@ -540,8 +550,8 @@ export default function GeoPage() {
             </table>
             <p className="mt-3 text-xs text-ink/30">
               {previousSummaries
-                ? `Compared against the previous run for this brand (${new Date(previousRunAt ?? "").toLocaleString()}).`
-                : "First recorded run for this brand — run it again later to see period-over-period trend here."}
+                ? `Bu markanın önceki koşusuyla karşılaştırıldı (${new Date(previousRunAt ?? "").toLocaleString()}).`
+                : "Bu marka için ilk kaydedilen koşu — dönemsel trendi görmek için daha sonra tekrar çalıştırın."}
             </p>
           </div>
         </div>
@@ -549,9 +559,9 @@ export default function GeoPage() {
 
       {trendData && (
         <div className="card">
-          <h2 className="font-medium mb-1">Visibility trend</h2>
+          <h2 className="font-medium mb-1">Görünürlük trendi</h2>
           <p className="text-sm text-ink/50 mb-4">
-            Visibility per brand across every recorded run for this domain ({trendData.length} runs).
+            Bu domain için kaydedilen her koşuda marka bazında görünürlük ({trendData.length} koşu).
           </p>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -580,11 +590,11 @@ export default function GeoPage() {
 
       {sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
-          <h2 className="font-medium">Source distribution</h2>
-          <p className="text-sm text-ink/50 mb-4">Which domains the AI engines cited across all runs.</p>
+          <h2 className="font-medium">Kaynak dağılımı</h2>
+          <p className="text-sm text-ink/50 mb-4">AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <div className="text-xs text-ink/40 mb-1">Top domains</div>
+              <div className="text-xs text-ink/40 mb-1">En çok atıf alan domainler</div>
               {sourceDistribution.slice(0, 8).map((d) => {
                 const max = sourceDistribution[0].count;
                 const width = Math.max(6, Math.round((d.count / max) * 100));
@@ -601,7 +611,7 @@ export default function GeoPage() {
             </div>
             <div className="space-y-2">
               <div className="text-xs text-ink/40 mb-1">
-                Domain types · {sourceDistribution.reduce((s, d) => s + d.count, 0)} total citations
+                Domain türleri · {sourceDistribution.reduce((s, d) => s + d.count, 0)} toplam atıf
               </div>
               {(["You", "Competitor", "Reference", "UGC", "Other"] as SourceDomainType[]).map((type) => {
                 const total = sourceDistribution.reduce((s, d) => s + d.count, 0) || 1;
@@ -610,7 +620,7 @@ export default function GeoPage() {
                 return (
                   <div key={type} className="flex items-center gap-2 text-sm">
                     <span className={`inline-block w-2.5 h-2.5 rounded-full ${DOMAIN_TYPE_COLOR[type]}`} />
-                    <span className="flex-1 text-ink/70">{type}</span>
+                    <span className="flex-1 text-ink/70">{DOMAIN_TYPE_LABEL[type]}</span>
                     <span className="text-ink/50 text-xs">{Math.round((count / total) * 100)}%</span>
                   </div>
                 );
@@ -653,7 +663,7 @@ export default function GeoPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-medium">
-              Individual runs <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
+              Tek tek koşular <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
             </h2>
             <div className="flex items-center gap-2">
               <input
@@ -662,7 +672,7 @@ export default function GeoPage() {
                   setRunResultsFilter(e.target.value);
                   setExpanded(null);
                 }}
-                placeholder="Search prompts…"
+                placeholder="Promptlarda ara…"
                 className="rounded-lg bg-muted border border-border px-3 py-1.5 text-xs outline-none focus:border-accent w-48"
               />
               <select
@@ -673,7 +683,7 @@ export default function GeoPage() {
                 }}
                 className="rounded-lg bg-muted border border-border px-2 py-1.5 text-xs outline-none focus:border-accent"
               >
-                <option value="all">All engines</option>
+                <option value="all">Tüm motorlar</option>
                 {Array.from(new Set(runs.map((r) => r.engine))).map((eng) => (
                   <option key={eng} value={eng}>
                     {ENGINE_LABEL[eng]}
@@ -683,7 +693,7 @@ export default function GeoPage() {
             </div>
           </div>
           {filteredRuns?.length === 0 && (
-            <div className="card text-sm text-ink/40 text-center py-6">No runs match this filter.</div>
+            <div className="card text-sm text-ink/40 text-center py-6">Bu filtreye uyan koşu yok.</div>
           )}
           {filteredRuns?.map((r, i) => (
             <div key={i} className="card">
@@ -703,7 +713,7 @@ export default function GeoPage() {
                   <span
                     className={`badge ${r.mentioned ? "badge-pass" : "bg-ink/5 text-ink/40"}`}
                   >
-                    {r.mentioned ? `Mentioned #${r.position}` : "Not mentioned"}
+                    {r.mentioned ? `#${r.position}. sırada anıldı` : "Anılmadı"}
                   </span>
                 </div>
               </button>
@@ -712,11 +722,11 @@ export default function GeoPage() {
                   <pre className="whitespace-pre-wrap text-ink/70 bg-muted rounded-lg p-3">{r.responseText}</pre>
                   {r.citations.length > 0 && (
                     <div>
-                      <div className="text-ink/40 text-xs mb-1">Citations</div>
+                      <div className="text-ink/40 text-xs mb-1">Atıflar</div>
                       <ul className="space-y-1">
                         {r.citations.map((c, ci) => (
                           <li key={ci} className={c.isOwnDomain ? "text-seo" : "text-ink/60"}>
-                            {c.domain} {c.isOwnDomain && "(your domain)"}
+                            {c.domain} {c.isOwnDomain && "(kendi domaininiz)"}
                           </li>
                         ))}
                       </ul>

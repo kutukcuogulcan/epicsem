@@ -128,11 +128,11 @@ export default function ContentStudioPage() {
       const data = await res.json();
       setTestResult(
         data.ok
-          ? { ok: true, message: `Connected as ${data.siteUserName ?? connForm.wpUsername}.` }
-          : { ok: false, message: data.error ?? "Connection failed." }
+          ? { ok: true, message: `${data.siteUserName ?? connForm.wpUsername} olarak bağlandı.` }
+          : { ok: false, message: data.error ?? "Bağlantı başarısız oldu." }
       );
     } catch (err) {
-      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Connection failed." });
+      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Bağlantı başarısız oldu." });
     } finally {
       setTesting(false);
     }
@@ -153,12 +153,12 @@ export default function ContentStudioPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save connection");
+      if (!res.ok) throw new Error(data.error ?? "Bağlantı kaydedilemedi");
       setConnForm({ label: "", siteUrl: "", wpUsername: "", wpAppPassword: "" });
       setTestResult(null);
       refreshConnections();
     } catch (err) {
-      setConnError(err instanceof Error ? err.message : "Something went wrong");
+      setConnError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setSavingConn(false);
     }
@@ -180,11 +180,11 @@ export default function ContentStudioPage() {
         body: JSON.stringify({ draftId: selectedDraft.id, connectionId: selectedConnectionId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Publish failed");
+      if (!res.ok) throw new Error(data.error ?? "Yayınlama başarısız oldu");
       loadDraft(selectedDraft.id);
       refreshDrafts();
     } catch (err) {
-      setPublishError(err instanceof Error ? err.message : "Something went wrong");
+      setPublishError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setPublishing(false);
     }
@@ -193,8 +193,8 @@ export default function ContentStudioPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Content Studio" }]} />
-        <h1 className="text-2xl font-semibold">Content Studio</h1>
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "İçerik Stüdyosu" }]} />
+        <h1 className="text-2xl font-semibold">İçerik Stüdyosu</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
           buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
@@ -206,8 +206,8 @@ export default function ContentStudioPage() {
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-medium">WordPress connections</h2>
-        {connections.length === 0 && <p className="text-sm text-ink/40">No connections yet — add one below.</p>}
+        <h2 className="font-medium">WordPress bağlantıları</h2>
+        {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
         <div className="space-y-2">
           {connections.map((c) => (
             <div key={c.id} className="flex items-center justify-between text-sm rounded-lg bg-muted px-3 py-2">
@@ -216,7 +216,7 @@ export default function ContentStudioPage() {
                 <span className="text-ink/40">— {c.siteUrl} ({c.wpUsername}, {c.wpAppPasswordMasked})</span>
               </div>
               <button onClick={() => deleteConnection(c.id)} className="text-xs text-danger hover:underline">
-                Remove
+                Kaldır
               </button>
             </div>
           ))}
@@ -227,35 +227,35 @@ export default function ContentStudioPage() {
             <input
               value={connForm.label}
               onChange={(e) => setConnForm((f) => ({ ...f, label: e.target.value }))}
-              placeholder="Label (e.g. Client's WP site)"
+              placeholder="Etiket (örn. Müşterinin WP sitesi)"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={connForm.siteUrl}
               onChange={(e) => setConnForm((f) => ({ ...f, siteUrl: e.target.value }))}
-              placeholder="https://client-site.com"
+              placeholder="https://musteri-sitesi.com"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={connForm.wpUsername}
               onChange={(e) => setConnForm((f) => ({ ...f, wpUsername: e.target.value }))}
-              placeholder="WordPress username"
+              placeholder="WordPress kullanıcı adı"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={connForm.wpAppPassword}
               onChange={(e) => setConnForm((f) => ({ ...f, wpAppPassword: e.target.value }))}
-              placeholder="Application password"
+              placeholder="Uygulama parolası"
               type="password"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <p className="text-xs text-ink/40">
-            In WordPress: Users → Profile → Application Passwords → add a new one. Not your real login password.
+            WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekleyin. Gerçek giriş parolanız değil.
           </p>
           <div className="flex items-center gap-3">
             <button
@@ -264,14 +264,14 @@ export default function ContentStudioPage() {
               disabled={testing || !connForm.siteUrl || !connForm.wpUsername || !connForm.wpAppPassword}
               className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
             >
-              {testing ? "Testing…" : "Test connection"}
+              {testing ? "Test ediliyor…" : "Bağlantıyı test et"}
             </button>
             <button
               type="submit"
               disabled={savingConn || !connForm.label}
               className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
             >
-              {savingConn ? "Saving…" : "Save connection"}
+              {savingConn ? "Kaydediliyor…" : "Bağlantıyı kaydet"}
             </button>
             {testResult && (
               <span className={testResult.ok ? "text-xs text-seo" : "text-xs text-danger"}>{testResult.message}</span>
@@ -283,10 +283,10 @@ export default function ContentStudioPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div className="card space-y-2 h-fit">
-          <h2 className="font-medium text-sm">Drafts</h2>
+          <h2 className="font-medium text-sm">Taslaklar</h2>
           {drafts.length === 0 && (
             <p className="text-xs text-ink/40">
-              None yet — generate one from a content brief on <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>.
+              Henüz yok — <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>'teki bir içerik brifinden bir tane oluşturun.
             </p>
           )}
           {drafts.map((d) => (
@@ -299,7 +299,7 @@ export default function ContentStudioPage() {
             >
               <div className="font-medium truncate">{d.article.title}</div>
               <div className="text-ink/40 flex items-center gap-2">
-                <span>{d.status === "published-to-wp" ? "Published to WP" : "Draft"}</span>
+                <span>{d.status === "published-to-wp" ? "WP'de yayınlandı" : "Taslak"}</span>
                 {d.article.demoMode && <span className="text-warn">demo</span>}
               </div>
             </button>
@@ -307,10 +307,10 @@ export default function ContentStudioPage() {
         </div>
 
         <div className="space-y-4">
-          {loadingDraft && <div className="card text-sm text-ink/40">Loading…</div>}
+          {loadingDraft && <div className="card text-sm text-ink/40">Yükleniyor…</div>}
 
           {!loadingDraft && !selectedDraft && (
-            <div className="card text-sm text-ink/40">Select a draft on the left, or generate a new one from Gap Analysis.</div>
+            <div className="card text-sm text-ink/40">Soldan bir taslak seçin, ya da Gap Analysis'ten yeni bir tane oluşturun.</div>
           )}
 
           {!loadingDraft && selectedDraft && (
@@ -319,12 +319,12 @@ export default function ContentStudioPage() {
                 <div>
                   <h2 className="font-medium">{selectedDraft.article.title}</h2>
                   <p className="text-xs text-ink/40 mt-1">
-                    For {selectedDraft.sourceUrl} · {selectedDraft.article.model}
-                    {selectedDraft.article.demoMode && " · simulated — no API key configured"}
+                    {selectedDraft.sourceUrl} için · {selectedDraft.article.model}
+                    {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
                   </p>
                 </div>
                 {selectedDraft.status === "published-to-wp" && (
-                  <span className="badge badge-pass">Published to WordPress</span>
+                  <span className="badge badge-pass">WordPress'te yayınlandı</span>
                 )}
               </div>
 
@@ -332,7 +332,7 @@ export default function ContentStudioPage() {
 
               {selectedDraft.article.openPlaceholders.length > 0 && (
                 <div className="rounded-lg border border-warn/40 bg-warn/5 p-3 text-xs text-warn space-y-1">
-                  <div className="font-medium">Needs a human before this is ready to publish:</div>
+                  <div className="font-medium">Yayına hazır olmadan önce bir insan gerekiyor:</div>
                   {selectedDraft.article.openPlaceholders.map((p, i) => (
                     <div key={i}>{p}</div>
                   ))}
@@ -347,19 +347,19 @@ export default function ContentStudioPage() {
                 <div className="flex gap-3 text-sm">
                   {selectedDraft.publishedPostUrl && (
                     <a href={selectedDraft.publishedPostUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-                      View post
+                      Gönderiyi görüntüle
                     </a>
                   )}
                   {selectedDraft.publishedEditUrl && (
                     <a href={selectedDraft.publishedEditUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-                      Edit in WordPress
+                      WordPress'te düzenle
                     </a>
                   )}
                 </div>
               ) : (
                 <div className="border-t border-border pt-3 space-y-2">
                   {connections.length === 0 ? (
-                    <p className="text-xs text-ink/40">Add a WordPress connection above to publish this draft.</p>
+                    <p className="text-xs text-ink/40">Bu taslağı yayınlamak için yukarıdan bir WordPress bağlantısı ekleyin.</p>
                   ) : (
                     <div className="flex items-center gap-3 flex-wrap">
                       <select
@@ -376,7 +376,7 @@ export default function ContentStudioPage() {
                         disabled={publishing}
                         className="text-sm rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
                       >
-                        {publishing ? "Publishing…" : "Publish as WordPress draft"}
+                        {publishing ? "Yayınlanıyor…" : "WordPress taslağı olarak yayınla"}
                       </button>
                     </div>
                   )}

@@ -40,7 +40,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "PDF raporda kendi ajans adım görünebilir mi?",
-    a: "Evet. Audit veya Gap Analysis sonuç ekranında, \"Download PDF report\" butonunun yanındaki \"Ajans adınız\" kutusuna kendi ajans/marka adını yazman yeterli — indirdiğin PDF'in üst kısmında Epicsem yerine o isim görünür. Bu isim hesabına değil, tarayıcına kaydedilir; aynı cihazdan tekrar geldiğinde otomatik dolu gelir.",
+    a: "Evet. Audit veya Gap Analysis sonuç ekranında, \"PDF rapor indir\" butonunun yanındaki \"Ajans adınız\" kutusuna kendi ajans/marka adını yazman yeterli — indirdiğin PDF'in üst kısmında Epicsem yerine o isim görünür. Bu isim hesabına değil, tarayıcına kaydedilir; aynı cihazdan tekrar geldiğinde otomatik dolu gelir.",
   },
 ];
 
@@ -92,7 +92,7 @@ export default function ClientsPage() {
   async function addClient(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !domain.trim()) {
-      setError("Enter a client name and domain.");
+      setError("Bir müşteri adı ve domain girin.");
       return;
     }
     setBusy("add");
@@ -113,14 +113,14 @@ export default function ClientsPage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save client");
+      if (!res.ok) throw new Error(data.error ?? "Müşteri kaydedilemedi");
       setName("");
       setDomain("");
       setCompetitors([{ name: "", domain: "" }]);
       setNotes("");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setBusy(null);
     }
@@ -147,8 +147,8 @@ export default function ClientsPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Clients" }]} />
-        <h1 className="text-2xl font-semibold">Clients</h1>
+        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Müşteriler" }]} />
+        <h1 className="text-2xl font-semibold">Müşteriler</h1>
         <p className="text-ink/60 text-sm">
           Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
           dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
@@ -157,32 +157,32 @@ export default function ClientsPage() {
       </div>
 
       <form onSubmit={addClient} className="card space-y-3">
-        <h2 className="font-medium text-sm">Add a client</h2>
+        <h2 className="font-medium text-sm">Bir müşteri ekle</h2>
         <div className="grid grid-cols-2 gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Client / brand name"
+            placeholder="Müşteri / marka adı"
             required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
           <input
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
-            placeholder="client-domain.com"
+            placeholder="musteri-domaini.com"
             required
             className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>
 
         <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-ink/50">Competitors</span>
+          <span className="text-xs text-ink/50">Rakipler</span>
           <button
             type="button"
             onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
             className="text-xs text-accent hover:underline"
           >
-            + Add competitor
+            + Rakip ekle
           </button>
         </div>
         {competitors.map((c, i) => (
@@ -190,13 +190,13 @@ export default function ClientsPage() {
             <input
               value={c.name}
               onChange={(e) => updateCompetitor(i, "name", e.target.value)}
-              placeholder="Competitor name"
+              placeholder="Rakip adı"
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={c.domain}
               onChange={(e) => updateCompetitor(i, "domain", e.target.value)}
-              placeholder="competitor-domain.com"
+              placeholder="rakip-domaini.com"
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
@@ -205,7 +205,7 @@ export default function ClientsPage() {
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (optional) — account contact, contract scope, anything worth remembering"
+          placeholder="Notlar (opsiyonel) — hesap iletişimi, sözleşme kapsamı, hatırlanmaya değer her şey"
           rows={2}
           className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
         />
@@ -215,7 +215,7 @@ export default function ClientsPage() {
           disabled={busy === "add"}
           className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {busy === "add" ? "Saving…" : "Save client"}
+          {busy === "add" ? "Kaydediliyor…" : "Müşteriyi kaydet"}
         </button>
       </form>
 
@@ -235,7 +235,7 @@ export default function ClientsPage() {
                   disabled={busy === `remove-${c.id}`}
                   className="text-xs text-danger/70 hover:text-danger"
                 >
-                  Remove
+                  Kaldır
                 </button>
               </div>
               {c.competitors.length > 0 && (
@@ -246,8 +246,8 @@ export default function ClientsPage() {
               {c.notes && <p className="text-xs text-ink/50">{c.notes}</p>}
               <div className="flex gap-3 pt-1 text-xs">
                 <Link href={`/audit?clientId=${c.id}`} className="text-accent hover:underline">Audit</Link>
-                <Link href={`/geo?clientId=${c.id}`} className="text-accent hover:underline">GEO test</Link>
-                <Link href={`/gap?clientId=${c.id}`} className="text-accent hover:underline">Gap analysis</Link>
+                <Link href={`/geo?clientId=${c.id}`} className="text-accent hover:underline">GEO testi</Link>
+                <Link href={`/gap?clientId=${c.id}`} className="text-accent hover:underline">Gap analizi</Link>
               </div>
             </div>
           ))}
