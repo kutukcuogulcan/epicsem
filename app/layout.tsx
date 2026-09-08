@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-// A bold, geometric sans — the same family of look as most modern AI-SEO-tool sites
-// (rounded terminals, reads confidently at heavy weights for headlines) instead of the
-// plain system-font stack the app used before. Self-hosted via @fontsource (npm) rather
-// than next/font/google's Google Fonts CSS fetch, which this build environment's network
-// can't reach — @fontsource ships the actual font files as package assets.
+// Eudoxus Sans is the exact font arvow.com uses — loaded from Fontshare's free CDN
+// (see the <link> tags below), the same way arvow.com itself serves it. Plus Jakarta
+// Sans stays as a self-hosted fallback (via @fontsource, bundled at build time) for the
+// rare case the Fontshare CDN doesn't load — it's the same rounded/geometric family of
+// look, so the fallback still reads close to the target instead of dropping to a plain
+// system font.
 import "@fontsource/plus-jakarta-sans/400.css";
 import "@fontsource/plus-jakarta-sans/500.css";
 import "@fontsource/plus-jakarta-sans/600.css";
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link
+          rel="stylesheet"
+          href="https://api.fontshare.com/v2/css?f[]=eudoxus-sans@400,500,600,700,800&display=swap"
+        />
+      </head>
       <body className="min-h-screen flex flex-col font-sans">
         <Nav />
         <main className="mx-auto max-w-6xl px-4 py-8 flex-1 w-full">{children}</main>
