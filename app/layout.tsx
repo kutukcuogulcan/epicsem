@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-// Eudoxus Sans is the exact font arvow.com uses — loaded from Fontshare's free CDN
-// (see the <link> tags below), the same way arvow.com itself serves it. Plus Jakarta
-// Sans stays as a self-hosted fallback (via @fontsource, bundled at build time) for the
-// rare case the Fontshare CDN doesn't load — it's the same rounded/geometric family of
-// look, so the fallback still reads close to the target instead of dropping to a plain
-// system font.
+// arvow.com's actual font is "Eudoxus Sans" — an open-source geometric sans (OFL) that
+// is itself explicitly built on top of Plus Jakarta Sans (same letterforms/family, just
+// a handful of tweaks), per its own README. It used to be servable from Fontshare's free
+// CDN, but Fontshare has since pulled it from their catalog (the endpoint now returns an
+// empty stylesheet), so we self-host the font it's based on instead via @fontsource —
+// same look, reliably bundled at build time rather than depending on a live CDN.
 import "@fontsource/plus-jakarta-sans/400.css";
 import "@fontsource/plus-jakarta-sans/500.css";
 import "@fontsource/plus-jakarta-sans/600.css";
@@ -22,13 +22,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://api.fontshare.com" />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=eudoxus-sans@400,500,600,700,800&display=swap"
-        />
-      </head>
       <body className="min-h-screen flex flex-col font-sans">
         <Nav />
         <main className="mx-auto max-w-6xl px-4 py-8 flex-1 w-full">{children}</main>

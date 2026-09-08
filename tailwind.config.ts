@@ -23,9 +23,9 @@ const config: Config = {
         danger: "#dc2626",
       },
       fontFamily: {
-        // Eudoxus Sans (arvow.com's actual font, loaded via Fontshare CDN in layout.tsx)
-        // first, then the self-hosted Plus Jakarta Sans fallback, then system fonts.
-        sans: ["\"Eudoxus Sans\"", "\"Plus Jakarta Sans\"", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Plus Jakarta Sans, self-hosted via @fontsource — the exact family arvow.com's
+        // own font (Eudoxus Sans) is built on top of. See app/layout.tsx for details.
+        sans: ["\"Plus Jakarta Sans\"", "ui-sans-serif", "system-ui", "sans-serif"],
       },
     },
   },
