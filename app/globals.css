@@ -7,16 +7,22 @@
 }
 
 body {
-  background-color: #faf9ff;
-  color: #1e1b29;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
 .card {
-  @apply bg-panel border border-border rounded-xl p-5 shadow-[0_1px_3px_rgba(124,58,237,0.07)];
+  @apply bg-panel border border-border rounded-xl p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)];
 }
 
 .badge {
-  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+/* A violet-bordered pill, used for small callouts (savings, trust badges, "yeni" tags) —
+   the same outline-pill pattern used throughout arvow.com. */
+.pill-outline {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-accent/30 text-accent px-3 py-1 text-xs font-semibold;
 }
 
 .badge-critical { @apply bg-danger/10 text-danger; }

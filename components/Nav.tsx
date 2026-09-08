@@ -34,9 +34,12 @@ export default async function Nav() {
   return (
     <header className="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-20">
       <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4">
-        <Link href="/" className="font-semibold text-lg tracking-tight shrink-0">
-          Epicsem <span className="text-accent">·</span>{" "}
-          <span className="text-sm font-normal text-ink/50 hidden sm:inline">SEO + GEO/AEO</span>
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-extrabold">
+            E
+          </span>
+          <span className="font-extrabold text-lg tracking-tight">Epicsem</span>
+          <span className="text-sm font-medium text-ink/40 hidden sm:inline">SEO + GEO/AEO</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-ink/70">
@@ -107,7 +110,7 @@ export default async function Nav() {
           )}
           <Link
             href="/audit"
-            className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
+            className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity"
           >
             Panele git
           </Link>

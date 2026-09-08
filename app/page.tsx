@@ -65,36 +65,45 @@ export default function Home() {
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-accent/[0.06] via-geo/10 to-transparent px-6 sm:px-10 py-16 sm:py-20">
-        <p className="text-sm uppercase tracking-widest text-accent font-medium">Ajansınız için SEO + AI görünürlük paneli</p>
-        <h1 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-tight max-w-3xl">
+        <span className="pill-outline bg-accent/5">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          Ajansınız için SEO + AI görünürlük paneli
+        </span>
+        <h1 className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-[1.05]">
           Google&apos;da sırala, <span className="text-accent">AI motorlarında</span> görün.
         </h1>
-        <p className="mt-4 text-ink/60 max-w-2xl text-base sm:text-lg">
+        <p className="mt-5 text-ink/60 max-w-2xl text-base sm:text-lg">
           Epicsem, klasik teknik SEO denetimini ve ChatGPT / Claude / Gemini / Perplexity üzerinde gerçek prompt
           testlerini aynı panelde çalıştırır — markanın sadece Google&apos;da değil, birine AI&apos;ya soru
           sorduğunda da hatırlanıp hatırlanmadığını gösterir.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
+          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-bold hover:opacity-90 transition-opacity">
             Panele git — ücretsiz dene
           </Link>
-          <Link href="#nasil-calisir" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
+          <Link href="#nasil-calisir" className="rounded-lg border border-border bg-panel px-6 py-3 text-sm font-bold hover:bg-muted transition-colors">
             Nasıl çalışır?
           </Link>
         </div>
+        <p className="mt-6 text-xs text-ink/40 font-medium">
+          Şu an ücretsiz test aşamasında — kart bilgisi ya da hesap açmadan deneyebilirsiniz.
+        </p>
       </section>
 
       <section className="space-y-8">
         <div className="max-w-2xl">
-          <h2 className="text-2xl font-semibold tracking-tight">Tek panel, üç iş</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Tek panel, üç iş</h2>
           <p className="mt-2 text-ink/60">Denetim, otomasyon ve müşteri yönetimi — hepsi aynı yerde, birbirinin verisini kullanarak.</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {GROUPS.map((group) => (
             <div key={group.title} className="card space-y-4">
               <div>
-                <div className={`text-xs font-semibold tracking-wide uppercase ${group.tone}`}>{group.title}</div>
-                <p className="mt-1 text-sm text-ink/50">{group.description}</p>
+                <div className={`inline-flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase ${group.tone}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full bg-current`} />
+                  {group.title}
+                </div>
+                <p className="mt-1.5 text-sm text-ink/50">{group.description}</p>
               </div>
               <div className="space-y-3 pt-1 border-t border-border">
                 {group.items.map((item) => (
@@ -118,16 +127,16 @@ export default function Home() {
 
       <section id="nasil-calisir" className="space-y-8 scroll-mt-24">
         <div className="max-w-2xl">
-          <h2 className="text-2xl font-semibold tracking-tight">Nasıl çalışır?</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Nasıl çalışır?</h2>
           <p className="mt-2 text-ink/60">Üç adımda kurulum — kod yazmana, entegrasyon beklemene gerek yok.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {STEPS.map((step) => (
             <div key={step.n} className="card">
-              <div className="w-8 h-8 rounded-full bg-accent/10 text-accent font-semibold flex items-center justify-center text-sm">
+              <div className="w-9 h-9 rounded-full bg-accent/10 text-accent font-extrabold flex items-center justify-center text-base">
                 {step.n}
               </div>
-              <div className="mt-3 font-medium">{step.title}</div>
+              <div className="mt-3 font-bold">{step.title}</div>
               <p className="mt-2 text-sm text-ink/60">{step.body}</p>
             </div>
           ))}
@@ -135,7 +144,7 @@ export default function Home() {
       </section>
 
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold tracking-tight">Sık sorulanlar</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight">Sık sorulanlar</h2>
         <div className="divide-y divide-border border-t border-b border-border">
           {FAQ.map((item) => (
             <details key={item.q} className="group py-4">
@@ -150,11 +159,11 @@ export default function Home() {
       </section>
 
       <section className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-12 sm:py-14 text-center space-y-4">
-        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Markanı Google&apos;da ve AI motorlarında test et</h2>
+        <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Markanı Google&apos;da ve AI motorlarında test et</h2>
         <p className="text-white/80 max-w-xl mx-auto">Şu an ücretsiz test modunda — hesap açmana bile gerek yok.</p>
         <Link
           href="/audit"
-          className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity"
+          className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-bold hover:opacity-90 transition-opacity"
         >
           Panele git
         </Link>
