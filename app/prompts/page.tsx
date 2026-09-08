@@ -52,7 +52,7 @@ export default function PromptsPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Promptları" }]} />
-        <h1 className="text-2xl font-semibold">Claude Code SEO Promptları</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Claude Code SEO Promptları</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Kendi sitenizin kodunda Claude Code (veya shell + dosya erişimi olan başka bir kodlama ajanı) ile SEO
           işleri yapmak için ücretsiz bir prompt kütüphanesi — teknik düzeltmeler, AI crawler erişimi, schema
@@ -70,7 +70,7 @@ export default function PromptsPage() {
 
       {categories.map((cat) => (
         <div key={cat} className="space-y-3">
-          <h2 className="font-medium text-lg">{CATEGORY_LABEL[cat]}</h2>
+          <h2 className="font-bold text-lg">{CATEGORY_LABEL[cat]}</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {grouped[cat].map((p) => (
               <PromptBlock key={p.id} title={p.title} description={p.description} prompt={p.prompt} />

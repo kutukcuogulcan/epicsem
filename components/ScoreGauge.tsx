@@ -20,9 +20,9 @@ export default function ScoreGauge({ label, score, colorClass }: { label: string
             strokeLinecap="round"
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold">{score}</div>
+        <div className="absolute inset-0 flex items-center justify-center text-2xl font-extrabold">{score}</div>
       </div>
-      <div className="text-sm text-ink/60">{label}</div>
+      <div className="text-sm text-ink/60 font-medium">{label}</div>
     </div>
   );
 }

@@ -314,7 +314,7 @@ export default function GeoPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "GEO/AEO Visibility" }]} />
-        <h1 className="text-2xl font-semibold">GEO / AEO Visibility Test</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">GEO / AEO Visibility Test</h1>
         <p className="text-ink/60 text-sm">
           Promptlarınızı ChatGPT, Claude, Gemini ve Perplexity&apos;e gönderir; markanızın anılıp anılmadığını,
           rakiplere göre nerede durduğunu ve hangi kaynakların referans gösterildiğini ölçer.
@@ -324,7 +324,7 @@ export default function GeoPage() {
 
       <form onSubmit={runTest} className="space-y-5">
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Markanız</h2>
+          <h2 className="font-bold text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               value={brand.name}
@@ -345,7 +345,7 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
+            <h2 className="font-bold text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
@@ -374,7 +374,7 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
+            <h2 className="font-bold text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button
                 type="button"
@@ -413,7 +413,7 @@ export default function GeoPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Motorlar</h2>
+          <h2 className="font-bold text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -435,7 +435,7 @@ export default function GeoPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "Çalışıyor…" : `${prompts.length} prompt × ${engines.length} motoru çalıştır`}
         </button>
@@ -490,7 +490,7 @@ export default function GeoPage() {
 
       {summaries && (
         <div className="card">
-          <h2 className="font-medium mb-4">Görünürlük ve pazar payı</h2>
+          <h2 className="font-bold mb-4">Görünürlük ve pazar payı</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -559,7 +559,7 @@ export default function GeoPage() {
 
       {trendData && (
         <div className="card">
-          <h2 className="font-medium mb-1">Görünürlük trendi</h2>
+          <h2 className="font-bold mb-1">Görünürlük trendi</h2>
           <p className="text-sm text-ink/50 mb-4">
             Bu domain için kaydedilen her koşuda marka bazında görünürlük ({trendData.length} koşu).
           </p>
@@ -590,7 +590,7 @@ export default function GeoPage() {
 
       {sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
-          <h2 className="font-medium">Kaynak dağılımı</h2>
+          <h2 className="font-bold">Kaynak dağılımı</h2>
           <p className="text-sm text-ink/50 mb-4">AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-2">
@@ -632,7 +632,7 @@ export default function GeoPage() {
 
       {topicBreakdown && topicBreakdown.length > 1 && (
         <div className="card">
-          <h2 className="font-medium">Konu bazında görünürlük</h2>
+          <h2 className="font-bold">Konu bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
             {ownSummary?.brand ?? "Markanız"} her prompt konusunda ne kadar görünüyor — hangi konularda görünmez
             olduğunuzu gösterir (Peec AI&apos;deki topic/tag kırılımına benzer).
@@ -662,7 +662,7 @@ export default function GeoPage() {
       {runs && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-medium">
+            <h2 className="font-bold">
               Tek tek koşular <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
             </h2>
             <div className="flex items-center gap-2">

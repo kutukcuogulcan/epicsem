@@ -194,7 +194,7 @@ export default function ContentStudioPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "İçerik Stüdyosu" }]} />
-        <h1 className="text-2xl font-semibold">İçerik Stüdyosu</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">İçerik Stüdyosu</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
           buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
@@ -206,7 +206,7 @@ export default function ContentStudioPage() {
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-medium">WordPress bağlantıları</h2>
+        <h2 className="font-bold">WordPress bağlantıları</h2>
         {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
         <div className="space-y-2">
           {connections.map((c) => (
@@ -269,7 +269,7 @@ export default function ContentStudioPage() {
             <button
               type="submit"
               disabled={savingConn || !connForm.label}
-              className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
+              className="text-xs font-semibold rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
             >
               {savingConn ? "Kaydediliyor…" : "Bağlantıyı kaydet"}
             </button>
@@ -283,7 +283,7 @@ export default function ContentStudioPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div className="card space-y-2 h-fit">
-          <h2 className="font-medium text-sm">Taslaklar</h2>
+          <h2 className="font-bold text-sm">Taslaklar</h2>
           {drafts.length === 0 && (
             <p className="text-xs text-ink/40">
               Henüz yok — <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>'teki bir içerik brifinden bir tane oluşturun.
@@ -317,7 +317,7 @@ export default function ContentStudioPage() {
             <div className="card space-y-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h2 className="font-medium">{selectedDraft.article.title}</h2>
+                  <h2 className="font-bold">{selectedDraft.article.title}</h2>
                   <p className="text-xs text-ink/40 mt-1">
                     {selectedDraft.sourceUrl} için · {selectedDraft.article.model}
                     {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
@@ -374,7 +374,7 @@ export default function ContentStudioPage() {
                       <button
                         onClick={publish}
                         disabled={publishing}
-                        className="text-sm rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
+                        className="text-sm font-semibold rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
                       >
                         {publishing ? "Yayınlanıyor…" : "WordPress taslağı olarak yayınla"}
                       </button>

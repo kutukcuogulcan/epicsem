@@ -236,7 +236,7 @@ export default function GapPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gap Analysis" }]} />
-        <h1 className="text-2xl font-semibold">Gap Analysis</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Gap Analysis</h1>
         <p className="text-ink/60 text-sm">
           SEO + AXO denetiminizi GEO görünürlük testiyle çaprazlar: listelediğiniz her sayfa teknik olarak sağlam
           mı, AI crawler&apos;lara açık mı — ve ikisinin tek başına cevaplayamadığı soru: herhangi bir AI motoru
@@ -247,7 +247,7 @@ export default function GapPage() {
 
       <form onSubmit={runAnalysis} className="space-y-5">
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Markanız</h2>
+          <h2 className="font-bold text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               value={brand.name}
@@ -268,7 +268,7 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
+            <h2 className="font-bold text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
@@ -297,7 +297,7 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
+            <h2 className="font-bold text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
                 EN örnek
@@ -317,7 +317,7 @@ export default function GapPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
+          <h2 className="font-bold text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
           <textarea
             value={pageUrlsText}
             onChange={(e) => setPageUrlsText(e.target.value)}
@@ -328,7 +328,7 @@ export default function GapPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Motorlar</h2>
+          <h2 className="font-bold text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function GapPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
         </button>
@@ -385,7 +385,7 @@ export default function GapPage() {
 
       {summaries && (
         <div className="space-y-3">
-          <h2 className="font-medium">Görünürlük özeti</h2>
+          <h2 className="font-bold">Görünürlük özeti</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {summaries.map((s) => (
               <StatCard
@@ -402,7 +402,7 @@ export default function GapPage() {
 
       {gapMatrix && (
         <div className="card">
-          <h2 className="font-medium">Gap matrisi</h2>
+          <h2 className="font-bold">Gap matrisi</h2>
           <p className="text-sm text-ink/50 mb-4">Her sayfa için teknik sağlık ile gerçek AI atfının karşılaştırması.</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -446,7 +446,7 @@ export default function GapPage() {
       {contentBriefs && contentBriefs.length > 0 && (
         <div className="space-y-3">
           <div>
-            <h2 className="font-medium">İçerik brifleri</h2>
+            <h2 className="font-bold">İçerik brifleri</h2>
             <p className="text-sm text-ink/50">
               Henüz kazanmayan her sayfa için: bu koşuda kaybettiği promptlar ve denetimin bulduğu somut içerik
               eksikleri. Bu koşunun kendi verisinden üretildi — hiçbir şey uydurulmadı.
@@ -501,7 +501,7 @@ export default function GapPage() {
                     type="button"
                     onClick={() => generateArticle(brief)}
                     disabled={generatingUrl === brief.url}
-                    className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
+                    className="text-xs font-semibold rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
                   >
                     {generatingUrl === brief.url ? "Oluşturuluyor…" : "Makale oluştur"}
                   </button>

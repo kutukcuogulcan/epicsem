@@ -148,7 +148,7 @@ export default function ClientsPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Müşteriler" }]} />
-        <h1 className="text-2xl font-semibold">Müşteriler</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Müşteriler</h1>
         <p className="text-ink/60 text-sm">
           Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
           dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
@@ -157,7 +157,7 @@ export default function ClientsPage() {
       </div>
 
       <form onSubmit={addClient} className="card space-y-3">
-        <h2 className="font-medium text-sm">Bir müşteri ekle</h2>
+        <h2 className="font-bold text-sm">Bir müşteri ekle</h2>
         <div className="grid grid-cols-2 gap-3">
           <input
             value={name}
@@ -213,7 +213,7 @@ export default function ClientsPage() {
         <button
           type="submit"
           disabled={busy === "add"}
-          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {busy === "add" ? "Kaydediliyor…" : "Müşteriyi kaydet"}
         </button>

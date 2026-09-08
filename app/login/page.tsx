@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-sm space-y-8 py-8">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-3xl font-extrabold tracking-tight">
           {mode === "login" ? "Giriş yap" : "Hesap oluştur"}
         </h1>
         <p className="text-ink/60 text-sm">
@@ -93,7 +93,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "..." : mode === "login" ? "Giriş yap" : "Hesap oluştur"}
         </button>

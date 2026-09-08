@@ -37,7 +37,7 @@ export default function PromptBlock({
     <div className={bare ? "space-y-2 border-t border-border pt-3" : "card space-y-2"}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="font-medium text-sm">{title}</div>
+          <div className="font-semibold text-sm">{title}</div>
           {description && <p className="text-xs text-ink/50 mt-1">{description}</p>}
         </div>
         <button
@@ -56,7 +56,7 @@ export default function PromptBlock({
           <button
             type="button"
             onClick={copy}
-            className="text-xs rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90"
+            className="text-xs font-semibold rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90"
           >
             {copied ? "Kopyalandı!" : "Prompt'u kopyala"}
           </button>

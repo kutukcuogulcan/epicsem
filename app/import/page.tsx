@@ -174,7 +174,7 @@ export default function ImportPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Toplu İçe Aktarma" }]} />
-        <h1 className="text-2xl font-semibold">Toplu Site İçe Aktarma (Screaming Frog)</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Toplu Site İçe Aktarma (Screaming Frog)</h1>
         <p className="text-ink/60 text-sm max-w-3xl">
           Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
           <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
@@ -222,7 +222,7 @@ export default function ImportPage() {
 
       {history.length > 0 && !result && (
         <div className="card space-y-2">
-          <h2 className="font-medium text-sm">Önceki içe aktarmalar</h2>
+          <h2 className="font-bold text-sm">Önceki içe aktarmalar</h2>
           <div className="space-y-1">
             {history.map((h) => (
               <button
@@ -242,7 +242,7 @@ export default function ImportPage() {
         <div className="space-y-6">
           <div className="card space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="font-medium">{result.filename}</h2>
+              <h2 className="font-bold">{result.filename}</h2>
               <span className="text-xs text-ink/40">{result.summary.totalRows} URL · içe aktarıldı {new Date(result.importedAt).toLocaleString()}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -269,7 +269,7 @@ export default function ImportPage() {
           {filteredRows.length > 0 && (
             <div className="card space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="font-medium">Sorunlu URL'ler ({result.rows.filter((r) => r.issues.length > 0).length})</h2>
+                <h2 className="font-bold">Sorunlu URL'ler ({result.rows.filter((r) => r.issues.length > 0).length})</h2>
                 <select
                   value={issueFilter}
                   onChange={(e) => setIssueFilter(e.target.value)}

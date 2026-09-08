@@ -19,7 +19,7 @@ export default function FixCard({ fix }: { fix: GeneratedFix }) {
   return (
     <div className="card">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-medium text-sm">{fix.label}</div>
+        <div className="font-semibold text-sm">{fix.label}</div>
         <button
           type="button"
           onClick={copy}

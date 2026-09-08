@@ -13,7 +13,7 @@ export default function FAQSection({ items, title = "Sık sorulanlar" }: { items
   if (items.length === 0) return null;
   return (
     <div className="space-y-3 pt-2">
-      <h2 className="font-medium text-sm">{title}</h2>
+      <h2 className="font-bold text-sm">{title}</h2>
       <div className="divide-y divide-border border-t border-b border-border">
         {items.map((item) => (
           <details key={item.q} className="group py-3">

@@ -24,7 +24,7 @@ export default function StatCard({ label, value, description, tone = "accent" }:
   return (
     <div className="card">
       <div className="text-xs text-ink/40">{label}</div>
-      <div className={`text-3xl font-semibold mt-1.5 ${TONE_TEXT[tone]}`}>{value}</div>
+      <div className={`text-3xl font-extrabold mt-1.5 ${TONE_TEXT[tone]}`}>{value}</div>
       <div className="text-xs text-ink/40 mt-1.5">{description}</div>
     </div>
   );

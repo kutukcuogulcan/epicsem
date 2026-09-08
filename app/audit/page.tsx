@@ -166,7 +166,7 @@ export default function AuditPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Audit" }]} />
-        <h1 className="text-2xl font-semibold">SEO + AXO Audit</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">SEO + AXO Audit</h1>
         <p className="text-ink/60 text-sm">
           Title, meta, başlıklar, schema ve sitemap gibi temelleri kontrol eder — ayrıca GPTBot, ClaudeBot,
           PerplexityBot, Google-Extended gibi AI crawler&apos;ların sayfaya gerçekten erişip erişemediğini gösterir.
@@ -184,7 +184,7 @@ export default function AuditPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "Taranıyor…" : "Denetimi başlat"}
         </button>
@@ -240,7 +240,7 @@ export default function AuditPage() {
           </div>
 
           <div className="card">
-            <h2 className="font-medium mb-3">AI crawler erişimi</h2>
+            <h2 className="font-bold mb-3">AI crawler erişimi</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               {result.meta.aiBotAccess.map((b) => (
                 <div key={b.bot} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
@@ -254,7 +254,7 @@ export default function AuditPage() {
           {result.fixes.length > 0 && (
             <div className="space-y-3">
               <div>
-                <h2 className="font-medium">Düzeltmeler</h2>
+                <h2 className="font-bold">Düzeltmeler</h2>
                 <p className="text-sm text-ink/50">
                   Bu sayfanın kendi içeriğinden üretildi — hiçbir şey uydurulmadı. Yayınlamadan önce gözden geçirip yapıştırın.
                 </p>
@@ -269,7 +269,7 @@ export default function AuditPage() {
 
           {groupedIssues.map((group) => (
             <div key={group.cat} className="space-y-3">
-              <h2 className="font-medium">{CATEGORY_LABEL[group.cat]}</h2>
+              <h2 className="font-bold">{CATEGORY_LABEL[group.cat]}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {group.issues.map((issue, i) => (
                   <IssueCard key={i} issue={issue} />
