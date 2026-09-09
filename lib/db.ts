@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import type {
   BulkImportResult,
   CmsConnection,
+  CmsPlatform,
   ContentDraft,
   GapRow,
   GeneratedArticle,
@@ -30,7 +31,7 @@ import type {
 // data yet) and much simpler than hand-rolling ALTER TABLE migrations for a schema
 // that's still moving. Once there's real customer data, migrations need to become
 // additive (ALTER TABLE ADD COLUMN) instead of this reset.
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 let pool: Pool | null = null;
 
@@ -219,10 +220,11 @@ async function initSchema(): Promise<void> {
     CREATE TABLE IF NOT EXISTS cms_connections (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
+      platform TEXT NOT NULL DEFAULT 'wordpress',
       label TEXT NOT NULL,
       site_url TEXT NOT NULL,
-      wp_username TEXT NOT NULL,
-      wp_app_password TEXT NOT NULL,
+      auth_identifier TEXT NOT NULL DEFAULT '',
+      auth_secret TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
@@ -743,11 +745,12 @@ export async function getImportRun(userId: number, id: number): Promise<BulkImpo
 
 // ---------------- CMS connections (WordPress) ----------------
 //
-// wp_app_password is stored as plain text, same as monitored_pages.slack_webhook above —
-// this is a scoped, individually-revocable "Application Password" credential (not the
-// user's real WP login), so it's the same risk class as the webhook URLs already stored
-// this way. list/getMasked never return the raw value to the client — only
-// publishToWordpress (server-side only) reads it in full.
+// auth_secret is stored as plain text, same as monitored_pages.slack_webhook above — for
+// WordPress it's a scoped, individually-revocable "Application Password" (not the user's
+// real WP login); for Shopify it's a Custom App Admin API access token, also scoped and
+// revocable from the merchant's own Shopify admin. Same risk class as the webhook URLs
+// already stored this way. list/getMasked never return the raw value to the client —
+// only the publish flow (server-side only) reads it in full.
 
 function maskSecret(secret: string): string {
   if (secret.length <= 4) return "••••";
@@ -757,24 +760,26 @@ function maskSecret(secret: string): string {
 function rowToCmsConnection(row: any): CmsConnection {
   return {
     id: row.id,
+    platform: row.platform,
     label: row.label,
     siteUrl: row.site_url,
-    wpUsername: row.wp_username,
-    wpAppPasswordMasked: maskSecret(row.wp_app_password),
+    authIdentifier: row.auth_identifier,
+    authSecretMasked: maskSecret(row.auth_secret),
     createdAt: toIso(row.created_at),
   };
 }
 
 export async function createCmsConnection(userId: number, params: {
+  platform: CmsPlatform;
   label: string;
   siteUrl: string;
-  wpUsername: string;
-  wpAppPassword: string;
+  authIdentifier: string;
+  authSecret: string;
 }): Promise<CmsConnection> {
   await ensureSchema();
   const row = await one<any>(
-    `INSERT INTO cms_connections (user_id, label, site_url, wp_username, wp_app_password) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [userId, params.label, params.siteUrl, params.wpUsername, params.wpAppPassword]
+    `INSERT INTO cms_connections (user_id, platform, label, site_url, auth_identifier, auth_secret) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [userId, params.platform, params.label, params.siteUrl, params.authIdentifier, params.authSecret]
   );
   return rowToCmsConnection(row);
 }
@@ -785,19 +790,20 @@ export async function listCmsConnections(userId: number): Promise<CmsConnection[
   return rows.map(rowToCmsConnection);
 }
 
-/** Server-side only (publish flow) — includes the raw app password. Never send this to the client. */
+/** Server-side only (publish flow) — includes the raw secret. Never send this to the client. */
 export interface CmsConnectionSecret {
   id: number;
+  platform: CmsPlatform;
   siteUrl: string;
-  wpUsername: string;
-  wpAppPassword: string;
+  authIdentifier: string;
+  authSecret: string;
 }
 
 export async function getCmsConnectionSecret(userId: number, id: number): Promise<CmsConnectionSecret | null> {
   await ensureSchema();
   const row = await one<any>(`SELECT * FROM cms_connections WHERE id = $1 AND user_id = $2`, [id, userId]);
   if (!row) return null;
-  return { id: row.id, siteUrl: row.site_url, wpUsername: row.wp_username, wpAppPassword: row.wp_app_password };
+  return { id: row.id, platform: row.platform, siteUrl: row.site_url, authIdentifier: row.auth_identifier, authSecret: row.auth_secret };
 }
 
 export async function deleteCmsConnection(userId: number, id: number): Promise<void> {

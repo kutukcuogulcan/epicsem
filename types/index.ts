@@ -198,12 +198,16 @@ export interface ContentDraft {
   createdAt: string;
 }
 
-/** Safe-to-return-to-the-client view of a saved CMS connection — app password is masked. */
+/** WordPress uses Application Passwords; Shopify uses a Custom App Admin API access token. */
+export type CmsPlatform = "wordpress" | "shopify";
+
+/** Safe-to-return-to-the-client view of a saved CMS connection — the secret is masked. */
 export interface CmsConnection {
   id: number;
+  platform: CmsPlatform;
   label: string;
   siteUrl: string;
-  wpUsername: string;
-  wpAppPasswordMasked: string;
+  authIdentifier: string;
+  authSecretMasked: string;
   createdAt: string;
 }

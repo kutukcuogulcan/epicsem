@@ -17,6 +17,7 @@ const OTHER_TOOLS = [
   { href: "/monitor", label: "AXO Monitoring" },
   { href: "/import", label: "Bulk Import" },
   { href: "/content", label: "Content Studio" },
+  { href: "/local", label: "Yerel İşletme (GBP)" },
   { href: "/clients", label: "Clients" },
   { href: "/prompts", label: "Claude Code Prompts" },
 ];

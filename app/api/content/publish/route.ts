@@ -5,13 +5,15 @@ import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { getCmsConnectionSecret, getContentDraft, markDraftPublished } from "@/lib/db";
 import { publishDraftToWordpress } from "@/lib/wordpress";
+import { publishDraftToShopify } from "@/lib/shopify";
 
 const bodySchema = z.object({
   draftId: z.number(),
   connectionId: z.number(),
 });
 
-/** Always publishes as a WordPress DRAFT — see lib/wordpress.ts for why this isn't configurable. */
+/** Always publishes as a draft (WordPress "draft" / Shopify "unpublished") — see
+ * lib/wordpress.ts and lib/shopify.ts for why this isn't configurable per platform. */
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
@@ -35,17 +37,26 @@ export async function POST(req: NextRequest) {
   if (!draft) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 
   const connection = await getCmsConnectionSecret(user.id, parsed.connectionId);
-  if (!connection) return NextResponse.json({ error: "WordPress connection not found" }, { status: 404 });
+  if (!connection) return NextResponse.json({ error: "CMS connection not found" }, { status: 404 });
 
   try {
-    const result = await publishDraftToWordpress({
-      siteUrl: connection.siteUrl,
-      username: connection.wpUsername,
-      appPassword: connection.wpAppPassword,
-      title: draft.article.title,
-      bodyMarkdown: draft.article.bodyMarkdown,
-      excerpt: draft.article.metaDescription,
-    });
+    const result =
+      connection.platform === "shopify"
+        ? await publishDraftToShopify({
+            shopDomain: connection.siteUrl,
+            accessToken: connection.authSecret,
+            title: draft.article.title,
+            bodyMarkdown: draft.article.bodyMarkdown,
+            excerpt: draft.article.metaDescription,
+          })
+        : await publishDraftToWordpress({
+            siteUrl: connection.siteUrl,
+            username: connection.authIdentifier,
+            appPassword: connection.authSecret,
+            title: draft.article.title,
+            bodyMarkdown: draft.article.bodyMarkdown,
+            excerpt: draft.article.metaDescription,
+          });
     await markDraftPublished(user.id, draft.id, {
       connectionId: connection.id,
       postUrl: result.postUrl,

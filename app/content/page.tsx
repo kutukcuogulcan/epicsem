@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CmsConnection, ContentDraft } from "@/types";
+import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
@@ -25,8 +25,8 @@ const SCENARIO_STEPS = [
     body: "Taslak, [NEEDS: ...] alanları doldurulup gözden geçirilir.",
   },
   {
-    title: "WordPress taslağı olarak yayınlanır",
-    body: "\"Publish as WordPress draft\" ile içerik canlıya değil, WordPress'te bir taslak olarak gönderilir — yayına alma kararı kullanıcıya kalır.",
+    title: "Taslak olarak yayınlanır",
+    body: "\"Taslak olarak yayınla\" ile içerik canlıya değil, WordPress veya Shopify'da bir taslak olarak gönderilir — yayına alma kararı kullanıcıya kalır.",
   },
 ];
 
@@ -37,11 +37,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Yayınladığımda direkt canlıya mı çıkıyor?",
-    a: "Hayır — yayınlama her zaman WordPress'te bir taslak (draft) oluşturur, asla otomatik yayına almaz. İncelemeyi ve yayına alma kararını sen WordPress üzerinden veriyorsun.",
+    a: "Hayır — yayınlama her zaman bir taslak oluşturur (WordPress'te \"draft\", Shopify'da \"unpublished\"), asla otomatik yayına almaz. İncelemeyi ve yayına alma kararını sen WordPress veya Shopify üzerinden veriyorsun.",
   },
   {
-    q: "Birden fazla müşterinin WordPress'ine bağlanabilir miyim?",
-    a: "Evet — her müşteri için ayrı bir bağlantı (site adresi, kullanıcı adı, application password) kaydedebilir, taslağı yayınlarken hangi bağlantıyı kullanacağını seçebilirsin.",
+    q: "Birden fazla müşterinin sitesine bağlanabilir miyim? WordPress dışında ne destekleniyor?",
+    a: "Evet — WordPress ve Shopify ilk sınıf destekleniyor. Her müşteri için ayrı bir bağlantı (site adresi, kullanıcı adı/token) kaydedebilir, taslağı yayınlarken hangi bağlantıyı kullanacağını seçebilirsin.",
   },
   {
     q: "Aylık kaç içerik üretebilirim?",
@@ -63,7 +63,13 @@ export default function ContentStudioPage() {
   const [selectedDraft, setSelectedDraft] = useState<ContentDraft | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
 
-  const [connForm, setConnForm] = useState({ label: "", siteUrl: "", wpUsername: "", wpAppPassword: "" });
+  const [connForm, setConnForm] = useState<{ platform: CmsPlatform; label: string; siteUrl: string; authIdentifier: string; authSecret: string }>({
+    platform: "wordpress",
+    label: "",
+    siteUrl: "",
+    authIdentifier: "",
+    authSecret: "",
+  });
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [savingConn, setSavingConn] = useState(false);
@@ -120,15 +126,16 @@ export default function ContentStudioPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          platform: connForm.platform,
           siteUrl: connForm.siteUrl,
-          wpUsername: connForm.wpUsername,
-          wpAppPassword: connForm.wpAppPassword,
+          authIdentifier: connForm.authIdentifier,
+          authSecret: connForm.authSecret,
         }),
       });
       const data = await res.json();
       setTestResult(
         data.ok
-          ? { ok: true, message: `${data.siteUserName ?? connForm.wpUsername} olarak bağlandı.` }
+          ? { ok: true, message: `${data.siteUserName ?? connForm.authIdentifier ?? connForm.siteUrl} olarak bağlandı.` }
           : { ok: false, message: data.error ?? "Bağlantı başarısız oldu." }
       );
     } catch (err) {
@@ -154,7 +161,7 @@ export default function ContentStudioPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Bağlantı kaydedilemedi");
-      setConnForm({ label: "", siteUrl: "", wpUsername: "", wpAppPassword: "" });
+      setConnForm({ platform: "wordpress", label: "", siteUrl: "", authIdentifier: "", authSecret: "" });
       setTestResult(null);
       refreshConnections();
     } catch (err) {
@@ -199,21 +206,28 @@ export default function ContentStudioPage() {
           <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
           buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
           bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
-          bırakılır. Yayınlama her zaman bir <strong>WordPress taslağı</strong> oluşturur, asla canlı bir gönderi
-          değil — inceleyip yayına almayı siz WordPress&apos;ten yaparsınız.
+          bırakılır. Yayınlama her zaman bir <strong>taslak</strong> oluşturur (WordPress veya Shopify), asla canlı
+          bir gönderi değil — inceleyip yayına almayı siz WordPress veya Shopify&apos;dan yaparsınız.
         </p>
         <UsageMeter metric="contentGenerations" />
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-bold">WordPress bağlantıları</h2>
+        <h2 className="font-bold">CMS bağlantıları</h2>
+        <p className="text-xs text-ink/40 -mt-2">WordPress veya Shopify — hangisini kullanıyorsanız.</p>
         {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
         <div className="space-y-2">
           {connections.map((c) => (
             <div key={c.id} className="flex items-center justify-between text-sm rounded-lg bg-muted px-3 py-2">
               <div>
+                <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-accent mr-1.5">
+                  {c.platform === "shopify" ? "Shopify" : "WordPress"}
+                </span>
                 <span className="font-medium">{c.label}</span>{" "}
-                <span className="text-ink/40">— {c.siteUrl} ({c.wpUsername}, {c.wpAppPasswordMasked})</span>
+                <span className="text-ink/40">
+                  — {c.siteUrl} ({c.authIdentifier ? `${c.authIdentifier}, ` : ""}
+                  {c.authSecretMasked})
+                </span>
               </div>
               <button onClick={() => deleteConnection(c.id)} className="text-xs text-danger hover:underline">
                 Kaldır
@@ -223,45 +237,68 @@ export default function ContentStudioPage() {
         </div>
 
         <form onSubmit={saveConnection} className="space-y-2 border-t border-border pt-4">
+          <div className="flex gap-2 text-xs">
+            {(["wordpress", "shopify"] as CmsPlatform[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setConnForm((f) => ({ ...f, platform: p, authIdentifier: "" }))}
+                className={`rounded-lg px-3 py-1.5 font-medium border ${
+                  connForm.platform === p ? "bg-accent text-white border-accent" : "border-border hover:bg-muted"
+                }`}
+              >
+                {p === "shopify" ? "Shopify" : "WordPress"}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <input
               value={connForm.label}
               onChange={(e) => setConnForm((f) => ({ ...f, label: e.target.value }))}
-              placeholder="Etiket (örn. Müşterinin WP sitesi)"
+              placeholder={connForm.platform === "shopify" ? "Etiket (örn. Müşterinin Shopify mağazası)" : "Etiket (örn. Müşterinin WP sitesi)"}
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={connForm.siteUrl}
               onChange={(e) => setConnForm((f) => ({ ...f, siteUrl: e.target.value }))}
-              placeholder="https://musteri-sitesi.com"
+              placeholder={connForm.platform === "shopify" ? "magaza.myshopify.com" : "https://musteri-sitesi.com"}
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
+            {connForm.platform === "wordpress" && (
+              <input
+                value={connForm.authIdentifier}
+                onChange={(e) => setConnForm((f) => ({ ...f, authIdentifier: e.target.value }))}
+                placeholder="WordPress kullanıcı adı"
+                required
+                className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+            )}
             <input
-              value={connForm.wpUsername}
-              onChange={(e) => setConnForm((f) => ({ ...f, wpUsername: e.target.value }))}
-              placeholder="WordPress kullanıcı adı"
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <input
-              value={connForm.wpAppPassword}
-              onChange={(e) => setConnForm((f) => ({ ...f, wpAppPassword: e.target.value }))}
-              placeholder="Uygulama parolası"
+              value={connForm.authSecret}
+              onChange={(e) => setConnForm((f) => ({ ...f, authSecret: e.target.value }))}
+              placeholder={connForm.platform === "shopify" ? "Admin API erişim token'ı (shpat_…)" : "Uygulama parolası"}
               type="password"
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <p className="text-xs text-ink/40">
-            WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekleyin. Gerçek giriş parolanız değil.
+            {connForm.platform === "shopify"
+              ? "Shopify'da: Ayarlar → Uygulamalar ve satış kanalları → Uygulama geliştir → yeni bir özel uygulama oluşturup Admin API erişiminde write_content iznini açın, oluşan token'ı buraya yapıştırın."
+              : "WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekleyin. Gerçek giriş parolanız değil."}
           </p>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={testConnection}
-              disabled={testing || !connForm.siteUrl || !connForm.wpUsername || !connForm.wpAppPassword}
+              disabled={
+                testing ||
+                !connForm.siteUrl ||
+                !connForm.authSecret ||
+                (connForm.platform === "wordpress" && !connForm.authIdentifier)
+              }
               className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
             >
               {testing ? "Test ediliyor…" : "Bağlantıyı test et"}
@@ -299,7 +336,7 @@ export default function ContentStudioPage() {
             >
               <div className="font-medium truncate">{d.article.title}</div>
               <div className="text-ink/40 flex items-center gap-2">
-                <span>{d.status === "published-to-wp" ? "WP'de yayınlandı" : "Taslak"}</span>
+                <span>{d.status === "published-to-wp" ? "Yayınlandı" : "Taslak"}</span>
                 {d.article.demoMode && <span className="text-warn">demo</span>}
               </div>
             </button>
@@ -324,7 +361,7 @@ export default function ContentStudioPage() {
                   </p>
                 </div>
                 {selectedDraft.status === "published-to-wp" && (
-                  <span className="badge badge-pass">WordPress'te yayınlandı</span>
+                  <span className="badge badge-pass">Yayınlandı</span>
                 )}
               </div>
 
@@ -352,14 +389,14 @@ export default function ContentStudioPage() {
                   )}
                   {selectedDraft.publishedEditUrl && (
                     <a href={selectedDraft.publishedEditUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-                      WordPress'te düzenle
+                      Sitede düzenle
                     </a>
                   )}
                 </div>
               ) : (
                 <div className="border-t border-border pt-3 space-y-2">
                   {connections.length === 0 ? (
-                    <p className="text-xs text-ink/40">Bu taslağı yayınlamak için yukarıdan bir WordPress bağlantısı ekleyin.</p>
+                    <p className="text-xs text-ink/40">Bu taslağı yayınlamak için yukarıdan bir WordPress veya Shopify bağlantısı ekleyin.</p>
                   ) : (
                     <div className="flex items-center gap-3 flex-wrap">
                       <select
@@ -376,7 +413,7 @@ export default function ContentStudioPage() {
                         disabled={publishing}
                         className="text-sm font-semibold rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
                       >
-                        {publishing ? "Yayınlanıyor…" : "WordPress taslağı olarak yayınla"}
+                        {publishing ? "Yayınlanıyor…" : "Taslak olarak yayınla"}
                       </button>
                     </div>
                   )}

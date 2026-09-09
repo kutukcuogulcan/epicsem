@@ -28,8 +28,9 @@ export default function PricingPage() {
           <ul className="space-y-2 text-sm text-ink/70 font-medium">
             <li>✓ SEO + AXO Audit — sınırsız</li>
             <li>✓ GEO/AEO Visibility — tüm motorlar (OpenAI, Anthropic, Google, Perplexity, DeepSeek, xAI)</li>
-            <li>✓ Gap Analysis + Content Studio</li>
+            <li>✓ Gap Analysis + Content Studio (WordPress + Shopify)</li>
             <li>✓ AXO Monitoring + Bulk Import</li>
+            <li>✓ Yerel İşletme araçları (GBP gönderi + yorum yanıtı taslağı)</li>
             <li>✓ Sınırsız müşteri (Clients)</li>
             <li>✓ Hesap açmadan panele erişim (demo modu)</li>
           </ul>

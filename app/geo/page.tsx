@@ -404,11 +404,12 @@ export default function GeoPage() {
             Bir satırı <code>Konu: prompt metni</code> şeklinde yazarsanız (örn. <code>Fiyat: X ne kadar tutar?</code>)
             sonuçlarda konu bazında görünürlük kırılımı çıkar — konu vermezseniz &ldquo;Genel&rdquo; sayılır.
           </p>
-          <p className="text-xs text-ink/30">
-            Türkiye pazarı ipucu: LLM&apos;ler Türkçe bir soruyu İngilizce eşdeğerinden farklı bir kaynak
-            karışımıyla yanıtlayabiliyor — hedef kitleniz Türkiye ise ikisini de test edin, İngilizce sonucun
-            aynen geçerli olacağını varsaymayın.
-          </p>
+          <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-ink/60">
+            <span className="font-semibold text-accent">🇹🇷 Türkiye pazarı ipucu:</span> LLM&apos;ler Türkçe bir
+            soruyu İngilizce eşdeğerinden farklı bir kaynak karışımıyla yanıtlayabiliyor — hedef kitleniz Türkiye
+            ise <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-accent hover:underline font-medium">TR örneği</button> ile
+            de test edin, İngilizce sonucun aynen geçerli olacağını varsaymayın.
+          </div>
           <UsageMeter metric="promptSuggestions" />
         </div>
 
@@ -626,6 +627,41 @@ export default function GeoPage() {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {sourceDistribution && sourceDistribution.filter((d) => d.type !== "You" && d.type !== "Competitor").length > 0 && (
+        <div className="card space-y-3">
+          <div>
+            <h2 className="font-bold">Backlink fırsatları</h2>
+            <p className="text-sm text-ink/50 mt-1">
+              Bu, otomatik bir link değişim ağı değil — az önceki testte AI motorlarının bu konuda zaten kaynak
+              gösterdiği, markanız veya rakipleriniz olmayan siteler. AI motorlarının güvendiğini kanıtladığı bu
+              siteler, gerçek bir bağlantı/mention için iletişime geçilebilecek somut bir hedef listesi oluşturur.
+            </p>
+          </div>
+          <div className="divide-y divide-border">
+            {sourceDistribution
+              .filter((d) => d.type !== "You" && d.type !== "Competitor")
+              .slice(0, 8)
+              .map((d) => (
+                <div key={d.domain} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${DOMAIN_TYPE_COLOR[d.type]}`} />
+                    <a
+                      href={`https://${d.domain}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-ink/80 hover:text-accent hover:underline"
+                    >
+                      {d.domain}
+                    </a>
+                    <span className="text-xs text-ink/40 shrink-0">{DOMAIN_TYPE_LABEL[d.type]}</span>
+                  </div>
+                  <span className="text-xs text-ink/50 shrink-0">{d.count} atıf</span>
+                </div>
+              ))}
           </div>
         </div>
       )}

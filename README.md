@@ -184,6 +184,37 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
     `/geo`, `/gap`, `/content` sayfalarında küçük bir `UsageMeter` bu ayki kullanımı
     gösteriyor. `users.plan` kolonu (`GET /api/usage`) ileride gerçek ücretli
     planlar eklenebilsin diye var — şu an herkes `free`'de, plan değiştirme UI'ı yok.
+  - **2026-09-09** — Arvow'un dört özelliği/fırsat alanı değerlendirildi; ikisi
+    dürüstçe tam otomatik kurulamayacağı için (aşağıda neden), hepsi için ya gerçek
+    entegrasyon ya da dürüst bir alternatif inşa edildi:
+    - **Shopify entegrasyonu** — `cms_connections` tablosu artık platform-agnostik
+      (`platform`, `auth_identifier`, `auth_secret` kolonları; `SCHEMA_VERSION` 6'ya
+      çıktı). `lib/shopify.ts`, `lib/wordpress.ts`'in aynı deseni izliyor: Shopify
+      Custom App Admin API access token'ıyla (`X-Shopify-Access-Token`, mağaza kendi
+      admin panelinden oluşturuyor — bizim OAuth app onayımıza gerek yok) bağlanıyor,
+      yayın her zaman `published: false` (taslak) ile gidiyor — WordPress'teki
+      "asla otomatik publish değil" kararının birebir aynısı. `/content` sayfasında
+      platform seçici eklendi.
+    - **Backlink Fırsatları** (`/geo`) — Arvow'daki "otomatik pilot backlink değişim
+      ağı" gerçek partner-site anlaşmalarına dayanıyor; böyle bir ağ yok ve sahte
+      veriyle taklit edilmedi. Bunun yerine GEO testinde zaten toplanan kaynak
+      dağılımı verisi (`computeSourceDistribution`) yeniden kullanılarak, markanız/
+      rakipleriniz olmayan ama AI motorlarının bu konuda kaynak gösterdiği siteler
+      "Backlink Fırsatları" olarak listeleniyor — otomatik bir ağ değil, kendi test
+      verinizden çıkan gerçek bir outreach hedef listesi (yeni backend yok, mevcut
+      veri yeniden çerçevelendi).
+    - **Yerel İşletme araçları** (`/local`) — Google Business Profile gönderisi ve
+      yorum yanıtı taslağı üretir (`lib/local-content.ts`, aynı `geo-providers.ts`
+      altyapısı, `contentGenerations` kotasını paylaşıyor). Google'ın Business
+      Profile API'si onay/inceleme gerektirdiği ve bu anında garanti edilemediği
+      için, sahte bir "otomatik gönderim" yerine dürüst bir taslak oluşturucu
+      yapıldı: metin üretilir, kopyala-yapıştır ile siz Google'a gönderirsiniz —
+      WordPress/Shopify'daki "insan onayı olmadan hiçbir şey canlıya çıkmaz"
+      ilkesiyle aynı mantık.
+    - **Türkiye/yerel pazar konumlandırması** — mevcut "Türkçe promptları ayrı
+      test edin" ipucu `/geo`'da daha görünür bir vurguya taşındı, homepage ve
+      `/features/geo-visibility`'ye bunu bilinçli bir farklılaştırıcı olarak
+      anlatan içerik eklendi (kod değişikliği yok, sadece konumlandırma).
 
 ## Bugün ne çalışmıyor / bilinçli olarak MVP dışı bırakıldı
 
@@ -191,10 +222,17 @@ o dördünü tek bir Next.js uygulamasında MVP olarak kuruyor. Üstüne, hiçbi
   entegrasyonu, ücretli plan satın alma, fatura, deneme süresi yok. Bu bilinçli bir
   sonraki adım: fiyatlandırma/plan isimleri iş kararı gerektiriyor, kod tarafı hazır
   (`lib/plans.ts`'e yeni bir plan eklemek + `users.plan`'ı güncellemek yeterli).
-- **WordPress dışında CMS yok** — `/content` şu an sadece WordPress REST API'sine
-  (Application Password ile) draft gönderiyor. Webflow, Shopify, headless CMS'ler
-  (Contentful, Sanity vb.) roadmap'te değil; agency'lerin en yaygın kullandığı CMS
-  olduğu için önce WordPress'e odaklanıldı.
+- **WordPress + Shopify dışında CMS yok** — `/content` artık WordPress (Application
+  Password) ve Shopify'a (Custom App Admin API token) draft gönderebiliyor. Webflow,
+  headless CMS'ler (Contentful, Sanity vb.) roadmap'te değil.
+- **Google Business Profile'a otomatik gönderim yok** — `/local` GBP gönderisi ve
+  yorum yanıtı taslağı üretiyor ama Google'a hiçbir şeyi kendi göndermiyor; Google'ın
+  Business Profile API'si onay/inceleme gerektirdiği için bu bilinçli bir sınır
+  (kopyala-yapıştır akışı).
+- **Otomatik backlink değişim ağı yok** — böyle bir ağ gerçek partner-site
+  anlaşmalarına dayanır, sahte veriyle taklit edilmedi. `/geo`'daki "Backlink
+  Fırsatları" bunun yerine gerçek GEO test verinizden çıkan bir outreach hedef
+  listesi (otomasyon değil).
 - **Çok sayfalı toplu tarama** — `/audit` ve `/gap` hâlâ tek URL alıyor; `/import` ile
   Screaming Frog CSV'sinden toplu teknik bulgu çıkarılabiliyor ama bu bir crawler değil
   — yine de önce Screaming Frog ile taramanız gerekiyor. Epicsem'in kendi çoklu-sayfa

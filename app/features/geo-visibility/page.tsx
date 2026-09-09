@@ -49,6 +49,10 @@ const FAQ_ITEMS = [
     q: "Aylık kaç sorgu hakkım var?",
     a: "Ücretsiz planda GEO/AEO ve Gap Analysis birlikte, ayda toplam 300 AI motor sorgusu (prompt sayısı × motor sayısı) içeriyor. Demo modda hiçbir sorgu bu kotadan düşmez.",
   },
+  {
+    q: "Neden Türkçe promptları ayrı test etmeliyim?",
+    a: "LLM'ler bir soruya hangi dilde sorulduğuna göre farklı kaynaklara (haber siteleri, forumlar, resmi sayfalar) yönelebiliyor — İngilizce sonuç Türkçe için otomatik geçerli olmuyor. Hedef kitleniz Türkiye ise iki dilde de test etmek, sadece İngilizce test etmekten daha doğru bir tablo verir.",
+  },
 ];
 
 const FEATURES = [
@@ -58,6 +62,7 @@ const FEATURES = [
   { title: "Kaynak dağılımı", body: "AI motorlarının cevaplarında hangi domainleri kaynak gösterdiğini — seni, rakiplerini veya üçüncü taraf siteleri — gör." },
   { title: "Trend takibi", body: "Aynı marka için tekrar test çalıştırdıkça görünürlüğün zaman içindeki değişimini grafikte izle." },
   { title: "Prompt önerisi", body: "Marka ve rakip bilgisinden otomatik, konu etiketli prompt seti üretilir — boş kutuyla başlamazsın." },
+  { title: "Türkiye pazarına özel test", body: "Türkçe promptları İngilizce eşdeğerinden ayrı test edin — aynı soru LLM'lerden dile göre farklı bir kaynak karışımıyla yanıt alabiliyor, çoğu GEO aracı bunu hiç ayırt etmiyor." },
 ];
 
 export default function GeoVisibilityLandingPage() {

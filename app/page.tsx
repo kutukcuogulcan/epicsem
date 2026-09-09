@@ -7,7 +7,7 @@ const GROUPS = [
     tone: "text-accent",
     items: [
       { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
-      { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör.", landingHref: "/features/geo-visibility" },
+      { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör — Türkçe ve İngilizce promptları ayrı test edebilirsin.", landingHref: "/features/geo-visibility" },
       { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
     ],
   },
@@ -18,7 +18,8 @@ const GROUPS = [
     items: [
       { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir.", landingHref: "/features/axo-monitoring" },
       { label: "Bulk Import", href: "/import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör.", landingHref: "/features/bulk-import" },
-      { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress'e yayınlar.", landingHref: "/features/content-studio" },
+      { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress veya Shopify'a yayınlar.", landingHref: "/features/content-studio" },
+      { label: "Yerel İşletme (GBP)", href: "/local", body: "Google Business Profile gönderisi ve müşteri yorumlarına yanıt taslağı üretir — kopyala, yapıştır, sen onayla." },
     ],
   },
   {
@@ -75,7 +76,8 @@ export default function Home() {
         <p className="mt-5 text-ink/60 max-w-2xl text-base sm:text-lg">
           Epicsem, klasik teknik SEO denetimini ve ChatGPT / Claude / Gemini / Perplexity üzerinde gerçek prompt
           testlerini aynı panelde çalıştırır — markanın sadece Google&apos;da değil, birine AI&apos;ya soru
-          sorduğunda da hatırlanıp hatırlanmadığını gösterir.
+          sorduğunda da hatırlanıp hatırlanmadığını gösterir. Türkçe promptları İngilizce eşdeğerinden ayrı test
+          eder — e-ticaret satıcıları ve yerel işletmeler için Türkiye pazarına özel bir bakış açısı sunar.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-bold hover:opacity-90 transition-opacity">

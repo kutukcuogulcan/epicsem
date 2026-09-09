@@ -4,12 +4,24 @@ import { createCmsConnection, deleteCmsConnection, listCmsConnections } from "@/
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 
-const bodySchema = z.object({
-  label: z.string().min(1).max(100),
-  siteUrl: z.string().url(),
-  wpUsername: z.string().min(1).max(200),
-  wpAppPassword: z.string().min(1).max(200),
-});
+const bodySchema = z
+  .object({
+    platform: z.enum(["wordpress", "shopify"]).default("wordpress"),
+    label: z.string().min(1).max(100),
+    siteUrl: z.string().min(1).max(200),
+    authIdentifier: z.string().max(200).default(""),
+    authSecret: z.string().min(1).max(300),
+  })
+  .superRefine((val, ctx) => {
+    if (val.platform === "wordpress") {
+      if (val.authIdentifier.trim().length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "WordPress kullanıcı adı gerekli", path: ["authIdentifier"] });
+      }
+      if (!/^https?:\/\//.test(val.siteUrl)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Site adresi https:// ile başlamalı", path: ["siteUrl"] });
+      }
+    }
+  });
 
 export async function GET() {
   const user = await requireUser();

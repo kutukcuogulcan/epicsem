@@ -3,12 +3,14 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { testWpConnection } from "@/lib/wordpress";
+import { testShopifyConnection } from "@/lib/shopify";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
-  siteUrl: z.string().url(),
-  wpUsername: z.string().min(1).max(200),
-  wpAppPassword: z.string().min(1).max(200),
+  platform: z.enum(["wordpress", "shopify"]).default("wordpress"),
+  siteUrl: z.string().min(1).max(200),
+  authIdentifier: z.string().max(200).default(""),
+  authSecret: z.string().min(1).max(300),
 });
 
 /** Tests credentials WITHOUT saving them — used by the "Test connection" button before Save. */
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
 
-  const limitResult = rateLimit(`wp-test:${user.id}`, 20, 60 * 60 * 1000);
+  const limitResult = rateLimit(`cms-test:${user.id}`, 20, 60 * 60 * 1000);
   if (!limitResult.allowed) {
     return NextResponse.json(
       { error: "Rate limit reached. Try again shortly." },
@@ -31,6 +33,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
   }
 
-  const result = await testWpConnection(parsed.siteUrl, parsed.wpUsername, parsed.wpAppPassword);
+  const result =
+    parsed.platform === "shopify"
+      ? await testShopifyConnection(parsed.siteUrl, parsed.authSecret)
+      : await testWpConnection(parsed.siteUrl, parsed.authIdentifier, parsed.authSecret);
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }
