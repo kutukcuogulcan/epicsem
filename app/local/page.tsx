@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import UsageMeter from "@/components/UsageMeter";
-import Breadcrumb from "@/components/Breadcrumb";
+import ToolPageHeader from "@/components/ToolPageHeader";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
@@ -93,17 +93,20 @@ export default function LocalToolsPage() {
 
   return (
     <div className="space-y-8 max-w-3xl">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Yerel İşletme" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">Yerel İşletme Araçları</h1>
-        <p className="text-ink/60 text-sm max-w-3xl">
-          Google Business Profile gönderisi ve müşteri yorumlarına yanıt taslağı üretir. Bu araç Google'a{" "}
-          <strong>hiçbir şeyi otomatik göndermez</strong> — Google Business Profile API'sinin gerektirdiği onay
-          sürecine sahip değiliz, o yüzden bunu sahte bir otomasyon gibi göstermek yerine dürüst bir taslak
-          oluşturucu olarak sunuyoruz: metni üretir, kopyalayıp Google Business Profile'a siz yapıştırırsınız.
-        </p>
+      <ToolPageHeader
+        breadcrumbLabel="Yerel İşletme"
+        title="Yerel İşletme Araçları"
+        body={
+          <>
+            Google Business Profile gönderisi ve müşteri yorumlarına yanıt taslağı üretir. Bu araç Google&apos;a{" "}
+            <strong>hiçbir şeyi otomatik göndermez</strong> — Google Business Profile API&apos;sinin gerektirdiği onay
+            sürecine sahip değiliz, o yüzden bunu sahte bir otomasyon gibi göstermek yerine dürüst bir taslak
+            oluşturucu olarak sunuyoruz: metni üretir, kopyalayıp Google Business Profile&apos;a siz yapıştırırsınız.
+          </>
+        }
+      >
         <UsageMeter metric="contentGenerations" />
-      </div>
+      </ToolPageHeader>
 
       <div className="card space-y-3">
         <h2 className="font-bold text-sm">İşletme bilgisi</h2>

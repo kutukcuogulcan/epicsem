@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Breadcrumb from "@/components/Breadcrumb";
+import ToolPageHeader from "@/components/ToolPageHeader";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
@@ -146,15 +146,17 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Müşteriler" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">Müşteriler</h1>
-        <p className="text-ink/60 text-sm">
-          Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
-          dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
-          bir PDF rapor üretin.
-        </p>
-      </div>
+      <ToolPageHeader
+        breadcrumbLabel="Müşteriler"
+        title="Müşteriler"
+        body={
+          <>
+            Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
+            dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
+            bir PDF rapor üretin.
+          </>
+        }
+      />
 
       <form onSubmit={addClient} className="card space-y-3">
         <h2 className="font-bold text-sm">Bir müşteri ekle</h2>

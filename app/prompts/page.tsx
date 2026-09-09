@@ -1,6 +1,6 @@
 import { CATEGORY_LABEL, getPromptsByCategory, type PromptCategory } from "@/lib/prompt-library";
 import PromptBlock from "@/components/PromptBlock";
-import Breadcrumb from "@/components/Breadcrumb";
+import ToolPageHeader from "@/components/ToolPageHeader";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
@@ -50,23 +50,27 @@ export default function PromptsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Claude Code Promptları" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">Claude Code SEO Promptları</h1>
-        <p className="text-ink/60 text-sm max-w-3xl">
-          Kendi sitenizin kodunda Claude Code (veya shell + dosya erişimi olan başka bir kodlama ajanı) ile SEO
-          işleri yapmak için ücretsiz bir prompt kütüphanesi — teknik düzeltmeler, AI crawler erişimi, schema
-          üretimi, GEO citation boşlukları, content brief&apos;leri, internal linking ve daha fazlası. Her prompt,
-          reponuzda gerçekten var olana dayanacak şekilde tasarlandı — uydurma istatistik yok, ince otomatik
-          üretilmiş sayfa yok.
-        </p>
-        <p className="text-ink/40 text-xs max-w-3xl">
-          Bunlar kendinizin dolduracağı statik şablonlardır. Kendi gerçek bulgularınızla önceden doldurulmuş bir
-          prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> ya da bir{" "}
-          <a href="/gap" className="text-accent hover:underline">gap analysis</a> çalıştırın — ikisinde de o
-          spesifik sonuçtan bir tane üreten bir "Fix with Claude Code" butonu var.
-        </p>
-      </div>
+      <ToolPageHeader
+        breadcrumbLabel="Claude Code Promptları"
+        title="Claude Code SEO Promptları"
+        body={
+          <>
+            <p className="max-w-3xl">
+              Kendi sitenizin kodunda Claude Code (veya shell + dosya erişimi olan başka bir kodlama ajanı) ile SEO
+              işleri yapmak için ücretsiz bir prompt kütüphanesi — teknik düzeltmeler, AI crawler erişimi, schema
+              üretimi, GEO citation boşlukları, content brief&apos;leri, internal linking ve daha fazlası. Her prompt,
+              reponuzda gerçekten var olana dayanacak şekilde tasarlandı — uydurma istatistik yok, ince otomatik
+              üretilmiş sayfa yok.
+            </p>
+            <p className="text-ink/40 text-xs max-w-3xl mt-2">
+              Bunlar kendinizin dolduracağı statik şablonlardır. Kendi gerçek bulgularınızla önceden doldurulmuş bir
+              prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> ya da bir{" "}
+              <a href="/gap" className="text-accent hover:underline">gap analysis</a> çalıştırın — ikisinde de o
+              spesifik sonuçtan bir tane üreten bir &quot;Fix with Claude Code&quot; butonu var.
+            </p>
+          </>
+        }
+      />
 
       {categories.map((cat) => (
         <div key={cat} className="space-y-3">
