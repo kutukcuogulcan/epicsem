@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "SEO + AXO Denetimi — Siteniz Google'da ve AI'da Görünüyor mu? | Epicsem",
@@ -63,46 +64,27 @@ const FEATURES = [
 export default function SeoAxoAuditLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Denetimi" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          Siteniz Google&apos;da iyi olabilir — ama AI&apos;da hiç görünmüyor olabilir.
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          Klasik SEO araçları title, meta ve başlık yapısını kontrol eder ama ChatGPT&apos;nin, Claude&apos;un veya
-          Perplexity&apos;nin crawler&apos;ının sitenize erişip erişemediğini ölçmez. Epicsem&apos;in SEO + AXO
-          Audit&apos;i ikisini birden tek taramada gösterir: teknik SEO sağlamlığı ve AI crawler erişimi.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Ücretsiz denetim yap
-          </Link>
-          <Link href="/features/geo-visibility" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            GEO/AEO Görünürlük&apos;ü incele
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="SEO + AXO Denetimi"
+        eyebrow="SEO + AXO AUDIT"
+        title={<>Siteniz Google&apos;da iyi olabilir — ama <span className="text-accent">AI&apos;da hiç görünmüyor</span> olabilir.</>}
+        body="Klasik SEO araçları title, meta ve başlık yapısını kontrol eder ama ChatGPT'nin, Claude'un veya Perplexity'nin crawler'ının sitenize erişip erişemediğini ölçmez. Epicsem'in SEO + AXO Audit'i ikisini birden tek taramada gösterir: teknik SEO sağlamlığı ve AI crawler erişimi."
+        primaryCta={{ href: "/audit", label: "Ücretsiz denetim yap" }}
+        secondaryCta={{ href: "/features/geo-visibility", label: "GEO/AEO Görünürlük'ü incele" }}
+        image={{ src: "/screenshots/audit-scores.png", alt: "Epicsem SEO + AXO Audit sonuç ekranı — gerçek skorlar", path: "epicsem.app/audit", width: 1400, height: 228 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="Bir mobilya e-ticaret sitesi audit'ten geçiyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Sitenizi şimdi ücretsiz denetleyin</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/audit" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          Denetimi başlat
-        </Link>
-      </div>
+      <FeatureCTA
+        title="Sitenizi şimdi ücretsiz denetleyin"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/audit", label: "Denetimi başlat" }}
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "Bulk Import — Screaming Frog CSV'nizi Tek Seferde Analiz Edin | Epicsem",
@@ -59,46 +60,27 @@ const FEATURES = [
 export default function BulkImportLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Bulk Import" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          Yüzlerce sayfanın SEO sorunlarını tek tek değil, tek seferde görün.
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          Epicsem&apos;in Audit&apos;i tek bir URL&apos;yi anlık tarar. Bulk Import ise Screaming Frog&apos;la taranmış
-          tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link ve
-          noindex sayfaları tüm site genelinde, tek bir özet tabloda gösterir.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/import" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Ücretsiz CSV yükle
-          </Link>
-          <Link href="/features/seo-axo-audit" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            Tek sayfa Audit&apos;i incele
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="Bulk Import"
+        eyebrow="BULK IMPORT"
+        title={<>Yüzlerce sayfanın SEO sorunlarını tek tek değil, <span className="text-accent">tek seferde</span> görün.</>}
+        body="Epicsem'in Audit'i tek bir URL'yi anlık tarar. Bulk Import ise Screaming Frog'la taranmış tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link ve noindex sayfaları tüm site genelinde, tek bir özet tabloda gösterir."
+        primaryCta={{ href: "/import", label: "Ücretsiz CSV yükle" }}
+        secondaryCta={{ href: "/features/seo-axo-audit", label: "Tek sayfa Audit'i incele" }}
+        image={{ src: "/screenshots/bulk-import-form.png", alt: "Epicsem Bulk Import — Screaming Frog CSV yükleme alanı", path: "epicsem.app/import", width: 1399, height: 101 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="50 sayfalık bir site, tek CSV ile toplu taranıyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Sitenizin CSV'sini şimdi yükleyin</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/import" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          CSV yüklemeyi başlat
-        </Link>
-      </div>
+      <FeatureCTA
+        title="Sitenizin CSV'sini şimdi yükleyin"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/import", label: "CSV yüklemeyi başlat" }}
+      />
     </div>
   );
 }

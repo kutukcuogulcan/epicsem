@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "Gap Analysis — Sağlam Ama AI'da Görünmeyen Sayfalarınızı Bulun | Epicsem",
@@ -63,46 +64,27 @@ const FEATURES = [
 export default function GapAnalysisLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gap Analysis" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          Sitenizde teknik olarak sağlam ama AI&apos;da hiç anılmayan sayfalar var mı?
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          Audit &quot;teknik olarak sağlam&quot; der, GEO testi &quot;anılıyor mu&quot; der — ama ikisini ayrı ayrı
-          okuduğunuzda asıl soruyu cevaplayamazsınız. Epicsem&apos;in Gap Analysis&apos;i, her sayfanız için ikisini
-          aynı satırda birleştirir ve sağlam olduğu halde neden anılmadığını gösterir.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/gap" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Ücretsiz analiz yap
-          </Link>
-          <Link href="/features/content-studio" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            Content Studio&apos;yu incele
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="Gap Analysis"
+        eyebrow="GAP ANALYSIS"
+        title={<>Sitenizde teknik olarak sağlam ama <span className="text-accent">AI&apos;da hiç anılmayan</span> sayfalar var mı?</>}
+        body="Audit &quot;teknik olarak sağlam&quot; der, GEO testi &quot;anılıyor mu&quot; der — ama ikisini ayrı ayrı okuduğunuzda asıl soruyu cevaplayamazsınız. Epicsem'in Gap Analysis'i, her sayfanız için ikisini aynı satırda birleştirir ve sağlam olduğu halde neden anılmadığını gösterir."
+        primaryCta={{ href: "/gap", label: "Ücretsiz analiz yap" }}
+        secondaryCta={{ href: "/features/content-studio", label: "Content Studio'yu incele" }}
+        image={{ src: "/screenshots/gap-analysis-form.png", alt: "Epicsem Gap Analysis formu — marka, rakip ve prompt girişi", path: "epicsem.app/gap", width: 1399, height: 534 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="Bir mobilya markası 'sağlam ama görünmez' sayfasını buluyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Görünmez sayfalarınızı şimdi bulun</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/gap" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          Gap Analysis&apos;i başlat
-        </Link>
-      </div>
+      <FeatureCTA
+        title="Görünmez sayfalarınızı şimdi bulun"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/gap", label: "Gap Analysis'i başlat" }}
+      />
     </div>
   );
 }

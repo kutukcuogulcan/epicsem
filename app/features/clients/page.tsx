@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "Clients — Ajansınız İçin Çoklu Müşteri Yönetimi | Epicsem",
@@ -59,45 +60,27 @@ const FEATURES = [
 export default function ClientsLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Clients" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          5-10 müşteri yönetiyorsanız, marka bilgisini her seferinde yeniden yazmayın.
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          Epicsem&apos;in Clients aracı, her müşterinizin marka adını, domainini ve rakiplerini bir kere kaydetmenizi
-          sağlar — sonraki her Audit, GEO testi ve Gap Analysis koşusunda bu bilgi otomatik doldurulmuş olarak açılır.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/clients" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Ücretsiz müşteri ekle
-          </Link>
-          <Link href="/features/seo-axo-audit" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            Audit'i incele
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="Clients"
+        eyebrow="CLIENTS"
+        title={<>5-10 müşteri yönetiyorsanız, marka bilgisini <span className="text-accent">her seferinde yeniden yazmayın.</span></>}
+        body="Epicsem'in Clients aracı, her müşterinizin marka adını, domainini ve rakiplerini bir kere kaydetmenizi sağlar — sonraki her Audit, GEO testi ve Gap Analysis koşusunda bu bilgi otomatik doldurulmuş olarak açılır."
+        primaryCta={{ href: "/clients", label: "Ücretsiz müşteri ekle" }}
+        secondaryCta={{ href: "/features/seo-axo-audit", label: "Audit'i incele" }}
+        image={{ src: "/screenshots/clients-form.png", alt: "Epicsem Clients — müşteri ekleme formu", path: "epicsem.app/clients", width: 1399, height: 398 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="Bir ajans 5 müşteriyi tek panelde yönetiyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">İlk müşterinizi şimdi kaydedin</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/clients" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          Müşteri ekle
-        </Link>
-      </div>
+      <FeatureCTA
+        title="İlk müşterinizi şimdi kaydedin"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/clients", label: "Müşteri ekle" }}
+      />
     </div>
   );
 }

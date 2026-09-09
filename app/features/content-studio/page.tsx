@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "Content Studio — Kaybedilen Promptlardan Yayına Hazır İçerik | Epicsem",
@@ -63,46 +64,27 @@ const FEATURES = [
 export default function ContentStudioLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Content Studio" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          Kaybettiğiniz her prompt, yayına hazır bir içerik fikri olabilir.
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          Gap Analysis&apos;in bulduğu &quot;bu sayfaların hiçbirinde anılmıyorsunuz&quot; sonuçları, Content
-          Studio&apos;da gerçek verilere dayanan bir WordPress taslağına dönüşür — hiçbir istatistik uydurulmaz,
-          dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/gap" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Gap Analysis'ten başlayın
-          </Link>
-          <Link href="/content" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            Content Studio'ya git
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="Content Studio"
+        eyebrow="CONTENT STUDIO"
+        title={<>Kaybettiğiniz her prompt, <span className="text-accent">yayına hazır bir içerik fikri</span> olabilir.</>}
+        body={<>Gap Analysis&apos;in bulduğu &quot;bu sayfaların hiçbirinde anılmıyorsunuz&quot; sonuçları, Content Studio&apos;da gerçek verilere dayanan bir WordPress veya Shopify taslağına dönüşür — hiçbir istatistik uydurulmaz, dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.</>}
+        primaryCta={{ href: "/gap", label: "Gap Analysis'ten başlayın" }}
+        secondaryCta={{ href: "/content", label: "Content Studio'ya git" }}
+        image={{ src: "/screenshots/content-studio-form.png", alt: "Epicsem Content Studio — CMS bağlantı formu", path: "epicsem.app/content", width: 1399, height: 423 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="Kaybedilen bir prompt, yayına hazır bir taslağa dönüşüyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Bir Gap Analysis çalıştırıp ilk brief'inizi çıkarın</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/gap" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          Gap Analysis'i başlat
-        </Link>
-      </div>
+      <FeatureCTA
+        title="Bir Gap Analysis çalıştırıp ilk brief'inizi çıkarın"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/gap", label: "Gap Analysis'i başlat" }}
+      />
     </div>
   );
 }

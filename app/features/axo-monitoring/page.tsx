@@ -1,7 +1,8 @@
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
 import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
+import FeatureHero from "@/components/FeatureHero";
+import FeatureGrid from "@/components/FeatureGrid";
+import FeatureCTA from "@/components/FeatureCTA";
 
 export const metadata = {
   title: "AXO Monitoring — AI Crawler Engellemelerini Anında Yakalayın | Epicsem",
@@ -59,46 +60,27 @@ const FEATURES = [
 export default function AxoMonitoringLandingPage() {
   return (
     <div className="space-y-10">
-      <div className="space-y-4">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO Monitoring" }]} />
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight max-w-3xl">
-          Bir robots.txt değişikliği AI görünürlüğünüzü sessizce sıfırlayabilir.
-        </h1>
-        <p className="text-ink/60 text-base max-w-2xl">
-          robots.txt ve CDN bot-engelleme kuralları sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılanı.
-          Epicsem&apos;in AXO Monitoring&apos;i kritik sayfalarınızı zamanla izler ve daha önce izinli olan bir AI
-          crawler engellenirse, haftalar sonra bir görünürlük düşüşünden değil anında Slack&apos;ten haberdar olursunuz.
-        </p>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/monitor" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-            Ücretsiz izlemeye başla
-          </Link>
-          <Link href="/features/seo-axo-audit" className="rounded-lg border border-border bg-panel/60 px-6 py-3 text-sm font-medium hover:bg-muted transition-colors">
-            SEO + AXO Audit&apos;i incele
-          </Link>
-        </div>
-      </div>
+      <FeatureHero
+        breadcrumbLabel="AXO Monitoring"
+        eyebrow="AXO MONITORING"
+        title={<>Bir robots.txt değişikliği AI görünürlüğünüzü <span className="text-accent">sessizce sıfırlayabilir.</span></>}
+        body="robots.txt ve CDN bot-engelleme kuralları sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılanı. Epicsem'in AXO Monitoring'i kritik sayfalarınızı zamanla izler ve daha önce izinli olan bir AI crawler engellenirse, haftalar sonra bir görünürlük düşüşünden değil anında Slack'ten haberdar olursunuz."
+        primaryCta={{ href: "/monitor", label: "Ücretsiz izlemeye başla" }}
+        secondaryCta={{ href: "/features/seo-axo-audit", label: "SEO + AXO Audit'i incele" }}
+        image={{ src: "/screenshots/axo-monitoring-form.png", alt: "Epicsem AXO Monitoring — izlenecek sayfa ekleme formu", path: "epicsem.app/monitor", width: 1399, height: 198 }}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="card">
-            <div className="font-medium text-sm">{f.title}</div>
-            <p className="mt-1.5 text-sm text-ink/60">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid items={FEATURES} />
 
       <ExampleScenario heading="Bir müşteri sitesinde sessiz bir engelleme yakalanıyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
 
-      <div className="rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Kritik sayfalarınızı şimdi izlemeye alın</h2>
-        <p className="text-white/80 max-w-xl mx-auto text-sm">Hesap açmadan, ücretsiz test modunda deneyebilirsiniz.</p>
-        <Link href="/monitor" className="inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-          İzlemeyi başlat
-        </Link>
-      </div>
+      <FeatureCTA
+        title="Kritik sayfalarınızı şimdi izlemeye alın"
+        body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
+        cta={{ href: "/monitor", label: "İzlemeyi başlat" }}
+      />
     </div>
   );
 }
