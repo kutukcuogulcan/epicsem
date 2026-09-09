@@ -52,8 +52,9 @@ export default async function Nav() {
               </svg>
             </button>
             <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 top-full pt-3 z-30">
-              <div className="w-[520px] bg-panel border border-border rounded-xl shadow-lg p-5 flex gap-5">
-                <div className="flex-1 space-y-1.5">
+              <div className="relative w-[540px] bg-panel border border-border rounded-2xl shadow-xl shadow-ink/[0.08] overflow-hidden flex gap-5">
+                <div className="h-1 bg-gradient-to-r from-accent via-geo to-accent absolute top-0 left-0 right-0" aria-hidden />
+                <div className="flex-1 space-y-1.5 p-5 pt-6">
                   <div className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1.5">Öne çıkanlar</div>
                   {FEATURED_PRODUCTS.map((item) => (
                     <Link
@@ -61,7 +62,7 @@ export default async function Nav() {
                       href={item.href}
                       className="flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors group/item"
                     >
-                      <div className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-accent/10 text-accent flex items-center justify-center text-sm font-semibold">
+                      <div className="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-accent/10 text-accent flex items-center justify-center text-sm font-semibold group-hover/item:bg-accent group-hover/item:text-white transition-colors">
                         {item.badge}
                       </div>
                       <div>
@@ -74,7 +75,7 @@ export default async function Nav() {
                   ))}
                 </div>
                 <div className="w-px bg-border shrink-0" />
-                <div className="w-40 shrink-0">
+                <div className="w-40 shrink-0 p-5 pt-6 pl-0">
                   <div className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1.5">Diğer araçlar</div>
                   <div className="space-y-1">
                     {OTHER_TOOLS.map((item) => (

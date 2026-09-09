@@ -198,19 +198,19 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="nasil-calisir" className="space-y-8 scroll-mt-24">
+      <section id="nasil-calisir" className="space-y-10 scroll-mt-24">
         <div className="max-w-2xl">
           <h2 className="text-3xl font-extrabold tracking-tight">Nasıl çalışır?</h2>
           <p className="mt-2 text-ink/60">Üç adımda kurulum — kod yazmana, entegrasyon beklemene gerek yok.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
           {STEPS.map((step) => (
-            <div key={step.n} className="card">
-              <div className="w-9 h-9 rounded-full bg-accent/10 text-accent font-extrabold flex items-center justify-center text-base">
+            <div key={step.n} className="card p-6 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-accent text-white font-extrabold flex items-center justify-center text-lg shadow-lg shadow-accent/20">
                 {step.n}
               </div>
-              <div className="mt-3 font-bold">{step.title}</div>
-              <p className="mt-2 text-sm text-ink/60">{step.body}</p>
+              <div className="font-bold text-lg">{step.title}</div>
+              <p className="text-sm text-ink/60">{step.body}</p>
             </div>
           ))}
         </div>
