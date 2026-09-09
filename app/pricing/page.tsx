@@ -48,8 +48,9 @@ export default function PricingPage() {
             <p className="mt-1 text-sm text-ink/40">Fiyat henüz belirlenmedi</p>
           </div>
           <p className="text-sm text-ink/50">
-            Test süreci bitip gerçek AI motoru anahtarları eklendiğinde (şu an demo modunda çalışıyoruz),
-            kullanım hacmine göre bir ücretli plan tanımlanacak. O ana kadar mevcut ücretsiz erişim aynen sürüyor.
+            Test süreci bitip tüm AI motoru anahtarları etkin hale geldiğinde (bağlantılar kademeli olarak
+            ekleniyor), kullanım hacmine göre bir ücretli plan tanımlanacak. O ana kadar mevcut ücretsiz erişim
+            aynen sürüyor.
           </p>
         </div>
       </div>

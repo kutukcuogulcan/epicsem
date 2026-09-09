@@ -109,7 +109,7 @@ export default function Home() {
                 {group.items.map((item) => (
                   <div key={item.label} className="pt-3 first:pt-3">
                     <Link href={item.href} className="block group/item">
-                      <div className="text-sm font-medium group-hover/item:text-accent transition-colors">{item.label}</div>
+                      <div className="text-sm font-semibold group-hover/item:text-accent transition-colors">{item.label}</div>
                       <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
                     </Link>
                     {"landingHref" in item && item.landingHref && (
