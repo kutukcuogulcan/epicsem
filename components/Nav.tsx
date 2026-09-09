@@ -14,6 +14,7 @@ const NAV_GROUPS = [
       { href: "/audit", label: "SEO + AXO Audit", icon: "audit" },
       { href: "/geo", label: "GEO/AEO Visibility", icon: "geo" },
       { href: "/gap", label: "Gap Analysis", icon: "gap" },
+      { href: "/article-writer", label: "Article Writer", icon: "article" },
     ],
   },
   {

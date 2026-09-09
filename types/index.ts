@@ -211,3 +211,76 @@ export interface CmsConnection {
   authSecretMasked: string;
   createdAt: string;
 }
+
+/**
+ * Article Writer — an LLM-driven deep on-page content audit, one level more detailed
+ * than the deterministic /audit tool: it grades the actual copy quality of title/meta/
+ * alt-text/links against character-count and content rules (not just presence/absence),
+ * and closes the loop with concrete article ideas grounded in what the audit found.
+ * The page's real HTML is fetched and extracted first (see lib/article-audit.ts) —
+ * the model only ever analyzes real, fetched content, it never guesses at a page it
+ * hasn't seen.
+ */
+export interface ArticleFieldSuggestion {
+  current: string;
+  suggested: string;
+  why: string;
+}
+
+export interface ArticleImageAlt {
+  src: string;
+  currentAlt: string;
+  suggestedAlt: string;
+  why: string;
+}
+
+export interface ArticleLinkIssue {
+  anchorText: string;
+  targetUrl: string;
+  issue: string;
+  suggestedAnchor: string;
+}
+
+export interface ArticleMissingLink {
+  suggestedAnchor: string;
+  context: string;
+  suggestedTargetUrlPattern: string;
+  why: string;
+}
+
+export type ArticleSchemaStatus = "present-valid" | "present-mismatch" | "missing" | "not-applicable";
+
+export interface ArticleSchemaResult {
+  status: ArticleSchemaStatus;
+  note: string;
+  jsonLd: string | null;
+}
+
+export interface ArticleRecommendation {
+  title: string;
+  targetKeyword: string;
+  angle: string;
+  outline: string[];
+}
+
+export interface ArticleAuditResult {
+  url: string;
+  fetchedAt: string;
+  pageType: string;
+  searchIntent: string;
+  targetKeyword: string;
+  title: ArticleFieldSuggestion & { currentLength: number; suggestedLength: number };
+  metaDescription: ArticleFieldSuggestion;
+  canonical: { current: string | null; suggested: string; why: string };
+  imageAlts: ArticleImageAlt[];
+  imagesTotal: number;
+  imagesSkipped: number;
+  linkIssues: ArticleLinkIssue[];
+  missingLinks: ArticleMissingLink[];
+  faqSchema: ArticleSchemaResult;
+  articleSchema: ArticleSchemaResult;
+  articleRecommendations: ArticleRecommendation[];
+  priorityActions: string[];
+  demoMode: boolean;
+  model: string;
+}

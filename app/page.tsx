@@ -46,6 +46,7 @@ const GROUPS = [
       { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
       { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör — Türkçe ve İngilizce promptları ayrı test edebilirsin.", landingHref: "/features/geo-visibility" },
       { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
+      { label: "Article Writer", href: "/article-writer", body: "Tek bir sayfayı derinlemesine denetler — title, meta, canonical, alt text, internal link fırsatları, FAQ/Article schema — ve bulunan boşluklara göre somut makale önerileri üretir." },
     ],
   },
   {

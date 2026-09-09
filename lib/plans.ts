@@ -13,7 +13,7 @@ export type PlanId = "free";
 export interface PlanLimits {
   /** Total (prompt × engine) LLM calls per calendar month, combined across /api/geo and /api/gap. */
   engineQueries: number;
-  /** /api/content/generate calls per calendar month. */
+  /** /api/content/generate and /api/article-writer calls per calendar month (both are real LLM calls). */
   contentGenerations: number;
   /** /api/geo/suggest-prompts calls per calendar month — one LLM call each. */
   promptSuggestions: number;

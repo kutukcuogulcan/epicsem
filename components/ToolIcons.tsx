@@ -32,6 +32,14 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="11.5" cy="9" r="4.5" />
     </ToolIcon>
   ),
+  article: (
+    <ToolIcon>
+      <rect x="3" y="2.5" width="12" height="13" rx="1.5" />
+      <path d="M5.8 6h6.4" />
+      <path d="M5.8 8.8h6.4" />
+      <path d="M5.8 11.6h3.6" />
+    </ToolIcon>
+  ),
   monitor: (
     <ToolIcon>
       <path d="M2 9.5h3l1.5-4L9 13l1.5-7 1.2 3.5H16" />
