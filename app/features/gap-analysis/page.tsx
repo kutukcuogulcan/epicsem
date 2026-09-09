@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Audit ve GEO'yu ayrı okuyunca",
+    items: [
+      "Bir sayfa teknik olarak sağlam mı, ayrı görürsünüz",
+      "Bir sayfa AI'da anılıyor mu, ayrı görürsünüz",
+      "İkisini aynı satırda birleştirmek elle, sayfa sayfa yapılır",
+      "\"Sağlam ama görünmez\" sayfalar gözden kaçar",
+    ],
+  },
+  withItems: {
+    title: "Epicsem Gap Analysis ile",
+    items: [
+      "Audit + GEO sonucu her sayfa için tek satırda",
+      "Blocked / Invisible / Cited / Needs work etiketi otomatik",
+      "\"Sağlam ama görünmez\" sayfalar tek bakışta listelenir",
+      "Kaybedilen promptlardan otomatik content brief üretilir",
+    ],
+  },
+};
 
 export const metadata = {
   title: "Gap Analysis — Sağlam Ama AI'da Görünmeyen Sayfalarınızı Bulun | Epicsem",
@@ -74,9 +96,15 @@ export default function GapAnalysisLandingPage() {
         image={{ src: "/screenshots/gap-analysis-form.png", alt: "Epicsem Gap Analysis formu — marka, rakip ve prompt girişi", path: "epicsem.app/gap", width: 1399, height: 534 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir mobilya markası 'sağlam ama görünmez' sayfasını buluyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="Gap Analysis nasıl çalışır?"
+        subheading="Marka girmekten content brief'e, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

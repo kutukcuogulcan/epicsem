@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Her koşuda yeniden yazarak",
+    items: [
+      "Her Audit/GEO/Gap koşusunda marka+rakip bilgisini yeniden girersiniz",
+      "5-10 müşteride bu hızla zaman kaybına dönüşür",
+      "Geçmiş koşuların hangi müşteriye ait olduğunu hatırlamanız gerekir",
+      "PDF raporlar hep Epicsem markasıyla çıkar",
+    ],
+  },
+  withItems: {
+    title: "Epicsem Clients ile",
+    items: [
+      "Marka, domain ve rakip bilgisi bir kere kaydedilir",
+      "Audit, GEO ve Gap koşuları otomatik dolu açılır",
+      "Her koşu otomatik olarak doğru müşteriye bağlanır",
+      "PDF raporda kendi ajans adınız görünür",
+    ],
+  },
+};
 
 export const metadata = {
   title: "Clients — Ajansınız İçin Çoklu Müşteri Yönetimi | Epicsem",
@@ -70,9 +92,15 @@ export default function ClientsLandingPage() {
         image={{ src: "/screenshots/clients-form.png", alt: "Epicsem Clients — müşteri ekleme formu", path: "epicsem.app/clients", width: 1399, height: 398 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir ajans 5 müşteriyi tek panelde yönetiyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="Müşteri yönetimi nasıl çalışır?"
+        subheading="Bir kere kaydetmekten otomatik dolu formlara, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

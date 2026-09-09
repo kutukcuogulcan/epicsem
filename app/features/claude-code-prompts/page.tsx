@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Sıfırdan prompt yazarak",
+    items: [
+      "Her teknik SEO görevi için kendi promptunuzu yazmanız gerekir",
+      "AI crawler erişimi gibi konularda nereden başlayacağınızı bilemeyebilirsiniz",
+      "Hazır bir şablon yoksa süreç yavaşlar",
+      "Gerçek verinizle doldurmak ayrı bir adımdır",
+    ],
+  },
+  withItems: {
+    title: "Epicsem Claude Code Prompts ile",
+    items: [
+      "Kategorilere ayrılmış hazır prompt kütüphanesi",
+      "Kopyala, kendi reponuzda çalışan Claude Code'a yapıştır",
+      "Hesap açmadan, ücretsiz erişim",
+      "Audit/Gap'in \"Fix with Claude Code\" butonu aynı promptun verinizle dolu halini üretir",
+    ],
+  },
+};
 
 export const metadata = {
   title: "Ücretsiz Claude Code SEO Prompt Kütüphanesi | Epicsem",
@@ -65,9 +87,15 @@ export default function ClaudeCodePromptsLandingPage() {
         image={{ src: "/screenshots/prompts-library.png", alt: "Epicsem Claude Code Prompts — kategoriye ayrılmış prompt kütüphanesi", path: "epicsem.app/prompts", width: 1399, height: 439 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir geliştirici genel bir şablonla kendi sitesini düzeltiyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="Prompt kütüphanesi nasıl kullanılır?"
+        subheading="Seçmekten kendi reponuzda çalıştırmaya, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

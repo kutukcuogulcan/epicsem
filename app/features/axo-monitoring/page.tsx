@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Manuel kontrol ile",
+    items: [
+      "robots.txt/CDN değişikliğini fark etmek için elle kontrol gerekir",
+      "Bir engelleme haftalarca fark edilmeyebilir",
+      "Müşteri sizden önce fark edip şikayet edebilir",
+      "Skor değişimini takip eden bir geçmiş yoktur",
+    ],
+  },
+  withItems: {
+    title: "Epicsem AXO Monitoring ile",
+    items: [
+      "Kritik sayfalar zamanla otomatik izlenir",
+      "Engelleme anında Slack'e bildirim gider",
+      "Sorunu müşteriden önce siz fark edersiniz",
+      "SEO/AXO skorlarının trend grafiği tutulur",
+    ],
+  },
+};
 
 export const metadata = {
   title: "AXO Monitoring — AI Crawler Engellemelerini Anında Yakalayın | Epicsem",
@@ -70,9 +92,15 @@ export default function AxoMonitoringLandingPage() {
         image={{ src: "/screenshots/axo-monitoring-form.png", alt: "Epicsem AXO Monitoring — izlenecek sayfa ekleme formu", path: "epicsem.app/monitor", width: 1399, height: 198 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir müşteri sitesinde sessiz bir engelleme yakalanıyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="İzleme nasıl çalışır?"
+        subheading="Sayfa eklemekten Slack bildirimine, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

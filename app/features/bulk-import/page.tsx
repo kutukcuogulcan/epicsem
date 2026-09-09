@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Tek tek URL taramayla",
+    items: [
+      "Yüzlerce sayfayı tek tek /audit'e girmeniz gerekir",
+      "Site genelinde ortak sorunları görmek zor",
+      "Hangi sayfanın hangi kategoriye girdiğini elle gruplamanız gerekir",
+      "Screaming Frog verisini ayrıca yorumlamanız gerekir",
+    ],
+  },
+  withItems: {
+    title: "Epicsem Bulk Import ile",
+    items: [
+      "Screaming Frog CSV'sini tek seferde yükleyin",
+      "13 sorun kategorisi tüm site genelinde otomatik çıkar",
+      "Sorun tipine göre filtrelenebilir özet tablo",
+      "Kategoriye göre gruplanmış tek fix prompt'u",
+    ],
+  },
+};
 
 export const metadata = {
   title: "Bulk Import — Screaming Frog CSV'nizi Tek Seferde Analiz Edin | Epicsem",
@@ -70,9 +92,15 @@ export default function BulkImportLandingPage() {
         image={{ src: "/screenshots/bulk-import-form.png", alt: "Epicsem Bulk Import — Screaming Frog CSV yükleme alanı", path: "epicsem.app/import", width: 1399, height: 101 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="50 sayfalık bir site, tek CSV ile toplu taranıyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="Toplu içe aktarma nasıl çalışır?"
+        subheading="CSV yüklemekten toplu düzeltmeye, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Elle içerik üretimiyle",
+    items: [
+      "Her boşluk için ayrı ayrı konu/başlık bulmanız gerekir",
+      "Gerçek veri yerine genel bilgiyle yazmak uydurma riski taşır",
+      "WordPress veya Shopify'a taslak eklemek ayrı bir adımdır",
+      "Hangi promptun hangi sayfayı etkilediğini takip etmek zor",
+    ],
+  },
+  withItems: {
+    title: "Epicsem Content Studio ile",
+    items: [
+      "Gap Analysis'in bulduğu boşluk direkt brief'e dönüşür",
+      "Dayanaksız bilgi [NEEDS: ...] olarak işaretlenir, uydurulmaz",
+      "Taslak otomatik WordPress veya Shopify'a gönderilir",
+      "Yayınlama her zaman taslak — canlıya alma kararı sizde",
+    ],
+  },
+};
 
 export const metadata = {
   title: "Content Studio — Kaybedilen Promptlardan Yayına Hazır İçerik | Epicsem",
@@ -74,9 +96,15 @@ export default function ContentStudioLandingPage() {
         image={{ src: "/screenshots/content-studio-form.png", alt: "Epicsem Content Studio — CMS bağlantı formu", path: "epicsem.app/content", width: 1399, height: 423 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Kaybedilen bir prompt, yayına hazır bir taslağa dönüşüyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="İçerik üretimi nasıl çalışır?"
+        subheading="Kaybedilen bir bulgudan yayına hazır taslağa, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

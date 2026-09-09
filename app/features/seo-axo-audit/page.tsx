@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Klasik SEO araçlarıyla",
+    items: [
+      "Title, meta ve başlık yapısını kontrol eder",
+      "AI crawler'ların (GPTBot, ClaudeBot...) erişip erişemediğini hiç ölçmez",
+      "robots.txt bir AI botu engellese bile fark etmezsiniz",
+      "Öneriler genellikle şablon metin, sayfanıza özel değil",
+    ],
+  },
+  withItems: {
+    title: "Epicsem SEO + AXO Audit ile",
+    items: [
+      "Teknik SEO ve AI crawler erişimi tek taramada",
+      "GPTBot, ClaudeBot, PerplexityBot, Google-Extended ayrı ayrı gösterilir",
+      "robots.txt engeli varsa net şekilde işaretlenir",
+      "Fix önerileri sadece taranan sayfanın kendi içeriğinden üretilir",
+    ],
+  },
+};
 
 export const metadata = {
   title: "SEO + AXO Denetimi — Siteniz Google'da ve AI'da Görünüyor mu? | Epicsem",
@@ -74,9 +96,15 @@ export default function SeoAxoAuditLandingPage() {
         image={{ src: "/screenshots/audit-scores.png", alt: "Epicsem SEO + AXO Audit sonuç ekranı — gerçek skorlar", path: "epicsem.app/audit", width: 1400, height: 228 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir mobilya e-ticaret sitesi audit'ten geçiyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="Denetim nasıl çalışır?"
+        subheading="Domain girmekten fix prompt'una, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 

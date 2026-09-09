@@ -1,8 +1,30 @@
-import ExampleScenario from "@/components/ExampleScenario";
 import FAQSection from "@/components/FAQSection";
 import FeatureHero from "@/components/FeatureHero";
 import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
+import FeatureComparison from "@/components/FeatureComparison";
+import FeatureSteps from "@/components/FeatureSteps";
+
+const COMPARISON = {
+  without: {
+    title: "Klasik SEO/rank takip araçlarıyla",
+    items: [
+      "Sadece Google sıralamasını ölçer",
+      "ChatGPT, Claude, Gemini'de marka anılıyor mu bilmezsiniz",
+      "Marka-bilinen ve keşif sorguları arasındaki farkı göstermez",
+      "Türkçe ve İngilizce promptlar arasında ayrım yapmaz",
+    ],
+  },
+  withItems: {
+    title: "Epicsem GEO/AEO Visibility ile",
+    items: [
+      "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönderilir",
+      "Marka-bilinen ve keşif görünürlüğü ayrı ölçülür",
+      "Hangi kaynakların referans gösterildiği görülür",
+      "Türkçe promptlar İngilizce eşdeğerinden ayrı test edilir",
+    ],
+  },
+};
 
 export const metadata = {
   title: "AI'da Marka Görünürlüğü Testi (ChatGPT, Claude, Gemini) — Epicsem GEO/AEO",
@@ -79,9 +101,15 @@ export default function GeoVisibilityLandingPage() {
         image={{ src: "/screenshots/geo-visibility-stats.png", alt: "Epicsem GEO/AEO Visibility sonuç ekranı — gerçek görünürlük skoru", path: "epicsem.app/geo", width: 1400, height: 171 }}
       />
 
-      <FeatureGrid items={FEATURES} />
+      <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
 
-      <ExampleScenario heading="Bir mobilya markası GEO testiyle görünmezliğini keşfediyor" steps={SCENARIO_STEPS} />
+      <FeatureSteps
+        heading="GEO testi nasıl çalışır?"
+        subheading="Marka girmekten konu bazlı bulguya, üç adımda"
+        steps={SCENARIO_STEPS}
+      />
+
+      <FeatureGrid items={FEATURES} />
 
       <FAQSection items={FAQ_ITEMS} />
 
