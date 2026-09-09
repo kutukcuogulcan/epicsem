@@ -42,7 +42,7 @@ export default async function Nav() {
           <span className="text-sm font-medium text-ink/40 hidden sm:inline">SEO + GEO/AEO</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm text-ink/70">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-ink/70">
           <div className="relative group py-2">
             <button type="button" className="flex items-center gap-1 hover:text-accent transition-colors">
               Ürünler
