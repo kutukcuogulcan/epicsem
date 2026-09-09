@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
-import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 
 const SCENARIO_STEPS = [
   {
@@ -199,18 +199,21 @@ export default function ContentStudioPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "İçerik Stüdyosu" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">İçerik Stüdyosu</h1>
-        <p className="text-ink/60 text-sm max-w-3xl">
-          <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
-          buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
-          bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
-          bırakılır. Yayınlama her zaman bir <strong>taslak</strong> oluşturur (WordPress veya Shopify), asla canlı
-          bir gönderi değil — inceleyip yayına almayı siz WordPress veya Shopify&apos;dan yaparsınız.
-        </p>
+      <ToolPageHeader
+        breadcrumbLabel="İçerik Stüdyosu"
+        title="İçerik Stüdyosu"
+        body={
+          <>
+            <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
+            buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
+            bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
+            bırakılır. Yayınlama her zaman bir <strong>taslak</strong> oluşturur (WordPress veya Shopify), asla canlı
+            bir gönderi değil — inceleyip yayına almayı siz WordPress veya Shopify&apos;dan yaparsınız.
+          </>
+        }
+      >
         <UsageMeter metric="contentGenerations" />
-      </div>
+      </ToolPageHeader>
 
       <div className="card space-y-4">
         <h2 className="font-bold">CMS bağlantıları</h2>

@@ -7,9 +7,9 @@ import IssueCard from "@/components/IssueCard";
 import FixCard from "@/components/FixCard";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
-import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
 
 const SCENARIO_STEPS = [
@@ -164,14 +164,11 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "SEO + AXO Audit" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">SEO + AXO Audit</h1>
-        <p className="text-ink/60 text-sm">
-          Title, meta, başlıklar, schema ve sitemap gibi temelleri kontrol eder — ayrıca GPTBot, ClaudeBot,
-          PerplexityBot, Google-Extended gibi AI crawler&apos;ların sayfaya gerçekten erişip erişemediğini gösterir.
-        </p>
-      </div>
+      <ToolPageHeader
+        breadcrumbLabel="SEO + AXO Audit"
+        title="SEO + AXO Audit"
+        body="Title, meta, başlıklar, schema ve sitemap gibi temelleri kontrol eder — ayrıca GPTBot, ClaudeBot, PerplexityBot, Google-Extended gibi AI crawler'ların sayfaya gerçekten erişip erişemediğini gösterir."
+      />
 
       <form onSubmit={runAudit} className="flex gap-3">
         <input

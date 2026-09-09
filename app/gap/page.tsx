@@ -5,10 +5,10 @@ import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
-import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
 
 const SCENARIO_STEPS = [
@@ -234,16 +234,13 @@ export default function GapPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gap Analysis" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">Gap Analysis</h1>
-        <p className="text-ink/60 text-sm">
-          SEO + AXO denetiminizi GEO görünürlük testiyle çaprazlar: listelediğiniz her sayfa teknik olarak sağlam
-          mı, AI crawler&apos;lara açık mı — ve ikisinin tek başına cevaplayamadığı soru: herhangi bir AI motoru
-          bu sayfayı gerçekten anıyor mu?
-        </p>
+      <ToolPageHeader
+        breadcrumbLabel="Gap Analysis"
+        title="Gap Analysis"
+        body="SEO + AXO denetiminizi GEO görünürlük testiyle çaprazlar: listelediğiniz her sayfa teknik olarak sağlam mı, AI crawler'lara açık mı — ve ikisinin tek başına cevaplayamadığı soru: herhangi bir AI motoru bu sayfayı gerçekten anıyor mu?"
+      >
         <UsageMeter metric="engineQueries" />
-      </div>
+      </ToolPageHeader>
 
       <form onSubmit={runAnalysis} className="space-y-5">
         <div className="card space-y-3">

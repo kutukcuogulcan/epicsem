@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 
 const SCENARIO_STEPS = [
   {
@@ -210,16 +210,11 @@ export default function MonitorPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "AXO İzleme" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">AXO İzleme</h1>
-        <p className="text-ink/60 text-sm">
-          robots.txt ve CDN bot engellemesi sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılan
-          ayar değişikliği. Kritik sayfalarınızı buraya ekleyin, daha önce izinli olan bir AI crawler (GPTBot,
-          ClaudeBot, PerplexityBot, Google-Extended…) engellendiği anda haber alın — haftalar sonra bir
-          görünürlük düşüşünden fark etmek yerine.
-        </p>
-      </div>
+      <ToolPageHeader
+        breadcrumbLabel="AXO İzleme"
+        title="AXO İzleme"
+        body="robots.txt ve CDN bot engellemesi sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılan ayar değişikliği. Kritik sayfalarınızı buraya ekleyin, daha önce izinli olan bir AI crawler (GPTBot, ClaudeBot, PerplexityBot, Google-Extended…) engellendiği anda haber alın — haftalar sonra bir görünürlük düşüşünden fark etmek yerine."
+      />
 
       {alerts && alerts.length > 0 && (
         <div className="space-y-2">

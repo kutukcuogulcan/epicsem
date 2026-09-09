@@ -15,11 +15,11 @@ import {
 } from "recharts";
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
-import Breadcrumb from "@/components/Breadcrumb";
 import StatCard from "@/components/StatCard";
 import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 
 const SCENARIO_STEPS = [
   {
@@ -312,15 +312,13 @@ export default function GeoPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "GEO/AEO Visibility" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">GEO / AEO Visibility Test</h1>
-        <p className="text-ink/60 text-sm">
-          Promptlarınızı ChatGPT, Claude, Gemini ve Perplexity&apos;e gönderir; markanızın anılıp anılmadığını,
-          rakiplere göre nerede durduğunu ve hangi kaynakların referans gösterildiğini ölçer.
-        </p>
+      <ToolPageHeader
+        breadcrumbLabel="GEO/AEO Visibility"
+        title="GEO / AEO Visibility Test"
+        body="Promptlarınızı ChatGPT, Claude, Gemini ve Perplexity'e gönderir; markanızın anılıp anılmadığını, rakiplere göre nerede durduğunu ve hangi kaynakların referans gösterildiğini ölçer."
+      >
         <UsageMeter metric="engineQueries" />
-      </div>
+      </ToolPageHeader>
 
       <form onSubmit={runTest} className="space-y-5">
         <div className="card space-y-3">

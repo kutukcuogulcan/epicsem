@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import type { BulkImportResult } from "@/types";
 import PromptBlock from "@/components/PromptBlock";
 import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
-import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import ToolPageHeader from "@/components/ToolPageHeader";
 
 const SCENARIO_STEPS = [
   {
@@ -172,17 +172,19 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Toplu İçe Aktarma" }]} />
-        <h1 className="text-3xl font-extrabold tracking-tight">Toplu Site İçe Aktarma (Screaming Frog)</h1>
-        <p className="text-ink/60 text-sm max-w-3xl">
-          Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
-          <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
-          buraya bırakın. Epicsem sütunları eşler, taramadaki her URL genelinde eksik/tekrarlayan title &amp; meta
-          açıklamaları, thin content, kırık linkler, eksik H1&apos;ler ve noindex sayfaları işaretler — tek sayfalık
-          hiçbir aracın (Arvow dahil) yapamadığı bir şey.
-        </p>
-      </div>
+      <ToolPageHeader
+        breadcrumbLabel="Toplu İçe Aktarma"
+        title="Toplu Site İçe Aktarma (Screaming Frog)"
+        body={
+          <>
+            Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
+            <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
+            buraya bırakın. Epicsem sütunları eşler, taramadaki her URL genelinde eksik/tekrarlayan title &amp; meta
+            açıklamaları, thin content, kırık linkler, eksik H1&apos;ler ve noindex sayfaları işaretler — tek sayfalık
+            hiçbir aracın (Arvow dahil) yapamadığı bir şey.
+          </>
+        }
+      />
 
       <div
         onDragOver={(e) => {
