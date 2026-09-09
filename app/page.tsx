@@ -163,7 +163,7 @@ export default function Home() {
         ))}
       </section>
 
-      <section className="space-y-8">
+      <section id="tum-araclar" className="space-y-8 scroll-mt-24">
         <div className="max-w-2xl">
           <h2 className="text-3xl font-extrabold tracking-tight">Tek panel, üç iş</h2>
           <p className="mt-2 text-ink/60">Denetim, otomasyon ve müşteri yönetimi — hepsi aynı yerde, birbirinin verisini kullanarak.</p>
