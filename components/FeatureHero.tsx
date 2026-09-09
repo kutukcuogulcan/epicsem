@@ -49,7 +49,7 @@ export default function FeatureHero({
             )}
           </div>
         </div>
-        <BrowserFrame src={image.src} alt={image.alt} path={image.path} width={image.width} height={image.height} />
+        <BrowserFrame src={image.src} alt={image.alt} path={image.path} width={image.width} height={image.height} priority />
       </div>
     </section>
   );

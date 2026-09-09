@@ -15,12 +15,14 @@ export default function BrowserFrame({
   path,
   width,
   height,
+  priority,
 }: {
   src: string;
   alt: string;
   path: string;
   width: number;
   height: number;
+  priority?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-panel shadow-xl shadow-ink/[0.06] overflow-hidden">
@@ -32,7 +34,7 @@ export default function BrowserFrame({
           {path}
         </span>
       </div>
-      <Image src={src} alt={alt} width={width} height={height} className="w-full h-auto" />
+      <Image src={src} alt={alt} width={width} height={height} className="w-full h-auto" priority={priority} />
     </div>
   );
 }
