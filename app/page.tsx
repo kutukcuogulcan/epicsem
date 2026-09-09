@@ -1,4 +1,41 @@
 import Link from "next/link";
+import BrowserFrame from "@/components/BrowserFrame";
+
+const CHECK_ICON = (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2.5 6.5L4.5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// Deep-dive sections for the two flagship products — alternating image/text sides,
+// each visual a REAL screenshot of this app's own live results (see BrowserFrame),
+// never a fabricated dashboard mockup.
+const SHOWCASES = [
+  {
+    eyebrow: "SEO + AXO AUDIT",
+    title: "Google'da neyin eksik olduğunu, AI botlarının erişip erişemediğini gör",
+    points: [
+      "Title/meta, başlıklar, structured data, robots.txt & sitemap kontrolü",
+      "GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği",
+      "Bulgulardan otomatik, kopyala-yapıştıra hazır bir Claude Code fix prompt'u",
+    ],
+    cta: { href: "/audit", label: "Ücretsiz denetim yap" },
+    image: { src: "/screenshots/audit-scores.png", alt: "Epicsem SEO + AXO Audit sonuç ekranı — gerçek skorlar", path: "epicsem.app/audit", width: 1400, height: 228 },
+    imageSide: "left" as const,
+  },
+  {
+    eyebrow: "GEO/AEO VISIBILITY",
+    title: "Markan AI'ya soru sorulduğunda gerçekten anılıyor mu?",
+    points: [
+      "ChatGPT, Claude, Gemini, Perplexity'e aynı promptlar gerçekten gönderilir",
+      "Marka-bilinen (\"X güvenilir mi?\") ve keşif (\"en iyi ... hangisi?\") ayrı ölçülür",
+      "Türkçe ve İngilizce promptları ayrı test et — sonuç dile göre değişebiliyor",
+    ],
+    cta: { href: "/geo", label: "GEO testini başlat" },
+    image: { src: "/screenshots/geo-visibility-stats.png", alt: "Epicsem GEO/AEO Visibility sonuç ekranı — gerçek görünürlük skoru", path: "epicsem.app/geo", width: 1400, height: 171 },
+    imageSide: "right" as const,
+  },
+];
 
 const GROUPS = [
   {
@@ -64,32 +101,66 @@ const FAQ = [
 
 export default function Home() {
   return (
-    <div className="space-y-20">
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-accent/[0.06] via-geo/10 to-transparent px-6 sm:px-10 py-16 sm:py-20">
-        <span className="pill-outline bg-accent/5">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          Ajansınız için SEO + AI görünürlük paneli
-        </span>
-        <h1 className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-[1.05]">
-          Google&apos;da sırala, <span className="text-accent">AI motorlarında</span> görün.
-        </h1>
-        <p className="mt-5 text-ink/60 max-w-2xl text-base sm:text-lg">
-          Epicsem, klasik teknik SEO denetimini ve ChatGPT / Claude / Gemini / Perplexity üzerinde gerçek prompt
-          testlerini aynı panelde çalıştırır — markanın sadece Google&apos;da değil, birine AI&apos;ya soru
-          sorduğunda da hatırlanıp hatırlanmadığını gösterir. Türkçe promptları İngilizce eşdeğerinden ayrı test
-          eder — e-ticaret satıcıları ve yerel işletmeler için Türkiye pazarına özel bir bakış açısı sunar.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-bold hover:opacity-90 transition-opacity">
-            Panele git — ücretsiz dene
-          </Link>
-          <Link href="#nasil-calisir" className="rounded-lg border border-border bg-panel px-6 py-3 text-sm font-bold hover:bg-muted transition-colors">
-            Nasıl çalışır?
-          </Link>
+    <div className="space-y-28">
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-accent/[0.06] via-geo/10 to-transparent px-6 sm:px-10 py-20 sm:py-28">
+        <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-32 -right-16 h-80 w-80 rounded-full bg-geo/25 blur-3xl" aria-hidden />
+        <div className="relative">
+          <span className="pill-outline bg-accent/5">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Ajansınız için SEO + AI görünürlük paneli
+          </span>
+          <h1 className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-[1.05]">
+            Google&apos;da sırala, <span className="text-accent">AI motorlarında</span> görün
+            <span className="italic font-medium text-ink/50"> — elle uğraşmadan.</span>
+          </h1>
+          <p className="mt-5 text-ink/60 max-w-2xl text-base sm:text-lg">
+            Epicsem, klasik teknik SEO denetimini ve ChatGPT / Claude / Gemini / Perplexity üzerinde gerçek prompt
+            testlerini aynı panelde çalıştırır — markanın sadece Google&apos;da değil, birine AI&apos;ya soru
+            sorduğunda da hatırlanıp hatırlanmadığını gösterir. Türkçe promptları İngilizce eşdeğerinden ayrı test
+            eder — e-ticaret satıcıları ve yerel işletmeler için Türkiye pazarına özel bir bakış açısı sunar.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/audit" className="rounded-lg bg-accent text-white px-6 py-3 text-sm font-bold hover:opacity-90 transition-opacity">
+              Panele git — ücretsiz dene
+            </Link>
+            <Link href="#nasil-calisir" className="rounded-lg border border-border bg-panel px-6 py-3 text-sm font-bold hover:bg-muted transition-colors">
+              Nasıl çalışır?
+            </Link>
+          </div>
+          <p className="mt-6 text-xs text-ink/40 font-medium">
+            Şu an ücretsiz test aşamasında — kart bilgisi ya da hesap açmadan deneyebilirsiniz.
+          </p>
         </div>
-        <p className="mt-6 text-xs text-ink/40 font-medium">
-          Şu an ücretsiz test aşamasında — kart bilgisi ya da hesap açmadan deneyebilirsiniz.
-        </p>
+      </section>
+
+      <section className="space-y-20">
+        {SHOWCASES.map((s) => (
+          <div key={s.eyebrow} className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div className={s.imageSide === "right" ? "lg:order-2" : ""}>
+              <BrowserFrame {...s.image} />
+              <p className="mt-2 text-center text-xs text-ink/30">Gerçek ekran görüntüsü — bu sitenin kendi audit/GEO sonucu, uydurma veri değil.</p>
+            </div>
+            <div className={s.imageSide === "right" ? "lg:order-1" : ""}>
+              <span className="pill-outline">{s.eyebrow}</span>
+              <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">{s.title}</h2>
+              <ul className="mt-5 space-y-3">
+                {s.points.map((p) => (
+                  <li key={p} className="flex items-start gap-3 text-sm text-ink/70">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                      {CHECK_ICON}
+                    </span>
+                    {p}
+                  </li>
+                ))}
+              </ul>
+              <Link href={s.cta.href} className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity">
+                {s.cta.label}
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="space-y-8">
