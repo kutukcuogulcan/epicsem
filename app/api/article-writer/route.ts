@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await runArticleAudit(parsed.url);
-    if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
+    // Only charge the quota when a real model call actually ran — runArticleAudit can
+    // itself fall back to a labeled demo result (e.g. the provider errored, expired
+    // credits), and a user shouldn't be billed for a run that produced no real output.
+    if (!demoMode && !result.demoMode) await consumeQuota(user.id, "contentGenerations", 1);
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(

@@ -16,6 +16,29 @@ import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
+
+// Organization + WebSite JSON-LD, site-wide. Deliberately minimal and honest — only
+// fields that are actually true today (name, url, description). No invented founding
+// date, address, or sameAs social links; see components/Footer.tsx's no-fabrication
+// policy. /audit itself flags a page for missing structured data, so this app carries
+// its own.
+const ORG_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: "SEO, GEO/AEO ve AXO görünürlüğünü tek panelde ölçen bir denetim ve izleme aracı.",
+    },
+    {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  ],
+};
 
 const eudoxusSans = localFont({
   src: [
@@ -39,6 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={eudoxusSans.variable}>
       <body className="min-h-screen flex flex-col font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }}
+        />
         <Nav />
         <main className="mx-auto max-w-6xl px-4 py-8 flex-1 w-full">{children}</main>
         <Footer />

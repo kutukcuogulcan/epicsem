@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-/** Simple, honest footer — no fabricated legal pages or company details that don't exist yet. */
+/**
+ * Simple, honest footer. /privacy and /terms are real pages (see app/privacy,
+ * app/terms) — both explicitly marked as drafts pending legal review, not fabricated
+ * finished documents, so linking them here isn't claiming more than is true.
+ */
 export default function Footer() {
   return (
     <footer className="border-t border-border mt-16">
@@ -21,6 +25,8 @@ export default function Footer() {
           <Link href="/geo" className="hover:text-accent transition-colors">GEO/AEO</Link>
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
           <Link href="/pricing" className="hover:text-accent transition-colors">Fiyatlandırma</Link>
+          <Link href="/privacy" className="hover:text-accent transition-colors">Gizlilik</Link>
+          <Link href="/terms" className="hover:text-accent transition-colors">Kullanım Şartları</Link>
         </nav>
       </div>
     </footer>

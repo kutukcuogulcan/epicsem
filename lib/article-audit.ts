@@ -281,46 +281,51 @@ function extractJson(text: string): any {
   }
 }
 
-function demoResult(page: ExtractedPage): ArticleAuditResult {
+function demoResult(page: ExtractedPage, failureNote?: string): ArticleAuditResult {
   const title = page.title ?? "";
   const description = page.metaDescription ?? "";
+  const why = failureNote
+    ? `Demo modu: gerçek model çağrısı başarısız oldu (${failureNote}).`
+    : "Demo modu: gerçek bir model çağrısı yapılmadı.";
   return {
     url: page.url,
     fetchedAt: new Date().toISOString(),
     pageType: "[DEMO DATA]",
     searchIntent: "[DEMO DATA]",
-    targetKeyword: "[DEMO DATA — ANTHROPIC_API_KEY veya OPENAI_API_KEY bağlayın]",
+    targetKeyword: failureNote
+      ? `[DEMO DATA — canlı model çağrısı başarısız oldu: ${failureNote}]`
+      : "[DEMO DATA — ANTHROPIC_API_KEY veya OPENAI_API_KEY bağlayın]",
     title: {
       current: title,
       currentLength: title.length,
       suggested: "[DEMO DATA — gerçek öneri için bir model API anahtarı bağlanmalı]",
       suggestedLength: 0,
-      why: "Demo modu: gerçek bir model çağrısı yapılmadı.",
+      why,
     },
     metaDescription: {
       current: description,
       suggested: "[DEMO DATA]",
-      why: "Demo modu: gerçek bir model çağrısı yapılmadı.",
+      why,
     },
-    canonical: { current: page.canonical, suggested: page.canonical ?? "[DEMO DATA]", why: "Demo modu." },
+    canonical: { current: page.canonical, suggested: page.canonical ?? "[DEMO DATA]", why },
     imageAlts: page.images.filter((i) => !i.alt).slice(0, 5).map((i) => ({
       src: i.src,
       currentAlt: "",
       suggestedAlt: "[DEMO DATA]",
-      why: "Demo modu: gerçek bir model çağrısı yapılmadı.",
+      why,
     })),
     imagesTotal: page.imagesTotalCount,
     imagesSkipped: Math.max(0, page.imagesTotalCount - page.images.length),
     linkIssues: [],
     missingLinks: [],
-    faqSchema: { status: "not-applicable", note: "Demo modu.", jsonLd: null },
-    articleSchema: { status: "not-applicable", note: "Demo modu.", jsonLd: null },
+    faqSchema: { status: "not-applicable", note: why, jsonLd: null },
+    articleSchema: { status: "not-applicable", note: why, jsonLd: null },
     articleRecommendations: [],
-    priorityActions: [
-      "[DEMO DATA] Gerçek öneriler için .env'e ANTHROPIC_API_KEY veya OPENAI_API_KEY ekleyin.",
-    ],
+    priorityActions: failureNote
+      ? [`[DEMO DATA] Canlı model çağrısı başarısız oldu, sonuçlar simüle edildi: ${failureNote}`]
+      : ["[DEMO DATA] Gerçek öneriler için .env'e ANTHROPIC_API_KEY veya OPENAI_API_KEY ekleyin."],
     demoMode: true,
-    model: "demo (no API key configured)",
+    model: failureNote ? "demo (live call failed)" : "demo (no API key configured)",
   };
 }
 
@@ -331,7 +336,18 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
   if (!provider) return demoResult(page);
 
   const prompt = buildPrompt(page);
-  const { text, model } = await provider.run(prompt);
+  let text: string;
+  let model: string;
+  try {
+    const response = await provider.run(prompt);
+    text = response.text;
+    model = response.model;
+  } catch (err) {
+    // Mirrors lib/geo-engine.ts's established fallback: a live-call failure (expired
+    // credits, rate limit, outage) degrades to a clearly-labeled demo result instead of
+    // surfacing a raw provider error to the user.
+    return demoResult(page, err instanceof Error ? err.message : "bilinmeyen hata");
+  }
   const parsed = extractJson(text);
 
   return {
