@@ -1,0 +1,34 @@
+name: Monitor Cron
+
+# Free, GitHub-hosted replacement for a Render Cron Job (which has no free plan —
+# minimum $1/mo). Public repos get unlimited GitHub Actions minutes, so this costs
+# nothing. It just calls the app's own /api/monitor/check via scripts/check-monitors.mjs
+# on a schedule — see that script's header comment for the full explanation of why the
+# app can't schedule itself (no persistent server process on Render's free web tier).
+#
+# Setup (one-time, manual — GitHub doesn't allow secrets to be set by pushing a file):
+#   Repo → Settings → Secrets and variables → Actions → "New repository secret"
+#   Name: CRON_SECRET
+#   Value: must match the CRON_SECRET env var already set on the epicsem-web Render service.
+#
+# Note: GitHub auto-disables a scheduled workflow after 60 days with zero commits to
+# the repo. Not a practical concern for an actively-developed project, but worth knowing.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch: {} # lets you trigger a run on-demand from the Actions tab, for testing
+
+jobs:
+  check-monitors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run monitor check sweep
+        env:
+          APP_URL: https://epicsem-web.onrender.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/check-monitors.mjs

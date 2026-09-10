@@ -101,6 +101,7 @@ export default async function Nav() {
               </div>
             </div>
           </div>
+          <Link href="/dashboard" className="hover:text-accent transition-colors">Panel</Link>
           <Link href="/pricing" className="hover:text-accent transition-colors">Fiyatlandırma</Link>
           <Link href="/#nasil-calisir" className="hover:text-accent transition-colors">Nasıl çalışır</Link>
         </nav>
@@ -120,7 +121,7 @@ export default async function Nav() {
             <Link href="/login" className="hidden lg:inline text-sm text-accent hover:underline">Giriş yap</Link>
           )}
           <Link
-            href="/audit"
+            href="/dashboard"
             className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity"
           >
             Panele git

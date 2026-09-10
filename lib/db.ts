@@ -261,6 +261,13 @@ async function initSchema(): Promise<void> {
      ON CONFLICT (k) DO UPDATE SET v = excluded.v`,
     [String(SCHEMA_VERSION)]
   );
+
+  // Additive migrations — run every boot, never gated behind SCHEMA_VERSION (which
+  // drops every table). Safe on an already-running instance with real rows in it.
+  // published_at backs the Overview dashboard's "Generated vs Published" activity
+  // chart: content_drafts.created_at alone can't tell you when a draft was actually
+  // published, only when it was written.
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ`);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -853,10 +860,132 @@ export async function getContentDraft(userId: number, id: number): Promise<Conte
 export async function markDraftPublished(userId: number, id: number, params: { connectionId: number; postUrl: string; editUrl: string }): Promise<void> {
   await ensureSchema();
   await exec(
-    `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = $1, published_post_url = $2, published_edit_url = $3
+    `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = $1, published_post_url = $2, published_edit_url = $3, published_at = now()
      WHERE id = $4 AND user_id = $5`,
     [params.connectionId, params.postUrl, params.editUrl, id, userId]
   );
+}
+
+// ---------------- dashboard overview ----------------
+
+export interface DashboardSummary {
+  activeServices: { monitoredPages: number; cmsConnections: number; clients: number };
+  totals: {
+    auditRuns: number;
+    geoRuns: number;
+    gapRuns: number;
+    importRuns: number;
+    contentDrafts: number;
+    contentPublished: number;
+  };
+  thisMonth: { auditRuns: number; geoRuns: number; contentGenerated: number; contentPublished: number };
+  activeAlerts: number;
+  /** Last 14 days, zero-filled — mirrors the "Generated vs Published" trend line pattern. */
+  activity: { date: string; generated: number; published: number }[];
+}
+
+function countOf(row: { count?: string } | null): number {
+  return Number(row?.count ?? 0);
+}
+
+/**
+ * One aggregate read for the Overview page — every number here is a real COUNT(*)
+ * against this user's own rows, nothing estimated or simulated (unlike audit/GEO
+ * runs, there's no "demo mode" concept for a dashboard: it's just what's actually in
+ * the database, which for a brand-new account is honestly all zeroes).
+ */
+export async function getDashboardSummary(userId: number): Promise<DashboardSummary> {
+  await ensureSchema();
+
+  const [
+    monitoredPages,
+    cmsConnections,
+    clients,
+    auditRuns,
+    geoRuns,
+    gapRuns,
+    importRuns,
+    contentDrafts,
+    contentPublished,
+    auditRunsMonth,
+    geoRunsMonth,
+    contentGeneratedMonth,
+    contentPublishedMonth,
+    activeAlerts,
+    activity,
+  ] = await Promise.all([
+    one<{ count: string }>(`SELECT COUNT(*) FROM monitored_pages WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM cms_connections WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM clients WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM audit_runs WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM geo_runs WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM gap_runs WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM import_runs WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM content_drafts WHERE user_id = $1`, [userId]),
+    one<{ count: string }>(`SELECT COUNT(*) FROM content_drafts WHERE user_id = $1 AND status <> 'draft'`, [userId]),
+    one<{ count: string }>(
+      `SELECT COUNT(*) FROM audit_runs WHERE user_id = $1 AND created_at >= date_trunc('month', now())`,
+      [userId]
+    ),
+    one<{ count: string }>(
+      `SELECT COUNT(*) FROM geo_runs WHERE user_id = $1 AND created_at >= date_trunc('month', now())`,
+      [userId]
+    ),
+    one<{ count: string }>(
+      `SELECT COUNT(*) FROM content_drafts WHERE user_id = $1 AND created_at >= date_trunc('month', now())`,
+      [userId]
+    ),
+    one<{ count: string }>(
+      `SELECT COUNT(*) FROM content_drafts WHERE user_id = $1 AND published_at >= date_trunc('month', now())`,
+      [userId]
+    ),
+    one<{ count: string }>(
+      `SELECT COUNT(*) FROM alerts a JOIN monitored_pages mp ON mp.id = a.monitored_page_id WHERE mp.user_id = $1 AND a.acknowledged = 0`,
+      [userId]
+    ),
+    many<{ date: string; generated: string; published: string }>(
+      `WITH days AS (
+         SELECT generate_series(current_date - interval '13 days', current_date, interval '1 day')::date AS day
+       )
+       SELECT
+         to_char(days.day, 'YYYY-MM-DD') AS date,
+         COUNT(DISTINCT CASE WHEN cd.created_at::date = days.day THEN cd.id END) AS generated,
+         COUNT(DISTINCT CASE WHEN cd.published_at::date = days.day THEN cd.id END) AS published
+       FROM days
+       LEFT JOIN content_drafts cd ON cd.user_id = $1
+       GROUP BY days.day
+       ORDER BY days.day`,
+      [userId]
+    ),
+  ]);
+
+  return {
+    activeServices: {
+      monitoredPages: countOf(monitoredPages),
+      cmsConnections: countOf(cmsConnections),
+      clients: countOf(clients),
+    },
+    totals: {
+      auditRuns: countOf(auditRuns),
+      geoRuns: countOf(geoRuns),
+      gapRuns: countOf(gapRuns),
+      importRuns: countOf(importRuns),
+      contentDrafts: countOf(contentDrafts),
+      contentPublished: countOf(contentPublished),
+    },
+    thisMonth: {
+      auditRuns: countOf(auditRunsMonth),
+      geoRuns: countOf(geoRunsMonth),
+      contentGenerated: countOf(contentGeneratedMonth),
+      contentPublished: countOf(contentPublishedMonth),
+    },
+    activeAlerts: countOf(activeAlerts),
+    activity: activity.map((r) => ({
+      date: r.date,
+      generated: Number(r.generated ?? 0),
+      published: Number(r.published ?? 0),
+    })),
+  };
 }
 
 // ---------------- usage limits (see lib/plans.ts for the actual limit numbers) ----------------
