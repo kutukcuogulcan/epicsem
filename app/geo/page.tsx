@@ -18,6 +18,7 @@ import UsageMeter from "@/components/UsageMeter";
 import StatCard from "@/components/StatCard";
 import GaugeStatCard from "@/components/GaugeStatCard";
 import GradientBar from "@/components/GradientBar";
+import SavedPromptsPanel from "@/components/SavedPromptsPanel";
 import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
@@ -467,6 +468,12 @@ export default function GeoPage() {
           {loading ? "Çalışıyor…" : `${prompts.length} prompt × ${engines.length} motoru çalıştır`}
         </button>
       </form>
+
+      <SavedPromptsPanel
+        brand={brand}
+        competitors={competitors.filter((c) => c.name && c.domain)}
+        engines={engines}
+      />
 
       {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
 

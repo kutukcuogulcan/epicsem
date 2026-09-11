@@ -293,6 +293,31 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_campaigns_user ON campaigns(user_id);
   `);
+
+  // Saved GEO prompts — a persistent per-brand prompt library (Prompts tab, re-run one
+  // at a time) instead of the ad-hoc "type prompts, run the whole batch, results vanish
+  // on reload" flow the GEO page started with. `branded` is stamped at save time via
+  // isBrandedPrompt so the Prompts table can show a Type badge without re-deriving it;
+  // last_* columns are null until the prompt has been run at least once.
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS saved_prompts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      brand_name TEXT NOT NULL,
+      brand_domain TEXT NOT NULL,
+      competitors_json TEXT NOT NULL DEFAULT '[]',
+      prompt_text TEXT NOT NULL,
+      topic TEXT NOT NULL DEFAULT 'Genel',
+      branded INTEGER NOT NULL DEFAULT 0,
+      last_visibility INTEGER,
+      last_sentiment INTEGER,
+      last_mentioned INTEGER,
+      last_run_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_saved_prompts_user_domain ON saved_prompts(user_id, brand_domain);
+  `);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -1149,4 +1174,97 @@ export async function listUsedContentUrls(userId: number): Promise<Set<string>> 
   await ensureSchema();
   const rows = await many<{ source_url: string }>(`SELECT DISTINCT source_url FROM content_drafts WHERE user_id = $1`, [userId]);
   return new Set(rows.map((r) => r.source_url));
+}
+
+// ---------------- saved prompts (persistent per-brand GEO prompt library) ----------------
+
+export interface SavedPrompt {
+  id: number;
+  userId: number;
+  brandName: string;
+  brandDomain: string;
+  competitors: { name: string; domain: string }[];
+  promptText: string;
+  topic: string;
+  branded: boolean;
+  lastVisibility: number | null; // 0-100, % of the engines it was last tested against that mentioned the brand
+  lastSentiment: number | null; // 0-100, averaged across engines where sentiment could be scored
+  lastMentioned: boolean | null;
+  lastRunAt: string | null;
+  createdAt: string;
+}
+
+function rowToSavedPrompt(row: any): SavedPrompt {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    brandName: row.brand_name,
+    brandDomain: row.brand_domain,
+    competitors: JSON.parse(row.competitors_json),
+    promptText: row.prompt_text,
+    topic: row.topic,
+    branded: row.branded === 1,
+    lastVisibility: row.last_visibility,
+    lastSentiment: row.last_sentiment,
+    lastMentioned: row.last_mentioned == null ? null : row.last_mentioned === 1,
+    lastRunAt: row.last_run_at ? toIso(row.last_run_at) : null,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+export async function createSavedPrompts(
+  userId: number,
+  params: {
+    brandName: string;
+    brandDomain: string;
+    competitors: { name: string; domain: string }[];
+    prompts: { text: string; topic: string; branded: boolean }[];
+  }
+): Promise<SavedPrompt[]> {
+  await ensureSchema();
+  const competitorsJson = JSON.stringify(params.competitors);
+  const rows = await Promise.all(
+    params.prompts.map((p) =>
+      one<any>(
+        `INSERT INTO saved_prompts (user_id, brand_name, brand_domain, competitors_json, prompt_text, topic, branded)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [userId, params.brandName, params.brandDomain, competitorsJson, p.text, p.topic, p.branded ? 1 : 0]
+      )
+    )
+  );
+  return rows.map(rowToSavedPrompt);
+}
+
+export async function listSavedPrompts(userId: number, brandDomain: string): Promise<SavedPrompt[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT * FROM saved_prompts WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC`,
+    [userId, brandDomain]
+  );
+  return rows.map(rowToSavedPrompt);
+}
+
+export async function getSavedPrompt(userId: number, id: number): Promise<SavedPrompt | null> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT * FROM saved_prompts WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return row ? rowToSavedPrompt(row) : null;
+}
+
+export async function deleteSavedPrompt(userId: number, id: number): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM saved_prompts WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export async function updateSavedPromptResult(
+  userId: number,
+  id: number,
+  result: { visibility: number; sentiment: number | null; mentioned: boolean }
+): Promise<SavedPrompt | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `UPDATE saved_prompts SET last_visibility = $1, last_sentiment = $2, last_mentioned = $3, last_run_at = now()
+     WHERE id = $4 AND user_id = $5 RETURNING *`,
+    [result.visibility, result.sentiment, result.mentioned ? 1 : 0, id, userId]
+  );
+  return row ? rowToSavedPrompt(row) : null;
 }
