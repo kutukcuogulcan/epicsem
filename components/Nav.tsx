@@ -1,40 +1,8 @@
 import Link from "next/link";
 import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled } from "@/lib/auth";
+import { NAV_GROUPS } from "@/lib/nav-groups";
 import LogoutButton from "./LogoutButton";
 import { TOOL_ICONS } from "./ToolIcons";
-
-// Mirrors the homepage's own "Tek panel, üç iş" grouping (Analiz & Test /
-// Otomasyon / Yönetim) so the nav and the homepage tell the same story about
-// how the tools are organized, instead of an unrelated "featured vs. other"
-// split invented just for the menu.
-const NAV_GROUPS = [
-  {
-    title: "Analiz & Test",
-    items: [
-      { href: "/audit", label: "SEO + AXO Audit", icon: "audit" },
-      { href: "/geo", label: "GEO/AEO Visibility", icon: "geo" },
-      { href: "/gap", label: "Gap Analysis", icon: "gap" },
-      { href: "/article-writer", label: "Article Writer", icon: "article" },
-    ],
-  },
-  {
-    title: "Otomasyon",
-    items: [
-      { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
-      { href: "/campaigns", label: "Kampanyalar", icon: "campaigns" },
-      { href: "/import", label: "Bulk Import", icon: "import" },
-      { href: "/content", label: "Content Studio", icon: "content" },
-      { href: "/local", label: "Yerel İşletme (GBP)", icon: "local" },
-    ],
-  },
-  {
-    title: "Yönetim",
-    items: [
-      { href: "/clients", label: "Clients", icon: "clients" },
-      { href: "/prompts", label: "Claude Code Prompts", icon: "prompts" },
-    ],
-  },
-];
 
 /**
  * Site-style top nav — logo, a hover mega-menu grouping every tool page (same pages

@@ -14,7 +14,9 @@ import "@fontsource/plus-jakarta-sans/600.css";
 import "@fontsource/plus-jakarta-sans/700.css";
 import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
+import { headers } from "next/headers";
 import Nav from "@/components/Nav";
+import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
@@ -58,17 +60,34 @@ export const metadata: Metadata = {
   description: "One dashboard for classic search rankings and AI-answer visibility.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Set by middleware.ts on every request — decides which chrome this page gets.
+  // Tool pages (dashboard, audit, geo, …) get the sidebar app-shell; everything else
+  // (homepage, pricing, login, legal pages) keeps the original top-nav marketing shell.
+  const headersList = await headers();
+  const isAppShell = headersList.get("x-shell") === "app";
+
   return (
     <html lang="en" className={eudoxusSans.variable}>
-      <body className="min-h-screen flex flex-col font-sans">
+      <body className="font-sans">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }}
         />
-        <Nav />
-        <main className="mx-auto max-w-6xl px-4 py-8 flex-1 w-full">{children}</main>
-        <Footer />
+        {isAppShell ? (
+          <div className="min-h-screen flex flex-col md:flex-row">
+            <Sidebar />
+            <main className="flex-1 min-w-0">
+              <div className="mx-auto max-w-6xl px-4 py-8">{children}</div>
+            </main>
+          </div>
+        ) : (
+          <div className="min-h-screen flex flex-col">
+            <Nav />
+            <main className="mx-auto max-w-6xl px-4 py-8 flex-1 w-full">{children}</main>
+            <Footer />
+          </div>
+        )}
       </body>
     </html>
   );
