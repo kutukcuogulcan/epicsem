@@ -10,6 +10,7 @@ const TOOL_PAGES = [
   "/gap",
   "/article-writer",
   "/monitor",
+  "/campaigns",
   "/import",
   "/content",
   "/local",

@@ -21,6 +21,7 @@ const NAV_GROUPS = [
     title: "Otomasyon",
     items: [
       { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
+      { href: "/campaigns", label: "Kampanyalar", icon: "campaigns" },
       { href: "/import", label: "Bulk Import", icon: "import" },
       { href: "/content", label: "Content Studio", icon: "content" },
       { href: "/local", label: "Yerel İşletme (GBP)", icon: "local" },

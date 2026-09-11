@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
 
   try {
-    await saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries });
+    await saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries, contentBriefs });
   } catch (dbErr) {
     console.error("gap history write failed:", dbErr);
   }

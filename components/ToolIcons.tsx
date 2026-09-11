@@ -84,4 +84,11 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <path d="M3.5 9.5l3.5 3.5 7.5-7.5" />
     </ToolIcon>
   ),
+  campaigns: (
+    <ToolIcon>
+      <circle cx="9" cy="9" r="6.5" />
+      <circle cx="9" cy="9" r="3" />
+      <circle cx="9" cy="9" r="0.5" fill="currentColor" />
+    </ToolIcon>
+  ),
 };

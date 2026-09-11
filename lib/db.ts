@@ -11,6 +11,7 @@ import type {
   SourceDomainStat,
   TopicVisibility,
 } from "@/types";
+import type { ContentBrief } from "@/lib/content-brief";
 
 /**
  * Persistence layer — Postgres via `pg` (node-postgres), connected through DATABASE_URL.
@@ -268,6 +269,30 @@ async function initSchema(): Promise<void> {
   // chart: content_drafts.created_at alone can't tell you when a draft was actually
   // published, only when it was written.
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ`);
+  await p.query(`ALTER TABLE gap_runs ADD COLUMN IF NOT EXISTS content_briefs_json TEXT NOT NULL DEFAULT '[]'`);
+
+  // Campaign mode — "set it and forget it" content generation, the Arvow-style piece
+  // still missing after Overview + real cron monitoring. Deliberately narrower than
+  // Arvow's own autoblog though: a campaign never invents a topic. Each run pulls the
+  // next not-yet-drafted content gap from this domain's most recent real Gap Analysis
+  // (see getLatestGapRunBriefs) and always lands as a draft (lib/content-generator.ts's
+  // existing [NEEDS: ...] / draft-only rules apply unchanged) — same review gate as a
+  // manually-generated article, just triggered by GitHub Actions cron instead of a click.
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      brand_name TEXT NOT NULL,
+      brand_domain TEXT NOT NULL,
+      frequency TEXT NOT NULL DEFAULT 'weekly',
+      status TEXT NOT NULL DEFAULT 'active',
+      last_run_at TIMESTAMPTZ,
+      last_run_note TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_campaigns_user ON campaigns(user_id);
+  `);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -480,20 +505,40 @@ export async function saveGapRun(userId: number, params: {
   demoMode: boolean;
   gapMatrix: GapRow[];
   summaries: GeoVisibilitySummary[];
+  /** Persisted (unlike the raw per-prompt GeoRunResult[] this is built from) so a
+   * Campaign — running unattended, days later — can pick a real, already-computed
+   * content gap without re-running the whole GEO fan-out just to get one topic. */
+  contentBriefs: ContentBrief[];
 }): Promise<void> {
   await ensureSchema();
   await exec(
-    `INSERT INTO gap_runs (user_id, brand_name, brand_domain, gap_matrix_json, summaries_json, demo_mode)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO gap_runs (user_id, brand_name, brand_domain, gap_matrix_json, summaries_json, content_briefs_json, demo_mode)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       userId,
       params.brandName,
       params.brandDomain,
       JSON.stringify(params.gapMatrix),
       JSON.stringify(params.summaries),
+      JSON.stringify(params.contentBriefs),
       params.demoMode ? 1 : 0,
     ]
   );
+}
+
+/** Most recent Gap Analysis content briefs for this brand domain — what a Campaign
+ * draws its next topic from. Null when Gap Analysis has never been run for it. */
+export async function getLatestGapRunBriefs(
+  userId: number,
+  brandDomain: string
+): Promise<{ gapRunId: number; contentBriefs: ContentBrief[] } | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT id, content_briefs_json FROM gap_runs WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC LIMIT 1`,
+    [userId, brandDomain]
+  );
+  if (!row) return null;
+  return { gapRunId: row.id, contentBriefs: JSON.parse(row.content_briefs_json || "[]") };
 }
 
 // ---------------- monitored pages ----------------
@@ -1023,4 +1068,85 @@ export async function incrementUsage(userId: number, metric: string, amount: num
      ON CONFLICT (user_id, period, metric) DO UPDATE SET count = usage_counters.count + excluded.count, updated_at = now()`,
     [userId, period, metric, amount]
   );
+}
+
+// ---------------- campaigns (automatic, grounded content generation) ----------------
+
+export type CampaignFrequency = "weekly" | "monthly";
+export type CampaignStatus = "active" | "paused";
+
+export interface Campaign {
+  id: number;
+  userId: number;
+  brandName: string;
+  brandDomain: string;
+  frequency: CampaignFrequency;
+  status: CampaignStatus;
+  lastRunAt: string | null;
+  lastRunNote: string | null;
+  createdAt: string;
+}
+
+function rowToCampaign(row: any): Campaign {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    brandName: row.brand_name,
+    brandDomain: row.brand_domain,
+    frequency: row.frequency,
+    status: row.status,
+    lastRunAt: row.last_run_at ? toIso(row.last_run_at) : null,
+    lastRunNote: row.last_run_note,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+export async function createCampaign(
+  userId: number,
+  params: { brandName: string; brandDomain: string; frequency: CampaignFrequency }
+): Promise<Campaign> {
+  await ensureSchema();
+  const row = await one<any>(
+    `INSERT INTO campaigns (user_id, brand_name, brand_domain, frequency) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [userId, params.brandName, params.brandDomain, params.frequency]
+  );
+  return rowToCampaign(row);
+}
+
+export async function listCampaigns(userId: number): Promise<Campaign[]> {
+  await ensureSchema();
+  const rows = await many<any>(`SELECT * FROM campaigns WHERE user_id = $1 ORDER BY id DESC`, [userId]);
+  return rows.map(rowToCampaign);
+}
+
+/** Every active campaign across every user — the cron sweep's input (mirrors
+ * listAllMonitoredPages), never scoped by a signed-in session. */
+export async function listAllActiveCampaigns(): Promise<Campaign[]> {
+  await ensureSchema();
+  const rows = await many<any>(`SELECT * FROM campaigns WHERE status = 'active'`);
+  return rows.map(rowToCampaign);
+}
+
+export async function setCampaignStatus(userId: number, id: number, status: CampaignStatus): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE campaigns SET status = $1 WHERE id = $2 AND user_id = $3`, [status, id, userId]);
+}
+
+export async function deleteCampaign(userId: number, id: number): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM campaigns WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export async function markCampaignRun(id: number, note: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE campaigns SET last_run_at = now(), last_run_note = $1 WHERE id = $2`, [note, id]);
+}
+
+/** Every URL this user has ever generated a content draft for — a campaign skips
+ * these when picking its next topic, whether the draft came from a manual "Generate
+ * article" click or an earlier campaign run. */
+export async function listUsedContentUrls(userId: number): Promise<Set<string>> {
+  await ensureSchema();
+  const rows = await many<{ source_url: string }>(`SELECT DISTINCT source_url FROM content_drafts WHERE user_id = $1`, [userId]);
+  return new Set(rows.map((r) => r.source_url));
 }

@@ -1,0 +1,29 @@
+diff --git a/app/page.tsx b/app/page.tsx
+index c214d21..7554b46 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -109,7 +109,7 @@ export default function Home() {
+                 {group.items.map((item) => (
+                   <div key={item.label} className="pt-3 first:pt-3">
+                     <Link href={item.href} className="block group/item">
+-                      <div className="text-sm font-medium group-hover/item:text-accent transition-colors">{item.label}</div>
++                      <div className="text-sm font-semibold group-hover/item:text-accent transition-colors">{item.label}</div>
+                       <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
+                     </Link>
+                     {"landingHref" in item && item.landingHref && (
+diff --git a/app/pricing/page.tsx b/app/pricing/page.tsx
+index 75907bf..0765c87 100644
+--- a/app/pricing/page.tsx
++++ b/app/pricing/page.tsx
+@@ -48,8 +48,9 @@ export default function PricingPage() {
+             <p className="mt-1 text-sm text-ink/40">Fiyat henüz belirlenmedi</p>
+           </div>
+           <p className="text-sm text-ink/50">
+-            Test süreci bitip gerçek AI motoru anahtarları eklendiğinde (şu an demo modunda çalışıyoruz),
+-            kullanım hacmine göre bir ücretli plan tanımlanacak. O ana kadar mevcut ücretsiz erişim aynen sürüyor.
++            Test süreci bitip tüm AI motoru anahtarları etkin hale geldiğinde (bağlantılar kademeli olarak
++            ekleniyor), kullanım hacmine göre bir ücretli plan tanımlanacak. O ana kadar mevcut ücretsiz erişim
++            aynen sürüyor.
+           </p>
+         </div>
+       </div>
