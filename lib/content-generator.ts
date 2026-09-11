@@ -1,6 +1,7 @@
 import type { EngineId, GeneratedArticle } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
+import { fetchPageSummary, type PageSummary } from "@/lib/content-fetch";
 
 /**
  * AI content generation grounded in a real ContentBrief — a page's actual gap-analysis
@@ -28,11 +29,17 @@ function pickProvider() {
   return null;
 }
 
-function buildGenerationPrompt(brief: ContentBrief, brand: BrandRef): string {
+function buildGenerationPrompt(brief: ContentBrief, brand: BrandRef, format: "article" | "listicle" = "article"): string {
   const lines: string[] = [];
-  lines.push(
-    `You are writing a page/article for ${brand.name} (${brand.domain}) to close a real content gap found by an SEO/GEO (generative engine optimization) audit on ${brief.url}.`
-  );
+  if (format === "listicle") {
+    lines.push(
+      `You are writing a LISTICLE (a numbered/bulleted list-format article, e.g. "7 things to check before...") for ${brand.name} (${brand.domain}) to close a real content gap found by an SEO/GEO (generative engine optimization) audit on ${brief.url}. Structure the body as a numbered list of items (## headings per item is fine), not prose paragraphs.`
+    );
+  } else {
+    lines.push(
+      `You are writing a page/article for ${brand.name} (${brand.domain}) to close a real content gap found by an SEO/GEO (generative engine optimization) audit on ${brief.url}.`
+    );
+  }
   lines.push(`Gap analysis verdict: "${brief.verdict}" — ${brief.reason}`);
 
   if (brief.targetQuestions.length > 0) {
@@ -113,21 +120,27 @@ function demoArticle(brief: ContentBrief, brand: BrandRef): GeneratedArticle {
   };
 }
 
-export async function generateArticleFromBrief(brief: ContentBrief, brand: BrandRef): Promise<GeneratedArticle> {
+export async function generateArticleFromBrief(
+  brief: ContentBrief,
+  brand: BrandRef,
+  format: "article" | "listicle" = "article"
+): Promise<GeneratedArticle> {
   // Respect the global DEMO_MODE override the same way lib/geo-engine.ts does — a key
   // being present shouldn't force a real (billable) call if DEMO_MODE=true was set
   // deliberately. Route callers use this same check to decide whether to enforce quota.
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return demoArticle(brief, brand);
 
-  const prompt = buildGenerationPrompt(brief, brand);
+  const prompt = buildGenerationPrompt(brief, brand, format);
   const { text, model } = await provider.run(prompt);
-  const parsed = extractJson(text);
+  return parseArticleResponse(text, model);
+}
 
+function parseArticleResponse(text: string, model: string): GeneratedArticle {
+  const parsed = extractJson(text);
   if (!parsed.title || !parsed.bodyMarkdown) {
     throw new Error("Model response was missing required fields (title/bodyMarkdown).");
   }
-
   return {
     title: String(parsed.title),
     metaDescription: String(parsed.metaDescription ?? ""),
@@ -136,4 +149,87 @@ export async function generateArticleFromBrief(brief: ContentBrief, brand: Brand
     demoMode: false,
     model,
   };
+}
+
+const RESPONSE_SHAPE_INSTRUCTIONS = `Respond with ONLY a single JSON object, no markdown fences, no commentary, matching exactly this shape:
+{
+  "title": "50-60 character SEO title",
+  "metaDescription": "140-160 character meta description",
+  "bodyMarkdown": "the full article in markdown, using ## / ### headings, answer-first paragraphs, and bullet lists where useful — 500-900 words",
+  "openPlaceholders": ["each distinct [NEEDS: ...] placeholder used in bodyMarkdown, verbatim, as its own array entry — empty array if none were needed"]
+}`;
+
+const NO_FABRICATION_RULE =
+  "CRITICAL constraint: do not invent facts, statistics, pricing, dates, customer counts, awards, or any claim that isn't either general safely-known information or literally present in the real page content quoted above. Where the article needs a specific fact you don't have, write a placeholder in the exact form [NEEDS: short description of the missing fact] instead of making one up. This placeholder convention is required, not optional.";
+
+function summarizeForPrompt(label: string, page: PageSummary): string {
+  return [
+    `${label} (${page.url}):`,
+    page.title ? `Title: ${page.title}` : null,
+    page.metaDescription ? `Meta description: ${page.metaDescription}` : null,
+    `Visible page text (truncated): ${page.bodyText || "(page returned no readable text)"}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/**
+ * URL-grounded Content Hub input types — news reaction, competitor comparison, and
+ * "alternatives to X" pages. Same two-step discipline as lib/article-audit.ts: fetch the
+ * real page(s) first (lib/content-fetch.ts), then hand ONLY that extracted text to the
+ * model. Comparison/alternatives also fetch the brand's own domain so the model has real
+ * material for "us" too, instead of inventing what the brand offers.
+ */
+export async function generateArticleFromUrlInput(
+  kind: "news" | "comparison" | "alternatives",
+  sourceUrl: string,
+  brand: BrandRef
+): Promise<GeneratedArticle> {
+  const sourcePage = await fetchPageSummary(sourceUrl);
+  const ownPage = kind === "news" ? null : await fetchPageSummary(brand.domain).catch(() => null);
+
+  const lines: string[] = [];
+  if (kind === "news") {
+    lines.push(
+      `You are writing a brand-perspective article for ${brand.name} (${brand.domain}) reacting to / summarizing the real news article below, adding the brand's relevant angle where genuinely applicable.`
+    );
+  } else if (kind === "comparison") {
+    lines.push(
+      `You are writing a comparison article: "${brand.name} vs the competitor at ${sourcePage.url}" — based ONLY on the real page content extracted below for each side.`
+    );
+  } else {
+    lines.push(
+      `You are writing an "alternatives to ${sourcePage.title ?? sourcePage.url}" article for ${brand.name} (${brand.domain}), positioning ${brand.name} as one real alternative — based ONLY on the real page content extracted below.`
+    );
+  }
+
+  lines.push("");
+  lines.push(summarizeForPrompt(kind === "news" ? "Source article" : "Competitor page", sourcePage));
+  if (ownPage) {
+    lines.push("");
+    lines.push(summarizeForPrompt(`${brand.name}'s own page`, ownPage));
+  } else if (kind !== "news") {
+    lines.push("");
+    lines.push(`(Could not fetch ${brand.domain} — write about ${brand.name} only in general terms and use [NEEDS: ...] for anything specific.)`);
+  }
+
+  lines.push("");
+  lines.push(NO_FABRICATION_RULE);
+  lines.push("");
+  lines.push(RESPONSE_SHAPE_INSTRUCTIONS);
+
+  const provider = isDemoMode() ? null : pickProvider();
+  if (!provider) {
+    return {
+      title: `[DEMO] ${kind === "news" ? "Haber temelli yazı" : kind === "comparison" ? "Karşılaştırma" : "Alternatifler"}: ${sourcePage.title ?? sourcePage.url}`,
+      metaDescription: `[DEMO DATA] Gerçek bir API anahtarı tanımlanmadığı için bu taslak simüle edildi.`,
+      bodyMarkdown: `[DEMO DATA — connect OPENAI_API_KEY or ANTHROPIC_API_KEY in .env to generate a real, grounded draft here instead of this placeholder.]\n\nKaynak: ${sourcePage.url}\n\n[NEEDS: gerçek model çağrısı olmadan bu bölüm doldurulamaz]`,
+      openPlaceholders: ["[NEEDS: gerçek model çağrısı olmadan bu bölüm doldurulamaz]"],
+      demoMode: true,
+      model: "demo (no API key configured)",
+    };
+  }
+
+  const { text, model } = await provider.run(lines.join("\n"));
+  return parseArticleResponse(text, model);
 }

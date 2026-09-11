@@ -6,6 +6,7 @@ import UsageMeter from "@/components/UsageMeter";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import ContentHub from "@/components/ContentHub";
 
 const SCENARIO_STEPS = [
   {
@@ -214,6 +215,8 @@ export default function ContentStudioPage() {
       >
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
+
+      <ContentHub />
 
       <div className="card space-y-4">
         <h2 className="font-bold">CMS bağlantıları</h2>

@@ -318,6 +318,33 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_saved_prompts_user_domain ON saved_prompts(user_id, brand_domain);
   `);
+
+  // Content Hub queue — a real, persisted "what should we write next" list instead of
+  // Arvow's mock-data input table. Every row must be grounded before it's created: a
+  // URL for news/comparison/alternatives types (scraped, never invented — see
+  // lib/content-fetch.ts), or a real Gap Analysis brief for seo-gap/listicle types
+  // (brief_json, same source Campaign mode already draws from). `topic` always holds
+  // the human-facing reference (the URL, or the brief's audited page URL) so the table
+  // never needs a second lookup just to render a label.
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS content_inputs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      brand_name TEXT NOT NULL,
+      brand_domain TEXT NOT NULL,
+      type TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      label TEXT NOT NULL,
+      brief_json TEXT,
+      language TEXT NOT NULL DEFAULT 'tr',
+      status TEXT NOT NULL DEFAULT 'queued',
+      draft_id INTEGER,
+      error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_content_inputs_user_domain ON content_inputs(user_id, brand_domain);
+  `);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -1267,4 +1294,106 @@ export async function updateSavedPromptResult(
     [result.visibility, result.sentiment, result.mentioned ? 1 : 0, id, userId]
   );
   return row ? rowToSavedPrompt(row) : null;
+}
+
+// ---------------- content hub (grounded content-input queue) ----------------
+
+export type ContentInputType = "seo-gap" | "listicle" | "news" | "comparison" | "alternatives";
+export type ContentInputStatus = "queued" | "drafted" | "failed";
+
+export interface ContentInput {
+  id: number;
+  userId: number;
+  brandName: string;
+  brandDomain: string;
+  type: ContentInputType;
+  topic: string;
+  label: string;
+  brief: ContentBrief | null;
+  language: string;
+  status: ContentInputStatus;
+  draftId: number | null;
+  error: string | null;
+  createdAt: string;
+}
+
+function rowToContentInput(row: any): ContentInput {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    brandName: row.brand_name,
+    brandDomain: row.brand_domain,
+    type: row.type,
+    topic: row.topic,
+    label: row.label,
+    brief: row.brief_json ? JSON.parse(row.brief_json) : null,
+    language: row.language,
+    status: row.status,
+    draftId: row.draft_id,
+    error: row.error,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+export async function createContentInput(
+  userId: number,
+  params: {
+    brandName: string;
+    brandDomain: string;
+    type: ContentInputType;
+    topic: string;
+    label: string;
+    brief?: ContentBrief;
+    language?: string;
+  }
+): Promise<ContentInput> {
+  await ensureSchema();
+  const row = await one<any>(
+    `INSERT INTO content_inputs (user_id, brand_name, brand_domain, type, topic, label, brief_json, language)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [
+      userId,
+      params.brandName,
+      params.brandDomain,
+      params.type,
+      params.topic,
+      params.label,
+      params.brief ? JSON.stringify(params.brief) : null,
+      params.language ?? "tr",
+    ]
+  );
+  return rowToContentInput(row);
+}
+
+export async function listContentInputs(userId: number, brandDomain: string): Promise<ContentInput[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT * FROM content_inputs WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC`,
+    [userId, brandDomain]
+  );
+  return rows.map(rowToContentInput);
+}
+
+export async function getContentInput(userId: number, id: number): Promise<ContentInput | null> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT * FROM content_inputs WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return row ? rowToContentInput(row) : null;
+}
+
+export async function deleteContentInput(userId: number, id: number): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM content_inputs WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export async function markContentInputDrafted(userId: number, id: number, draftId: number): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `UPDATE content_inputs SET status = 'drafted', draft_id = $1, error = NULL WHERE id = $2 AND user_id = $3`,
+    [draftId, id, userId]
+  );
+}
+
+export async function markContentInputFailed(userId: number, id: number, error: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE content_inputs SET status = 'failed', error = $1 WHERE id = $2 AND user_id = $3`, [error, id, userId]);
 }
