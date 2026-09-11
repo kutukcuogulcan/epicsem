@@ -13,8 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run monitor check sweep
+            - name: Run monitor check sweep
         env:
           APP_URL: https://epicsem-web.onrender.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: node scripts/check-monitors.mjs
+      - name: Run campaign sweep
+        env:
+          APP_URL: https://epicsem-web.onrender.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/run-campaigns.mjs
