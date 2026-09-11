@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EngineId } from "@/types";
 import ScoreBadge from "@/components/ScoreBadge";
+import GradientBar from "@/components/GradientBar";
 
 interface BrandRow {
   name: string;
@@ -51,8 +52,21 @@ export default function SavedPromptsPanel({
   const [importText, setImportText] = useState("");
   const [saving, setSaving] = useState(false);
   const [runningId, setRunningId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "branded" | "discovery">("all");
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
 
   const hasBrand = Boolean(brand.name && brand.domain);
+
+  const filteredPrompts = useMemo(() => {
+    if (!prompts) return prompts;
+    return prompts.filter((p) => {
+      if (typeFilter === "branded" && !p.branded) return false;
+      if (typeFilter === "discovery" && p.branded) return false;
+      if (search.trim() && !p.promptText.toLowerCase().includes(search.trim().toLowerCase())) return false;
+      return true;
+    });
+  }, [prompts, search, typeFilter]);
 
   const load = useCallback(async () => {
     if (!brand.domain) {
@@ -144,6 +158,7 @@ export default function SavedPromptsPanel({
   }
 
   async function remove(id: number) {
+    setMenuOpenId(null);
     setPrompts((prev) => prev?.filter((p) => p.id !== id) ?? prev);
     try {
       await fetch("/api/saved-prompts", {
@@ -190,58 +205,116 @@ export default function SavedPromptsPanel({
       )}
 
       {hasBrand && prompts && prompts.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-ink/40 text-left">
-              <tr>
-                <th className="py-2 pr-4">Prompt</th>
-                <th className="py-2 pr-4">Tip</th>
-                <th className="py-2 pr-4">Görünürlük</th>
-                <th className="py-2 pr-4">Duygu</th>
-                <th className="py-2 pr-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {prompts.map((p) => (
-                <tr key={p.id} className="border-t border-border">
-                  <td className="py-2 pr-4 max-w-xs">
-                    <div className="truncate" title={p.promptText}>
-                      {p.promptText}
-                    </div>
-                    {p.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/50 mt-1">{p.topic}</span>}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <span className={`badge ${p.branded ? "badge-info" : "bg-ink/5 text-ink/50"}`}>
-                      {p.branded ? "Marka bilinen" : "Keşif"}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-4">
-                    <ScoreBadge score={p.lastVisibility} display={p.lastVisibility != null ? `${p.lastVisibility}%` : undefined} />
-                  </td>
-                  <td className="py-2 pr-4">
-                    <ScoreBadge score={p.lastSentiment} kind="sentiment" />
-                  </td>
-                  <td className="py-2 pr-4 text-right whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => runOne(p.id)}
-                      disabled={runningId === p.id}
-                      className="text-xs text-accent hover:underline disabled:opacity-50 mr-3"
-                    >
-                      {runningId === p.id ? "Çalışıyor…" : "Çalıştır"}
-                    </button>
-                    <button type="button" onClick={() => remove(p.id)} className="text-xs text-ink/30 hover:text-danger">
-                      Sil
-                    </button>
-                  </td>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Promptlarda ara…"
+              className="rounded-lg bg-muted border border-border px-3 py-1.5 text-xs outline-none focus:border-accent w-56"
+            />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
+              className="rounded-lg bg-muted border border-border px-2 py-1.5 text-xs outline-none focus:border-accent"
+            >
+              <option value="all">Tüm tipler</option>
+              <option value="branded">Marka bilinen</option>
+              <option value="discovery">Keşif</option>
+            </select>
+            <span className="text-xs text-ink/30">
+              {filteredPrompts?.length ?? 0}/{prompts.length}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-ink/40 text-left">
+                <tr>
+                  <th className="py-2 pr-4">Prompt</th>
+                  <th className="py-2 pr-4">Tip</th>
+                  <th className="py-2 pr-4">Görünürlük</th>
+                  <th className="py-2 pr-4">Duygu</th>
+                  <th className="py-2 pr-4"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-3 text-xs text-ink/30">
-            Görünürlük/duygu, o promptun en son çalıştırıldığında hangi motorların markayı andığının yüzdesi —
-            hiç çalıştırılmadıysa boş görünür.
-          </p>
+              </thead>
+              <tbody>
+                {filteredPrompts?.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-ink/40">
+                      Bu filtreye uyan prompt yok.
+                    </td>
+                  </tr>
+                )}
+                {filteredPrompts?.map((p) => (
+                  <tr key={p.id} className="border-t border-border">
+                    <td className="py-2 pr-4 max-w-xs">
+                      <div className="truncate" title={p.promptText}>
+                        {p.promptText}
+                      </div>
+                      {p.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/50 mt-1">{p.topic}</span>}
+                    </td>
+                    <td className="py-2 pr-4">
+                      <span className={`badge ${p.branded ? "badge-info" : "bg-ink/5 text-ink/50"}`}>
+                        {p.branded ? "Marka bilinen" : "Keşif"}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-4">
+                      <ScoreBadge score={p.lastVisibility} display={p.lastVisibility != null ? `${p.lastVisibility}%` : undefined} />
+                    </td>
+                    <td className="py-2 pr-4">
+                      {p.lastSentiment == null ? (
+                        <span className="text-xs text-ink/30">—</span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <GradientBar value={p.lastSentiment} className="w-20" />
+                          <span className="text-xs text-ink/50 w-6">{p.lastSentiment}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 pr-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5 relative">
+                        <button
+                          type="button"
+                          onClick={() => runOne(p.id)}
+                          disabled={runningId === p.id}
+                          className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                        >
+                          {runningId === p.id ? "Çalışıyor…" : "Çalıştır"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMenuOpenId(menuOpenId === p.id ? null : p.id)}
+                          className="rounded-lg px-2 py-1 text-ink/40 hover:bg-muted hover:text-ink"
+                          aria-label="Diğer işlemler"
+                        >
+                          ⋯
+                        </button>
+                        {menuOpenId === p.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
+                            <div className="absolute right-0 top-8 z-20 w-32 bg-panel border border-border rounded-lg shadow-lg py-1">
+                              <button
+                                type="button"
+                                onClick={() => remove(p.id)}
+                                className="w-full text-left px-3 py-1.5 text-xs text-danger hover:bg-danger/5"
+                              >
+                                Sil
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-3 text-xs text-ink/30">
+              Görünürlük/duygu, o promptun en son çalıştırıldığında hangi motorların markayı andığının yüzdesi —
+              hiç çalıştırılmadıysa boş görünür.
+            </p>
+          </div>
         </div>
       )}
 
