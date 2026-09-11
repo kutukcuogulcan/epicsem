@@ -16,6 +16,8 @@ import {
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import StatCard from "@/components/StatCard";
+import GaugeStatCard from "@/components/GaugeStatCard";
+import GradientBar from "@/components/GradientBar";
 import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
@@ -304,6 +306,32 @@ export default function GeoPage() {
   // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
   // of making you read them out of the comparison table below.
   const ownSummary = summaries?.find((s) => s.domain === brand.domain) ?? summaries?.[0] ?? null;
+
+  // Per-AI-engine breakdown (ChatGPT vs Claude vs Gemini vs Perplexity vs …) — the
+  // "LLM Breakdown" panel real AI-visibility dashboards (e.g. Arvow) show next to their
+  // headline number. Only computable from the current run's raw results (engine-level
+  // data isn't persisted in geo_runs, only brand/topic aggregates), so this reflects the
+  // latest test only, not history.
+  const engineBreakdown = useMemo(() => {
+    if (!runs || runs.length === 0) return null;
+    const byEngine = new Map<EngineId, { mentioned: number; total: number; sentiments: number[] }>();
+    for (const r of runs) {
+      const cur = byEngine.get(r.engine) ?? { mentioned: 0, total: 0, sentiments: [] };
+      cur.total += 1;
+      if (r.mentioned) cur.mentioned += 1;
+      if (r.sentiment != null) cur.sentiments.push(r.sentiment);
+      byEngine.set(r.engine, cur);
+    }
+    return Array.from(byEngine.entries())
+      .map(([engine, v]) => ({
+        engine,
+        visibility: Math.round((v.mentioned / v.total) * 100),
+        sentiment: v.sentiments.length ? Math.round(v.sentiments.reduce((a, b) => a + b, 0) / v.sentiments.length) : null,
+        total: v.total,
+      }))
+      .sort((a, b) => b.visibility - a.visibility);
+  }, [runs]);
+
   const filteredRuns = runs?.filter(
     (r) =>
       (runEngineFilter === "all" || r.engine === runEngineFilter) &&
@@ -452,9 +480,9 @@ export default function GeoPage() {
 
       {summaries && ownSummary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
+          <GaugeStatCard
             label="Görünürlük"
-            value={`${Math.round(ownSummary.visibility * 100)}%`}
+            score={Math.round(ownSummary.visibility * 100)}
             description={`${ownSummary.brand} kaç promptta görünüyor`}
             tone={ownSummary.visibility >= 0.5 ? "seo" : ownSummary.visibility >= 0.2 ? "warn" : "danger"}
           />
@@ -484,6 +512,27 @@ export default function GeoPage() {
               description="Markanı zaten bilen vs. kategoriyi araştıran sorular"
             />
           )}
+        </div>
+      )}
+
+      {engineBreakdown && engineBreakdown.length > 1 && (
+        <div className="card">
+          <h2 className="font-bold">AI motoru bazında görünürlük</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar görünüyor — bazı motorlar sizi
+            hiç anmıyorken diğerleri anabilir, bu fark hangi motora öncelik vermeniz gerektiğini gösterir.
+          </p>
+          <div className="space-y-3">
+            {engineBreakdown.map((e) => (
+              <div key={e.engine} className="flex items-center gap-3 text-sm">
+                <div className="w-40 truncate text-ink/70 shrink-0">{ENGINE_LABEL[e.engine]}</div>
+                <GradientBar value={e.visibility} className="flex-1" />
+                <div className="w-32 text-right text-ink/50 text-xs shrink-0">
+                  %{e.visibility} görünürlük{e.sentiment != null ? ` · ${e.sentiment} ton` : ""}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
