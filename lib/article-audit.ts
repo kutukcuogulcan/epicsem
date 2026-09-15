@@ -237,6 +237,22 @@ function buildPrompt(page: ExtractedPage): string {
   );
   lines.push("## 9. Priority Action List");
   lines.push("The top 5 fixes ranked by SEO impact, one line each, most impactful first.");
+  lines.push("## 10. AI Citability Score & GEO Rewrite");
+  lines.push(
+    "You are also acting as a GEO (Generative Engine Optimization) analyst simulating how ChatGPT, Perplexity, Gemini and Google AI Overviews would decide whether to lift a direct-answer snippet from this page. Score and rewrite based ONLY on the real extracted content above — never invent facts, statistics, or sources that aren't already on the page."
+  );
+  lines.push(
+    "10a. citabilityScore (0-100): how easily an AI engine could quote this page as-is. Judge by real structural signals only: does it open with a direct-answer sentence, does it use scannable H2/H3, does it already contain concrete numbers/definitions, does it use tables or bulleted lists where the content is comparative or list-like. Do not score on subjective 'quality'."
+  );
+  lines.push(
+    "10b. citabilityWeaknesses: 2-5 concrete structural gaps found in the REAL content (e.g. 'no direct-answer opening sentence — the topic isn't defined until paragraph 3', 'no comparison table despite comparing 3 options in prose', 'no concrete numbers, only vague claims like several/many'). Each needs an issue + a one-sentence why. If the page is already strong, return fewer items rather than inventing weak ones."
+  );
+  lines.push(
+    "10c. geoRewrite: rewrite the page's OWN real body content (from the extracted body text/structural excerpt above) into a version an AI engine could lift as a direct snippet — answer-first opening sentence, short paragraphs, ## /### headings, a markdown table or bullet list where the source content is comparative/list-like. Use ONLY facts, numbers, and claims already present in the extracted content above. Where the rewrite would benefit from a fact that ISN'T in the extracted content (a stat, a date, a source), insert a placeholder in the exact form [NEEDS: short description of the missing fact] instead of inventing one — same rule as everywhere else in this app. 300-600 words."
+  );
+  lines.push(
+    "10d. citationSuggestions: 2-5 short descriptions of the KIND of authoritative data point that would strengthen this page's citability if added (e.g. 'a recent industry statistic on [topic]', 'the publish/last-updated date', 'a named source or study for the claim in paragraph 2'). These are suggestions of what to go find and add — NEVER a specific number, statistic, or source you made up presented as if it were real."
+  );
   lines.push("---");
   lines.push(
     `Respond with ONLY a single JSON object, no markdown fences, no commentary, matching EXACTLY this shape:
@@ -253,7 +269,11 @@ function buildPrompt(page: ExtractedPage): string {
   "faqSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": "full JSON-LD as a string, or null" },
   "articleSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": "full JSON-LD as a string, or null" },
   "articleRecommendations": [ { "title": "string", "targetKeyword": "string", "angle": "string", "outline": ["string", "string"] } ],
-  "priorityActions": ["string", "string", "string", "string", "string"]
+  "priorityActions": ["string", "string", "string", "string", "string"],
+  "citabilityScore": 0,
+  "citabilityWeaknesses": [ { "issue": "string", "why": "string" } ],
+  "geoRewrite": "string (markdown, 300-600 words, [NEEDS: ...] placeholders for anything not grounded in the real content)",
+  "citationSuggestions": ["string", "string"]
 }
 Only include real problems — if imageAlts, linkIssues, or missingLinks have nothing to flag, return an empty array rather than inventing one.`
   );
@@ -324,6 +344,10 @@ function demoResult(page: ExtractedPage, failureNote?: string): ArticleAuditResu
     priorityActions: failureNote
       ? [`[DEMO DATA] Canlı model çağrısı başarısız oldu, sonuçlar simüle edildi: ${failureNote}`]
       : ["[DEMO DATA] Gerçek öneriler için .env'e ANTHROPIC_API_KEY veya OPENAI_API_KEY ekleyin."],
+    citabilityScore: 0,
+    citabilityWeaknesses: [{ issue: "[DEMO DATA]", why }],
+    geoRewrite: `[DEMO DATA — gerçek bir GEO yeniden yazımı için bir model API anahtarı bağlanmalı.]\n\n[NEEDS: gerçek model çağrısı olmadan bu bölüm doldurulamaz]`,
+    citationSuggestions: ["[DEMO DATA]"],
     demoMode: true,
     model: failureNote ? "demo (live call failed)" : "demo (no API key configured)",
   };
@@ -390,6 +414,10 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
     },
     articleRecommendations: Array.isArray(parsed.articleRecommendations) ? parsed.articleRecommendations.slice(0, 4) : [],
     priorityActions: Array.isArray(parsed.priorityActions) ? parsed.priorityActions.slice(0, 5) : [],
+    citabilityScore: Math.max(0, Math.min(100, Math.round(Number(parsed.citabilityScore ?? 0)))),
+    citabilityWeaknesses: Array.isArray(parsed.citabilityWeaknesses) ? parsed.citabilityWeaknesses.slice(0, 5) : [],
+    geoRewrite: String(parsed.geoRewrite ?? ""),
+    citationSuggestions: Array.isArray(parsed.citationSuggestions) ? parsed.citationSuggestions.slice(0, 5) : [],
     demoMode: false,
     model,
   };

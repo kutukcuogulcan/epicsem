@@ -263,6 +263,14 @@ export interface ArticleRecommendation {
   outline: string[];
 }
 
+/** One structural weakness the AI Citability score is docked for — e.g. "no
+ * comparison table", "no direct-answer opening sentence" — always tied to what's
+ * actually (not) present in the real page, never a generic filler complaint. */
+export interface CitabilityWeakness {
+  issue: string;
+  why: string;
+}
+
 export interface ArticleAuditResult {
   url: string;
   fetchedAt: string;
@@ -281,6 +289,22 @@ export interface ArticleAuditResult {
   articleSchema: ArticleSchemaResult;
   articleRecommendations: ArticleRecommendation[];
   priorityActions: string[];
+  /** 0-100 — how easily an AI answer engine (ChatGPT/Perplexity/Gemini/AI Overviews)
+   * could lift a direct-answer snippet from this page as-is, based only on real
+   * structural signals (definition sentences, scannable headings, tables/lists,
+   * concrete numbers already on the page) — never a subjective "quality" score. */
+  citabilityScore: number;
+  citabilityWeaknesses: CitabilityWeakness[];
+  /** The page's OWN real content (bodyText/bodyHtmlExcerpt), restructured for AI
+   * parsing — answer-first sentences, clear H2/H3, tables/bullets where the source
+   * material supports one. Never adds a fact that wasn't already on the page; a
+   * gap the model can't fill from real content is left as an explicit
+   * [NEEDS: ...] placeholder, same convention as lib/content-generator.ts. */
+  geoRewrite: string;
+  /** What KIND of authoritative data point would help citability (e.g. "a stat on
+   * X here", "the year this claim was last updated") — suggestions of what to add,
+   * never a fabricated number/source presented as real. */
+  citationSuggestions: string[];
   demoMode: boolean;
   model: string;
 }

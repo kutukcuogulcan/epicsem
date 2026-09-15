@@ -162,6 +162,7 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
+  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources">("visibility");
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -245,6 +246,7 @@ export default function GeoPage() {
     setHistory(null);
     setRunResultsFilter("");
     setRunEngineFilter("all");
+    setResultsTab("visibility");
     try {
       const res = await fetch("/api/geo", {
         method: "POST",
@@ -302,6 +304,23 @@ export default function GeoPage() {
     });
   }, [history]);
   const trendBrands = summaries?.map((s) => s.brand) ?? [];
+
+  // Same history rows as the visibility trend, plotting avgSentiment instead — real,
+  // already-persisted data (geo_runs.summaries_json includes avgSentiment per brand per
+  // run), so this costs nothing extra to compute. A brand/run with no sentiment score
+  // yet (avgSentiment null — e.g. it was never mentioned) just leaves a gap in its line.
+  const sentimentTrendData = useMemo(() => {
+    if (!history || history.length < 2) return null;
+    return history.map((h) => {
+      const point: Record<string, string | number> = {
+        date: new Date(h.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      };
+      h.summaries.forEach((s) => {
+        if (s.avgSentiment != null) point[s.brand] = s.avgSentiment;
+      });
+      return point;
+    });
+  }, [history]);
 
   // The three headline numbers, own-brand only — mirrors the stat-card row real
   // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
@@ -522,7 +541,31 @@ export default function GeoPage() {
         </div>
       )}
 
-      {engineBreakdown && engineBreakdown.length > 1 && (
+      {summaries && (
+        <div className="flex gap-1 text-sm border-b border-border overflow-x-auto">
+          {(
+            [
+              { key: "visibility", label: "Görünürlük" },
+              { key: "sentiment", label: "Duygu" },
+              { key: "prompts", label: `Promptlar${runs ? ` (${runs.length})` : ""}` },
+              { key: "sources", label: "Kaynaklar" },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setResultsTab(t.key)}
+              className={`px-3 pb-2 -mb-px border-b-2 whitespace-nowrap ${
+                resultsTab === t.key ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50 hover:text-ink/80"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {resultsTab === "visibility" && engineBreakdown && engineBreakdown.length > 1 && (
         <div className="card">
           <h2 className="font-bold">AI motoru bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
@@ -543,7 +586,69 @@ export default function GeoPage() {
         </div>
       )}
 
-      {summaries && (
+      {resultsTab === "sentiment" && engineBreakdown && engineBreakdown.length > 0 && (
+        <div className="card">
+          <h2 className="font-bold">AI motoru bazında duygu tonu</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar olumlu tanımlanıyor — 0 en olumsuz,
+            100 en olumlu.
+          </p>
+          <div className="space-y-3">
+            {engineBreakdown
+              .filter((e) => e.sentiment != null)
+              .map((e) => (
+                <div key={e.engine} className="flex items-center gap-3 text-sm">
+                  <div className="w-40 truncate text-ink/70 shrink-0">{ENGINE_LABEL[e.engine]}</div>
+                  <GradientBar value={e.sentiment as number} className="flex-1" />
+                  <div className="w-24 text-right text-ink/50 text-xs shrink-0">{e.sentiment} ton</div>
+                </div>
+              ))}
+            {engineBreakdown.every((e) => e.sentiment == null) && (
+              <p className="text-sm text-ink/40">
+                Bu koşuda hiçbir motorda markanız anılmadığı için bir duygu tonu ölçülemedi.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {resultsTab === "sentiment" && sentimentTrendData && (
+        <div className="card">
+          <h2 className="font-bold mb-1">Duygu trendi</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            Bu domain için kaydedilen her koşuda marka bazında duygu tonu ({sentimentTrendData.length} koşu).
+          </p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sentimentTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e0f5" />
+                <XAxis dataKey="date" stroke="#8a8398" fontSize={12} />
+                <YAxis stroke="#8a8398" fontSize={12} domain={[0, 100]} />
+                <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e0f5", color: "#1e1b29" }} />
+                <Legend />
+                {trendBrands.map((b, i) => (
+                  <Line
+                    key={b}
+                    type="monotone"
+                    dataKey={b}
+                    stroke={TREND_COLORS[i % TREND_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+      {resultsTab === "sentiment" && !sentimentTrendData && (
+        <div className="card text-sm text-ink/40">
+          Duygu trendini görmek için bu domain için en az 2 koşu kaydedilmiş olmalı — daha sonra tekrar çalıştırın.
+        </div>
+      )}
+
+      {resultsTab === "visibility" && summaries && (
         <div className="card">
           <h2 className="font-bold mb-4">Görünürlük ve pazar payı</h2>
           <div className="h-64">
@@ -612,7 +717,7 @@ export default function GeoPage() {
         </div>
       )}
 
-      {trendData && (
+      {resultsTab === "visibility" && trendData && (
         <div className="card">
           <h2 className="font-bold mb-1">Görünürlük trendi</h2>
           <p className="text-sm text-ink/50 mb-4">
@@ -643,7 +748,7 @@ export default function GeoPage() {
         </div>
       )}
 
-      {sourceDistribution && sourceDistribution.length > 0 && (
+      {resultsTab === "sources" && sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
           <h2 className="font-bold">Kaynak dağılımı</h2>
           <p className="text-sm text-ink/50 mb-4">AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği.</p>
@@ -685,7 +790,7 @@ export default function GeoPage() {
         </div>
       )}
 
-      {sourceDistribution && sourceDistribution.filter((d) => d.type !== "You" && d.type !== "Competitor").length > 0 && (
+      {resultsTab === "sources" && sourceDistribution && sourceDistribution.filter((d) => d.type !== "You" && d.type !== "Competitor").length > 0 && (
         <div className="card space-y-3">
           <div>
             <h2 className="font-bold">Backlink fırsatları</h2>
@@ -720,7 +825,7 @@ export default function GeoPage() {
         </div>
       )}
 
-      {topicBreakdown && topicBreakdown.length > 1 && (
+      {resultsTab === "visibility" && topicBreakdown && topicBreakdown.length > 1 && (
         <div className="card">
           <h2 className="font-bold">Konu bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
@@ -749,7 +854,7 @@ export default function GeoPage() {
         </div>
       )}
 
-      {runs && (
+      {resultsTab === "prompts" && runs && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-bold">

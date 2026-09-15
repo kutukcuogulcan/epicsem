@@ -7,6 +7,7 @@ import UsageMeter from "@/components/UsageMeter";
 import PromptBlock from "@/components/PromptBlock";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import GaugeStatCard from "@/components/GaugeStatCard";
 
 const SCENARIO_STEPS = [
   {
@@ -43,6 +44,10 @@ const FAQ_ITEMS = [
   {
     q: "Neden bazen 'demo modu' görüyorum?",
     a: "Bu özellik gerçek bir yapay zeka modeli çağırır — ANTHROPIC_API_KEY veya OPENAI_API_KEY bağlı değilse araç bunu açıkça 'demo modu' olarak işaretler ve hiçbir öneriyi gerçekmiş gibi göstermez.",
+  },
+  {
+    q: "AI Citability Score nasıl hesaplanıyor, GEO Rewrite'ta veri uyduruluyor mu?",
+    a: "Skor, sayfanın gerçek yapısal sinyallerine bakıyor — cevap-öncelikli bir açılış cümlesi var mı, taranabilir H2/H3 var mı, somut sayı/tanım var mı, karşılaştırmalı içerik bir tablo/liste olarak sunulmuş mu. Yeniden yazım da yalnızca sayfanın kendi gerçek metnini yeniden düzenliyor — modelin sayfada olmayan bir gerçeği/istatistiği ekleyemeyeceği yerlerde açık bir [NEEDS: ...] placeholder'ı bırakılıyor. Alıntı kaynağı önerileri de aynı şekilde 'buraya şu türden bir veri eklemelisin' formatında — hiçbir zaman uydurma bir sayı veya kaynak değil.",
   },
 ];
 
@@ -305,6 +310,59 @@ export default function ArticleWriterPage() {
               </ol>
             </div>
           )}
+
+          <div className="space-y-3">
+            <div>
+              <h2 className="font-bold">10. AI Citability Score &amp; GEO Rewrite</h2>
+              <p className="text-sm text-ink/50">
+                AI motorlarının bu sayfadan doğrudan bir cevap alıntılayıp alıntılayamayacağını ölçer — sadece
+                sayfanın gerçek yapısına dayanır.
+              </p>
+            </div>
+
+            <GaugeStatCard
+              label="AI Citability Score"
+              score={result.citabilityScore}
+              description="AI motorları bu sayfadan bir snippet'i ne kadar kolay alıntılayabilir"
+              tone={result.citabilityScore >= 70 ? "seo" : result.citabilityScore >= 40 ? "warn" : "danger"}
+            />
+
+            {result.citabilityWeaknesses.length > 0 && (
+              <div className="card space-y-2">
+                <div className="font-semibold text-sm">Yapısal eksikler</div>
+                <div className="space-y-2">
+                  {result.citabilityWeaknesses.map((w, i) => (
+                    <div key={i} className="rounded-lg bg-muted p-3 text-sm space-y-0.5">
+                      <div className="font-medium">{w.issue}</div>
+                      <div className="text-xs text-ink/50">{w.why}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {result.geoRewrite && (
+              <PromptBlock
+                title="GEO-Optimized Rewrite"
+                description="Sayfanın kendi gerçek içeriği, AI motorlarının doğrudan alıntılayabileceği şekilde yeniden düzenlendi — sayfada olmayan bir gerçek gerektiğinde [NEEDS: ...] olarak işaretlendi."
+                prompt={result.geoRewrite}
+              />
+            )}
+
+            {result.citationSuggestions.length > 0 && (
+              <div className="card space-y-2">
+                <div className="font-semibold text-sm">Alıntı kaynağı önerileri</div>
+                <p className="text-xs text-ink/50 -mt-1">
+                  Bunlar gerçek veri değil — hangi türden bir kaynağı/veriyi bulup eklemen gerektiğine dair öneriler.
+                </p>
+                <ul className="text-sm text-ink/60 list-disc pl-4 space-y-1">
+                  {result.citationSuggestions.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
