@@ -40,13 +40,14 @@ function demoTopics(): GeneratedTopic[] {
   ];
 }
 
-function buildPrompt(brandName: string, industry: string, description: string): string {
+function buildPrompt(brandName: string, industry: string, description: string, language: "tr" | "en"): string {
+  const lang = language === "en" ? "English" : "Turkish";
   return [
-    `You are setting up AI-visibility (GEO) tracking for the Turkish brand "${brandName}", industry: ${industry}.`,
+    `You are setting up AI-visibility (GEO) tracking for the brand "${brandName}", industry: ${industry}.`,
     `What it does: ${description}`,
     ``,
     `Generate exactly 10 topic categories that together cover the realistic range of questions a potential customer would ask an AI assistant (ChatGPT, Claude, Gemini, Perplexity) while researching this brand or its category — mix brand-known questions (pricing, trust, how-it-works) with pure category-discovery questions (someone who's never heard of this brand).`,
-    `Each topic needs a short Turkish label (1-3 words, e.g. "Fiyat", "Karşılaştırma") and a one-sentence Turkish reason it matters for this specific brand/industry.`,
+    `Each topic needs a short ${lang} label (1-3 words, e.g. "Fiyat", "Karşılaştırma") and a one-sentence ${lang} reason it matters for this specific brand/industry.`,
     ``,
     `Respond with ONLY a JSON array, no markdown fences, no commentary, of exactly 10 objects:`,
     `[{"topic": "...", "why": "..."}]`,
@@ -56,14 +57,15 @@ function buildPrompt(brandName: string, industry: string, description: string): 
 export async function generateTopicsForBrand(
   brandName: string,
   industry: string,
-  description: string
+  description: string,
+  language: "tr" | "en" = "tr"
 ): Promise<{ topics: GeneratedTopic[]; demoMode: boolean; model: string }> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) {
     return { topics: demoTopics(), demoMode: true, model: "demo (no API key configured)" };
   }
 
-  const prompt = buildPrompt(brandName, industry, description);
+  const prompt = buildPrompt(brandName, industry, description, language);
   const { text, model } = await provider.run(prompt);
   const parsed = extractJsonArray(text);
 

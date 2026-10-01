@@ -11,6 +11,7 @@ const bodySchema = z.object({
   brandName: z.string().min(1),
   industry: z.string().min(1),
   description: z.string().min(1),
+  language: z.enum(["tr", "en"]).default("tr"),
 });
 
 /** POST /api/geo/discover-topics — step 2 of the onboarding wizard: the wizard fires this
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await generateTopicsForBrand(parsed.brandName, parsed.industry, parsed.description);
+    const result = await generateTopicsForBrand(parsed.brandName, parsed.industry, parsed.description, parsed.language);
     if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
     return NextResponse.json(result);
   } catch (err) {

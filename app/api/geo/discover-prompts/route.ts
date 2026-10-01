@@ -13,6 +13,8 @@ const bodySchema = z.object({
   brand: brandSchema,
   competitors: z.array(brandSchema).max(6).default([]),
   topics: z.array(z.string().min(1)).min(1).max(10),
+  audienceNote: z.string().max(500).optional(),
+  language: z.enum(["tr", "en"]).default("tr"),
 });
 
 /** POST /api/geo/discover-prompts — step 3 of the onboarding wizard: fired the moment the
@@ -50,7 +52,9 @@ export async function POST(req: NextRequest) {
     const result = await generateTopicGroundedPrompts(
       parsed.brand,
       parsed.competitors.filter((c) => c.name && c.domain),
-      parsed.topics
+      parsed.topics,
+      parsed.audienceNote,
+      parsed.language
     );
     if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
     return NextResponse.json(result);

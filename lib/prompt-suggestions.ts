@@ -102,7 +102,16 @@ export interface TopicPromptSuggestion extends PromptSuggestion {
   topic: string;
 }
 
-function buildTopicGroundedPrompt(brand: BrandRef, competitors: BrandRef[], topics: string[]): string {
+const PROMPTS_PER_TOPIC = 8;
+
+function buildTopicGroundedPrompt(
+  brand: BrandRef,
+  competitors: BrandRef[],
+  topics: string[],
+  audienceNote: string | undefined,
+  language: "tr" | "en"
+): string {
+  const lang = language === "en" ? "English" : "Turkish";
   const lines: string[] = [];
   lines.push(
     `You are generating AI-visibility (GEO) tracking prompts for the brand "${brand.name}" (${brand.domain}).`
@@ -110,41 +119,53 @@ function buildTopicGroundedPrompt(brand: BrandRef, competitors: BrandRef[], topi
   if (competitors.length > 0) {
     lines.push(`Known competitors: ${competitors.map((c) => `${c.name} (${c.domain})`).join(", ")}.`);
   }
+  if (audienceNote) {
+    lines.push(`Target audience (weight the phrasing/tone toward these, proportional to their share): ${audienceNote}.`);
+  }
   lines.push("");
-  lines.push(`For EACH of these ${topics.length} topic categories, write exactly 4 realistic Turkish prompts a real person would type into an AI assistant (ChatGPT, Claude, Gemini, Perplexity) that fall under that topic:`);
+  lines.push(`For EACH of these ${topics.length} topic categories, write exactly ${PROMPTS_PER_TOPIC} realistic ${lang} prompts a real person would type into an AI assistant (ChatGPT, Claude, Gemini, Perplexity) that fall under that topic:`);
   lines.push(topics.map((t) => `- ${t}`).join("\n"));
   lines.push("");
-  lines.push("Within each topic, mix branded prompts (naming the brand directly) with non-branded discovery prompts where the topic allows it. Write natural Turkish phrasing.");
+  lines.push(`Within each topic, mix branded prompts (naming the brand directly) with non-branded discovery prompts where the topic allows it. Write natural ${lang} phrasing.`);
   lines.push("");
   lines.push(
-    `Respond with ONLY a JSON array, no markdown fences, no commentary, of exactly ${topics.length * 4} objects matching this shape:
+    `Respond with ONLY a JSON array, no markdown fences, no commentary, of exactly ${topics.length * PROMPTS_PER_TOPIC} objects matching this shape:
 [{"topic": "must be exactly one of the topic labels given above", "text": "the prompt itself", "branded": true or false}]`
   );
   return lines.join("\n");
 }
 
 function demoTopicPrompts(brand: BrandRef, topics: string[]): TopicPromptSuggestion[] {
-  return topics.flatMap((topic) => [
-    { topic, text: `${brand.name} ${topic.toLowerCase()} konusunda nasıl, anlatır mısın?`, branded: true },
-    { topic, text: `Bu kategoride ${topic.toLowerCase()} açısından en iyi seçenekler neler?`, branded: false },
-  ]);
+  const variants = [
+    (t: string) => ({ text: `${brand.name} ${t.toLowerCase()} konusunda nasıl, anlatır mısın?`, branded: true }),
+    (t: string) => ({ text: `Bu kategoride ${t.toLowerCase()} açısından en iyi seçenekler neler?`, branded: false }),
+    (t: string) => ({ text: `${brand.name}'in ${t.toLowerCase()} konusundaki yaklaşımı rakiplerinden farklı mı?`, branded: true }),
+    (t: string) => ({ text: `${t} konusunda araştırma yaparken nelere dikkat etmeliyim?`, branded: false }),
+  ];
+  return topics.flatMap((topic) =>
+    Array.from({ length: PROMPTS_PER_TOPIC }, (_, i) => ({ topic, ...variants[i % variants.length](topic) }))
+  );
 }
 
 /** Step 3→4 of the onboarding wizard: given the topics the user kept from step 2
  * (lib/topic-generator.ts), generate concrete prompts for all of them in one call — fired
  * the moment the topics step renders so it's usually already resolved by the time the user
- * finishes reviewing/deselecting topics and clicks through. */
+ * finishes reviewing/deselecting topics and clicks through. `audienceNote` optionally carries
+ * the wizard's persona mix (lib/brand-discovery.ts's DiscoveredPersona[]) so prompt phrasing
+ * leans toward the brand's actual target customers instead of a generic voice. */
 export async function generateTopicGroundedPrompts(
   brand: BrandRef,
   competitors: BrandRef[],
-  topics: string[]
+  topics: string[],
+  audienceNote?: string,
+  language: "tr" | "en" = "tr"
 ): Promise<{ prompts: TopicPromptSuggestion[]; demoMode: boolean; model: string }> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) {
     return { prompts: demoTopicPrompts(brand, topics), demoMode: true, model: "demo (no API key configured)" };
   }
 
-  const prompt = buildTopicGroundedPrompt(brand, competitors, topics);
+  const prompt = buildTopicGroundedPrompt(brand, competitors, topics, audienceNote, language);
   const { text, model } = await provider.run(prompt);
   const parsed = extractJsonArray(text);
 

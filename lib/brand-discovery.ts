@@ -3,15 +3,22 @@ import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 
 /**
- * Step 1 of the URL-first onboarding wizard (mirrors Peec AI's "enter a URL, we build the
- * rest" flow — see HANDOFF.md / the onboarding-principle card the user shared): a real page
- * fetch (lib/content-fetch.ts — same fetch-then-extract discipline as lib/article-audit.ts)
- * grounds the brand name/description in what the site ACTUALLY says, never invented. The
- * suggested competitors are the one place this necessarily goes beyond "only what's on the
- * page" — the model is drawing on its own general knowledge of the industry, same as any
- * human brainstorming a competitor list. That's why they come back editable/removable in the
- * wizard rather than presented as a verified fact, and their domains are frequently left
- * blank ([NEEDS: domain] convention) rather than guessed.
+ * Step 1-2 of the URL-first onboarding wizard (mirrors Peec AI's "enter a URL, we build the
+ * rest" flow — tested by the user directly against pnc.com.tr, see the numbered screenshot
+ * table they shared): a real page fetch (lib/content-fetch.ts — same fetch-then-extract
+ * discipline as lib/article-audit.ts) grounds the brand name/description/identity/products in
+ * what the site ACTUALLY says, never invented. One LLM call covers everything the wizard's
+ * step-2 sub-screens (profile / products+market / audience) show, since all of it is grounded
+ * in the same single page fetch — no reason to split it into separate round-trips.
+ *
+ * The suggested competitors are the one field that necessarily goes beyond "only what's on
+ * the page" — the model is drawing on its own general industry knowledge, same as any human
+ * brainstorming a competitor list. The user's own test against pnc.com.tr (a digital
+ * marketing consultancy) showed Peec AI itself getting this wrong — it suggested ERP
+ * software vendors (Logo, Mikro, Nebim, Uyumsoft) instead of marketing-agency competitors.
+ * That's exactly why these come back editable/removable with an explicit caution note in the
+ * wizard, never presented as verified fact, and why domains are left blank
+ * ([NEEDS: domain] convention) rather than guessed when the model isn't confident.
  */
 
 export interface DiscoveredCompetitor {
@@ -21,12 +28,29 @@ export interface DiscoveredCompetitor {
   domain: string;
 }
 
+export interface DiscoveredPersona {
+  name: string;
+  description: string;
+  /** 0-100, the three personas' percentages are intended to sum to ~100 but the wizard
+   * re-normalizes on edit rather than trusting the model's arithmetic. */
+  percentage: number;
+}
+
 export interface DiscoveredBrand {
   brand: { name: string; domain: string };
   /** 1-2 sentence description grounded in the real fetched page content. */
   description: string;
   /** Short industry/category label, used to prompt the topic-generation step. */
   industry: string;
+  /** 3-5 short Turkish adjectives describing the brand's own voice/positioning, as the
+   * page itself conveys it (e.g. "güvenilir", "yenilikçi") — grounded in real copy/tone,
+   * not invented traits. */
+  identityAdjectives: string[];
+  /** 3-6 short Turkish product/service tags the brand actually offers, per the page. */
+  productTags: string[];
+  /** Up to 3 target-customer personas inferred from the real page content — grounds the
+   * tone of later-generated prompts (lib/prompt-suggestions.ts's generateTopicGroundedPrompts). */
+  personas: DiscoveredPersona[];
   competitors: DiscoveredCompetitor[];
   demoMode: boolean;
   model: string;
@@ -61,13 +85,22 @@ function demoResult(domain: string): DiscoveredBrand {
     brand: { name, domain },
     description: `[DEMO DATA] ${name} için gerçek bir marka özeti çıkarmak üzere bir model API anahtarı bağlanmalı — bu alan sayfa gerçekten taranıp analiz edildiğinde gerçek içerikle doldurulur.`,
     industry: "[DEMO DATA — genel kategori]",
+    identityAdjectives: ["[DEMO DATA]"],
+    productTags: ["[DEMO DATA]"],
+    personas: [
+      { name: "[DEMO DATA]", description: "Gerçek persona için API anahtarı gerekli.", percentage: 100 },
+    ],
     competitors: [{ name: "[DEMO DATA]", domain: "" }],
     demoMode: true,
     model: "demo (no API key configured)",
   };
 }
 
-function buildPrompt(page: { url: string; title: string | null; metaDescription: string | null; bodyText: string }): string {
+function buildPrompt(
+  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
+  language: "tr" | "en"
+): string {
+  const lang = language === "en" ? "English" : "Turkish";
   return [
     `You are analyzing a real, just-fetched web page to bootstrap AI-visibility (GEO) tracking setup — the same first step a tool like Peec AI performs when a user pastes their homepage URL.`,
     ``,
@@ -76,18 +109,53 @@ function buildPrompt(page: { url: string; title: string | null; metaDescription:
     `Meta description: ${page.metaDescription ?? "(none found)"}`,
     `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`,
     ``,
-    `From ONLY the real content above, extract:`,
+    `From ONLY the real content above, extract (write every text field in ${lang}):`,
     `- "brandName": the brand/company name as it actually appears on the page (never invent one).`,
-    `- "description": a 1-2 sentence Turkish summary of what this brand/site actually does, grounded only in the text above — if the content is too thin to tell, say so plainly instead of guessing.`,
-    `- "industry": a short Turkish category label for what market/industry this brand competes in (e.g. "dijital pazarlama ajansı", "e-ticaret - kadın giyim").`,
-    `- "competitors": an array of 2-4 real, well-known companies that compete in the same industry/category (this is general market knowledge, not something read off the page — pick companies you're genuinely confident exist and are relevant; for each, include "domain" only if you're confident of it, otherwise use an empty string).`,
+    `- "description": a 1-2 sentence ${lang} summary of what this brand/site actually does, grounded only in the text above — if the content is too thin to tell, say so plainly instead of guessing.`,
+    `- "industry": a short ${lang} category label for what market/industry this brand competes in (e.g. "dijital pazarlama ajansı", "e-ticaret - kadın giyim"). Be specific and literal about what the business actually does — do not default to a generic or adjacent category.`,
+    `- "identityAdjectives": 3-5 short ${lang} adjectives describing the brand's own voice/positioning as the page itself conveys it (e.g. "güvenilir", "yenilikçi", "yerel").`,
+    `- "productTags": 3-6 short ${lang} tags for the specific products/services this brand actually offers per the page.`,
+    `- "personas": an array of up to 3 target-customer personas inferred from the real content, each {"name": short ${lang} label, "description": one sentence, "percentage": a number} where the percentages sum to 100.`,
+    `- "competitors": an array of 2-4 real, well-known companies that compete in the SAME specific industry/category you identified above (this is general market knowledge, not something read off the page) — double-check each one actually operates in the same business, not just a loosely related one (e.g. an ERP software vendor is NOT a competitor to a marketing agency); for each, include "domain" only if you're confident of it, otherwise use an empty string.`,
     ``,
     `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
-    `{"brandName": "...", "description": "...", "industry": "...", "competitors": [{"name": "...", "domain": "..."}]}`,
+    `{"brandName": "...", "description": "...", "industry": "...", "identityAdjectives": ["..."], "productTags": ["..."], "personas": [{"name": "...", "description": "...", "percentage": 0}], "competitors": [{"name": "...", "domain": "..."}]}`,
   ].join("\n");
 }
 
-export async function discoverBrandFromUrl(rawUrl: string): Promise<DiscoveredBrand> {
+function normalizePersonas(raw: any): DiscoveredPersona[] {
+  if (!Array.isArray(raw)) return [];
+  const personas = raw
+    .filter((p: any) => p && typeof p.name === "string" && p.name.trim())
+    .slice(0, 3)
+    .map((p: any) => ({
+      name: String(p.name).trim(),
+      description: typeof p.description === "string" ? p.description.trim() : "",
+      percentage: Number.isFinite(Number(p.percentage)) ? Math.round(Number(p.percentage)) : 0,
+    }));
+  const total = personas.reduce((sum, p) => sum + p.percentage, 0);
+  if (personas.length > 0 && total !== 100) {
+    // Re-normalize rather than trust the model's arithmetic — distribute evenly if it
+    // didn't give usable percentages at all, otherwise scale proportionally.
+    if (total <= 0) {
+      const even = Math.floor(100 / personas.length);
+      personas.forEach((p, i) => (p.percentage = i === personas.length - 1 ? 100 - even * (personas.length - 1) : even));
+    } else {
+      let running = 0;
+      personas.forEach((p, i) => {
+        if (i === personas.length - 1) {
+          p.percentage = 100 - running;
+        } else {
+          p.percentage = Math.round((p.percentage / total) * 100);
+          running += p.percentage;
+        }
+      });
+    }
+  }
+  return personas;
+}
+
+export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en" = "tr"): Promise<DiscoveredBrand> {
   const url = normalizeUrl(rawUrl);
   const domain = domainFromUrl(url);
 
@@ -106,13 +174,16 @@ export async function discoverBrandFromUrl(rawUrl: string): Promise<DiscoveredBr
       brand: { name: guessNameFromDomain(domain), domain },
       description: "[NEEDS: sayfa taranamadı — marka açıklamasını elle girin]",
       industry: "[NEEDS: kategori — sayfa taranamadığı için belirlenemedi]",
+      identityAdjectives: [],
+      productTags: [],
+      personas: [],
       competitors: [],
       demoMode: false,
       model: provider.defaultModel,
     };
   }
 
-  const prompt = buildPrompt(page);
+  const prompt = buildPrompt(page, language);
   const { text, model } = await provider.run(prompt);
   const parsed = extractJsonObject(text);
 
@@ -123,6 +194,14 @@ export async function discoverBrandFromUrl(rawUrl: string): Promise<DiscoveredBr
         .map((c: any) => ({ name: String(c.name).trim(), domain: typeof c.domain === "string" ? c.domain.trim() : "" }))
     : [];
 
+  const identityAdjectives: string[] = Array.isArray(parsed.identityAdjectives)
+    ? parsed.identityAdjectives.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 5).map((a: string) => a.trim())
+    : [];
+
+  const productTags: string[] = Array.isArray(parsed.productTags)
+    ? parsed.productTags.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 6).map((a: string) => a.trim())
+    : [];
+
   return {
     brand: {
       name: typeof parsed.brandName === "string" && parsed.brandName.trim() ? parsed.brandName.trim() : guessNameFromDomain(domain),
@@ -130,6 +209,9 @@ export async function discoverBrandFromUrl(rawUrl: string): Promise<DiscoveredBr
     },
     description: typeof parsed.description === "string" && parsed.description.trim() ? parsed.description.trim() : "[NEEDS: açıklama]",
     industry: typeof parsed.industry === "string" && parsed.industry.trim() ? parsed.industry.trim() : "[NEEDS: kategori]",
+    identityAdjectives,
+    productTags,
+    personas: normalizePersonas(parsed.personas),
     competitors,
     demoMode: false,
     model,

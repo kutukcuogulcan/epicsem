@@ -201,7 +201,9 @@ export default function GeoPage() {
     setBrand(wizardBrand);
     setCompetitors(wizardCompetitors.length > 0 ? wizardCompetitors : [{ name: "", domain: "" }]);
     setPromptsText(wizardPromptsText);
-    setWizardOpen(false);
+    // Deliberately NOT closing the wizard here — it stays mounted showing its own
+    // "running" animation (driven by the `running` prop below) until the real test this
+    // triggers actually finishes, then closes itself.
     autoRunRef.current = true;
   }
 
@@ -391,7 +393,7 @@ export default function GeoPage() {
       </ToolPageHeader>
 
       {wizardOpen ? (
-        <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} />
+        <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} running={loading} />
       ) : (
         <button
           type="button"
@@ -403,6 +405,7 @@ export default function GeoPage() {
         </button>
       )}
 
+      {!wizardOpen && (
       <form onSubmit={runTest} className="space-y-5">
         <div className="card space-y-3">
           <h2 className="font-bold text-sm">Markanız</h2>
@@ -522,6 +525,7 @@ export default function GeoPage() {
           {loading ? "Çalışıyor…" : `${prompts.length} prompt × ${engines.length} motoru çalıştır`}
         </button>
       </form>
+      )}
 
       <SavedPromptsPanel
         brand={brand}

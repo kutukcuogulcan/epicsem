@@ -7,7 +7,7 @@ import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
-const bodySchema = z.object({ url: z.string().min(3) });
+const bodySchema = z.object({ url: z.string().min(3), language: z.enum(["tr", "en"]).default("tr") });
 
 /** POST /api/geo/discover — step 1 of the URL-first onboarding wizard: fetch the real page
  * and extract a brand profile + suggested competitors. See lib/brand-discovery.ts. */
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await discoverBrandFromUrl(parsed.url);
+    const result = await discoverBrandFromUrl(parsed.url, parsed.language);
     if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
     return NextResponse.json(result);
   } catch (err) {
