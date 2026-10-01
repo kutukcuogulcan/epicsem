@@ -17,6 +17,10 @@ export interface PlanLimits {
   contentGenerations: number;
   /** /api/geo/suggest-prompts calls per calendar month — one LLM call each. */
   promptSuggestions: number;
+  /** /api/geo/discover, /api/geo/discover-topics, /api/geo/discover-prompts calls per
+   * calendar month — the URL-first onboarding wizard's 3-call chain, counted together
+   * since a single wizard run through all 3 steps costs the same either way. */
+  onboardingSetup: number;
 }
 
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
@@ -24,6 +28,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     engineQueries: 300,
     contentGenerations: 20,
     promptSuggestions: 30,
+    onboardingSetup: 30,
   },
 };
 

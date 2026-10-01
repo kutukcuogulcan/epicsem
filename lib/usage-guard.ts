@@ -31,6 +31,7 @@ const METRIC_LABEL: Record<UsageMetric, string> = {
   engineQueries: "AI motor sorgusu",
   contentGenerations: "içerik üretimi",
   promptSuggestions: "prompt önerisi",
+  onboardingSetup: "otomatik kurulum adımı",
 };
 
 export function quotaExceededMessage(metric: UsageMetric, quota: QuotaCheck, requested: number): string {

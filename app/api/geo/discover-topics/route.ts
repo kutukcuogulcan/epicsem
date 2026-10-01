@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { generateTopicsForBrand } from "@/lib/topic-generator";
+import { isDemoMode } from "@/lib/geo-providers";
+import { requireUser } from "@/lib/auth";
+import { readableZodError } from "@/lib/zod-error";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+
+const bodySchema = z.object({
+  brandName: z.string().min(1),
+  industry: z.string().min(1),
+  description: z.string().min(1),
+});
+
+/** POST /api/geo/discover-topics — step 2 of the onboarding wizard: the wizard fires this
+ * in the background the moment step 1 resolves, while the user is still reading the brand
+ * profile screen. See lib/topic-generator.ts. */
+export async function POST(req: NextRequest) {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
+
+  const limitResult = rateLimit(`geo-discover-topics:${user.id}`, 20, 60 * 60 * 1000);
+  if (!limitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit reached — up to 20 calls per hour. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = bodySchema.parse(await req.json());
+  } catch (err) {
+    return NextResponse.json({ error: readableZodError(err) }, { status: 400 });
+  }
+
+  const demoMode = isDemoMode();
+  if (!demoMode) {
+    const quota = await checkQuota(user.id, "onboardingSetup", 1);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quotaExceededMessage("onboardingSetup", quota, 1) }, { status: 402 });
+    }
+  }
+
+  try {
+    const result = await generateTopicsForBrand(parsed.brandName, parsed.industry, parsed.description);
+    if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
+    return NextResponse.json(result);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Topic generation failed" }, { status: 500 });
+  }
+}

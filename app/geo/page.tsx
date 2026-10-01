@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -23,6 +23,7 @@ import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 const SCENARIO_STEPS = [
   {
@@ -163,6 +164,8 @@ export default function GeoPage() {
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
   const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources">("visibility");
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const autoRunRef = useRef(false);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -182,6 +185,25 @@ export default function GeoPage() {
     () => promptsText.split("\n").map((p) => p.trim()).filter(Boolean).map(parsePromptLine),
     [promptsText]
   );
+
+  // Fires exactly once after the onboarding wizard finishes — waits for the brand/prompts
+  // state it just set to actually land (state updates aren't visible in the same tick the
+  // wizard's onComplete callback runs in) before auto-submitting the real GEO test.
+  useEffect(() => {
+    if (autoRunRef.current && brand.name && brand.domain && prompts.length > 0) {
+      autoRunRef.current = false;
+      runTest();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand, prompts]);
+
+  function handleWizardComplete(wizardBrand: BrandRow, wizardCompetitors: BrandRow[], wizardPromptsText: string) {
+    setBrand(wizardBrand);
+    setCompetitors(wizardCompetitors.length > 0 ? wizardCompetitors : [{ name: "", domain: "" }]);
+    setPromptsText(wizardPromptsText);
+    setWizardOpen(false);
+    autoRunRef.current = true;
+  }
 
   function updateCompetitor(i: number, field: keyof BrandRow, value: string) {
     setCompetitors((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
@@ -220,8 +242,8 @@ export default function GeoPage() {
     }
   }
 
-  async function runTest(e: React.FormEvent) {
-    e.preventDefault();
+  async function runTest(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!brand.name || !brand.domain) {
       setError("Enter your brand name and domain.");
       return;
@@ -367,6 +389,19 @@ export default function GeoPage() {
       >
         <UsageMeter metric="engineQueries" />
       </ToolPageHeader>
+
+      {wizardOpen ? (
+        <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setWizardOpen(true)}
+          className="w-full card border-dashed border-accent/40 text-left text-sm hover:border-accent transition-colors"
+        >
+          <span className="font-bold text-accent">🪄 URL ile otomatik kur</span>
+          <span className="text-ink/50"> — markanızın adresini girin, marka profilini, konu başlıklarını ve promptları sizin için üretelim.</span>
+        </button>
+      )}
 
       <form onSubmit={runTest} className="space-y-5">
         <div className="card space-y-3">
