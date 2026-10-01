@@ -7,16 +7,26 @@ import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
+const brandSchema = z.object({
+  name: z.string().min(1),
+  domain: z.string().min(1),
+  description: z.string().default(""),
+  industry: z.string().default(""),
+  identityAdjectives: z.array(z.string()).default([]),
+  productTags: z.array(z.string()).default([]),
+});
+
 const bodySchema = z.object({
-  brandName: z.string().min(1),
-  industry: z.string().min(1),
-  description: z.string().min(1),
+  brand: brandSchema,
+  country: z.string().min(1).default("Türkiye"),
   language: z.enum(["tr", "en"]).default("tr"),
+  sectorSeeds: z.array(z.string()).max(20).default([]),
 });
 
 /** POST /api/geo/discover-topics — step 2 of the onboarding wizard: the wizard fires this
  * in the background the moment step 1 resolves, while the user is still reading the brand
- * profile screen. See lib/topic-generator.ts. */
+ * profile screen. See lib/topic-generator.ts — the LLM only proposes+scores candidates,
+ * dedup/ranking/the top-5 auto-select are deterministic code (Kart 11 of the methodology). */
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
@@ -45,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await generateTopicsForBrand(parsed.brandName, parsed.industry, parsed.description, parsed.language);
+    const result = await generateTopicsForBrand(parsed.brand, parsed.country, parsed.language, parsed.sectorSeeds);
     if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
     return NextResponse.json(result);
   } catch (err) {

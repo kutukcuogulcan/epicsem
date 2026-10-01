@@ -1,6 +1,7 @@
 import { fetchPageSummary, normalizeUrl } from "@/lib/content-fetch";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
+import { PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
 
 /**
  * Step 1-2 of the URL-first onboarding wizard (mirrors Peec AI's "enter a URL, we build the
@@ -19,6 +20,11 @@ import { extractJsonObject } from "@/lib/llm-json";
  * That's exactly why these come back editable/removable with an explicit caution note in the
  * wizard, never presented as verified fact, and why domains are left blank
  * ([NEEDS: domain] convention) rather than guessed when the model isn't confident.
+ *
+ * Personas are NOT freeform — they're the 3 fixed archetypes the slot-planning engine's
+ * compat matrix is keyed on (lib/sector-packs.ts's PersonaKey). The model's only job here is
+ * estimating what share of this brand's audience each archetype represents; it never invents
+ * persona names/descriptions, so lib/slot-planner.ts's formulas always apply cleanly.
  */
 
 export interface DiscoveredCompetitor {
@@ -26,14 +32,6 @@ export interface DiscoveredCompetitor {
   /** Best-guess domain, or "" when the model isn't confident — the wizard leaves this
    * editable rather than ever inventing a domain that might be wrong. */
   domain: string;
-}
-
-export interface DiscoveredPersona {
-  name: string;
-  description: string;
-  /** 0-100, the three personas' percentages are intended to sum to ~100 but the wizard
-   * re-normalizes on edit rather than trusting the model's arithmetic. */
-  percentage: number;
 }
 
 export interface DiscoveredBrand {
@@ -48,15 +46,17 @@ export interface DiscoveredBrand {
   identityAdjectives: string[];
   /** 3-6 short Turkish product/service tags the brand actually offers, per the page. */
   productTags: string[];
-  /** Up to 3 target-customer personas inferred from the real page content — grounds the
-   * tone of later-generated prompts (lib/prompt-suggestions.ts's generateTopicGroundedPrompts). */
-  personas: DiscoveredPersona[];
+  /** Share (0-100, summing to 100) of each of the 3 fixed audience archetypes for this
+   * brand — feeds lib/slot-planner.ts's persona-assignment formula directly. */
+  personas: Record<PersonaKey, number>;
   competitors: DiscoveredCompetitor[];
   demoMode: boolean;
   model: string;
 }
 
 const PREFERRED_ORDER = ["anthropic", "openai", "google", "perplexity", "deepseek", "xai"] as const;
+
+const EVEN_PERSONAS: Record<PersonaKey, number> = { simple: 34, informed: 33, researcher: 33 };
 
 function pickProvider() {
   for (const id of PREFERRED_ORDER) {
@@ -87,9 +87,7 @@ function demoResult(domain: string): DiscoveredBrand {
     industry: "[DEMO DATA — genel kategori]",
     identityAdjectives: ["[DEMO DATA]"],
     productTags: ["[DEMO DATA]"],
-    personas: [
-      { name: "[DEMO DATA]", description: "Gerçek persona için API anahtarı gerekli.", percentage: 100 },
-    ],
+    personas: EVEN_PERSONAS,
     competitors: [{ name: "[DEMO DATA]", domain: "" }],
     demoMode: true,
     model: "demo (no API key configured)",
@@ -115,44 +113,36 @@ function buildPrompt(
     `- "industry": a short ${lang} category label for what market/industry this brand competes in (e.g. "dijital pazarlama ajansı", "e-ticaret - kadın giyim"). Be specific and literal about what the business actually does — do not default to a generic or adjacent category.`,
     `- "identityAdjectives": 3-5 short ${lang} adjectives describing the brand's own voice/positioning as the page itself conveys it (e.g. "güvenilir", "yenilikçi", "yerel").`,
     `- "productTags": 3-6 short ${lang} tags for the specific products/services this brand actually offers per the page.`,
-    `- "personas": an array of up to 3 target-customer personas inferred from the real content, each {"name": short ${lang} label, "description": one sentence, "percentage": a number} where the percentages sum to 100.`,
+    `- "personaShares": estimate, for THIS brand's likely customers, what percentage falls into each of these 3 FIXED archetypes (they must sum to 100): "simple" = wants a quick recommendation, no detail; "informed" = has a specific need/feature in mind, compares options; "researcher" = compares criteria/pros-cons in depth before deciding. Respond as {"simple": 0, "informed": 0, "researcher": 0}.`,
     `- "competitors": an array of 2-4 real, well-known companies that compete in the SAME specific industry/category you identified above (this is general market knowledge, not something read off the page) — double-check each one actually operates in the same business, not just a loosely related one (e.g. an ERP software vendor is NOT a competitor to a marketing agency); for each, include "domain" only if you're confident of it, otherwise use an empty string.`,
     ``,
     `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
-    `{"brandName": "...", "description": "...", "industry": "...", "identityAdjectives": ["..."], "productTags": ["..."], "personas": [{"name": "...", "description": "...", "percentage": 0}], "competitors": [{"name": "...", "domain": "..."}]}`,
+    `{"brandName": "...", "description": "...", "industry": "...", "identityAdjectives": ["..."], "productTags": ["..."], "personaShares": {"simple": 0, "informed": 0, "researcher": 0}, "competitors": [{"name": "...", "domain": "..."}]}`,
   ].join("\n");
 }
 
-function normalizePersonas(raw: any): DiscoveredPersona[] {
-  if (!Array.isArray(raw)) return [];
-  const personas = raw
-    .filter((p: any) => p && typeof p.name === "string" && p.name.trim())
-    .slice(0, 3)
-    .map((p: any) => ({
-      name: String(p.name).trim(),
-      description: typeof p.description === "string" ? p.description.trim() : "",
-      percentage: Number.isFinite(Number(p.percentage)) ? Math.round(Number(p.percentage)) : 0,
-    }));
-  const total = personas.reduce((sum, p) => sum + p.percentage, 0);
-  if (personas.length > 0 && total !== 100) {
-    // Re-normalize rather than trust the model's arithmetic — distribute evenly if it
-    // didn't give usable percentages at all, otherwise scale proportionally.
-    if (total <= 0) {
-      const even = Math.floor(100 / personas.length);
-      personas.forEach((p, i) => (p.percentage = i === personas.length - 1 ? 100 - even * (personas.length - 1) : even));
-    } else {
-      let running = 0;
-      personas.forEach((p, i) => {
-        if (i === personas.length - 1) {
-          p.percentage = 100 - running;
-        } else {
-          p.percentage = Math.round((p.percentage / total) * 100);
-          running += p.percentage;
-        }
-      });
-    }
+function normalizePersonaShares(raw: any): Record<PersonaKey, number> {
+  const out: Record<PersonaKey, number> = { simple: 0, informed: 0, researcher: 0 };
+  if (!raw || typeof raw !== "object") return EVEN_PERSONAS;
+  for (const key of PERSONA_ORDER) {
+    const v = Number(raw[key]);
+    out[key] = Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0;
   }
-  return personas;
+  const total = PERSONA_ORDER.reduce((sum, k) => sum + out[k], 0);
+  if (total <= 0) return EVEN_PERSONAS;
+  if (total !== 100) {
+    // Re-normalize proportionally rather than trust the model's arithmetic.
+    let running = 0;
+    PERSONA_ORDER.forEach((k, i) => {
+      if (i === PERSONA_ORDER.length - 1) {
+        out[k] = 100 - running;
+      } else {
+        out[k] = Math.round((out[k] / total) * 100);
+        running += out[k];
+      }
+    });
+  }
+  return out;
 }
 
 export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en" = "tr"): Promise<DiscoveredBrand> {
@@ -176,7 +166,7 @@ export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en"
       industry: "[NEEDS: kategori — sayfa taranamadığı için belirlenemedi]",
       identityAdjectives: [],
       productTags: [],
-      personas: [],
+      personas: EVEN_PERSONAS,
       competitors: [],
       demoMode: false,
       model: provider.defaultModel,
@@ -211,7 +201,7 @@ export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en"
     industry: typeof parsed.industry === "string" && parsed.industry.trim() ? parsed.industry.trim() : "[NEEDS: kategori]",
     identityAdjectives,
     productTags,
-    personas: normalizePersonas(parsed.personas),
+    personas: normalizePersonaShares(parsed.personaShares),
     competitors,
     demoMode: false,
     model,
