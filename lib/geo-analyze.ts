@@ -2,6 +2,8 @@
 // and citation extraction from a raw AI-answer text.
 // (Production upgrade path: replace the sentiment heuristic with an LLM-as-judge call.)
 
+import { brandMentioned, findBrandIndex, trLower } from "./text-match";
+
 const POSITIVE_WORDS = [
   "best", "excellent", "great", "strong", "leading", "top", "trusted", "reliable",
   "recommended", "popular", "innovative", "well-regarded", "solid", "outstanding",
@@ -19,17 +21,27 @@ export interface AnalyzedResponse {
   citations: { url: string; domain: string; isOwnDomain: boolean }[];
 }
 
-export function analyzeResponse(text: string, brandName: string, brandDomain: string): AnalyzedResponse {
-  const lowerText = text.toLowerCase();
-  const nameVariants = [brandName.toLowerCase(), brandDomain.toLowerCase().replace(/^www\./, "")];
-  const mentioned = nameVariants.some((v) => lowerText.includes(v));
+/** @param aliases Extra names that also count as a mention of this brand (Kart: Marka tespiti §2) —
+ * e.g. a shortened or commonly-used form of the brand name, on top of the tracked `brandName`. */
+export function analyzeResponse(
+  text: string,
+  brandName: string,
+  brandDomain: string,
+  aliases: string[] = []
+): AnalyzedResponse {
+  const brand = { name: brandName, aliases };
+  const mentioned = brandMentioned(text, brand);
 
   let position: number | null = null;
   if (mentioned) {
-    // crude "position" proxy: rank by first-mention order among **bolded** names or capitalized names
+    // "position" = rank by first-mention order among ALL brand names in the response — tracked
+    // AND untracked (Peec: "including both tracked and untracked"). We don't have a real named-
+    // entity extractor, so **bolded** names (most AI answers bold the brands they list) or,
+    // failing that, capitalized phrases are used as a proxy for "every brand named here" —
+    // documented limitation, not a fabricated signal: it's a best-effort read of the real text.
     const boldMatches = Array.from(text.matchAll(/\*\*([^*]+)\*\*/g)).map((m) => m[1].trim());
     const namesInOrder = boldMatches.length > 0 ? boldMatches : extractCapitalizedPhrases(text);
-    const idx = namesInOrder.findIndex((n) => n.toLowerCase().includes(brandName.toLowerCase()));
+    const idx = findBrandIndex(namesInOrder, brand);
     position = idx >= 0 ? idx + 1 : 1;
   }
 
@@ -41,7 +53,7 @@ export function analyzeResponse(text: string, brandName: string, brandDomain: st
 }
 
 function extractSentenceWindow(text: string, brandName: string): string {
-  const idx = text.toLowerCase().indexOf(brandName.toLowerCase());
+  const idx = trLower(text).indexOf(trLower(brandName));
   if (idx === -1) return text;
   const start = Math.max(0, idx - 120);
   const end = Math.min(text.length, idx + 200);

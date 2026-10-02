@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility } from "@/types";
+import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility, UrlStat, UrlType } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
 import StatCard from "@/components/StatCard";
 import GaugeStatCard from "@/components/GaugeStatCard";
@@ -103,9 +103,13 @@ const EN_PROMPT_PRESET = "best tools for [your category]\nhow to choose a [your 
 const TR_PROMPT_PRESET =
   "[kategori] için en iyi markalar hangileri?\nİstanbul'da [kategori] konusunda hangi firmayı önerirsiniz?\n[marka] güvenilir mi?\n[marka] ile [rakip] arasındaki fark ne?";
 
+// 8-category domain-type taxonomy (Kart: Overview/Domain/URL metrics spec §8).
 const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
   You: "bg-seo",
   Competitor: "bg-danger",
+  Corporate: "bg-blue-400",
+  Editorial: "bg-orange-400",
+  Government: "bg-slate-500",
   Reference: "bg-accent",
   UGC: "bg-warn",
   Other: "bg-ink/20",
@@ -114,10 +118,35 @@ const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
 const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
   You: "Siz",
   Competitor: "Rakip",
+  Corporate: "Kurumsal",
+  Editorial: "Editoryal",
+  Government: "Kamu/Kurum",
   Reference: "Referans",
   UGC: "Kullanıcı içeriği",
   Other: "Diğer",
 };
+
+const DOMAIN_TYPE_ORDER: SourceDomainType[] = ["You", "Competitor", "Corporate", "Editorial", "Government", "Reference", "UGC", "Other"];
+
+// 11-category URL-type taxonomy (Kart §8).
+const URL_TYPE_LABEL: Record<UrlType, string> = {
+  Home: "Ana sayfa",
+  Category: "Kategori",
+  Product: "Ürün",
+  Listicle: "Listicle",
+  Comparison: "Karşılaştırma",
+  Profile: "Profil",
+  Alternative: "Alternatif",
+  Discussion: "Tartışma",
+  HowTo: "Nasıl yapılır",
+  Article: "Makale",
+  Other: "Diğer",
+};
+
+/** Kart §6 — Retrieval rate/Citation rate are averages, never percentages: never ×100, never "%". */
+function fmtRate(n: number): string {
+  return n.toFixed(2);
+}
 
 interface BrandRow {
   name: string;
@@ -152,6 +181,9 @@ export default function GeoPage() {
   const [runs, setRuns] = useState<GeoRunResult[] | null>(null);
   const [summaries, setSummaries] = useState<GeoVisibilitySummary[] | null>(null);
   const [sourceDistribution, setSourceDistribution] = useState<SourceDomainStat[] | null>(null);
+  const [urlStats, setUrlStats] = useState<UrlStat[] | null>(null);
+  const [chatCount, setChatCount] = useState<number>(0);
+  const [insufficientData, setInsufficientData] = useState(false);
   const [topicBreakdown, setTopicBreakdown] = useState<TopicVisibility[] | null>(null);
   const [brandedSplit, setBrandedSplit] = useState<{ branded: number; discovery: number } | null>(null);
   const [suggesting, setSuggesting] = useState(false);
@@ -163,7 +195,7 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources">("visibility");
+  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls">("visibility");
   const [wizardOpen, setWizardOpen] = useState(false);
   const autoRunRef = useRef(false);
 
@@ -263,6 +295,9 @@ export default function GeoPage() {
     setRuns(null);
     setSummaries(null);
     setSourceDistribution(null);
+    setUrlStats(null);
+    setChatCount(0);
+    setInsufficientData(false);
     setTopicBreakdown(null);
     setBrandedSplit(null);
     setPreviousSummaries(null);
@@ -291,6 +326,9 @@ export default function GeoPage() {
       setRuns(data.runs);
       setSummaries(data.summaries);
       setSourceDistribution(data.sourceDistribution);
+      if (Array.isArray(data.urlStats)) setUrlStats(data.urlStats);
+      if (typeof data.chatCount === "number") setChatCount(data.chatCount);
+      setInsufficientData(Boolean(data.insufficientData));
       if (Array.isArray(data.topicBreakdown)) setTopicBreakdown(data.topicBreakdown);
       if (data.brandedSplit) setBrandedSplit(data.brandedSplit);
       setDemoMode(data.demoMode);
@@ -580,6 +618,13 @@ export default function GeoPage() {
         </div>
       )}
 
+      {insufficientData && summaries && (
+        <div className="card border-ink/20 text-ink/50 text-sm">
+          Bu koşuda yalnızca {chatCount} sohbet var (prompt × motor). 10 sohbetin altında metrikler istatistiksel
+          olarak gürültülü olabilir — aşağıdaki değerleri yönlendirici olarak okuyun, kesin kabul etmeyin.
+        </div>
+      )}
+
       {summaries && (
         <div className="flex gap-1 text-sm border-b border-border overflow-x-auto">
           {(
@@ -587,7 +632,8 @@ export default function GeoPage() {
               { key: "visibility", label: "Görünürlük" },
               { key: "sentiment", label: "Duygu" },
               { key: "prompts", label: `Promptlar${runs ? ` (${runs.length})` : ""}` },
-              { key: "sources", label: "Kaynaklar" },
+              { key: "sources", label: "Domain" },
+              { key: "urls", label: "URL" },
             ] as const
           ).map((t) => (
             <button
@@ -789,8 +835,14 @@ export default function GeoPage() {
 
       {resultsTab === "sources" && sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
-          <h2 className="font-bold">Kaynak dağılımı</h2>
-          <p className="text-sm text-ink/50 mb-4">AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği.</p>
+          <h2 className="font-bold">Domain metrikleri</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği. &ldquo;Retrieved %&rdquo; ve
+            &ldquo;Retrieval rate&rdquo; henüz gösterilmiyor — bunlar modelin cevabı üretirken baktığı ama
+            metinde atıf vermediği URL&apos;leri de yakalayan ayrı bir sinyal gerektiriyor, bu da henüz kurulmadı
+            (🚨 Browser tabanlı sorgu altyapısı kartı). Aşağıdaki Citation rate asla % değil, bir orandır (1&apos;i
+            geçebilir).
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-2">
               <div className="text-xs text-ink/40 mb-1">En çok atıf alan domainler</div>
@@ -803,7 +855,9 @@ export default function GeoPage() {
                     <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className={`h-full rounded-full ${DOMAIN_TYPE_COLOR[d.type]}`} style={{ width: `${width}%` }} />
                     </div>
-                    <div className="w-6 text-right text-ink/50 text-xs">{d.count}</div>
+                    <div className="w-28 text-right text-ink/40 text-xs shrink-0">
+                      {d.count} atıf · %{Math.round(d.citationShare * 100)} pay · {fmtRate(d.citationRate)} oran
+                    </div>
                   </div>
                 );
               })}
@@ -812,7 +866,7 @@ export default function GeoPage() {
               <div className="text-xs text-ink/40 mb-1">
                 Domain türleri · {sourceDistribution.reduce((s, d) => s + d.count, 0)} toplam atıf
               </div>
-              {(["You", "Competitor", "Reference", "UGC", "Other"] as SourceDomainType[]).map((type) => {
+              {DOMAIN_TYPE_ORDER.map((type) => {
                 const total = sourceDistribution.reduce((s, d) => s + d.count, 0) || 1;
                 const count = sourceDistribution.filter((d) => d.type === type).reduce((s, d) => s + d.count, 0);
                 if (count === 0) return null;
@@ -824,6 +878,10 @@ export default function GeoPage() {
                   </div>
                 );
               })}
+              <p className="text-xs text-ink/30 pt-2">
+                Kurumsal/Editoryal/Kamu-Kurum sınıflandırması sezgisel bir listeye dayanır — henüz elle düzeltme
+                arayüzü yok, bu nedenle bazı domainler yanlış kovaya düşebilir.
+              </p>
             </div>
           </div>
         </div>
@@ -861,6 +919,50 @@ export default function GeoPage() {
                 </div>
               ))}
           </div>
+        </div>
+      )}
+
+      {resultsTab === "urls" && urlStats && urlStats.length > 0 && (
+        <div className="card">
+          <h2 className="font-bold">URL metrikleri</h2>
+          <p className="text-sm text-ink/50 mb-4">
+            Domain değil, tekil URL bazında atıf dağılımı — hangi sayfa (sadece hangi site) gerçekten kaynak
+            gösteriliyor. &ldquo;Retrievals&rdquo; (kaynak olduğu sohbet sayısı, atıf almadan) aynı nedenle henüz
+            yok — bkz. Domain sekmesindeki not.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-ink/40 text-left">
+                <tr>
+                  <th className="py-2 pr-4">URL</th>
+                  <th className="py-2 pr-4">Tür</th>
+                  <th className="py-2 pr-4">Toplam atıf</th>
+                  <th className="py-2 pr-4">Atıf payı</th>
+                  <th className="py-2 pr-4">Atıf oranı</th>
+                </tr>
+              </thead>
+              <tbody>
+                {urlStats.slice(0, 20).map((u) => (
+                  <tr key={u.url} className="border-t border-border">
+                    <td className="py-2 pr-4 max-w-xs truncate">
+                      <a href={u.url} target="_blank" rel="noreferrer" className="text-ink/80 hover:text-accent hover:underline">
+                        {u.url}
+                      </a>
+                    </td>
+                    <td className="py-2 pr-4 text-ink/50 text-xs whitespace-nowrap">{URL_TYPE_LABEL[u.type]}</td>
+                    <td className="py-2 pr-4">{u.totalCitations}</td>
+                    <td className="py-2 pr-4 text-ink/50">%{Math.round(u.citationShare * 100)}</td>
+                    <td className="py-2 pr-4 text-ink/50">{fmtRate(u.citationRate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {resultsTab === "urls" && (!urlStats || urlStats.length === 0) && (
+        <div className="card text-sm text-ink/40 text-center py-6">
+          Bu koşuda hiçbir yanıt bir URL&apos;ye atıf vermedi.
         </div>
       )}
 

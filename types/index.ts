@@ -105,12 +105,54 @@ export interface TopicVisibility {
   totalCount: number;
 }
 
-export type SourceDomainType = "You" | "Competitor" | "Reference" | "UGC" | "Other";
+/** Kart: Overview/Domain/URL metrics spec §8 — "Biz, Rakip, Kurumsal, Editoryal, Kamu/Kurum,
+ * UGC, Referans, Diğer" (8 categories). English keys here map to the Turkish labels shown in
+ * the UI (see DOMAIN_TYPE_LABEL in app/geo/page.tsx). */
+export type SourceDomainType = "You" | "Competitor" | "Corporate" | "Editorial" | "Government" | "Reference" | "UGC" | "Other";
 
 export interface SourceDomainStat {
   domain: string;
+  /** Total in-text citations of this domain across all runs — Kart §4 "Total citations". */
   count: number;
   type: SourceDomainType;
+  /** This domain's citations ÷ total citations across every domain shown — Kart §4 "Citation
+   * share" (0-1 ratio; ×100 for display). */
+  citationShare: number;
+  /** This domain's total citations ÷ number of distinct chats it was cited in — Kart §4
+   * "Citation rate" (an average, NOT a percentage — can exceed 1.0, never ×100 for display). */
+  citationRate: number;
+  /** Number of distinct chats (runs) that cite this domain at least once. */
+  chatsCited: number;
+}
+
+/** Kart §8 — "Ana sayfa, Kategori, Ürün, Listicle, Karşılaştırma, Profil, Alternatif, Tartışma,
+ * Nasıl yapılır, Makale, Diğer" (11 categories). English keys map to Turkish labels in the UI. */
+export type UrlType =
+  | "Home"
+  | "Category"
+  | "Product"
+  | "Listicle"
+  | "Comparison"
+  | "Profile"
+  | "Alternative"
+  | "Discussion"
+  | "HowTo"
+  | "Article"
+  | "Other";
+
+/** Per-URL citation breakdown — Kart §5 "URL metrikleri". "Retrievals" (how many chats used this
+ * URL as a source, independent of whether it was cited) needs the not-yet-built browser-based
+ * retrieval signal and is deliberately not included here — see computeUrlStats in lib/geo-engine.ts. */
+export interface UrlStat {
+  url: string;
+  domain: string;
+  type: UrlType;
+  totalCitations: number;
+  /** 0-1 ratio; ×100 for display. */
+  citationShare: number;
+  /** An average, NOT a percentage — never ×100, never shown with "%". */
+  citationRate: number;
+  chatsCited: number;
 }
 
 export type GapVerdict = "blocked" | "invisible" | "cited" | "needs-work";

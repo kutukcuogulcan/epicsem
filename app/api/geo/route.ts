@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { EngineId } from "@/types";
-import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeByTopic, summarizeVisibility } from "@/lib/geo-engine";
+import {
+  ALL_ENGINES,
+  MIN_CHATS_FOR_RELIABLE_METRIC,
+  computeShareOfVoice,
+  computeSourceDistribution,
+  computeUrlStats,
+  runPromptAcrossEngines,
+  summarizeByTopic,
+  summarizeVisibility,
+} from "@/lib/geo-engine";
 import { isDemoMode } from "@/lib/geo-providers";
 import { getPreviousGeoRun, listGeoRunHistory, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -74,6 +83,7 @@ export async function POST(req: NextRequest) {
     .sort((a, b) => b.visibility - a.visibility)
     .map((s, i) => ({ ...s, rank: i + 1 }));
   const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
+  const urlStats = computeUrlStats(allRuns, brand, competitors);
   const topicBreakdown = summarizeByTopic(allRuns);
   const brandedCount = allRuns.filter((r) => r.branded).length;
   const brandedSplit = {
@@ -98,10 +108,14 @@ export async function POST(req: NextRequest) {
     runs: allRuns,
     summaries,
     sourceDistribution,
+    urlStats,
     topicBreakdown,
     brandedSplit,
     previousRun,
     history,
+    // Kart §10: below this many chats, metrics are too noisy to trust at face value.
+    chatCount: allRuns.length,
+    insufficientData: allRuns.length < MIN_CHATS_FOR_RELIABLE_METRIC,
   });
 }
 
