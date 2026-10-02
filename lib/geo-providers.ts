@@ -5,12 +5,33 @@ export interface ProviderResponse {
   model: string;
 }
 
+/** Optional per-call overrides — used by generation-only call sites (topic/prompt
+ * generation; never the real GEO-test engine queries, which must keep using each engine's
+ * actual flagship model since that's literally what the tool is measuring) to ask for a
+ * cheaper/faster model and a non-default temperature. Providers that don't support one or
+ * both silently fall back to their class defaults. */
+export interface RunOptions {
+  model?: string;
+  temperature?: number;
+}
+
 export interface LlmProvider {
   engine: EngineId;
   defaultModel: string;
   isConfigured(): boolean;
-  run(prompt: string): Promise<ProviderResponse>;
+  run(prompt: string, options?: RunOptions): Promise<ProviderResponse>;
 }
+
+/** "Hızlı model (Haiku / Gemini Flash / GPT-mini)" from the prompt-generation methodology
+ * card (Kart 14, section C) — bulk per-topic sentence-writing calls use these instead of the
+ * flagship models above, since there's no need to pay flagship prices to fill in an
+ * already-fully-specified slot. Only for providers it makes sense to downgrade; Perplexity/
+ * DeepSeek/xAI don't have an equivalently-positioned "mini" tier in this app's integration. */
+export const FAST_MODEL: Partial<Record<EngineId, string>> = {
+  openai: "gpt-4o-mini",
+  anthropic: "claude-3-5-haiku-20241022",
+  google: "gemini-2.5-flash", // already the fast tier — same as the flagship pick above
+};
 
 /** OpenAI — powers ChatGPT's answers and (with search-enabled models) live citations. */
 class OpenAiProvider implements LlmProvider {
@@ -19,7 +40,8 @@ class OpenAiProvider implements LlmProvider {
   isConfigured() {
     return Boolean(process.env.OPENAI_API_KEY);
   }
-  async run(prompt: string): Promise<ProviderResponse> {
+  async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
+    const model = options?.model ?? this.defaultModel;
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -27,14 +49,14 @@ class OpenAiProvider implements LlmProvider {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: this.defaultModel,
+        model,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.4,
+        temperature: options?.temperature ?? 0.4,
       }),
     });
     if (!res.ok) throw new Error(`OpenAI API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
-    return { text: data.choices?.[0]?.message?.content ?? "", model: this.defaultModel };
+    return { text: data.choices?.[0]?.message?.content ?? "", model };
   }
 }
 
@@ -45,7 +67,8 @@ class AnthropicProvider implements LlmProvider {
   isConfigured() {
     return Boolean(process.env.ANTHROPIC_API_KEY);
   }
-  async run(prompt: string): Promise<ProviderResponse> {
+  async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
+    const model = options?.model ?? this.defaultModel;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -54,15 +77,16 @@ class AnthropicProvider implements LlmProvider {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: this.defaultModel,
+        model,
         max_tokens: 1024,
+        temperature: options?.temperature,
         messages: [{ role: "user", content: prompt }],
       }),
     });
     if (!res.ok) throw new Error(`Anthropic API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
     const text = Array.isArray(data.content) ? data.content.map((c: { text?: string }) => c.text ?? "").join("") : "";
-    return { text, model: this.defaultModel };
+    return { text, model };
   }
 }
 
@@ -73,19 +97,23 @@ class GoogleProvider implements LlmProvider {
   isConfigured() {
     return Boolean(process.env.GOOGLE_AI_API_KEY);
   }
-  async run(prompt: string): Promise<ProviderResponse> {
+  async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
+    const model = options?.model ?? this.defaultModel;
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModel}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          ...(options?.temperature != null ? { generationConfig: { temperature: options.temperature } } : {}),
+        }),
       }
     );
     if (!res.ok) throw new Error(`Google AI API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-    return { text, model: this.defaultModel };
+    return { text, model };
   }
 }
 
@@ -213,6 +241,31 @@ export const PROVIDERS: Record<EngineId, LlmProvider> = {
   meta: new MetaAiProvider(),
   microsoft: new MicrosoftCopilotProvider(),
 };
+
+/** Picks the first configured provider that HAS a fast-tier model (openai/anthropic/google
+ * only, per FAST_MODEL above) in a fixed preference order (Haiku first, per the methodology
+ * card's own ordering) — for bulk generation calls (topic/prompt generation), never for the
+ * real GEO-test engine queries. Falls back to any other configured provider at its normal
+ * model/temperature if none of the three fast-tier ones are configured, so generation still
+ * works (just without the cost savings) rather than failing outright. */
+const FAST_PREFERRED_ORDER: EngineId[] = ["anthropic", "google", "openai", "perplexity", "deepseek", "xai"];
+
+export function pickFastProvider(): LlmProvider | null {
+  for (const id of FAST_PREFERRED_ORDER) {
+    const p = PROVIDERS[id];
+    if (p.isConfigured()) return p;
+  }
+  return null;
+}
+
+/** Runs `prompt` against the fast provider, applying its FAST_MODEL override (when one
+ * exists for that engine) and the given temperature. Returns null when no provider is
+ * configured at all (demo mode) — callers fall back to their own demo content. */
+export async function runFast(prompt: string, temperature = 0.7): Promise<ProviderResponse | null> {
+  const provider = pickFastProvider();
+  if (!provider) return null;
+  return provider.run(prompt, { model: FAST_MODEL[provider.engine], temperature });
+}
 
 export function isDemoMode(): boolean {
   if (process.env.DEMO_MODE === "false") return false;

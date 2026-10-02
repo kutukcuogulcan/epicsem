@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { fillAllSlots, generateBrandedTopicPrompts } from "@/lib/prompt-suggestions";
 import { planSlotsForTopics } from "@/lib/slot-planner";
-import { getSectorPack, PERSONA_ORDER } from "@/lib/sector-packs";
+import { getSectorPack, matchSectorPack, PERSONA_ORDER } from "@/lib/sector-packs";
 import { isDemoMode } from "@/lib/geo-providers";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -11,16 +11,32 @@ import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guar
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
+const topicSchema = z.union([
+  z.string().min(1).transform((name) => ({ name, description: "" })),
+  z.object({ name: z.string().min(1), description: z.string().default("") }),
+]);
+
 const bodySchema = z.object({
-  brand: brandSchema,
+  brand: z.object({
+    name: z.string().min(1),
+    domain: z.string().min(1),
+    description: z.string().default(""),
+    industry: z.string().default(""),
+    productTags: z.array(z.string()).default([]),
+  }),
   competitors: z.array(brandSchema).max(6).default([]),
-  topics: z.array(z.string().min(1)).min(1).max(10),
+  topics: z.array(topicSchema).min(1).max(10),
   /** Share (0-100) of each of the 3 fixed audience archetypes — as returned by
    * lib/brand-discovery.ts's discoverBrandFromUrl, or edited by the user in the wizard's
    * audience step. Re-normalized below regardless of what it sums to. */
   audience: z.object({ simple: z.number(), informed: z.number(), researcher: z.number() }).optional(),
+  /** Explicit override — omit to let matchSectorPack() pick from brand.industry/description
+   * (Kart 13's E3 keyword match, falling back to the Genel pack). */
   sectorPackId: z.string().optional(),
+  country: z.string().min(1).default("Türkiye"),
   includeBrandedTopic: z.boolean().default(false),
+  /** D5's package-limit crop — omit to keep every planned slot's prompt. */
+  limit: z.number().int().positive().max(200).optional(),
   language: z.enum(["tr", "en"]).default("tr"),
 });
 
@@ -68,8 +84,10 @@ export async function POST(req: NextRequest) {
         ? Object.fromEntries(PERSONA_ORDER.map((k) => [k, Math.max(0, raw[k] || 0) / rawTotal])) as Record<(typeof PERSONA_ORDER)[number], number>
         : { simple: 1 / 3, informed: 1 / 3, researcher: 1 / 3 };
 
-    const pack = getSectorPack(parsed.sectorPackId);
-    const slots = planSlotsForTopics(parsed.topics, pack, audience, 8);
+    const pack = parsed.sectorPackId ? getSectorPack(parsed.sectorPackId) : matchSectorPack(parsed.brand.industry, parsed.brand.description);
+    const topicNames = parsed.topics.map((t) => t.name);
+    const topicDescriptions = new Map(parsed.topics.map((t) => [t.name, t.description]));
+    const slots = planSlotsForTopics(topicNames, pack, audience, 8, parsed.brand.productTags);
 
     const slotsByTopic = new Map<string, typeof slots>();
     for (const slot of slots) {
@@ -79,7 +97,20 @@ export async function POST(req: NextRequest) {
     }
 
     const competitors = parsed.competitors.filter((c) => c.name && c.domain);
-    const { prompts, demoMode: fillDemoMode, model } = await fillAllSlots(parsed.brand, competitors, slotsByTopic, parsed.language);
+    const {
+      prompts,
+      demoMode: fillDemoMode,
+      model,
+    } = await fillAllSlots({
+      brand: parsed.brand,
+      competitors,
+      slotsByTopic,
+      topicDescriptions,
+      pack,
+      language: parsed.language,
+      country: parsed.country,
+      limit: parsed.limit,
+    });
 
     const brandedPrompts = parsed.includeBrandedTopic ? generateBrandedTopicPrompts(parsed.brand, competitors) : [];
 
@@ -88,6 +119,7 @@ export async function POST(req: NextRequest) {
       prompts: [...prompts, ...brandedPrompts],
       demoMode: fillDemoMode,
       model,
+      sectorPackId: pack.id,
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Prompt generation failed" }, { status: 500 });

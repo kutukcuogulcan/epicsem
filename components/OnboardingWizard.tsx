@@ -196,14 +196,16 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   }
 
   async function fetchPromptsForTopics(
-    topicNames: string[],
+    topics: { name: string; description: string }[],
     brand: BrandRow,
+    profile: { description: string; industry: string; productTags: string[] },
     competitors: BrandRow[],
     audienceShares: Record<PersonaKey, number>,
+    country: string,
     brandedTopic: boolean
   ) {
-    if (topicNames.length === 0) return;
-    const key = `${[...topicNames].sort().join("|")}::${brandedTopic}`;
+    if (topics.length === 0) return;
+    const key = `${topics.map((t) => t.name).sort().join("|")}::${brandedTopic}`;
     if (promptsFetchedForRef.current === key) return;
     promptsFetchedForRef.current = key;
     const requestId = ++promptsRequestIdRef.current;
@@ -214,10 +216,11 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          brand,
+          brand: { name: brand.name, domain: brand.domain, description: profile.description, industry: profile.industry, productTags: profile.productTags },
           competitors: competitors.filter((c) => c.name && c.domain),
-          topics: topicNames,
+          topics,
           audience: audienceShares,
+          country: country || "Türkiye",
           includeBrandedTopic: brandedTopic,
           language,
         }),
@@ -256,7 +259,6 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           brand: { name: brand.name, domain: brand.domain, description: desc, industry: ind, identityAdjectives: identity, productTags: products },
           country: targetMarket || "Türkiye",
           language,
-          sectorSeeds: [],
         }),
       });
       if (handleUnauthorized(res)) return;
@@ -269,7 +271,10 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       // Prefetch the auto-selected topics' prompts in the background right away — don't wait
       // for the user to reach (let alone finish) the topic-selection step. Only the default
       // selection, not every candidate (see the component doc comment).
-      fetchPromptsForTopics(result.autoSelected, brand, competitors, audienceShares, includeBrandedTopic);
+      const autoTopics = result.candidates
+        .filter((c) => result.autoSelected.includes(c.name))
+        .map((c) => ({ name: c.name, description: c.description }));
+      fetchPromptsForTopics(autoTopics, brand, { description: desc, industry: ind, productTags: products }, competitors, audienceShares, targetMarket, includeBrandedTopic);
     } catch (err) {
       setTopicsError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -344,7 +349,10 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   useEffect(() => {
     if (!topicResult || selectedTopics.size === 0) return;
     const brand = { name: brandName.trim(), domain: brandDomain.trim() };
-    fetchPromptsForTopics(Array.from(selectedTopics), brand, competitorList, audience, includeBrandedTopic);
+    const topics = topicResult.candidates
+      .filter((c) => selectedTopics.has(c.name))
+      .map((c) => ({ name: c.name, description: c.description }));
+    fetchPromptsForTopics(topics, brand, { description, industry, productTags }, competitorList, audience, targetMarket, includeBrandedTopic);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTopics, includeBrandedTopic]);
 

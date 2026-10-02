@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateTopicsForBrand } from "@/lib/topic-generator";
+import { matchSectorPack, renderTopicSeeds } from "@/lib/sector-packs";
 import { isDemoMode } from "@/lib/geo-providers";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -20,7 +21,9 @@ const bodySchema = z.object({
   brand: brandSchema,
   country: z.string().min(1).default("Türkiye"),
   language: z.enum(["tr", "en"]).default("tr"),
-  sectorSeeds: z.array(z.string()).max(20).default([]),
+  /** Optional — omit to let matchSectorPack() derive seeds from brand.industry/description
+   * (Kart 13's E3 keyword match) instead of the caller supplying its own list. */
+  sectorSeeds: z.array(z.string()).max(20).optional(),
 });
 
 /** POST /api/geo/discover-topics — step 2 of the onboarding wizard: the wizard fires this
@@ -55,7 +58,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await generateTopicsForBrand(parsed.brand, parsed.country, parsed.language, parsed.sectorSeeds);
+    const sectorSeeds =
+      parsed.sectorSeeds ?? renderTopicSeeds(matchSectorPack(parsed.brand.industry, parsed.brand.description), parsed.brand.industry);
+    const result = await generateTopicsForBrand(parsed.brand, parsed.country, parsed.language, sectorSeeds);
     if (!demoMode) await consumeQuota(user.id, "onboardingSetup", 1);
     return NextResponse.json(result);
   } catch (err) {

@@ -65,8 +65,21 @@ function shuffleNoRepeat<K>(items: K[]): K[] {
   return result;
 }
 
-function pickModifiers(pack: SectorPack, count: number, usageInTopic: Map<string, number>, totalInTopic: { n: number }): string[] {
-  const all = [...pack.modifierPool.city, ...pack.modifierPool.budget, ...pack.modifierPool.size, ...pack.modifierPool.urgency];
+function pickModifiers(
+  pack: SectorPack,
+  count: number,
+  usageInTopic: Map<string, number>,
+  totalInTopic: { n: number },
+  dynamicSegmentValues: string[]
+): string[] {
+  const all = [
+    ...pack.modifierPool.city,
+    ...pack.modifierPool.budget,
+    ...pack.modifierPool.size,
+    ...pack.modifierPool.urgency,
+    ...pack.modifierPool.segment,
+    ...dynamicSegmentValues,
+  ];
   const picked: string[] = [];
   for (let i = 0; i < count; i++) {
     const candidates = all.filter((m) => {
@@ -99,9 +112,17 @@ function pickModifiers(pack: SectorPack, count: number, usageInTopic: Map<string
  * one continuous counter across the whole list (not reset per topic), so the audience split
  * balances out over the full set rather than forcing every single topic to hit the exact
  * ratio. `audience` is fractions that should sum to ~1 (e.g. {simple:0.2, informed:0.5,
- * researcher:0.3}).
+ * researcher:0.3}). `dynamicSegmentValues` is the brand's own productTags — the spec's
+ * "segment: from_profile" modifier category (see lib/sector-packs.ts's ModifierPool doc) —
+ * merged into the modifier pool at plan time rather than hardcoded on the pack itself.
  */
-export function planSlotsForTopics(topics: string[], pack: SectorPack, audience: Record<PersonaKey, number>, n = 8): SlotSpec[] {
+export function planSlotsForTopics(
+  topics: string[],
+  pack: SectorPack,
+  audience: Record<PersonaKey, number>,
+  n = 8,
+  dynamicSegmentValues: string[] = []
+): SlotSpec[] {
   const counts: Record<PersonaKey, number> = { simple: 0, informed: 0, researcher: 0 };
   let total = 0;
   const plan: SlotSpec[] = [];
@@ -131,7 +152,7 @@ export function planSlotsForTopics(topics: string[], pack: SectorPack, audience:
 
       const style = PERSONA_STYLE[bestPersona];
       const modCount = style.minModifiers + Math.floor(Math.random() * (style.maxModifiers - style.minModifiers + 1));
-      const modifiers = pickModifiers(pack, modCount, usageInTopic, totalInTopic);
+      const modifiers = pickModifiers(pack, modCount, usageInTopic, totalInTopic, dynamicSegmentValues);
 
       plan.push({ topic: topicName, intent, persona: bestPersona, form: forms[idx], modifiers });
     });
