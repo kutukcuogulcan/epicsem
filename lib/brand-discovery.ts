@@ -66,7 +66,7 @@ function pickProvider() {
   return null;
 }
 
-function domainFromUrl(url: string): string {
+export function domainFromUrl(url: string): string {
   try {
     return new URL(normalizeUrl(url)).hostname.replace(/^www\./, "");
   } catch {
@@ -143,6 +143,156 @@ function normalizePersonaShares(raw: any): Record<PersonaKey, number> {
     });
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------------------
+// Split step functions — Kart: Otomatik onboarding zinciri. The combined discoverBrandFromUrl
+// below (used by the manual /api/geo/discover route) still does crawl+profile+competitors in
+// one pass. The automatic background chain (lib/onboarding-engine.ts) needs these as separate,
+// independently-failable, genuinely-parallel steps instead — "Tarama" (page fetch) once, then
+// "Marka profili" and "Rakipler" as two separate LLM calls that both only need the same crawled
+// page, so they can run with Promise.all rather than one being nested inside the other.
+// ---------------------------------------------------------------------------------------
+
+export interface BrandProfileResult {
+  brand: { name: string; domain: string };
+  description: string;
+  industry: string;
+  identityAdjectives: string[];
+  productTags: string[];
+  personas: Record<PersonaKey, number>;
+  demoMode: boolean;
+  model: string;
+}
+
+export interface CompetitorsResult {
+  competitors: DiscoveredCompetitor[];
+  demoMode: boolean;
+  model: string;
+}
+
+/** Kart step "Tarama" — just the real page fetch, split out of discoverBrandFromUrl so it can
+ * be its own tracked job. Throws on fetch failure (dead site, blocked bot, timeout); the caller
+ * (lib/onboarding-engine.ts) is responsible for marking the step 'error' and short-circuiting
+ * the rest of the chain, since nothing downstream can run without a real page to ground on. */
+export async function runCrawlStep(rawUrl: string): Promise<{ page: Awaited<ReturnType<typeof fetchPageSummary>>; domain: string }> {
+  const url = normalizeUrl(rawUrl);
+  const domain = domainFromUrl(url);
+  const page = await fetchPageSummary(url);
+  return { page, domain };
+}
+
+function buildProfilePrompt(page: { url: string; title: string | null; metaDescription: string | null; bodyText: string }, language: "tr" | "en"): string {
+  const lang = language === "en" ? "English" : "Turkish";
+  return [
+    `You are analyzing a real, just-fetched web page to bootstrap AI-visibility (GEO) tracking setup — the same first step a tool like Peec AI performs when a user pastes their homepage URL.`,
+    ``,
+    `URL: ${page.url}`,
+    `Page <title>: ${page.title ?? "(none found)"}`,
+    `Meta description: ${page.metaDescription ?? "(none found)"}`,
+    `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`,
+    ``,
+    `From ONLY the real content above, extract (write every text field in ${lang}):`,
+    `- "brandName": the brand/company name as it actually appears on the page (never invent one).`,
+    `- "description": a 1-2 sentence ${lang} summary of what this brand/site actually does, grounded only in the text above — if the content is too thin to tell, say so plainly instead of guessing.`,
+    `- "industry": a short ${lang} category label for what market/industry this brand competes in (e.g. "dijital pazarlama ajansı", "e-ticaret - kadın giyim"). Be specific and literal about what the business actually does — do not default to a generic or adjacent category.`,
+    `- "identityAdjectives": 3-5 short ${lang} adjectives describing the brand's own voice/positioning as the page itself conveys it (e.g. "güvenilir", "yenilikçi", "yerel").`,
+    `- "productTags": 3-6 short ${lang} tags for the specific products/services this brand actually offers per the page.`,
+    `- "personaShares": estimate, for THIS brand's likely customers, what percentage falls into each of these 3 FIXED archetypes (they must sum to 100): "simple" = wants a quick recommendation, no detail; "informed" = has a specific need/feature in mind, compares options; "researcher" = compares criteria/pros-cons in depth before deciding. Respond as {"simple": 0, "informed": 0, "researcher": 0}.`,
+    ``,
+    `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
+    `{"brandName": "...", "description": "...", "industry": "...", "identityAdjectives": ["..."], "productTags": ["..."], "personaShares": {"simple": 0, "informed": 0, "researcher": 0}}`,
+  ].join("\n");
+}
+
+function buildCompetitorsPrompt(page: { url: string; title: string | null; metaDescription: string | null; bodyText: string }, language: "tr" | "en"): string {
+  const lang = language === "en" ? "English" : "Turkish";
+  return [
+    `You are looking at a real, just-fetched web page to suggest competitors for AI-visibility (GEO) tracking setup.`,
+    ``,
+    `URL: ${page.url}`,
+    `Page <title>: ${page.title ?? "(none found)"}`,
+    `Meta description: ${page.metaDescription ?? "(none found)"}`,
+    `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`,
+    ``,
+    `First silently work out what specific market/industry this brand competes in from the real content above (be literal — e.g. "digital marketing agency", not a generic adjacent category). Then suggest 2-4 real, well-known companies that compete in that SAME specific industry — this is general market knowledge, not something read off the page, so double-check each one actually operates in the same business (e.g. an ERP software vendor is NOT a competitor to a marketing agency). Write any text in ${lang}; for each, include "domain" only if you're confident of it, otherwise use an empty string.`,
+    ``,
+    `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
+    `{"competitors": [{"name": "...", "domain": "..."}]}`,
+  ].join("\n");
+}
+
+function demoProfileResult(domain: string): BrandProfileResult {
+  const name = guessNameFromDomain(domain);
+  return {
+    brand: { name, domain },
+    description: `[DEMO DATA] ${name} için gerçek bir marka özeti çıkarmak üzere bir model API anahtarı bağlanmalı — bu alan sayfa gerçekten taranıp analiz edildiğinde gerçek içerikle doldurulur.`,
+    industry: "[DEMO DATA — genel kategori]",
+    identityAdjectives: ["[DEMO DATA]"],
+    productTags: ["[DEMO DATA]"],
+    personas: EVEN_PERSONAS,
+    demoMode: true,
+    model: "demo (no API key configured)",
+  };
+}
+
+/** Kart step "Marka profili" — name/description/industry/identity/products/personas only, no
+ * competitors (those are the separate, parallel "Rakipler" step below). */
+export async function runProfileStep(
+  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
+  domain: string,
+  language: "tr" | "en" = "tr"
+): Promise<BrandProfileResult> {
+  const provider = isDemoMode() ? null : pickProvider();
+  if (!provider) return demoProfileResult(domain);
+
+  const { text, model } = await provider.run(buildProfilePrompt(page, language));
+  const parsed = extractJsonObject(text);
+
+  const identityAdjectives: string[] = Array.isArray(parsed.identityAdjectives)
+    ? parsed.identityAdjectives.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 5).map((a: string) => a.trim())
+    : [];
+  const productTags: string[] = Array.isArray(parsed.productTags)
+    ? parsed.productTags.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 6).map((a: string) => a.trim())
+    : [];
+
+  return {
+    brand: {
+      name: typeof parsed.brandName === "string" && parsed.brandName.trim() ? parsed.brandName.trim() : guessNameFromDomain(domain),
+      domain,
+    },
+    description: typeof parsed.description === "string" && parsed.description.trim() ? parsed.description.trim() : "[NEEDS: açıklama]",
+    industry: typeof parsed.industry === "string" && parsed.industry.trim() ? parsed.industry.trim() : "[NEEDS: kategori]",
+    identityAdjectives,
+    productTags,
+    personas: normalizePersonaShares(parsed.personaShares),
+    demoMode: false,
+    model,
+  };
+}
+
+/** Kart step "Rakipler" — runs in parallel with "Marka profili" (both only need the same
+ * crawled page), not nested inside it. Same known limitation as before: these are the model's
+ * general market knowledge, not read off the page — always presented as editable/removable. */
+export async function runCompetitorsStep(
+  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
+  domain: string,
+  language: "tr" | "en" = "tr"
+): Promise<CompetitorsResult> {
+  const provider = isDemoMode() ? null : pickProvider();
+  if (!provider) return { competitors: [{ name: "[DEMO DATA]", domain: "" }], demoMode: true, model: "demo (no API key configured)" };
+
+  const { text, model } = await provider.run(buildCompetitorsPrompt(page, language));
+  const parsed = extractJsonObject(text);
+
+  const competitors: DiscoveredCompetitor[] = Array.isArray(parsed.competitors)
+    ? parsed.competitors
+        .filter((c: any) => c && typeof c.name === "string" && c.name.trim())
+        .slice(0, 4)
+        .map((c: any) => ({ name: String(c.name).trim(), domain: typeof c.domain === "string" ? c.domain.trim() : "" }))
+    : [];
+
+  return { competitors, demoMode: false, model };
 }
 
 export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en" = "tr"): Promise<DiscoveredBrand> {

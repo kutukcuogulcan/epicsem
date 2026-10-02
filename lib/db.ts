@@ -345,6 +345,48 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_content_inputs_user_domain ON content_inputs(user_id, brand_domain);
   `);
+
+  // Kart: Otomatik onboarding zinciri — durable job state for the URL-first wizard so the
+  // chain (Tarama → Marka profili ‖ Rakipler → Topic'ler → Promptlar) runs server-side the
+  // moment the URL is entered, without waiting on the user to click anything, and survives a
+  // page refresh (the wizard just re-polls this row by id). Each step has its own
+  // status/result/error instead of one shared status column, since steps run in parallel
+  // (profile/competitors) and partial failure is meaningful (e.g. competitors erroring
+  // shouldn't block prompts — see lib/onboarding-engine.ts).
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS onboarding_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      url TEXT NOT NULL,
+      language TEXT NOT NULL DEFAULT 'tr',
+      country TEXT NOT NULL DEFAULT 'Türkiye',
+
+      crawl_status TEXT NOT NULL DEFAULT 'pending',
+      crawl_result_json TEXT,
+      crawl_error TEXT,
+
+      profile_status TEXT NOT NULL DEFAULT 'pending',
+      profile_result_json TEXT,
+      profile_error TEXT,
+
+      competitors_status TEXT NOT NULL DEFAULT 'pending',
+      competitors_result_json TEXT,
+      competitors_error TEXT,
+
+      topics_status TEXT NOT NULL DEFAULT 'pending',
+      topics_result_json TEXT,
+      topics_error TEXT,
+
+      prompts_status TEXT NOT NULL DEFAULT 'pending',
+      prompts_result_json TEXT,
+      prompts_error TEXT,
+
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_onboarding_sessions_user ON onboarding_sessions(user_id);
+  `);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -1396,4 +1438,118 @@ export async function markContentInputDrafted(userId: number, id: number, draftI
 export async function markContentInputFailed(userId: number, id: number, error: string): Promise<void> {
   await ensureSchema();
   await exec(`UPDATE content_inputs SET status = 'failed', error = $1 WHERE id = $2 AND user_id = $3`, [error, id, userId]);
+}
+
+// ---------------- onboarding_sessions (Kart: Otomatik onboarding zinciri) ----------------
+
+export type OnboardingStepName = "crawl" | "profile" | "competitors" | "topics" | "prompts";
+export type OnboardingStepStatus = "pending" | "running" | "ready" | "error";
+
+export interface OnboardingSessionRow {
+  id: number;
+  userId: number;
+  url: string;
+  language: "tr" | "en";
+  country: string;
+  crawlStatus: OnboardingStepStatus;
+  crawlResult: any | null;
+  crawlError: string | null;
+  profileStatus: OnboardingStepStatus;
+  profileResult: any | null;
+  profileError: string | null;
+  competitorsStatus: OnboardingStepStatus;
+  competitorsResult: any | null;
+  competitorsError: string | null;
+  topicsStatus: OnboardingStepStatus;
+  topicsResult: any | null;
+  topicsError: string | null;
+  promptsStatus: OnboardingStepStatus;
+  promptsResult: any | null;
+  promptsError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function parseJsonOrNull(v: string | null): any | null {
+  if (!v) return null;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+}
+
+function rowToOnboardingSession(row: any): OnboardingSessionRow {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    url: row.url,
+    language: row.language,
+    country: row.country,
+    crawlStatus: row.crawl_status,
+    crawlResult: parseJsonOrNull(row.crawl_result_json),
+    crawlError: row.crawl_error,
+    profileStatus: row.profile_status,
+    profileResult: parseJsonOrNull(row.profile_result_json),
+    profileError: row.profile_error,
+    competitorsStatus: row.competitors_status,
+    competitorsResult: parseJsonOrNull(row.competitors_result_json),
+    competitorsError: row.competitors_error,
+    topicsStatus: row.topics_status,
+    topicsResult: parseJsonOrNull(row.topics_result_json),
+    topicsError: row.topics_error,
+    promptsStatus: row.prompts_status,
+    promptsResult: parseJsonOrNull(row.prompts_result_json),
+    promptsError: row.prompts_error,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
+  };
+}
+
+export async function createOnboardingSession(userId: number, url: string, language: "tr" | "en", country: string): Promise<number> {
+  await ensureSchema();
+  const row = await one<{ id: number }>(
+    `INSERT INTO onboarding_sessions (user_id, url, language, country) VALUES ($1, $2, $3, $4) RETURNING id`,
+    [userId, url, language, country]
+  );
+  return row!.id;
+}
+
+export async function getOnboardingSession(userId: number, id: number): Promise<OnboardingSessionRow | null> {
+  await ensureSchema();
+  const row = await one(`SELECT * FROM onboarding_sessions WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return row ? rowToOnboardingSession(row) : null;
+}
+
+/** Column names are from the fixed OnboardingStepName union (never request input), so building
+ * the SQL with them interpolated is safe — values themselves still go through $-params. */
+export async function updateOnboardingStep(
+  id: number,
+  step: OnboardingStepName,
+  patch: { status: OnboardingStepStatus; result?: unknown; error?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  const resultCol = `${step}_result_json`;
+  const statusCol = `${step}_status`;
+  const errorCol = `${step}_error`;
+  await exec(
+    `UPDATE onboarding_sessions SET ${statusCol} = $1, ${resultCol} = $2, ${errorCol} = $3, updated_at = now() WHERE id = $4`,
+    [patch.status, patch.result !== undefined ? JSON.stringify(patch.result) : null, patch.error ?? null, id]
+  );
+}
+
+/** Marks every step that hasn't already settled (ready/error) as 'error' with the same
+ * message — used when an earlier required step (e.g. crawl) fails and nothing downstream can
+ * meaningfully run, so the session doesn't sit stuck on 'pending'/'running' forever. */
+export async function failRemainingOnboardingSteps(id: number, fromStep: OnboardingStepName, message: string): Promise<void> {
+  await ensureSchema();
+  const order: OnboardingStepName[] = ["crawl", "profile", "competitors", "topics", "prompts"];
+  const idx = order.indexOf(fromStep);
+  for (const step of order.slice(idx)) {
+    const col = `${step}_status`;
+    await exec(
+      `UPDATE onboarding_sessions SET ${col} = 'error', ${step}_error = $1, updated_at = now() WHERE id = $2 AND ${col} != 'ready' AND ${col} != 'error'`,
+      [message, id]
+    );
+  }
 }
