@@ -400,6 +400,28 @@ async function initSchema(): Promise<void> {
   // never a crash.
   await p.query(`ALTER TABLE onboarding_sessions ADD COLUMN IF NOT EXISTS topics_input_hash TEXT`);
   await p.query(`ALTER TABLE onboarding_sessions ADD COLUMN IF NOT EXISTS topics_input_products_json TEXT NOT NULL DEFAULT '[]'`);
+
+  // Kart: Domain bazlı önbellek — aynı domain tekrar girilirse (demo, satış görüşmesi, aynı
+  // firmadan ikinci kullanıcı) tüm zincirin (tarama→profil→rakipler→topic'ler→promptlar) son
+  // başarılı çıktısı burada domain anahtarıyla saklanır; lib/onboarding-engine.ts'in
+  // runOnboardingChain'i bu satırı bulursa hiçbir ağ/LLM çağrısı yapmadan doğrudan session'a
+  // kopyalar. 7 günlük geçerlilik bir TTL kolonu yerine okuma anında updated_at üzerinden
+  // kontrol edilir (bkz. getOnboardingDomainCache) — süresi geçmiş bir satır burada sessizce
+  // yok sayılır, bir sonraki gerçek (cache'siz) çalışma onu zaten üzerine yazar.
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS onboarding_domain_cache (
+      domain TEXT PRIMARY KEY,
+      crawl_result_json TEXT NOT NULL,
+      profile_result_json TEXT NOT NULL,
+      competitors_result_json TEXT NOT NULL,
+      topics_result_json TEXT NOT NULL,
+      prompts_result_json TEXT NOT NULL,
+      topics_input_hash TEXT NOT NULL,
+      topics_input_products_json TEXT NOT NULL DEFAULT '[]',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -1596,4 +1618,96 @@ export async function failRemainingOnboardingSteps(id: number, fromStep: Onboard
       [message, id]
     );
   }
+}
+
+// ---------------- onboarding_domain_cache (Kart: Domain bazlı önbellek) ----------------
+
+const DOMAIN_CACHE_TTL_DAYS = 7;
+
+export interface OnboardingDomainCacheRow {
+  domain: string;
+  crawlResult: any;
+  profileResult: any;
+  competitorsResult: any;
+  topicsResult: any;
+  promptsResult: any;
+  topicsInputHash: string;
+  topicsInputProducts: string[];
+  updatedAt: string;
+}
+
+/** Null when there's no cached row for this domain, or when the row is older than the 7-day
+ * TTL — an expired row is left in place (not deleted here); the next real, non-cached chain
+ * run for that domain overwrites it via setOnboardingDomainCache's upsert. */
+export async function getOnboardingDomainCache(domain: string): Promise<OnboardingDomainCacheRow | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT * FROM onboarding_domain_cache WHERE domain = $1 AND updated_at > now() - interval '${DOMAIN_CACHE_TTL_DAYS} days'`,
+    [domain]
+  );
+  if (!row) return null;
+  return {
+    domain: row.domain,
+    crawlResult: parseJsonOrNull(row.crawl_result_json),
+    profileResult: parseJsonOrNull(row.profile_result_json),
+    competitorsResult: parseJsonOrNull(row.competitors_result_json),
+    topicsResult: parseJsonOrNull(row.topics_result_json),
+    promptsResult: parseJsonOrNull(row.prompts_result_json),
+    topicsInputHash: row.topics_input_hash,
+    topicsInputProducts: (() => {
+      try {
+        const parsed = JSON.parse(row.topics_input_products_json ?? "[]");
+        return Array.isArray(parsed) ? parsed.filter((p: any) => typeof p === "string") : [];
+      } catch {
+        return [];
+      }
+    })(),
+    updatedAt: toIso(row.updated_at),
+  };
+}
+
+/** Upserts the full chain's output for a domain. Called once by runOnboardingChain, only after
+ * a real (non-cached) run finishes with every step — crawl, profile, competitors, topics,
+ * prompts — successfully; a run where e.g. rakip önerisi failed is deliberately never cached,
+ * so a later cache hit can never silently replay a partial/failed result as if it were a full
+ * one. Demo-mode output is cached too, same as every other part of the app — it stays clearly
+ * [DEMO DATA]-labeled inside the stored JSON itself, so replaying it from cache is no less
+ * honest than generating the same placeholder again from scratch. */
+export async function setOnboardingDomainCache(
+  domain: string,
+  data: {
+    crawlResult: unknown;
+    profileResult: unknown;
+    competitorsResult: unknown;
+    topicsResult: unknown;
+    promptsResult: unknown;
+    topicsInputHash: string;
+    topicsInputProducts: string[];
+  }
+): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `INSERT INTO onboarding_domain_cache
+       (domain, crawl_result_json, profile_result_json, competitors_result_json, topics_result_json, prompts_result_json, topics_input_hash, topics_input_products_json, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+     ON CONFLICT (domain) DO UPDATE SET
+       crawl_result_json = EXCLUDED.crawl_result_json,
+       profile_result_json = EXCLUDED.profile_result_json,
+       competitors_result_json = EXCLUDED.competitors_result_json,
+       topics_result_json = EXCLUDED.topics_result_json,
+       prompts_result_json = EXCLUDED.prompts_result_json,
+       topics_input_hash = EXCLUDED.topics_input_hash,
+       topics_input_products_json = EXCLUDED.topics_input_products_json,
+       updated_at = now()`,
+    [
+      domain,
+      JSON.stringify(data.crawlResult),
+      JSON.stringify(data.profileResult),
+      JSON.stringify(data.competitorsResult),
+      JSON.stringify(data.topicsResult),
+      JSON.stringify(data.promptsResult),
+      data.topicsInputHash,
+      JSON.stringify(data.topicsInputProducts),
+    ]
+  );
 }

@@ -1,7 +1,9 @@
 import { createHash } from "crypto";
 import {
   failRemainingOnboardingSteps,
+  getOnboardingDomainCache,
   getOnboardingSession,
+  setOnboardingDomainCache,
   setOnboardingTopicsInputSnapshot,
   updateOnboardingStep,
   type OnboardingStepName,
@@ -38,6 +40,13 @@ import { consumeQuota } from "./usage-guard";
  * regenerate/route.ts kullanıcı profili sonradan düzenlediğinde AYNI üretimi tekrar
  * çalıştırabilmeli — iki ayrı (ve zamanla birbirinden sapabilecek) implementasyon yerine tek
  * paylaşılan fonksiyon.
+ *
+ * Kart: Domain bazlı önbellek — domain, URL'den sıfır ağ isteğiyle çıkarılabildiği için (bkz.
+ * domainFromUrl) gerçek tarama adımı başlamadan ÖNCE önbellek kontrol edilir. Önbellekte (7 gün
+ * içinde) bu domain için daha önce TAM başarılı bir zincir sonucu varsa, aşağıdaki 5 adımın
+ * hiçbiri çalışmaz — ne ağ isteği ne LLM çağrısı ne de kota tüketimi olur, session doğrudan o
+ * sonuçlarla "ready" işaretlenir. Önbellek sadece zincirin SONUNDA, beş adımın hepsi gerçekten
+ * başarıyla bitince yazılır (bkz. aşağıdaki setOnboardingDomainCache çağrısı).
  */
 export async function runOnboardingChain(sessionId: number, userId: number): Promise<void> {
   const demo = isDemoMode();
@@ -45,22 +54,34 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
   if (!session) return;
   const { url, language, country } = session;
 
+  const domain = domainFromUrl(url);
+  const cached = await getOnboardingDomainCache(domain);
+  if (cached) {
+    await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: cached.crawlResult });
+    await updateOnboardingStep(sessionId, "profile", { status: "ready", result: cached.profileResult });
+    await updateOnboardingStep(sessionId, "competitors", { status: "ready", result: cached.competitorsResult });
+    await updateOnboardingStep(sessionId, "topics", { status: "ready", result: cached.topicsResult });
+    await setOnboardingTopicsInputSnapshot(sessionId, cached.topicsInputHash, cached.topicsInputProducts);
+    await updateOnboardingStep(sessionId, "prompts", { status: "ready", result: cached.promptsResult });
+    return;
+  }
+
   // 1. Tarama — demo modda (hiçbir LLM API anahtarı yokken) gerçek bir ağ isteği atmaya hiç
   // gerek yok: hiçbir sonraki adım gerçek sayfa içeriğine bakmayacak zaten (hepsi demo
   // placeholder döner), bu da eski discoverBrandFromUrl'ün demo modda fetch'i tamamen atlayan
   // davranışıyla eşleşiyor — demo modda ağ erişimi yavaş/engelli olsa bile zincir hep çalışır.
   await updateOnboardingStep(sessionId, "crawl", { status: "running" });
   let page: { url: string; title: string | null; metaDescription: string | null; bodyText: string };
-  let domain: string;
   if (demo) {
-    domain = domainFromUrl(url);
     page = { url: normalizeUrl(url), title: null, metaDescription: null, bodyText: "" };
     await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: { domain, page, demoMode: true } });
   } else {
     try {
+      // runCrawlStep derives its own domain internally (domainFromUrl is pure/deterministic),
+      // so it's always identical to the `domain` already computed above for the cache check —
+      // reused rather than reassigned.
       const crawl = await runCrawlStep(url);
       page = crawl.page;
-      domain = crawl.domain;
       await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: { domain, page } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Tarama başarısız oldu — site erişilemiyor olabilir";
@@ -125,11 +146,30 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
     const result = await generateTopicsAndPrompts(genProfile);
     const topicsResult = result.topicsResult;
     await updateOnboardingStep(sessionId, "topics", { status: "ready", result: topicsResult });
-    await setOnboardingTopicsInputSnapshot(sessionId, computeTopicsInputHash(profile.description, profile.industry), profile.productTags);
+    const topicsInputHash = computeTopicsInputHash(profile.description, profile.industry);
+    await setOnboardingTopicsInputSnapshot(sessionId, topicsInputHash, profile.productTags);
     if (!demo && !topicsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
 
     await updateOnboardingStep(sessionId, "prompts", { status: "ready", result: result.promptsResult });
     if (!demo && !result.promptsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
+
+    // Kart: Domain bazlı önbellek — zincir baştan sona (rakipler dahil) gerçekten başarıyla
+    // bittiyse sonucu domain anahtarıyla sakla. competitorsSettled hâlâ yukarıdaki adım 2+3'ten
+    // kapsam içinde; rakip önerisi başarısız olduysa bilerek ÖNBELLEĞE YAZILMAZ — aksi halde
+    // sonraki bir girişte o kalıcı hata sessizce "başarılı" gibi tekrar sunulurdu. Önbellek
+    // yazımı best-effort: başarısız olursa (ör. geçici DB hatası) zincirin kendisini asla
+    // düşürmemeli, sadece bir sonraki girişte tekrar önbelleksiz çalışılmasına yol açar.
+    if (competitorsSettled.status === "fulfilled") {
+      await setOnboardingDomainCache(domain, {
+        crawlResult: demo ? { domain, page, demoMode: true } : { domain, page },
+        profileResult: profile,
+        competitorsResult: competitorsSettled.value,
+        topicsResult,
+        promptsResult: result.promptsResult,
+        topicsInputHash,
+        topicsInputProducts: profile.productTags,
+      }).catch(() => {});
+    }
   } catch (err) {
     // Topic üretimi başarısız olduysa prompts de üretilemez; topics zaten başarılıysa ve sadece
     // prompts tarafı patladıysa (fillAllSlots içindeki bir hata) topics "ready" kalır, sadece
