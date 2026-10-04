@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { PERSONA_DESCRIPTION, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
 
 /**
@@ -12,11 +12,24 @@ import { PERSONA_DESCRIPTION, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } fr
  * onboarding_sessions row and kicks off the whole chain in the background:
  *   Tarama → (Marka profili ‖ Rakipler, paralel) → Topic'ler (10) → Promptlar (10×8)
  * without waiting on the user to do anything else. This component just polls
- * GET /api/onboarding/sessions/:id every ~1.5s and fills each screen in as its step's status
+ * GET /api/onboarding/sessions/:id every ~1s and fills each screen in as its step's status
  * flips to "ready" (lib/onboarding-engine.ts does the actual work). The session id is carried
  * in the URL's query string (?onboardingSession=…), so a page refresh resumes by re-polling
  * the same id instead of losing everything and restarting from "url" — same pattern
  * app/geo/page.tsx already uses for ?clientId=.
+ *
+ * Kart: Hazır olmayan içerik (skeleton + stream hissi) — "SSE (ya da 1 sn aralıklı polling)"
+ * reads as two equally acceptable options in the card itself; this app already had a polling
+ * loop from Kart 1, so it's tightened to 1s rather than adding a parallel SSE transport for
+ * the same data. Every step that shows real server content (profil, topic'ler, promptlar) now
+ * renders gray skeleton placeholders — never a bare spinner or an empty-looking form — while
+ * its status isn't yet "ready"/"error", and reveals the real fields with a short staggered
+ * fade-in (SkeletonBar/RevealField below) once it is. That reveal is a presentation animation
+ * over data that has already fully arrived from the server in one piece — lib/geo-providers.ts's
+ * provider.run() calls return one complete response, there is no token-level streaming from the
+ * LLM providers today — so "alanlar tek tek belirir" is implemented honestly as a client-side
+ * stagger of real values, never as placeholder/fake text standing in for a value that hasn't
+ * actually been computed yet.
  *
  * All calls (lib/brand-discovery.ts, lib/topic-generator.ts, lib/prompt-suggestions.ts's
  * fillAllSlots) are real — demo-mode fallbacks are clearly labeled, same convention as the
@@ -126,6 +139,26 @@ function TagEditor({ tags, onChange, placeholder }: { tags: string[]; onChange: 
           + Ekle
         </button>
       </div>
+    </div>
+  );
+}
+
+// Kart: Hazır olmayan içerik (skeleton + stream hissi) — a plain gray placeholder bar, used
+// everywhere a real field/row would go while its step's data hasn't arrived yet. Never a bare
+// spinner, never styled to look like it already contains (fake) text.
+function SkeletonBar({ width = "100%", height = "0.9rem", className = "" }: { width?: string; height?: string; className?: string }) {
+  return <div className={`rounded bg-muted animate-pulse ${className}`} style={{ width, height }} />;
+}
+
+// Wraps already-arrived, real content in a short staggered fade-in so a screen's fields feel
+// like they're appearing one by one, the moment they replace that same screen's skeleton —
+// never a substitute for the skeleton itself, and never applied to data that hasn't actually
+// been computed yet (see the Kart 3 doc-comment above for why this is presentation, not fake
+// streaming).
+function RevealField({ index, children }: { index: number; children: ReactNode }) {
+  return (
+    <div className="owz-field-in" style={{ animationDelay: `${index * 70}ms` }}>
+      {children}
     </div>
   );
 }
@@ -284,9 +317,9 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           data.session.crawlStatus === "error" ||
           data.session.promptsStatus === "ready" ||
           data.session.promptsStatus === "error";
-        if (!terminal) timer = setTimeout(poll, 1500);
+        if (!terminal) timer = setTimeout(poll, 1000);
       } catch {
-        if (!cancelled) timer = setTimeout(poll, 3000); // transient hiccup — keep polling
+        if (!cancelled) timer = setTimeout(poll, 2000); // transient hiccup — keep polling
       }
     }
     poll();
@@ -515,6 +548,10 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
 
   return (
     <div className="card space-y-4 border-accent/30">
+      <style>{`
+        .owz-field-in { animation: owz-field-in 260ms ease both; }
+        @keyframes owz-field-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
       <div className="flex items-center justify-between">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink/40">
           {["URL", "Marka profili", "Ürün & pazar", "Kitle", "Topic'ler", "Promptlar"].map((label, i) => (
@@ -607,49 +644,85 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </button>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="Marka adı" className={inputClass} />
-            <input value={brandDomain} onChange={(e) => setBrandDomain(e.target.value)} placeholder="Domain" className={inputClass} />
-          </div>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-            className={`${inputClass} font-mono`}
-          />
-          <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="Kategori" className={inputClass} />
-
-          <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Marka kimliği (sıfatlar)</h3>
-            <TagEditor tags={identityAdjectives} onChange={setIdentityAdjectives} placeholder="örn. güvenilir" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-ink/50">Önerilen rakipler</h3>
-              <button
-                type="button"
-                onClick={() => setCompetitorList((c) => [...c, { name: "", domain: "" }])}
-                className="text-xs text-accent hover:underline"
-              >
-                + Rakip ekle
-              </button>
-            </div>
-            {competitorsStatus === "running" && <p className="text-xs text-ink/40">Rakip önerileri hazırlanıyor…</p>}
-            {competitorsStatus === "error" && (
-              <p className="text-xs text-ink/40">Rakip önerisi başarısız oldu — aşağıya elle ekleyebilirsiniz.</p>
-            )}
-            <p className="text-xs text-warn/90">
-              ⚠️ Bu öneriler sayfa içeriğinden değil modelin genel sektör bilgisinden geliyor — yanlış olabilir (ör. bir
-              dijital pazarlama ajansı için ERP yazılımı önerebilir). Mutlaka gözden geçirin, gerekirse silin/düzeltin.
-            </p>
-            {competitorList.map((c, i) => (
-              <div key={i} className="grid grid-cols-2 gap-3">
-                <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={inputClass} />
-                <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip-domaini.com" className={inputClass} />
+          {profileStatus !== "ready" && profileStatus !== "error" ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <SkeletonBar height="2.6rem" />
+                <SkeletonBar height="2.6rem" />
               </div>
-            ))}
-          </div>
+              <SkeletonBar height="3.5rem" />
+              <SkeletonBar height="2.6rem" width="55%" />
+              <div className="space-y-1">
+                <SkeletonBar height="0.7rem" width="35%" />
+                <div className="flex gap-2">
+                  <SkeletonBar height="1.8rem" width="5rem" className="rounded-full" />
+                  <SkeletonBar height="1.8rem" width="6rem" className="rounded-full" />
+                  <SkeletonBar height="1.8rem" width="4.5rem" className="rounded-full" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <SkeletonBar height="0.7rem" width="40%" />
+                <SkeletonBar height="2.6rem" />
+                <SkeletonBar height="2.6rem" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <RevealField index={0}>
+                <div className="grid grid-cols-2 gap-3">
+                  <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="Marka adı" className={inputClass} />
+                  <input value={brandDomain} onChange={(e) => setBrandDomain(e.target.value)} placeholder="Domain" className={inputClass} />
+                </div>
+              </RevealField>
+              <RevealField index={1}>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                  className={`${inputClass} font-mono`}
+                />
+              </RevealField>
+              <RevealField index={2}>
+                <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="Kategori" className={inputClass} />
+              </RevealField>
+
+              <RevealField index={3}>
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-ink/50">Marka kimliği (sıfatlar)</h3>
+                  <TagEditor tags={identityAdjectives} onChange={setIdentityAdjectives} placeholder="örn. güvenilir" />
+                </div>
+              </RevealField>
+
+              <RevealField index={4}>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-ink/50">Önerilen rakipler</h3>
+                    <button
+                      type="button"
+                      onClick={() => setCompetitorList((c) => [...c, { name: "", domain: "" }])}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      + Rakip ekle
+                    </button>
+                  </div>
+                  {competitorsStatus === "running" && <p className="text-xs text-ink/40">Rakip önerileri hazırlanıyor…</p>}
+                  {competitorsStatus === "error" && (
+                    <p className="text-xs text-ink/40">Rakip önerisi başarısız oldu — aşağıya elle ekleyebilirsiniz.</p>
+                  )}
+                  <p className="text-xs text-warn/90">
+                    ⚠️ Bu öneriler sayfa içeriğinden değil modelin genel sektör bilgisinden geliyor — yanlış olabilir (ör. bir
+                    dijital pazarlama ajansı için ERP yazılımı önerebilir). Mutlaka gözden geçirin, gerekirse silin/düzeltin.
+                  </p>
+                  {competitorList.map((c, i) => (
+                    <div key={i} className="grid grid-cols-2 gap-3">
+                      <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={inputClass} />
+                      <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip-domaini.com" className={inputClass} />
+                    </div>
+                  ))}
+                </div>
+              </RevealField>
+            </>
+          )}
 
           <button
             type="button"
@@ -666,7 +739,16 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           <h2 className="font-bold text-sm">Ürünler ve hedef pazar</h2>
           <div className="space-y-1">
             <h3 className="text-xs font-semibold text-ink/50">Ürün/hizmet etiketleri</h3>
-            <TagEditor tags={productTags} onChange={setProductTags} placeholder="örn. SEO danışmanlığı" />
+            {profileStatus !== "ready" && profileStatus !== "error" ? (
+              <div className="flex gap-2">
+                <SkeletonBar height="1.8rem" width="6rem" className="rounded-full" />
+                <SkeletonBar height="1.8rem" width="7rem" className="rounded-full" />
+              </div>
+            ) : (
+              <RevealField index={0}>
+                <TagEditor tags={productTags} onChange={setProductTags} placeholder="örn. SEO danışmanlığı" />
+              </RevealField>
+            )}
           </div>
           <div className="space-y-1">
             <h3 className="text-xs font-semibold text-ink/50">Hedef pazar</h3>
@@ -761,28 +843,34 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             otomatik seçildi (iş önemi, markaya uygunluk ve talep skoruna göre) — isterseniz değiştirin.
           </p>
           {(topicsStatus === "running" || topicsStatus === "pending") && !topicResult && (
-            <p className="text-sm text-ink/40">Konu başlıkları üretiliyor…</p>
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <SkeletonBar key={i} height="1.9rem" width={`${5 + (i % 4)}rem`} className="rounded-full" />
+              ))}
+            </div>
           )}
           {topicsError && !topicResult && <p className="text-xs text-danger">{topicsError}</p>}
           {topicResult && (
-            <div className="flex flex-wrap gap-2">
-              {topicResult.candidates.map((t) => (
-                <button
-                  key={t.name}
-                  type="button"
-                  onClick={() => toggleTopic(t.name)}
-                  title={`${t.description} (${SOURCE_LABEL[t.source]}, skor ${t.score.toFixed(1)})`}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    selectedTopics.has(t.name)
-                      ? "bg-accent text-white border-accent"
-                      : "bg-muted border-border text-ink/60 hover:border-accent/50"
-                  }`}
-                >
-                  {t.name}
-                  <span className="ml-1 opacity-60">· {SOURCE_LABEL[t.source]}</span>
-                </button>
-              ))}
-            </div>
+            <RevealField index={0}>
+              <div className="flex flex-wrap gap-2">
+                {topicResult.candidates.map((t) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => toggleTopic(t.name)}
+                    title={`${t.description} (${SOURCE_LABEL[t.source]}, skor ${t.score.toFixed(1)})`}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      selectedTopics.has(t.name)
+                        ? "bg-accent text-white border-accent"
+                        : "bg-muted border-border text-ink/60 hover:border-accent/50"
+                    }`}
+                  >
+                    {t.name}
+                    <span className="ml-1 opacity-60">· {SOURCE_LABEL[t.source]}</span>
+                  </button>
+                ))}
+              </div>
+            </RevealField>
           )}
           <label className="flex items-start gap-2 text-xs text-ink/60 rounded-lg border border-border px-3 py-2">
             <input type="checkbox" checked={includeBrandedTopic} onChange={(e) => setIncludeBrandedTopic(e.target.checked)} className="mt-0.5" />
@@ -823,34 +911,46 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             promptun amacı (niyet/kalıp/persona) kod tarafından önceden planlandı; model sadece cümleyi yazdı.
           </p>
           {(promptsStatus === "running" || promptsStatus === "pending") && !prompts && (
-            <p className="text-sm text-ink/40">Promptlar hazırlanıyor…</p>
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-lg border border-border p-3 space-y-2">
+                  <SkeletonBar height="0.9rem" width="45%" />
+                  <SkeletonBar height="0.8rem" width="90%" />
+                  <SkeletonBar height="0.8rem" width="75%" />
+                </div>
+              ))}
+            </div>
           )}
           {promptsError && !prompts && <p className="text-xs text-danger">{promptsError}</p>}
-          <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
-            {promptsByTopic
-              .filter((g) => g.items.length > 0)
-              .map((g, gi) => (
-                <details key={g.topic} open={gi === 0} className="rounded-lg border border-border">
-                  <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold flex items-center justify-between">
-                    <span>{g.topic}</span>
-                    <span className="text-xs text-ink/40 font-normal">{g.items.filter((p) => checkedPrompts.has(p.i)).length}/{g.items.length}</span>
-                  </summary>
-                  <div className="space-y-1 px-2 pb-2">
-                    {g.items.map((p) => (
-                      <label key={p.i} className="flex items-start gap-2 text-sm rounded-lg hover:bg-muted px-2 py-1.5">
-                        <input type="checkbox" checked={checkedPrompts.has(p.i)} onChange={() => togglePrompt(p.i)} className="mt-0.5" />
-                        <span className="flex-1">
-                          {p.text}
-                          <span className="block text-[10px] text-ink/30 mt-0.5">
-                            {PERSONA_LABEL[p.persona]} · {p.intent} · {p.form}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </details>
-              ))}
-          </div>
+          {prompts && (
+            <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
+              {promptsByTopic
+                .filter((g) => g.items.length > 0)
+                .map((g, gi) => (
+                  <RevealField key={g.topic} index={gi}>
+                    <details open={gi === 0} className="rounded-lg border border-border">
+                      <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold flex items-center justify-between">
+                        <span>{g.topic}</span>
+                        <span className="text-xs text-ink/40 font-normal">{g.items.filter((p) => checkedPrompts.has(p.i)).length}/{g.items.length}</span>
+                      </summary>
+                      <div className="space-y-1 px-2 pb-2">
+                        {g.items.map((p) => (
+                          <label key={p.i} className="flex items-start gap-2 text-sm rounded-lg hover:bg-muted px-2 py-1.5">
+                            <input type="checkbox" checked={checkedPrompts.has(p.i)} onChange={() => togglePrompt(p.i)} className="mt-0.5" />
+                            <span className="flex-1">
+                              {p.text}
+                              <span className="block text-[10px] text-ink/30 mt-0.5">
+                                {PERSONA_LABEL[p.persona]} · {p.intent} · {p.form}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </details>
+                  </RevealField>
+                ))}
+            </div>
+          )}
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep("topics")} className="text-sm text-ink/50 hover:underline">
               ← Geri
