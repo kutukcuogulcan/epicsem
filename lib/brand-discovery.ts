@@ -74,7 +74,11 @@ export function domainFromUrl(url: string): string {
   }
 }
 
-function guessNameFromDomain(domain: string): string {
+/** Exported for app/api/onboarding/prefill/route.ts (Kart: LLM'siz otomatik doldurma) — the
+ * same last-resort "no page metadata available" brand-name guess the full AI profile step
+ * already falls back to here, reused as-is so the fast Step-1 guess and the slower Step-2 AI
+ * guess never silently disagree on what a bare domain's name should default to. */
+export function guessNameFromDomain(domain: string): string {
   const base = domain.split(".")[0];
   return base.charAt(0).toUpperCase() + base.slice(1);
 }

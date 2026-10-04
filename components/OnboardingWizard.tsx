@@ -165,6 +165,20 @@ function RevealField({ index, children }: { index: number; children: ReactNode }
 
 const EVEN_AUDIENCE: Record<PersonaKey, number> = { simple: 34, informed: 33, researcher: 33 };
 
+// Kart: LLM'siz otomatik doldurma — "Saat dilimi" seçeneklerinin tam IANA listesi. Modern
+// tarayıcılarda (ve Node 18+'ta) var olan Intl.supportedValuesOf ile dolduruluyor; eski bir
+// runtime'da bu yoksa liste boş kalır ve select tek seçenek olarak o an algılanan zamanı
+// gösterir (bkz. aşağıdaki "url" adımı) — asla uydurma bir liste üretilmez.
+const TIMEZONE_OPTIONS: string[] = (() => {
+  try {
+    const intlAny = Intl as unknown as { supportedValuesOf?: (key: string) => string[] };
+    if (typeof intlAny.supportedValuesOf === "function") return intlAny.supportedValuesOf("timeZone");
+  } catch {
+    // fall through
+  }
+  return [];
+})();
+
 export default function OnboardingWizard({ onComplete, onClose, running }: Props) {
   const [step, setStep] = useState<Step>("url");
 
@@ -172,6 +186,22 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   const [language, setLanguage] = useState<"tr" | "en">("tr");
   const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [anyDemoMode, setAnyDemoMode] = useState(false);
+
+  // Kart: LLM'siz otomatik doldurma — Step 1'in kendi, Kart 1'in ağır AI zincirinden bağımsız,
+  // LLM'siz hızlı tahmin akışı. timezone tamamen istemci taraflı (Intl API, hiç ağ yok) olduğu
+  // için lazy useState initializer'da hemen hesaplanır — kullanıcı URL'ye dokunmadan önce bile
+  // dolu gelir. prefilling/prefillWarning ise og:site_name/<title>/<html lang>/hreflang okuyan
+  // /api/onboarding/prefill çağrısının durumunu izler.
+  const [timezone, setTimezone] = useState<string>(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return "Europe/Istanbul";
+    }
+  });
+  const [prefilling, setPrefilling] = useState(false);
+  const [prefillWarning, setPrefillWarning] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
 
   const [brandName, setBrandName] = useState("");
   const [brandDomain, setBrandDomain] = useState("");
@@ -355,15 +385,45 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // Kart: Otomatik onboarding zinciri — fires on URL field BLUR, not on a button click. Guarded
-  // by urlStartedForRef so tabbing in and out of the field without changing it doesn't open a
-  // second session, and so a resumed session (sessionId already set from the URL query string
-  // on mount) never gets clobbered by an accidental re-fire.
+  // Kart: Otomatik onboarding zinciri + Kart: LLM'siz otomatik doldurma — fires on URL field
+  // BLUR, not on a button click. Guarded by urlStartedForRef so tabbing in and out of the
+  // field without changing it doesn't open a second session, and so a resumed session
+  // (sessionId already set from the URL query string on mount) never gets clobbered by an
+  // accidental re-fire. Two independent requests start at the exact same moment and never
+  // wait on each other: the heavy, LLM-driven chain (/api/onboarding/sessions, unchanged from
+  // Kart 1) and the light, LLM-free Step-1 field guess (/api/onboarding/prefill, new) — one
+  // slow+accurate, one fast+approximate, each filling in whatever it can as it finishes.
   async function handleUrlBlur() {
     const trimmed = url.trim();
     if (!trimmed || urlStartedForRef.current === trimmed || sessionId != null) return;
     urlStartedForRef.current = trimmed;
     setDiscoverError(null);
+    setPrefillWarning(null);
+    setCreatingSession(true);
+
+    setPrefilling(true);
+    fetch("/api/onboarding/prefill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: trimmed }),
+    })
+      .then((res) => (handleUnauthorized(res) ? null : res.json()))
+      .then((data) => {
+        if (!data) return;
+        if (data.brandNameGuess) setBrandName(data.brandNameGuess);
+        if (data.domain) setBrandDomain(data.domain);
+        if (data.countryGuess) setTargetMarket(data.countryGuess);
+        if (data.languageGuess) setLanguage(data.languageGuess);
+        if (data.reachable === false) {
+          setPrefillWarning(data.warning ?? "Site'ye ulaşılamadı — alanlar domain'den tahmin edildi, gözden geçirin.");
+        }
+      })
+      .catch(() => {
+        // Sessizce geç — bu sadece hızlı bir kolaylık tahmini; asıl doğru profil Step 2'de
+        // zaten Kart 1'in LLM'li zinciriyle geliyor, burada bir hata hiçbir şeyi bloklamamalı.
+      })
+      .finally(() => setPrefilling(false));
+
     try {
       const res = await fetch("/api/onboarding/sessions", {
         method: "POST",
@@ -379,12 +439,14 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       const next = new URL(window.location.href);
       next.searchParams.set("onboardingSession", String(data.sessionId));
       window.history.replaceState({}, "", next.toString());
-      // Advance immediately — nothing left to click. The profile screen shows its own
-      // loading state until the server-side chain actually fills each field in.
-      setStep("profile");
+      // Kart: LLM'siz otomatik doldurma — artık otomatik ilerlemiyoruz: kullanıcı Step 1'in
+      // kendi (hızlı, LLM'siz) tahminlerini gözden geçirip "İleri →"ye kendisi basıyor; Kart
+      // 1'in zinciri bu arada zaten arka planda çalışmaya başladı.
     } catch (err) {
       urlStartedForRef.current = null;
       setDiscoverError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
+    } finally {
+      setCreatingSession(false);
     }
   }
 
@@ -583,13 +645,16 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
 
       {step === "url" && (
         <div className="space-y-3">
-          <h2 className="font-bold text-sm">Markanızın URL&apos;ini girin</h2>
+          <h2 className="font-bold text-sm">Proje detaylarını ekleyin</h2>
           <p className="text-xs text-ink/50">
-            URL&apos;i yazıp başka bir alana geçin (Tab veya tıklayın) — taramayı, marka profilini, rakip önerilerini,
-            konu başlıklarını ve promptları hiçbir şeye basmanıza gerek kalmadan arka planda otomatik üretmeye
-            başlarız. Siz sadece gözden geçirip onaylarsınız.
+            Markanızın görünürlüğünü AI yanıtlarında izleyin. URL&apos;i yazıp başka bir alana geçin (Tab veya
+            tıklayın) — aşağıdaki alanlar saniyeler içinde kendiliğinden dolar, siz sadece gözden geçirip
+            düzeltirsiniz. Aynı anda arka planda taramayı, marka profilini, rakip önerilerini, konu başlıklarını ve
+            promptları da üretmeye başlarız (Kart 1) — hiçbir şeye basmanız gerekmez.
           </p>
-          <div className="flex gap-3">
+
+          <div className="space-y-1">
+            <h3 className="text-xs font-semibold text-ink/50">Marka URL&apos;si</h3>
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -605,12 +670,62 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               autoFocus
               className={inputClass}
             />
-            <select value={language} onChange={(e) => setLanguage(e.target.value as "tr" | "en")} className={`${inputClass} w-auto shrink-0`}>
-              <option value="tr">🇹🇷 Türkçe</option>
-              <option value="en">🇬🇧 English</option>
-            </select>
           </div>
           {discoverError && <p className="text-xs text-danger">{discoverError}</p>}
+          {prefillWarning && <p className="text-xs text-warn/90">⚠️ {prefillWarning}</p>}
+
+          {/* Kart: LLM'siz otomatik doldurma — og:site_name/<title>/TLD/<html lang>/hreflang
+              üzerinden, hiçbir model çağrısı yapmadan; Marka adı dışındakiler (Ülke/Dil/Saat
+              dilimi) her zaman makul bir varsayılanla başladığı için (Türkiye/tr/tarayıcı saat
+              dilimi) orada boş-görünen bir iskelete gerek yok — sadece gerçekten boş başlayan
+              Marka adı alanı, tahmin gelene kadar iskelet gösteriyor. */}
+          <div className="space-y-1">
+            <h3 className="text-xs font-semibold text-ink/50">Marka adı</h3>
+            {prefilling && !brandName ? (
+              <SkeletonBar height="2.6rem" />
+            ) : (
+              <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="Marka adı" className={inputClass} />
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <h3 className="text-xs font-semibold text-ink/50">Ülke</h3>
+              <input value={targetMarket} onChange={(e) => setTargetMarket(e.target.value)} placeholder="örn. Türkiye" className={inputClass} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xs font-semibold text-ink/50">Dil</h3>
+              <select value={language} onChange={(e) => setLanguage(e.target.value as "tr" | "en")} className={inputClass}>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="en">🇬🇧 English</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-xs font-semibold text-ink/50">Saat dilimi</h3>
+            {/* Intl.supportedValuesOf("timeZone") doesn't always include every value
+                resolvedOptions().timeZone can return (e.g. plain "UTC" on some systems) — the
+                detected zone is always added to the list if it's missing, so the select never
+                silently falls back to showing an unrelated first option instead of what was
+                actually detected. */}
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={inputClass}>
+              {(TIMEZONE_OPTIONS.includes(timezone) ? TIMEZONE_OPTIONS : [timezone, ...TIMEZONE_OPTIONS]).map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            disabled={!sessionId}
+            onClick={() => setStep("profile")}
+            className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {creatingSession ? "Taranıyor…" : "İleri →"}
+          </button>
         </div>
       )}
 
