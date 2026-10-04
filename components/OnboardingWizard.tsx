@@ -173,11 +173,25 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   const [topicsStatus, setTopicsStatus] = useState<StepStatus>("pending");
   const [promptsStatus, setPromptsStatus] = useState<StepStatus>("pending");
 
+  // Kart: Değişiklikte yeniden üretim (hash kontrolü) — whether the regenerate call is
+  // currently in flight, and the last error it hit (shown on the topics step, which still
+  // renders the previous, pre-edit content underneath — a failed update never blocks the
+  // user, it just means what they see may be stale).
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
+
   const urlStartedForRef = useRef<string | null>(null);
   // Guards against a later poll re-copying server data over fields the user has since edited
   // by hand — each step's data is copied into editable state exactly once, the first time
   // that step's status is seen as "ready".
   const appliedStepsRef = useRef<Set<string>>(new Set());
+  // Kart: Değişiklikte yeniden üretim — the exact (description, industry, productTags) the
+  // server's current topicResult/allPrompts were generated from. Set once when the server's
+  // own first topics pass lands (applySession, below) and again after every successful
+  // regenerate call — comparing against this (not against "did the user touch the form at
+  // all") is what makes an edit-then-revert-back-to-the-original-text a no-op, not a forced
+  // regen.
+  const lastSyncedProfileRef = useRef<{ description: string; industry: string; productTags: string[] } | null>(null);
   const hasStartedRunningRef = useRef(false);
   const runningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -219,6 +233,10 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       setProductTags(p.productTags ?? []);
       setAudience(p.personas ?? EVEN_AUDIENCE);
       if (p.demoMode) setAnyDemoMode(true);
+      // The server's topics/prompts steps (still pending at this exact moment, or already
+      // running) will use THIS snapshot — whatever the user types from here on is compared
+      // against it, not against some later, possibly-stale copy.
+      lastSyncedProfileRef.current = { description: p.description, industry: p.industry, productTags: p.productTags ?? [] };
     }
     if (s.profileStatus === "error") setDiscoverError(s.profileError ?? "Marka profili çıkarılamadı");
 
@@ -391,6 +409,74 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       else next.add(i);
       return next;
     });
+  }
+
+  // Kart: Değişiklikte yeniden üretim (hash kontrolü) — the ONLY place this wizard decides
+  // whether to re-run topic/prompt generation, triggered right when the user is about to see
+  // the topics step (the audience step's "İleri →"). Comparing locally first means "nothing
+  // changed" costs zero network round-trips (Adım 3 anında açılır); only an actual edit to
+  // description/industry/productTags reaches the server at all — identityAdjectives/brandName/
+  // competitors/audience are deliberately left out of this comparison (per the card, an
+  // adjective-only edit must never trigger a regen), even though they're still sent along as
+  // context for whichever regeneration a REAL trigger ends up running.
+  async function handleEnterTopics() {
+    const synced = lastSyncedProfileRef.current;
+    const unchanged =
+      synced != null &&
+      description === synced.description &&
+      industry === synced.industry &&
+      productTags.length === synced.productTags.length &&
+      productTags.every((p, i) => p === synced.productTags[i]);
+
+    // Topics not ready yet (first-time server generation still running) — nothing to diff
+    // against yet; just advance, the topics screen already shows its own loading state.
+    if (unchanged || topicsStatus !== "ready" || sessionId == null) {
+      setStep("topics");
+      return;
+    }
+
+    setRegenerateError(null);
+    setRegenerating(true);
+    try {
+      const res = await fetch(`/api/onboarding/sessions/${sessionId}/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, industry, productTags, brandName, brandDomain, identityAdjectives, competitors: competitorList, audience }),
+      });
+      if (handleUnauthorized(res)) return;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Güncellenemedi");
+
+      if (data.changed) {
+        const newTopics: TopicCandidate[] = data.topicsResult.candidates;
+        setTopicResult({ candidates: newTopics, autoSelected: data.topicsResult.autoSelected });
+        setSelectedTopics((prev) => {
+          if (data.mode === "full") {
+            // The whole topic list was replaced — any previous selection may point at
+            // names that no longer exist, so fall back to the server's fresh top-5 pick,
+            // same default the very first generation uses.
+            return new Set<string>(data.topicsResult.autoSelected);
+          }
+          // Partial: keep selections for topics that survived, drop ones that were
+          // removed (their product was deleted), add newly-generated ones pre-checked.
+          const validNames = new Set(newTopics.map((t) => t.name));
+          const next = new Set([...prev].filter((n) => validNames.has(n)));
+          (data.addedTopics ?? []).forEach((n: string) => next.add(n));
+          return next;
+        });
+        setAllPrompts(data.promptsResult.prompts ?? []);
+        setBrandedPrompts(data.promptsResult.brandedPrompts ?? []);
+        if (data.topicsResult.demoMode || data.promptsResult.demoMode) setAnyDemoMode(true);
+      }
+      lastSyncedProfileRef.current = { description, industry, productTags };
+    } catch (err) {
+      // Never block the user on a failed update — keep showing whatever topics/prompts are
+      // already in state (pre-edit, so still correct, just possibly stale) and surface why.
+      setRegenerateError(err instanceof Error ? err.message : "Güncellenemedi — önceki içerik gösteriliyor");
+    } finally {
+      setRegenerating(false);
+    }
+    setStep("topics");
   }
 
   function clearSessionParam() {
@@ -651,10 +737,11 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             </button>
             <button
               type="button"
-              onClick={() => setStep("topics")}
-              className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity"
+              disabled={regenerating}
+              onClick={handleEnterTopics}
+              className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              İleri →
+              {regenerating ? "Profil değişikliklerine göre güncelleniyor…" : "İleri →"}
             </button>
           </div>
         </div>
@@ -663,6 +750,12 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       {step === "topics" && (
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Hangi konu başlıklarını takip edelim?</h2>
+          {regenerateError && (
+            <div className="rounded-lg border border-warn/40 text-warn text-xs px-3 py-2">
+              Profil değişikliğine göre güncellenemedi: {regenerateError} — önceki konu başlıkları/promptlar
+              gösteriliyor.
+            </div>
+          )}
           <p className="text-xs text-ink/50">
             Markanız ve kategoriniz için üretilen {topicResult?.candidates.length ?? "…"} konu başlığından en iyi 5 tanesi
             otomatik seçildi (iş önemi, markaya uygunluk ve talep skoruna göre) — isterseniz değiştirin.

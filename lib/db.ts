@@ -387,6 +387,19 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_onboarding_sessions_user ON onboarding_sessions(user_id);
   `);
+
+  // Kart: Değişiklikte yeniden üretim (hash kontrolü) — the snapshot of the exact
+  // (description, industry) pair topics_result_json was last generated from (as a hash,
+  // never the raw text — nothing here needs to be human-readable) plus the exact
+  // productTags list used, so a later "about to show the topics step" check can tell
+  // apart "nothing changed" (show instantly), "description/industry changed" (full
+  // regen) and "only a product was added/removed" (surgical topic+prompt patch) without
+  // re-running any generation just to find out. Columns start NULL on existing rows
+  // (pre-dating this card) — null hash is simply never equal to a freshly computed one,
+  // so an old session in flight degrades to "treat as changed" on its first check here,
+  // never a crash.
+  await p.query(`ALTER TABLE onboarding_sessions ADD COLUMN IF NOT EXISTS topics_input_hash TEXT`);
+  await p.query(`ALTER TABLE onboarding_sessions ADD COLUMN IF NOT EXISTS topics_input_products_json TEXT NOT NULL DEFAULT '[]'`);
 }
 
 // ---------------- users & sessions (see lib/auth.ts for hashing/cookie logic) ----------------
@@ -1466,6 +1479,13 @@ export interface OnboardingSessionRow {
   promptsStatus: OnboardingStepStatus;
   promptsResult: any | null;
   promptsError: string | null;
+  /** Kart: Değişiklikte yeniden üretim — hash of the (description, industry) pair the
+   * current topicsResult/promptsResult were generated from, and the exact productTags
+   * list used, so a client about to enter the topics step can ask "did anything that
+   * matters change" without re-running generation. Null until topics have been
+   * generated at least once. */
+  topicsInputHash: string | null;
+  topicsInputProducts: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -1501,6 +1521,15 @@ function rowToOnboardingSession(row: any): OnboardingSessionRow {
     promptsStatus: row.prompts_status,
     promptsResult: parseJsonOrNull(row.prompts_result_json),
     promptsError: row.prompts_error,
+    topicsInputHash: row.topics_input_hash ?? null,
+    topicsInputProducts: (() => {
+      try {
+        const parsed = JSON.parse(row.topics_input_products_json ?? "[]");
+        return Array.isArray(parsed) ? parsed.filter((p: any) => typeof p === "string") : [];
+      } catch {
+        return [];
+      }
+    })(),
     createdAt: toIso(row.created_at),
     updatedAt: toIso(row.updated_at),
   };
@@ -1535,6 +1564,21 @@ export async function updateOnboardingStep(
   await exec(
     `UPDATE onboarding_sessions SET ${statusCol} = $1, ${resultCol} = $2, ${errorCol} = $3, updated_at = now() WHERE id = $4`,
     [patch.status, patch.result !== undefined ? JSON.stringify(patch.result) : null, patch.error ?? null, id]
+  );
+}
+
+/** Kart: Değişiklikte yeniden üretim — stamps the (description, industry) hash and the
+ * exact productTags list that topics_result_json/prompts_result_json were just generated
+ * from. Called right after a successful topics+prompts generation, both the very first
+ * time (lib/onboarding-engine.ts's runOnboardingChain) and on every later regenerate call
+ * (app/api/onboarding/sessions/[id]/regenerate/route.ts) — always together with
+ * updateOnboardingStep("topics", ...) so the snapshot and the result it describes never
+ * drift apart. */
+export async function setOnboardingTopicsInputSnapshot(id: number, hash: string, products: string[]): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `UPDATE onboarding_sessions SET topics_input_hash = $1, topics_input_products_json = $2, updated_at = now() WHERE id = $3`,
+    [hash, JSON.stringify(products), id]
   );
 }
 

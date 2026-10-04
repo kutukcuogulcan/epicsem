@@ -1,15 +1,17 @@
+import { createHash } from "crypto";
 import {
   failRemainingOnboardingSteps,
   getOnboardingSession,
+  setOnboardingTopicsInputSnapshot,
   updateOnboardingStep,
   type OnboardingStepName,
 } from "./db";
 import { runCrawlStep, runProfileStep, runCompetitorsStep, domainFromUrl, type BrandProfileResult, type DiscoveredCompetitor } from "./brand-discovery";
 import { normalizeUrl } from "./content-fetch";
-import { generateTopicsForBrand } from "./topic-generator";
-import { getSectorPack, matchSectorPack, renderTopicSeeds, PERSONA_ORDER } from "./sector-packs";
+import { generateTopicsForBrand, type TopicCandidate, type TopicGenerationResult } from "./topic-generator";
+import { matchSectorPack, renderTopicSeeds, PERSONA_ORDER, type PersonaKey } from "./sector-packs";
 import { planSlotsForTopics } from "./slot-planner";
-import { fillAllSlots, generateBrandedTopicPrompts } from "./prompt-suggestions";
+import { fillAllSlots, generateBrandedTopicPrompts, type SlotFilledPrompt } from "./prompt-suggestions";
 import { isDemoMode } from "./geo-providers";
 import { consumeQuota } from "./usage-guard";
 
@@ -30,6 +32,12 @@ import { consumeQuota } from "./usage-guard";
  * Her adımın durumu (pending/running/ready/error) onboarding_sessions satırında tutulur;
  * GET /api/onboarding/sessions/:id bu satırı okuyup döner — sayfa yenilense de wizard aynı
  * id'yi URL'den okuyup pollamaya devam eder, zincirin kendisi tamamen sunucu tarafında.
+ *
+ * Kart: Değişiklikte yeniden üretim (hash kontrolü) — adım 4+5'in asıl üretim mantığı artık
+ * aşağıdaki generateTopicsAndPrompts()'a taşındı, çünkü app/api/onboarding/sessions/[id]/
+ * regenerate/route.ts kullanıcı profili sonradan düzenlediğinde AYNI üretimi tekrar
+ * çalıştırabilmeli — iki ayrı (ve zamanla birbirinden sapabilecek) implementasyon yerine tek
+ * paylaşılan fonksiyon.
  */
 export async function runOnboardingChain(sessionId: number, userId: number): Promise<void> {
   const demo = isDemoMode();
@@ -99,86 +107,194 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
     return;
   }
 
-  // 4. Topic'ler (10) — kullanıcı seçimi beklemeden en iyi 10 aday otomatik kullanılır
-  // (lib/topic-generator.ts zaten skora göre top-10'a kırpıyor).
+  // 4+5. Topic'ler (10) + Promptlar (10×8) — bkz. generateTopicsAndPrompts() yukarıdaki not.
   await updateOnboardingStep(sessionId, "topics", { status: "running" });
-  let topicNames: string[] = [];
-  let topicDescriptions = new Map<string, string>();
-  try {
-    const sectorSeeds = renderTopicSeeds(matchSectorPack(profile.industry, profile.description), profile.industry);
-    const brandInput = {
-      name: profile.brand.name,
-      domain,
-      description: profile.description,
-      industry: profile.industry,
-      identityAdjectives: profile.identityAdjectives,
-      productTags: profile.productTags,
-    };
-    const topicResult = await generateTopicsForBrand(brandInput, country, language, sectorSeeds);
-    topicNames = topicResult.candidates.map((c) => c.name);
-    topicDescriptions = new Map(topicResult.candidates.map((c) => [c.name, c.description]));
-    await updateOnboardingStep(sessionId, "topics", { status: "ready", result: topicResult });
-    if (!demo && !topicResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Topic üretimi başarısız oldu";
-    await updateOnboardingStep(sessionId, "topics", { status: "error", error: msg });
-    await failRemainingOnboardingSteps(sessionId, "prompts", "Topic üretimi başarısız olduğu için devam edilemedi");
-    return;
-  }
-
-  // 5. Promptlar (10 topic × 8 slot = 80 prompt) — slot planı tamamen kod (lib/slot-planner.ts),
-  // LLM sadece her slotun cümlesini yazıyor (lib/prompt-suggestions.ts'teki fillAllSlots).
   await updateOnboardingStep(sessionId, "prompts", { status: "running" });
+  const genProfile: GenerationProfile = {
+    brand: { name: profile.brand.name, domain },
+    description: profile.description,
+    industry: profile.industry,
+    identityAdjectives: profile.identityAdjectives,
+    productTags: profile.productTags,
+    personas: profile.personas,
+    competitors,
+    country,
+    language,
+  };
   try {
-    const pack = matchSectorPack(profile.industry, profile.description);
-    const rawTotal = PERSONA_ORDER.reduce((sum, k) => sum + Math.max(0, profile.personas[k] || 0), 0);
-    const audience =
-      rawTotal > 0
-        ? (Object.fromEntries(PERSONA_ORDER.map((k) => [k, Math.max(0, profile.personas[k] || 0) / rawTotal])) as Record<(typeof PERSONA_ORDER)[number], number>)
-        : { simple: 1 / 3, informed: 1 / 3, researcher: 1 / 3 };
+    const result = await generateTopicsAndPrompts(genProfile);
+    const topicsResult = result.topicsResult;
+    await updateOnboardingStep(sessionId, "topics", { status: "ready", result: topicsResult });
+    await setOnboardingTopicsInputSnapshot(sessionId, computeTopicsInputHash(profile.description, profile.industry), profile.productTags);
+    if (!demo && !topicsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
 
-    const slots = planSlotsForTopics(topicNames, pack, audience, 8, profile.productTags);
-    const slotsByTopic = new Map<string, typeof slots>();
-    for (const slot of slots) {
-      const list = slotsByTopic.get(slot.topic) ?? [];
-      list.push(slot);
-      slotsByTopic.set(slot.topic, list);
-    }
-
-    const brandForPrompts = {
-      name: profile.brand.name,
-      domain,
-      description: profile.description,
-      industry: profile.industry,
-      productTags: profile.productTags,
-    };
-
-    const activeCompetitors = competitors.filter((c) => c.name && c.domain);
-    const { prompts, demoMode: fillDemoMode, model } = await fillAllSlots({
-      brand: brandForPrompts,
-      competitors: activeCompetitors,
-      slotsByTopic,
-      topicDescriptions,
-      pack,
-      language,
-      country,
-      limit: undefined,
-    });
-
-    // Branded-topic prompts ("X güvenilir mi?" etc.) are pure template text, no LLM call —
-    // generated here too so toggling "X Hakkında'yı da ekle" in the wizard is instant client-
-    // side filtering instead of a second round trip, consistent with "zaten üretilmiş olsun".
-    const brandedPrompts = generateBrandedTopicPrompts(brandForPrompts, activeCompetitors);
-
-    await updateOnboardingStep(sessionId, "prompts", {
-      status: "ready",
-      result: { prompts, brandedPrompts, demoMode: fillDemoMode, model, sectorPackId: pack.id },
-    });
-    if (!demo && !fillDemoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
+    await updateOnboardingStep(sessionId, "prompts", { status: "ready", result: result.promptsResult });
+    if (!demo && !result.promptsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Prompt üretimi başarısız oldu";
-    await updateOnboardingStep(sessionId, "prompts", { status: "error", error: msg });
+    // Topic üretimi başarısız olduysa prompts de üretilemez; topics zaten başarılıysa ve sadece
+    // prompts tarafı patladıysa (fillAllSlots içindeki bir hata) topics "ready" kalır, sadece
+    // prompts "error" olarak işaretlenir.
+    const msg = err instanceof Error ? err.message : "Üretim başarısız oldu";
+    const topicsStillPending = (await getOnboardingSession(userId, sessionId))?.topicsStatus !== "ready";
+    if (topicsStillPending) {
+      await updateOnboardingStep(sessionId, "topics", { status: "error", error: msg });
+      await failRemainingOnboardingSteps(sessionId, "prompts", "Topic üretimi başarısız olduğu için devam edilemedi");
+    } else {
+      await updateOnboardingStep(sessionId, "prompts", { status: "error", error: msg });
+    }
   }
 }
 
 export const ONBOARDING_STEP_ORDER: OnboardingStepName[] = ["crawl", "profile", "competitors", "topics", "prompts"];
+
+// ---------------------------------------------------------------------------------------
+// Kart: Değişiklikte yeniden üretim (hash kontrolü)
+// ---------------------------------------------------------------------------------------
+
+/**
+ * topics_result_json is only ever worth trusting as "still matches the brand profile" when
+ * nothing the topic-generation prompt actually reads (description, industry) has changed
+ * since it ran. identityAdjectives/brandName/competitors are deliberately NOT part of this
+ * hash — the card is explicit that an adjective edit alone must never trigger regeneration.
+ * productTags is tracked separately as a list (topics_input_products_json), not folded into
+ * this hash, because it needs add/remove DIFFING rather than a plain changed/unchanged flag
+ * — see app/api/onboarding/sessions/[id]/regenerate/route.ts, which is the only caller that
+ * compares this hash against a freshly-edited profile.
+ */
+export function computeTopicsInputHash(description: string, industry: string): string {
+  const normalized = `${description.trim().toLowerCase()}\u0000${industry.trim().toLowerCase()}`;
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+export interface GenerationProfile {
+  brand: { name: string; domain: string };
+  description: string;
+  industry: string;
+  identityAdjectives: string[];
+  productTags: string[];
+  /** Raw (not-necessarily-normalized) shares, same shape as BrandProfileResult.personas. */
+  personas: Record<PersonaKey, number>;
+  competitors: DiscoveredCompetitor[];
+  country: string;
+  language: "tr" | "en";
+}
+
+function normalizedAudience(personas: Record<PersonaKey, number>): Record<PersonaKey, number> {
+  const rawTotal = PERSONA_ORDER.reduce((sum, k) => sum + Math.max(0, personas[k] || 0), 0);
+  if (rawTotal <= 0) return { simple: 1 / 3, informed: 1 / 3, researcher: 1 / 3 };
+  return Object.fromEntries(
+    PERSONA_ORDER.map((k) => [k, Math.max(0, personas[k] || 0) / rawTotal])
+  ) as Record<PersonaKey, number>;
+}
+
+/**
+ * Topic'ler (10) + Promptlar (10×8) — runOnboardingChain'in adım 4/5'i, artık burada: hem ilk
+ * çalıştırma hem de description/industry değiştiğinde yapılan TAM yeniden üretim
+ * (app/api/onboarding/sessions/[id]/regenerate/route.ts) aynı bu fonksiyonu çağırır, böylece
+ * ikisi arasında davranış asla sapmaz.
+ */
+export async function generateTopicsAndPrompts(
+  profile: GenerationProfile
+): Promise<{
+  topicsResult: TopicGenerationResult;
+  promptsResult: { prompts: SlotFilledPrompt[]; brandedPrompts: SlotFilledPrompt[]; demoMode: boolean; model: string; sectorPackId: string };
+}> {
+  const pack = matchSectorPack(profile.industry, profile.description);
+  const sectorSeeds = renderTopicSeeds(pack, profile.industry);
+  const brandInput = {
+    name: profile.brand.name,
+    domain: profile.brand.domain,
+    description: profile.description,
+    industry: profile.industry,
+    identityAdjectives: profile.identityAdjectives,
+    productTags: profile.productTags,
+  };
+  const topicsResult = await generateTopicsForBrand(brandInput, profile.country, profile.language, sectorSeeds);
+  const topicNames = topicsResult.candidates.map((c) => c.name);
+  const topicDescriptions = new Map(topicsResult.candidates.map((c) => [c.name, c.description]));
+
+  const audience = normalizedAudience(profile.personas);
+  const slots = planSlotsForTopics(topicNames, pack, audience, 8, profile.productTags);
+  const slotsByTopic = new Map<string, typeof slots>();
+  for (const slot of slots) {
+    const list = slotsByTopic.get(slot.topic) ?? [];
+    list.push(slot);
+    slotsByTopic.set(slot.topic, list);
+  }
+
+  const brandForPrompts = {
+    name: profile.brand.name,
+    domain: profile.brand.domain,
+    description: profile.description,
+    industry: profile.industry,
+    productTags: profile.productTags,
+  };
+  const activeCompetitors = profile.competitors.filter((c) => c.name && c.domain);
+  const { prompts, demoMode: fillDemoMode, model } = await fillAllSlots({
+    brand: brandForPrompts,
+    competitors: activeCompetitors,
+    slotsByTopic,
+    topicDescriptions,
+    pack,
+    language: profile.language,
+    country: profile.country,
+    limit: undefined,
+  });
+  const brandedPrompts = generateBrandedTopicPrompts(brandForPrompts, activeCompetitors);
+
+  return {
+    topicsResult,
+    promptsResult: { prompts, brandedPrompts, demoMode: fillDemoMode, model, sectorPackId: pack.id },
+  };
+}
+
+/** Kart: Değişiklikte yeniden üretim — "bir ürün eklendiyse → sadece o ürün için 1 topic ve
+ * promptları üretilir". Reuses generateTopicsForBrand (no new prompt to write/validate)
+ * scoped to just the new product so the model's candidate pool is biased toward it, then
+ * keeps whichever candidate it tagged source:"product" (falling back to its top-scored
+ * candidate if none came back that way — demo mode in particular never tags a source
+ * meaningfully, see lib/topic-generator.ts's demoCandidates). Plans+fills exactly 8 slots for
+ * that one topic, same as every other topic gets. */
+export async function generateTopicForProduct(
+  profile: GenerationProfile,
+  product: string
+): Promise<{ topic: TopicCandidate; prompts: SlotFilledPrompt[]; demoMode: boolean }> {
+  const pack = matchSectorPack(profile.industry, profile.description);
+  const brandInput = {
+    name: profile.brand.name,
+    domain: profile.brand.domain,
+    description: profile.description,
+    industry: profile.industry,
+    identityAdjectives: profile.identityAdjectives,
+    productTags: [product],
+  };
+  const scoped = await generateTopicsForBrand(brandInput, profile.country, profile.language, []);
+  const topic = scoped.candidates.find((c) => c.source === "product") ?? scoped.candidates[0];
+  if (!topic) throw new Error(`"${product}" için topic üretilemedi`);
+  // The scoped call above only ever saw this one product — make sure the topic is actually
+  // linked to it even if the model's own linked_products list came back empty/off.
+  if (!topic.linkedProducts.includes(product)) topic.linkedProducts = [...topic.linkedProducts, product];
+
+  const audience = normalizedAudience(profile.personas);
+  const slots = planSlotsForTopics([topic.name], pack, audience, 8, profile.productTags);
+  const brandForPrompts = {
+    name: profile.brand.name,
+    domain: profile.brand.domain,
+    description: profile.description,
+    industry: profile.industry,
+    productTags: profile.productTags,
+  };
+  const activeCompetitors = profile.competitors.filter((c) => c.name && c.domain);
+  const { prompts, demoMode } = await fillAllSlots({
+    brand: brandForPrompts,
+    competitors: activeCompetitors,
+    slotsByTopic: new Map([[topic.name, slots]]),
+    topicDescriptions: new Map([[topic.name, topic.description]]),
+    pack,
+    language: profile.language,
+    country: profile.country,
+    limit: undefined,
+  });
+
+  return { topic, prompts, demoMode: scoped.demoMode || demoMode };
+}
