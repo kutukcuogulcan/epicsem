@@ -9,6 +9,7 @@ import {
   type OnboardingStepName,
 } from "./db";
 import { runCrawlStep, runProfileStep, runCompetitorsStep, domainFromUrl, type BrandProfileResult, type DiscoveredCompetitor } from "./brand-discovery";
+import type { SiteCrawlResult } from "./site-crawler";
 import { normalizeUrl } from "./content-fetch";
 import { generateTopicsForBrand, type TopicCandidate, type TopicGenerationResult } from "./topic-generator";
 import { matchSectorPack, renderTopicSeeds, PERSONA_ORDER, type PersonaKey } from "./sector-packs";
@@ -72,6 +73,13 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
   // davranışıyla eşleşiyor — demo modda ağ erişimi yavaş/engelli olsa bile zincir hep çalışır.
   await updateOnboardingStep(sessionId, "crawl", { status: "running" });
   let page: { url: string; title: string | null; metaDescription: string | null; bodyText: string };
+  // Kart: Hızlı ve kapsamlı tarama — demo modda hâlâ sıfır ağ isteği atılır (siteCrawl undefined
+  // kalır); gerçek modda runCrawlStep artık tek sayfa değil, tam çok-sayfalı bir tarama
+  // (lib/site-crawler.ts) döner — siteCrawl, aşağıdaki profil/rakip adımlarına ve crawl
+  // sonucunun kendisine taşınır ki hem LLM daha zengin bir metinle beslensin hem de (ileride
+  // gösterilmek istenirse) hangi sayfaların tarandığı/hangi yöntemle (fetch/jina-reader)
+  // okunduğu session satırında saklanmış olsun.
+  let siteCrawl: SiteCrawlResult | undefined;
   if (demo) {
     page = { url: normalizeUrl(url), title: null, metaDescription: null, bodyText: "" };
     await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: { domain, page, demoMode: true } });
@@ -82,7 +90,8 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
       // reused rather than reassigned.
       const crawl = await runCrawlStep(url);
       page = crawl.page;
-      await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: { domain, page } });
+      siteCrawl = crawl.siteCrawl;
+      await updateOnboardingStep(sessionId, "crawl", { status: "ready", result: { domain, page, siteCrawl } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Tarama başarısız oldu — site erişilemiyor olabilir";
       await updateOnboardingStep(sessionId, "crawl", { status: "error", error: msg });
@@ -91,14 +100,14 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
     }
   }
 
-  // 2+3. Marka profili ‖ Rakipler — aynı sayfaya bakan iki bağımsız LLM çağrısı, Promise.all
+  // 2+3. Marka profili ‖ Rakipler — aynı taramaya bakan iki bağımsız LLM çağrısı, Promise.all
   // ile gerçekten paralel (biri diğerinin içine gömülü değil).
   await updateOnboardingStep(sessionId, "profile", { status: "running" });
   await updateOnboardingStep(sessionId, "competitors", { status: "running" });
 
   const [profileSettled, competitorsSettled] = await Promise.allSettled([
-    runProfileStep(page, domain, language),
-    runCompetitorsStep(page, domain, language),
+    runProfileStep(page, domain, language, siteCrawl),
+    runCompetitorsStep(page, domain, language, siteCrawl),
   ]);
 
   let profile: BrandProfileResult | null = null;
@@ -161,7 +170,7 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
     // düşürmemeli, sadece bir sonraki girişte tekrar önbelleksiz çalışılmasına yol açar.
     if (competitorsSettled.status === "fulfilled") {
       await setOnboardingDomainCache(domain, {
-        crawlResult: demo ? { domain, page, demoMode: true } : { domain, page },
+        crawlResult: demo ? { domain, page, demoMode: true } : { domain, page, siteCrawl },
         profileResult: profile,
         competitorsResult: competitorsSettled.value,
         topicsResult,

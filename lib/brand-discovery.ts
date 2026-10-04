@@ -1,4 +1,5 @@
 import { fetchPageSummary, normalizeUrl } from "@/lib/content-fetch";
+import { crawlSite, combinedCrawlText, type SiteCrawlResult } from "@/lib/site-crawler";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 import { PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
@@ -175,26 +176,48 @@ export interface CompetitorsResult {
   model: string;
 }
 
-/** Kart step "Tarama" — just the real page fetch, split out of discoverBrandFromUrl so it can
- * be its own tracked job. Throws on fetch failure (dead site, blocked bot, timeout); the caller
- * (lib/onboarding-engine.ts) is responsible for marking the step 'error' and short-circuiting
- * the rest of the chain, since nothing downstream can run without a real page to ground on. */
-export async function runCrawlStep(rawUrl: string): Promise<{ page: Awaited<ReturnType<typeof fetchPageSummary>>; domain: string }> {
+/** Kart step "Tarama" — split out of discoverBrandFromUrl so it can be its own tracked job.
+ *
+ * Kart: Hızlı ve kapsamlı tarama — now runs the full multi-page crawl (lib/site-crawler.ts's
+ * crawlSite: home + sitemap/robots/llms.txt + up to 5 critical pages, in parallel, with a
+ * JS/Cloudflare fallback renderer) instead of fetching only the home page. `page` is still
+ * returned in its original single-object shape (home page's title/metaDescription/bodyText) so
+ * existing callers/storage (onboarding_sessions.crawl_result_json) don't need a shape change;
+ * `siteCrawl` carries the full multi-page result for callers that want the richer grounding
+ * (runProfileStep/runCompetitorsStep below). Throws only if the home page itself can't be
+ * reached at all — a single critical page failing doesn't fail the whole crawl, since
+ * Promise.allSettled inside crawlSite already tolerates that.
+ */
+export async function runCrawlStep(rawUrl: string): Promise<{ page: Awaited<ReturnType<typeof fetchPageSummary>>; domain: string; siteCrawl: SiteCrawlResult }> {
   const url = normalizeUrl(rawUrl);
   const domain = domainFromUrl(url);
-  const page = await fetchPageSummary(url);
-  return { page, domain };
+  const siteCrawl = await crawlSite(url);
+  const home = siteCrawl.pages[0];
+  if (home.fetchedVia === "failed" && !home.bodyText) {
+    throw new Error(home.error ?? `${url} alınamadı`);
+  }
+  const page = { url: home.url, title: home.title, metaDescription: home.metaDescription, bodyText: home.bodyText };
+  return { page, domain, siteCrawl };
 }
 
-function buildProfilePrompt(page: { url: string; title: string | null; metaDescription: string | null; bodyText: string }, language: "tr" | "en"): string {
+function buildProfilePrompt(
+  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
+  language: "tr" | "en",
+  multiPageText?: string
+): string {
   const lang = language === "en" ? "English" : "Turkish";
+  // Kart: Hızlı ve kapsamlı tarama — multiPageText (lib/site-crawler.ts's combinedCrawlText)
+  // already includes the home page itself (with its URL/title/meta/OG/JSON-LD) plus up to 5
+  // critical pages, so it fully replaces the old single-page "Visible body text" line when
+  // present. Falls back to just the home page's own fields when a caller doesn't have a full
+  // site crawl (keeps this function usable on its own, e.g. from a test or a future caller).
+  const contentSection = multiPageText && multiPageText.trim()
+    ? [`Real, just-fetched page content (home page + up to 5 crawled critical pages):`, multiPageText]
+    : [`URL: ${page.url}`, `Page <title>: ${page.title ?? "(none found)"}`, `Meta description: ${page.metaDescription ?? "(none found)"}`, `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`];
   return [
-    `You are analyzing a real, just-fetched web page to bootstrap AI-visibility (GEO) tracking setup — the same first step a tool like Peec AI performs when a user pastes their homepage URL.`,
+    `You are analyzing real, just-fetched web pages to bootstrap AI-visibility (GEO) tracking setup — the same first step a tool like Peec AI performs when a user pastes their homepage URL.`,
     ``,
-    `URL: ${page.url}`,
-    `Page <title>: ${page.title ?? "(none found)"}`,
-    `Meta description: ${page.metaDescription ?? "(none found)"}`,
-    `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`,
+    ...contentSection,
     ``,
     `From ONLY the real content above, extract (write every text field in ${lang}):`,
     `- "brandName": the brand/company name as it actually appears on the page (never invent one).`,
@@ -209,15 +232,19 @@ function buildProfilePrompt(page: { url: string; title: string | null; metaDescr
   ].join("\n");
 }
 
-function buildCompetitorsPrompt(page: { url: string; title: string | null; metaDescription: string | null; bodyText: string }, language: "tr" | "en"): string {
+function buildCompetitorsPrompt(
+  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
+  language: "tr" | "en",
+  multiPageText?: string
+): string {
   const lang = language === "en" ? "English" : "Turkish";
+  const contentSection = multiPageText && multiPageText.trim()
+    ? [`Real, just-fetched page content (home page + up to 5 crawled critical pages):`, multiPageText]
+    : [`URL: ${page.url}`, `Page <title>: ${page.title ?? "(none found)"}`, `Meta description: ${page.metaDescription ?? "(none found)"}`, `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`];
   return [
-    `You are looking at a real, just-fetched web page to suggest competitors for AI-visibility (GEO) tracking setup.`,
+    `You are looking at real, just-fetched web pages to suggest competitors for AI-visibility (GEO) tracking setup.`,
     ``,
-    `URL: ${page.url}`,
-    `Page <title>: ${page.title ?? "(none found)"}`,
-    `Meta description: ${page.metaDescription ?? "(none found)"}`,
-    `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`,
+    ...contentSection,
     ``,
     `First silently work out what specific market/industry this brand competes in from the real content above (be literal — e.g. "digital marketing agency", not a generic adjacent category). Then suggest 2-4 real, well-known companies that compete in that SAME specific industry — this is general market knowledge, not something read off the page, so double-check each one actually operates in the same business (e.g. an ERP software vendor is NOT a competitor to a marketing agency). Write any text in ${lang}; for each, include "domain" only if you're confident of it, otherwise use an empty string.`,
     ``,
@@ -245,12 +272,14 @@ function demoProfileResult(domain: string): BrandProfileResult {
 export async function runProfileStep(
   page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
   domain: string,
-  language: "tr" | "en" = "tr"
+  language: "tr" | "en" = "tr",
+  siteCrawl?: SiteCrawlResult
 ): Promise<BrandProfileResult> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return demoProfileResult(domain);
 
-  const { text, model } = await provider.run(buildProfilePrompt(page, language));
+  const multiPageText = siteCrawl ? combinedCrawlText(siteCrawl) : undefined;
+  const { text, model } = await provider.run(buildProfilePrompt(page, language, multiPageText));
   const parsed = extractJsonObject(text);
 
   const identityAdjectives: string[] = Array.isArray(parsed.identityAdjectives)
@@ -281,12 +310,14 @@ export async function runProfileStep(
 export async function runCompetitorsStep(
   page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
   domain: string,
-  language: "tr" | "en" = "tr"
+  language: "tr" | "en" = "tr",
+  siteCrawl?: SiteCrawlResult
 ): Promise<CompetitorsResult> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return { competitors: [{ name: "[DEMO DATA]", domain: "" }], demoMode: true, model: "demo (no API key configured)" };
 
-  const { text, model } = await provider.run(buildCompetitorsPrompt(page, language));
+  const multiPageText = siteCrawl ? combinedCrawlText(siteCrawl) : undefined;
+  const { text, model } = await provider.run(buildCompetitorsPrompt(page, language, multiPageText));
   const parsed = extractJsonObject(text);
 
   const competitors: DiscoveredCompetitor[] = Array.isArray(parsed.competitors)
