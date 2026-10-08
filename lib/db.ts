@@ -271,6 +271,14 @@ async function initSchema(): Promise<void> {
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ`);
   await p.query(`ALTER TABLE gap_runs ADD COLUMN IF NOT EXISTS content_briefs_json TEXT NOT NULL DEFAULT '[]'`);
 
+  // Billing (Stripe) — additive. users.plan stays the single source of truth for limits;
+  // these columns just let the webhook map a Stripe customer/subscription back to a user.
+  await p.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`);
+  await p.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`);
+  await p.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status TEXT`);
+  await p.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ`);
+  await p.query(`CREATE INDEX IF NOT EXISTS users_stripe_customer_idx ON users (stripe_customer_id)`);
+
   // Campaign mode — "set it and forget it" content generation, the Arvow-style piece
   // still missing after Overview + real cron monitoring. Deliberately narrower than
   // Arvow's own autoblog though: a campaign never invents a topic. Each run pulls the
@@ -1197,6 +1205,60 @@ export async function incrementUsage(userId: number, metric: string, amount: num
      ON CONFLICT (user_id, period, metric) DO UPDATE SET count = usage_counters.count + excluded.count, updated_at = now()`,
     [userId, period, metric, amount]
   );
+}
+
+// ---------------- billing (Stripe) ----------------
+
+export interface BillingInfo {
+  plan: string;
+  email: string;
+  stripeCustomerId: string | null;
+  subscriptionStatus: string | null;
+  currentPeriodEnd: string | null;
+}
+
+export async function getBillingInfo(userId: number): Promise<BillingInfo | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT plan, email, stripe_customer_id, subscription_status, current_period_end FROM users WHERE id = $1`,
+    [userId]
+  );
+  if (!row) return null;
+  return {
+    plan: row.plan ?? "free",
+    email: row.email,
+    stripeCustomerId: row.stripe_customer_id ?? null,
+    subscriptionStatus: row.subscription_status ?? null,
+    currentPeriodEnd: row.current_period_end ? new Date(row.current_period_end).toISOString() : null,
+  };
+}
+
+export async function setStripeCustomerId(userId: number, customerId: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE users SET stripe_customer_id = $2 WHERE id = $1`, [userId, customerId]);
+}
+
+/**
+ * Applied by the webhook. Matches on stripe_customer_id first, then falls back to the
+ * user id carried in Stripe metadata (first checkout, before the id was stored).
+ */
+export async function applySubscriptionState(opts: {
+  customerId: string;
+  userId?: number | null;
+  plan: string;
+  subscriptionId: string | null;
+  status: string | null;
+  currentPeriodEnd: Date | null;
+}): Promise<number> {
+  await ensureSchema();
+  const res = await getPool().query(
+    `UPDATE users
+        SET plan = $3, stripe_subscription_id = $4, subscription_status = $5, current_period_end = $6,
+            stripe_customer_id = COALESCE(stripe_customer_id, $1)
+      WHERE stripe_customer_id = $1 OR ($2::int IS NOT NULL AND id = $2::int)`,
+    [opts.customerId, opts.userId ?? null, opts.plan, opts.subscriptionId, opts.status, opts.currentPeriodEnd]
+  );
+  return res.rowCount ?? 0;
 }
 
 // ---------------- campaigns (automatic, grounded content generation) ----------------

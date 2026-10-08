@@ -29,6 +29,13 @@ const TOOLS = [
   { href: "/prompts", label: "Claude Code Prompts", icon: "prompts" },
 ];
 
+const QUICK_ACTIONS = [
+  { href: "/audit", icon: "audit", title: "Siteyi denetle", body: "SEO + AXO taraması, hazır düzeltmelerle" },
+  { href: "/geo", icon: "geo", title: "GEO testi yap", body: "Markan AI cevaplarında görünüyor mu?" },
+  { href: "/article-writer", icon: "article", title: "Makale yaz", body: "AI'ın alıntılayacağı biçimde içerik" },
+  { href: "/monitor", icon: "monitor", title: "Sayfa izle", body: "AI crawler engellenirse anında haber al" },
+];
+
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -43,6 +50,25 @@ export default async function DashboardPage() {
         title="Panel"
         body="Tüm araçların özeti — bu ay ne çalıştırıldı, ne üretildi, ne bekliyor. Her sayı, bu hesaba gerçekten kayıtlı satırların COUNT(*)'ı; tahmini veya örnek bir gösterge değil."
       />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {QUICK_ACTIONS.map((a) => (
+          <Link
+            key={a.href}
+            href={a.href}
+            className="card group flex flex-col gap-3 hover:border-accent/50 transition-colors"
+          >
+            <span className="h-10 w-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
+              {TOOL_ICONS[a.icon]}
+            </span>
+            <div>
+              <div className="font-bold">{a.title}</div>
+              <p className="text-xs text-ink/50 mt-1">{a.body}</p>
+            </div>
+            <span className="text-xs font-bold text-accent mt-auto">Başla →</span>
+          </Link>
+        ))}
+      </div>
 
       {summary.activeAlerts > 0 && (
         <Link

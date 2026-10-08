@@ -62,8 +62,12 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
       </nav>
 
       <div className="border-t border-border px-4 py-3 space-y-2 shrink-0">
-        <Link href="/pricing" className="text-xs text-ink/50 hover:text-accent block">
-          Fiyatlandırma
+        <Link
+          href="/billing"
+          onClick={() => setOpen(false)}
+          className={`${linkClass(isActive("/billing"))} text-xs`}
+        >
+          Plan ve faturalandırma
         </Link>
         {isDemoFallback ? (
           <div className="text-xs">

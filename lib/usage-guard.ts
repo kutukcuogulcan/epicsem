@@ -36,5 +36,5 @@ const METRIC_LABEL: Record<UsageMetric, string> = {
 
 export function quotaExceededMessage(metric: UsageMetric, quota: QuotaCheck, requested: number): string {
   const label = METRIC_LABEL[metric] ?? metric;
-  return `Aylık kullanım limitine ulaşıldı: ${quota.used}/${quota.limit} ${label} (bu işlem ${requested} daha gerektiriyor). Kota her ayın başında (UTC) sıfırlanır.`;
+  return `Aylık kullanım limitine ulaşıldı: ${quota.used}/${quota.limit} ${label} (bu işlem ${requested} daha gerektiriyor). Kota her ayın başında (UTC) sıfırlanır — daha yüksek limit için planınızı yükseltebilirsiniz.`;
 }

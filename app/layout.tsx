@@ -18,6 +18,8 @@ import { headers } from "next/headers";
 import Nav from "@/components/Nav";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import AppTopBar from "@/components/AppTopBar";
+import QuotaWatcher from "@/components/QuotaWatcher";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 // Organization + WebSite JSON-LD, site-wide. Deliberately minimal and honest — only
@@ -78,8 +80,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="min-h-screen flex flex-col md:flex-row">
             <Sidebar />
             <main className="flex-1 min-w-0">
-              <div className="mx-auto max-w-6xl px-4 py-8">{children}</div>
+              <AppTopBar />
+              <div className="mx-auto max-w-6xl px-4 md:px-8 py-8">{children}</div>
             </main>
+            <QuotaWatcher />
           </div>
         ) : (
           <div className="min-h-screen flex flex-col">

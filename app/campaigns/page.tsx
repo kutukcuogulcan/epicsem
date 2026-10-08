@@ -5,6 +5,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
+import EmptyState from "@/components/EmptyState";
 
 const SCENARIO_STEPS = [
   {
@@ -291,13 +292,12 @@ export default function CampaignsPage() {
       )}
 
       {campaigns && campaigns.length === 0 && (
-        <div className="card space-y-2">
-          <div className="text-sm font-medium">Henüz kampanya kurulmadı</div>
-          <p className="text-xs text-ink/50">
-            Önce bir domain için Gap Analysis çalıştır, sonra yukarıdan aynı domain için bir kampanya kur —
-            oradaki gerçek content brief'lerden otomatik taslak üretmeye başlar.
-          </p>
-        </div>
+        <EmptyState
+          title="Henüz kampanya kurulmadı"
+          body="Önce bir domain için Gap Analysis çalıştır, sonra yukarıdan aynı domain için bir kampanya kur — oradaki gerçek content brief'lerden otomatik taslak üretmeye başlar."
+          actionLabel="Gap Analysis'e git"
+          actionHref="/gap"
+        />
       )}
 
       <ExampleScenario heading="Bir ajans 3 müşteri için kampanya kurup unutuyor" steps={SCENARIO_STEPS} />
