@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { PERSONA_DESCRIPTION, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
+import { TARGET_MARKET_COUNTRIES, countryCodeFromName, countryNameFromCode } from "@/lib/country-map";
+
+// react-simple-maps + world-atlas (bkz. WorldMapPicker'ın kendi doc-comment'i) sadece "market"
+// adımına ulaşıldığında gerekiyor — wizard'ın ilk yüklemesini (Adım 1: URL) şişirmemek için
+// ssr:false ile client-only ve lazy olarak yükleniyor; haritanın kendisi SSR'a ihtiyaç duyan
+// bir şey yapmıyor zaten (düz SVG).
+const WorldMapPicker = dynamic(() => import("@/components/WorldMapPicker"), { ssr: false });
 
 /**
  * URL-first onboarding wizard for /geo — mirrors Peec AI's onboarding flow, verified by the
@@ -35,12 +43,18 @@ import { PERSONA_DESCRIPTION, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } fr
  * fillAllSlots) are real — demo-mode fallbacks are clearly labeled, same convention as the
  * rest of the app.
  *
- * Deliberately NOT replicated from the reference flow: a literal map widget for "target
- * market" (a free-text field does the same job without a fake-looking pin on an unreal map),
- * a timezone selector (no feature in this app does anything with it, and adding an inert
- * control would be exactly the kind of fake affordance the app's no-fabrication principle
- * argues against), and the final "choose your plan" paywall screen (Epicsem has no billing
- * system yet — see lib/plans.ts).
+ * Kart 8 — Adım 2 "Marka profilini doğrula": hedef pazarlar artık serbest metin değil,
+ * components/WorldMapPicker.tsx'in çizdiği gerçek bir dünya haritası (world-atlas/Natural
+ * Earth verisi) + lib/country-map.ts'teki sabit ~40 ülkelik kod listesinden seçilen bir dizi
+ * (çoklu seçim) — "harita ve ülke seçici" kart metnine birebir karşılık geliyor. Kitle
+ * dağılımındaki 3 persona artık tek tek açılıp kapatılabiliyor (bkz. personaEnabled state'i,
+ * "audience" adımı altında); kapatılan bir personanın payı 0'a sabitlenir ve "Eşit böl" sadece
+ * açık olan personalar arasında dağıtır — toplamın %100 olması şartı (ve bu şartın promptları
+ * üreten lib/slot-planner.ts'e nasıl aktarıldığı) değişmedi.
+ *
+ * Deliberately NOT replicated from the reference flow: a timezone selector doing anything
+ * beyond storing the detected value (no feature in this app reads it yet), and the final
+ * "choose your plan" paywall screen (Epicsem has no billing system yet — see lib/plans.ts).
  *
  * Prompts for all 10 topics (× 8 slots) are generated server-side up front, so the topics
  * step's topic toggle and the "X Hakkında" branded-topic checkbox are now pure client-side
@@ -211,9 +225,22 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   const [competitorList, setCompetitorList] = useState<BrandRow[]>([]);
 
   const [productTags, setProductTags] = useState<string[]>([]);
-  const [targetMarket, setTargetMarket] = useState("Türkiye");
+  // Kart 8 — "Hedef pazarlar: harita ve ülke seçici". Diziydeki ilk kod "birincil pazar" —
+  // sunucuya gönderilen tek `country` alanını (lib/onboarding-engine.ts'in topic/prompt
+  // lokalizasyonu için kullandığı) o belirler; sonrakiler sadece haritada/etiketlerde görünür,
+  // bugün başka hiçbir üretim adımını etkilemez — bu, backend'in zaten tek-ülke tasarlanmış
+  // olmasından kaynaklanan bilinçli bir kapsam kararı (sahte "her pazar için ayrı içerik
+  // üretiliyor" hissi vermemek için burada açıkça not ediliyor).
+  const [targetMarkets, setTargetMarkets] = useState<string[]>(["tr"]);
 
   const [audience, setAudience] = useState<Record<PersonaKey, number>>(EVEN_AUDIENCE);
+  // Kart 8 — her persona tek tek "açılıp kapatılabilir". Kapalı bir personanın payı 0'a
+  // sabitlenir (aşağıdaki updateAudience/normalizeAudience/togglePersona bunu korur) ve
+  // sunucuya hep olduğu gibi gönderilir — lib/onboarding-engine.ts'teki normalizedAudience
+  // zaten 0 payı olan bir personayı orantısal olarak sıfıra yakın tutuyor, backend'de ek bir
+  // "enabled" alanı gerekmedi.
+  const [personaEnabled, setPersonaEnabled] = useState<Record<PersonaKey, boolean>>({ simple: true, informed: true, researcher: true });
+  const lastNonZeroAudienceRef = useRef<Record<PersonaKey, number>>({ ...EVEN_AUDIENCE });
 
   const [topicResult, setTopicResult] = useState<{ candidates: TopicCandidate[]; autoSelected: string[] } | null>(null);
   const [topicsError, setTopicsError] = useState<string | null>(null);
@@ -412,7 +439,14 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         if (!data) return;
         if (data.brandNameGuess) setBrandName(data.brandNameGuess);
         if (data.domain) setBrandDomain(data.domain);
-        if (data.countryGuess) setTargetMarket(data.countryGuess);
+        if (data.countryGuess) {
+          // data.countryGuess bir Türkçe ülke adı (ör. "Türkiye") — lib/country-map.ts'teki
+          // sabit listeyle eşleşmezse (yani prefill'in TLD/hreflang tablosu bu wizard'ın
+          // haritada gösterdiği ~40 ülkelik listenin dışında bir isim üretmişse) sessizce
+          // yoksayılır, asla tahmini bir kod uydurulmaz.
+          const code = countryCodeFromName(data.countryGuess);
+          if (code) setTargetMarkets([code]);
+        }
         if (data.languageGuess) setLanguage(data.languageGuess);
         if (data.reachable === false) {
           setPrefillWarning(data.warning ?? "Site'ye ulaşılamadı — alanlar domain'den tahmin edildi, gözden geçirin.");
@@ -428,7 +462,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       const res = await fetch("/api/onboarding/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed, language, country: targetMarket || "Türkiye" }),
+        body: JSON.stringify({ url: trimmed, language, country: countryNameFromCode(targetMarkets[0]) || "Türkiye" }),
       });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
@@ -454,15 +488,53 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
     setCompetitorList((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
   }
 
+  // Kart 8 — haritadan tıklayarak veya "+ Pazar ekle" seçiciyle toggle. En az bir pazar her
+  // zaman seçili kalır (sunucuya gönderilen tek `country` alanı bir şeye dayanmak zorunda) —
+  // son kalan pazarı kaldırmak sessizce hiçbir şey yapmaz.
+  function toggleTargetMarket(code: string) {
+    setTargetMarkets((prev) => {
+      if (prev.includes(code)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((c) => c !== code);
+      }
+      return [...prev, code];
+    });
+  }
+
   function updateAudience(key: PersonaKey, value: string) {
-    setAudience((prev) => ({ ...prev, [key]: Math.max(0, Number(value) || 0) }));
+    const next = Math.max(0, Number(value) || 0);
+    setAudience((prev) => ({ ...prev, [key]: next }));
+    if (next > 0) lastNonZeroAudienceRef.current[key] = next;
+  }
+
+  // Kart 8 — persona açma/kapama. Kapatma: mevcut payı hatırlayıp (açıldığında geri gelsin)
+  // 0'a sabitler. Açma: hatırlanan son pozitif payı (yoksa eşit bölünmüş bir varsayılanı) geri
+  // yükler — ama toplamı otomatik olarak 100'e tamamlamaz, kullanıcı "Eşit böl"e basabilir ya
+  // da elle düzeltir, tıpkı herhangi bir elle yapılan düzenleme gibi.
+  function togglePersona(key: PersonaKey) {
+    setPersonaEnabled((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (!next[key]) {
+        if (audience[key] > 0) lastNonZeroAudienceRef.current[key] = audience[key];
+        setAudience((a) => ({ ...a, [key]: 0 }));
+      } else {
+        const restored = lastNonZeroAudienceRef.current[key] || Math.floor(100 / PERSONA_ORDER.length);
+        setAudience((a) => ({ ...a, [key]: restored }));
+      }
+      return next;
+    });
   }
 
   function normalizeAudience() {
-    const even = Math.floor(100 / PERSONA_ORDER.length);
-    const next: Record<PersonaKey, number> = { simple: even, informed: even, researcher: even };
-    next[PERSONA_ORDER[PERSONA_ORDER.length - 1]] = 100 - even * (PERSONA_ORDER.length - 1);
+    const enabledKeys = PERSONA_ORDER.filter((k) => personaEnabled[k]);
+    const pool = enabledKeys.length > 0 ? enabledKeys : PERSONA_ORDER; // hepsi kapalıysa yine de bir dağılım göster
+    const even = Math.floor(100 / pool.length);
+    const next: Record<PersonaKey, number> = { simple: 0, informed: 0, researcher: 0 };
+    pool.forEach((k, i) => {
+      next[k] = i === pool.length - 1 ? 100 - even * (pool.length - 1) : even;
+    });
     setAudience(next);
+    pool.forEach((k) => (lastNonZeroAudienceRef.current[k] = next[k]));
   }
 
   const audienceTotal = PERSONA_ORDER.reduce((sum, k) => sum + (audience[k] || 0), 0);
@@ -691,7 +763,19 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <h3 className="text-xs font-semibold text-ink/50">Ülke</h3>
-              <input value={targetMarket} onChange={(e) => setTargetMarket(e.target.value)} placeholder="örn. Türkiye" className={inputClass} />
+              {/* Step 1'in hızlı/LLM'siz tahmini: tek, birincil pazar. Birden fazla hedef
+                  pazar eklemek (harita + çoklu seçim) Adım 3 "Ürünler ve hedef pazar"da. */}
+              <select
+                value={targetMarkets[0] ?? "tr"}
+                onChange={(e) => setTargetMarkets([e.target.value])}
+                className={inputClass}
+              >
+                {TARGET_MARKET_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.nameTr}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
               <h3 className="text-xs font-semibold text-ink/50">Dil</h3>
@@ -865,9 +949,53 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </RevealField>
             )}
           </div>
-          <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Hedef pazar</h3>
-            <input value={targetMarket} onChange={(e) => setTargetMarket(e.target.value)} placeholder="örn. Türkiye" className={inputClass} />
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-ink/50">Hedef pazarlar</h3>
+            <p className="text-xs text-ink/40">
+              Haritadan tıklayarak ya da listeden seçerek birden fazla pazar ekleyebilirsiniz — ilki (⭐) konu ve prompt
+              üretiminde kullanılan birincil pazar olur.
+            </p>
+            <WorldMapPicker selected={targetMarkets} onToggle={toggleTargetMarket} />
+            <div className="flex flex-wrap gap-2">
+              {targetMarkets.map((code, i) => {
+                const name = countryNameFromCode(code) ?? code;
+                const isOnly = targetMarkets.length === 1;
+                return (
+                  <span key={code} className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-3 py-1 text-xs">
+                    {i === 0 && <span title="Birincil pazar">⭐</span>}
+                    {name}
+                    <button
+                      type="button"
+                      onClick={() => toggleTargetMarket(code)}
+                      disabled={isOnly}
+                      title={isOnly ? "En az bir pazar seçili olmalı" : "Kaldır"}
+                      className="text-ink/40 hover:text-danger disabled:opacity-30 disabled:hover:text-ink/40"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+            {/* Seçimden sonra placeholder'a dönmesi için: eklenen pazar listesi değiştiğinde
+                select "key" değişip yeniden mount olur, native bir reset ihtiyacı kalmaz. */}
+            <select
+              key={targetMarkets.join(",")}
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) toggleTargetMarket(e.target.value);
+              }}
+              className={inputClass}
+            >
+              <option value="" disabled>
+                + Pazar ekle…
+              </option>
+              {TARGET_MARKET_COUNTRIES.filter((c) => !targetMarkets.includes(c.code)).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.nameTr}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep("profile")} className="text-sm text-ink/50 hover:underline">
@@ -892,27 +1020,43 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             detaylı araştırmacı) yazılacağını belirler — yüzdelerin toplamı 100 olmalı. Bunlar sabit 3 arketip; markaya
             özel persona isimleri burada yok, sadece payları.
           </p>
-          {PERSONA_ORDER.map((key) => (
-            <div key={key} className="rounded-lg border border-border p-3 space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="text-sm font-semibold">{PERSONA_LABEL[key]}</div>
-                  <div className="text-xs text-ink/50">{PERSONA_DESCRIPTION[key]}</div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={audience[key]}
-                    onChange={(e) => updateAudience(key, e.target.value)}
-                    className={`${inputClass} w-20`}
-                  />
-                  <span className="text-xs text-ink/40">%</span>
+          {PERSONA_ORDER.map((key) => {
+            const enabled = personaEnabled[key];
+            return (
+              <div key={key} className={`rounded-lg border border-border p-3 space-y-1 ${enabled ? "" : "opacity-50"}`}>
+                <div className="flex items-center gap-3">
+                  {/* Kart 8 — "her biri açılıp kapatılabilir": kapalı bir persona payı 0'a
+                      sabitlenir, %100 toplamına ve promptları üreten slot planına hiç girmez. */}
+                  <button
+                    type="button"
+                    onClick={() => togglePersona(key)}
+                    title={enabled ? "Bu personayı kapat" : "Bu personayı aç"}
+                    className={`relative w-9 h-5 rounded-full shrink-0 transition-colors ${enabled ? "bg-accent" : "bg-border"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </button>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold">{PERSONA_LABEL[key]}</div>
+                    <div className="text-xs text-ink/50">{PERSONA_DESCRIPTION[key]}</div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      disabled={!enabled}
+                      value={audience[key]}
+                      onChange={(e) => updateAudience(key, e.target.value)}
+                      className={`${inputClass} w-20 disabled:opacity-50`}
+                    />
+                    <span className="text-xs text-ink/40">%</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <p className={`text-xs ${audienceTotal === 100 ? "text-ink/40" : "text-danger"}`}>
             Toplam: %{audienceTotal}{audienceTotal !== 100 && " — 100 olmalı"}
             {audienceTotal !== 100 && (
