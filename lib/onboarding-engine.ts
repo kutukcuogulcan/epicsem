@@ -105,92 +105,93 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
   await updateOnboardingStep(sessionId, "profile", { status: "running" });
   await updateOnboardingStep(sessionId, "competitors", { status: "running" });
 
-  const [profileSettled, competitorsSettled] = await Promise.allSettled([
-    runProfileStep(page, domain, language, siteCrawl),
-    runCompetitorsStep(page, domain, language, siteCrawl, country),
-  ]);
+  // Kart: Topic üretimi — profil hazır olduğu AN topic'ler başlar; web aramalı rakip adımı
+  // (20-40 sn sürebilir) beklenmez. Rakipler sadece promptlar (markalı/rakipli slotlar) için
+  // gerekli, o yüzden promptlar topic'ler + rakipler ikisi de bitince başlar.
+  const competitorsPromise = runCompetitorsStep(page, domain, language, siteCrawl, country).then(
+    (value) => ({ status: "fulfilled" as const, value }),
+    (reason) => ({ status: "rejected" as const, reason })
+  );
+  const competitorsDone = competitorsPromise.then(async (settled) => {
+    if (settled.status === "fulfilled") {
+      await updateOnboardingStep(sessionId, "competitors", { status: "ready", result: settled.value });
+    } else {
+      const msg = settled.reason instanceof Error ? settled.reason.message : "Rakip önerisi başarısız oldu";
+      await updateOnboardingStep(sessionId, "competitors", { status: "error", error: msg });
+    }
+    return settled;
+  });
 
   let profile: BrandProfileResult | null = null;
-  if (profileSettled.status === "fulfilled") {
-    profile = profileSettled.value;
+  try {
+    profile = await runProfileStep(page, domain, language, siteCrawl);
     await updateOnboardingStep(sessionId, "profile", { status: "ready", result: profile });
     if (!demo && !profile.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
-  } else {
-    const msg = profileSettled.reason instanceof Error ? profileSettled.reason.message : "Marka profili çıkarılamadı";
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Marka profili çıkarılamadı";
     await updateOnboardingStep(sessionId, "profile", { status: "error", error: msg });
-  }
-
-  let competitors: DiscoveredCompetitor[] = [];
-  if (competitorsSettled.status === "fulfilled") {
-    competitors = competitorsSettled.value.competitors;
-    await updateOnboardingStep(sessionId, "competitors", { status: "ready", result: competitorsSettled.value });
-  } else {
-    const msg = competitorsSettled.reason instanceof Error ? competitorsSettled.reason.message : "Rakip önerisi başarısız oldu";
-    await updateOnboardingStep(sessionId, "competitors", { status: "error", error: msg });
   }
 
   if (!profile) {
     // Topics/Prompts need the brand profile (name/industry/products) — can't proceed without
-    // it. Competitors failing alone does NOT stop the chain (see below — prompts just runs
-    // with an empty competitor list, same as the manual wizard already tolerates).
+    // it. Rakip adımı kendi başına bitsin diye beklenir (durumu yazılsın), sonra çıkılır.
+    await competitorsDone;
     await failRemainingOnboardingSteps(sessionId, "topics", "Marka profili olmadan devam edilemedi");
     return;
   }
 
-  // 4+5. Topic'ler (10) + Promptlar (10×8) — bkz. generateTopicsAndPrompts() yukarıdaki not.
+  // 4. Topic'ler (10) — rakipler hâlâ aranırken.
   await updateOnboardingStep(sessionId, "topics", { status: "running" });
   await updateOnboardingStep(sessionId, "prompts", { status: "running" });
-  const genProfile: GenerationProfile = {
+  const baseProfile: GenerationProfile = {
     brand: { name: profile.brand.name, domain },
     description: profile.description,
     industry: profile.industry,
     identityAdjectives: profile.identityAdjectives,
     productTags: profile.productTags,
     personas: profile.personas,
-    competitors,
+    competitors: [],
     country,
     language,
   };
+
+  let topicsResult: TopicGenerationResult;
   try {
-    const result = await generateTopicsAndPrompts(genProfile);
-    const topicsResult = result.topicsResult;
+    topicsResult = await generateTopics(baseProfile);
     await updateOnboardingStep(sessionId, "topics", { status: "ready", result: topicsResult });
-    const topicsInputHash = computeTopicsInputHash(profile.description, profile.industry);
-    await setOnboardingTopicsInputSnapshot(sessionId, topicsInputHash, profile.productTags);
+    await setOnboardingTopicsInputSnapshot(sessionId, computeTopicsInputHash(profile.description, profile.industry), profile.productTags);
     if (!demo && !topicsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Topic üretimi başarısız oldu";
+    await updateOnboardingStep(sessionId, "topics", { status: "error", error: msg });
+    await competitorsDone;
+    await failRemainingOnboardingSteps(sessionId, "prompts", "Topic üretimi başarısız olduğu için devam edilemedi");
+    return;
+  }
 
-    await updateOnboardingStep(sessionId, "prompts", { status: "ready", result: result.promptsResult });
-    if (!demo && !result.promptsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
+  // 5. Promptlar (10×8) — topic'ler hazır + rakip adımı bitti (başarısızsa boş listeyle).
+  const competitorsSettled = await competitorsDone;
+  const competitors: DiscoveredCompetitor[] = competitorsSettled.status === "fulfilled" ? competitorsSettled.value.competitors : [];
+  try {
+    const promptsResult = await generatePromptsForTopics({ ...baseProfile, competitors }, topicsResult);
+    await updateOnboardingStep(sessionId, "prompts", { status: "ready", result: promptsResult });
+    if (!demo && !promptsResult.demoMode) await consumeQuota(userId, "onboardingSetup", 1).catch(() => {});
 
-    // Kart: Domain bazlı önbellek — zincir baştan sona (rakipler dahil) gerçekten başarıyla
-    // bittiyse sonucu domain anahtarıyla sakla. competitorsSettled hâlâ yukarıdaki adım 2+3'ten
-    // kapsam içinde; rakip önerisi başarısız olduysa bilerek ÖNBELLEĞE YAZILMAZ — aksi halde
-    // sonraki bir girişte o kalıcı hata sessizce "başarılı" gibi tekrar sunulurdu. Önbellek
-    // yazımı best-effort: başarısız olursa (ör. geçici DB hatası) zincirin kendisini asla
-    // düşürmemeli, sadece bir sonraki girişte tekrar önbelleksiz çalışılmasına yol açar.
+    // Kart: Domain bazlı önbellek — sadece zincir (rakipler dahil) tamamen başarılıysa yazılır.
     if (competitorsSettled.status === "fulfilled") {
       await setOnboardingDomainCache(domain, {
         crawlResult: demo ? { domain, page, demoMode: true } : { domain, page, siteCrawl },
         profileResult: profile,
         competitorsResult: competitorsSettled.value,
         topicsResult,
-        promptsResult: result.promptsResult,
-        topicsInputHash,
+        promptsResult,
+        topicsInputHash: computeTopicsInputHash(profile.description, profile.industry),
         topicsInputProducts: profile.productTags,
       }).catch(() => {});
     }
   } catch (err) {
-    // Topic üretimi başarısız olduysa prompts de üretilemez; topics zaten başarılıysa ve sadece
-    // prompts tarafı patladıysa (fillAllSlots içindeki bir hata) topics "ready" kalır, sadece
-    // prompts "error" olarak işaretlenir.
-    const msg = err instanceof Error ? err.message : "Üretim başarısız oldu";
-    const topicsStillPending = (await getOnboardingSession(userId, sessionId))?.topicsStatus !== "ready";
-    if (topicsStillPending) {
-      await updateOnboardingStep(sessionId, "topics", { status: "error", error: msg });
-      await failRemainingOnboardingSteps(sessionId, "prompts", "Topic üretimi başarısız olduğu için devam edilemedi");
-    } else {
-      await updateOnboardingStep(sessionId, "prompts", { status: "error", error: msg });
-    }
+    const msg = err instanceof Error ? err.message : "Prompt üretimi başarısız oldu";
+    await updateOnboardingStep(sessionId, "prompts", { status: "error", error: msg });
   }
 }
 
@@ -242,23 +243,31 @@ function normalizedAudience(personas: Record<PersonaKey, number>): Record<Person
  * (app/api/onboarding/sessions/[id]/regenerate/route.ts) aynı bu fonksiyonu çağırır, böylece
  * ikisi arasında davranış asla sapmaz.
  */
-export async function generateTopicsAndPrompts(
-  profile: GenerationProfile
-): Promise<{
-  topicsResult: TopicGenerationResult;
-  promptsResult: { prompts: SlotFilledPrompt[]; brandedPrompts: SlotFilledPrompt[]; demoMode: boolean; model: string; sectorPackId: string };
-}> {
+type PromptsResult = { prompts: SlotFilledPrompt[]; brandedPrompts: SlotFilledPrompt[]; demoMode: boolean; model: string; sectorPackId: string };
+
+/** Kart: Topic üretimi — sadece 10 topic (en alakalı 5'i otomatik seçili). Rakip gerektirmez,
+ * o yüzden onboarding zincirinde profil hazır olur olmaz çağrılır. */
+export async function generateTopics(profile: GenerationProfile): Promise<TopicGenerationResult> {
   const pack = matchSectorPack(profile.industry, profile.description);
   const sectorSeeds = renderTopicSeeds(pack, profile.industry);
-  const brandInput = {
-    name: profile.brand.name,
-    domain: profile.brand.domain,
-    description: profile.description,
-    industry: profile.industry,
-    identityAdjectives: profile.identityAdjectives,
-    productTags: profile.productTags,
-  };
-  const topicsResult = await generateTopicsForBrand(brandInput, profile.country, profile.language, sectorSeeds);
+  return generateTopicsForBrand(
+    {
+      name: profile.brand.name,
+      domain: profile.brand.domain,
+      description: profile.description,
+      industry: profile.industry,
+      identityAdjectives: profile.identityAdjectives,
+      productTags: profile.productTags,
+    },
+    profile.country,
+    profile.language,
+    sectorSeeds
+  );
+}
+
+/** Kart 14 — 10 topic'in hepsi için 8'er slot planlanır ve doldurulur. */
+export async function generatePromptsForTopics(profile: GenerationProfile, topicsResult: TopicGenerationResult): Promise<PromptsResult> {
+  const pack = matchSectorPack(profile.industry, profile.description);
   const topicNames = topicsResult.candidates.map((c) => c.name);
   const topicDescriptions = new Map(topicsResult.candidates.map((c) => [c.name, c.description]));
 
@@ -290,11 +299,20 @@ export async function generateTopicsAndPrompts(
     limit: undefined,
   });
   const brandedPrompts = generateBrandedTopicPrompts(brandForPrompts, activeCompetitors);
+  return { prompts, brandedPrompts, demoMode: fillDemoMode, model, sectorPackId: pack.id };
+}
 
-  return {
-    topicsResult,
-    promptsResult: { prompts, brandedPrompts, demoMode: fillDemoMode, model, sectorPackId: pack.id },
-  };
+/**
+ * Topic'ler + Promptlar tek seferde — description/industry değiştiğinde yapılan TAM yeniden
+ * üretim (app/api/onboarding/sessions/[id]/regenerate/route.ts) kullanır; ilk zincir ise
+ * ikisini ayrı ayrı çağırır (topic'ler rakipleri beklemeden başlasın diye).
+ */
+export async function generateTopicsAndPrompts(
+  profile: GenerationProfile
+): Promise<{ topicsResult: TopicGenerationResult; promptsResult: PromptsResult }> {
+  const topicsResult = await generateTopics(profile);
+  const promptsResult = await generatePromptsForTopics(profile, topicsResult);
+  return { topicsResult, promptsResult };
 }
 
 /** Kart: Değişiklikte yeniden üretim — "bir ürün eklendiyse → sadece o ürün için 1 topic ve
