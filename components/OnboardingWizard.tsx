@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { PERSONA_DESCRIPTION, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
+import { PERSONA_DESCRIPTION, PERSONA_EXAMPLE, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
 import { TARGET_MARKET_COUNTRIES, countryCodeFromName, countryNameFromCode } from "@/lib/country-map";
 
 // react-simple-maps + world-atlas (bkz. WorldMapPicker'ın kendi doc-comment'i) sadece "market"
@@ -121,6 +121,10 @@ function TagEditor({ tags, onChange, placeholder }: { tags: string[]; onChange: 
   function add() {
     const v = draft.trim();
     if (!v) return;
+    if (tags.some((t) => t.toLocaleLowerCase("tr") === v.toLocaleLowerCase("tr"))) {
+      setDraft("");
+      return;
+    }
     onChange([...tags, v]);
     setDraft("");
   }
@@ -240,6 +244,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   // zaten 0 payı olan bir personayı orantısal olarak sıfıra yakın tutuyor, backend'de ek bir
   // "enabled" alanı gerekmedi.
   const [personaEnabled, setPersonaEnabled] = useState<Record<PersonaKey, boolean>>({ simple: true, informed: true, researcher: true });
+  const [personaOpen, setPersonaOpen] = useState<Record<PersonaKey, boolean>>({ simple: false, informed: false, researcher: false });
   const lastNonZeroAudienceRef = useRef<Record<PersonaKey, number>>({ ...EVEN_AUDIENCE });
 
   const [topicResult, setTopicResult] = useState<{ candidates: TopicCandidate[]; autoSelected: string[] } | null>(null);
@@ -586,22 +591,25 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   // competitors/audience are deliberately left out of this comparison (per the card, an
   // adjective-only edit must never trigger a regen), even though they're still sent along as
   // context for whichever regeneration a REAL trigger ends up running.
-  async function handleEnterTopics() {
+  function profileUnchanged() {
     const synced = lastSyncedProfileRef.current;
-    const unchanged =
+    return (
       synced != null &&
       description === synced.description &&
       industry === synced.industry &&
       productTags.length === synced.productTags.length &&
-      productTags.every((p, i) => p === synced.productTags[i]);
+      productTags.every((p, i) => p === synced.productTags[i])
+    );
+  }
 
-    // Topics not ready yet (first-time server generation still running) — nothing to diff
-    // against yet; just advance, the topics screen already shows its own loading state.
-    if (unchanged || topicsStatus !== "ready" || sessionId == null) {
-      setStep("topics");
-      return;
-    }
+  // Kart 2 — the user edited the profile but Next was pressed BEFORE the first server-side
+  // topic/prompt generation finished. We never block Next on that (Adım 3 has its own
+  // loading state), but the edit must not be silently dropped either: it's remembered here
+  // and the regeneration runs automatically the moment topics+prompts flip to "ready".
+  const pendingRegenRef = useRef(false);
 
+  async function runRegenerate() {
+    if (sessionId == null) return;
     setRegenerateError(null);
     setRegenerating(true);
     try {
@@ -643,8 +651,39 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
     } finally {
       setRegenerating(false);
     }
+  }
+
+  // Kart: Değişiklikte yeniden üretim (hash kontrolü) — the ONLY place this wizard decides
+  // whether to re-run topic/prompt generation, triggered right when the user is about to see
+  // the topics step (the audience step's "İleri →"). Comparing locally first means "nothing
+  // changed" costs zero network round-trips (Adım 3 anında açılır — Kart 2 kabul kriteri);
+  // only an actual edit to description/industry/productTags reaches the server at all —
+  // identityAdjectives/brandName/competitors/audience are deliberately left out of this
+  // comparison (an adjective-only edit must never trigger a regen), even though they're still
+  // sent along as context for whichever regeneration a REAL trigger ends up running.
+  async function handleEnterTopics() {
+    if (profileUnchanged()) {
+      setStep("topics");
+      return;
+    }
+    // First-time generation still running — open Adım 3 right away (it shows its own
+    // loading state) and queue the edit; the effect below fires it once data is ready.
+    if (topicsStatus !== "ready" || promptsStatus !== "ready" || sessionId == null) {
+      pendingRegenRef.current = true;
+      setStep("topics");
+      return;
+    }
+    await runRegenerate();
     setStep("topics");
   }
+
+  useEffect(() => {
+    if (!pendingRegenRef.current) return;
+    if (topicsStatus !== "ready" || promptsStatus !== "ready" || sessionId == null) return;
+    pendingRegenRef.current = false;
+    if (!profileUnchanged()) void runRegenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicsStatus, promptsStatus, sessionId]);
 
   function clearSessionParam() {
     const next = new URL(window.location.href);
@@ -874,15 +913,22 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                 </div>
               </RevealField>
               <RevealField index={1}>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={2}
-                  className={`${inputClass} font-mono`}
-                />
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-ink/50">Açıklama</h3>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Markanın ne yaptığını 2-3 cümleyle anlatın"
+                    className={`${inputClass} resize-y leading-relaxed`}
+                  />
+                </div>
               </RevealField>
               <RevealField index={2}>
-                <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="Kategori" className={inputClass} />
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-ink/50">Sektör</h3>
+                  <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="örn. Dijital pazarlama ajansı" className={inputClass} />
+                </div>
               </RevealField>
 
               <RevealField index={3}>
@@ -937,7 +983,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Ürünler ve hedef pazar</h2>
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Ürün/hizmet etiketleri</h3>
+            <h3 className="text-xs font-semibold text-ink/50">Ürünler ve hizmetler</h3>
             {profileStatus !== "ready" && profileStatus !== "error" ? (
               <div className="flex gap-2">
                 <SkeletonBar height="1.8rem" width="6rem" className="rounded-full" />
@@ -1037,10 +1083,15 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                       className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`}
                     />
                   </button>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold">{PERSONA_LABEL[key]}</div>
-                    <div className="text-xs text-ink/50">{PERSONA_DESCRIPTION[key]}</div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPersonaOpen((prev) => ({ ...prev, [key]: !prev[key] }))}
+                    aria-expanded={personaOpen[key]}
+                    className="flex-1 flex items-center gap-2 text-left"
+                  >
+                    <span className="text-sm font-semibold">{PERSONA_LABEL[key]}</span>
+                    <span className={`text-ink/40 text-xs transition-transform ${personaOpen[key] ? "rotate-180" : ""}`}>▾</span>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     <input
                       type="number"
@@ -1054,6 +1105,12 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                     <span className="text-xs text-ink/40">%</span>
                   </div>
                 </div>
+                {personaOpen[key] && (
+                  <div className="pl-12 pt-1 space-y-1 text-xs text-ink/60">
+                    <p>{PERSONA_DESCRIPTION[key]}</p>
+                    <p className="text-ink/40">Örnek soru: “{PERSONA_EXAMPLE[key]}”</p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1078,7 +1135,8 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             </button>
             <button
               type="button"
-              disabled={regenerating}
+              disabled={regenerating || audienceTotal !== 100}
+              title={audienceTotal !== 100 ? "Kitle dağılımının toplamı %100 olmalı" : undefined}
               onClick={handleEnterTopics}
               className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
             >

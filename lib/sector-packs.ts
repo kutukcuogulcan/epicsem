@@ -37,9 +37,17 @@ export const PERSONA_LABEL: Record<PersonaKey, string> = {
 };
 
 export const PERSONA_DESCRIPTION: Record<PersonaKey, string> = {
-  simple: "Hızlı bir öneri istiyor, detaya girmek istemiyor.",
-  informed: "Belirli bir ihtiyacı/özelliği var, ona göre karşılaştırıyor.",
-  researcher: "Kriterleri karşılaştırıyor, artı-eksi arıyor, karar vermeden önce derinlemesine araştırıyor.",
+  simple: "Teknik bilgisi yok; uzun açıklama değil, kısa bir isim/öneri istiyor.",
+  informed: "Ürünü/kategoriyi biliyor; belirli özellikleri ve detayları soruyor.",
+  researcher: "Seçenekleri yan yana karşılaştırıyor; artı-eksi ve kriter arıyor.",
+};
+
+// Kart 2 — persona akordeonunda gösterilen, sektörden bağımsız örnek soru kalıbı (sadece
+// açıklama amaçlı; prompt üretimine girmez — o iş lib/slot-planner.ts'te).
+export const PERSONA_EXAMPLE: Record<PersonaKey, string> = {
+  simple: "En iyi … hangisi?",
+  informed: "… için X özelliği olan bir seçenek önerir misin?",
+  researcher: "A ile B'yi fiyat, destek ve özellikler açısından karşılaştırır mısın?",
 };
 
 /** Prompt-length/context/tone rules per persona — B4 of the methodology / C's persona rules. */
