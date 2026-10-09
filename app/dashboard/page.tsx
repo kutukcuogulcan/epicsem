@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardSummary } from "@/lib/db";
-import ToolPageHeader from "@/components/ToolPageHeader";
+import { getDashboardSummary, listGeoBrands, listGeoRunsForOverview } from "@/lib/db";
+import OverviewPanel from "@/components/OverviewPanel";
 import StatCard from "@/components/StatCard";
 import UsageMeter from "@/components/UsageMeter";
 import DashboardActivityChart from "@/components/DashboardActivityChart";
@@ -36,20 +36,37 @@ const QUICK_ACTIONS = [
   { href: "/monitor", icon: "monitor", title: "Sayfa izle", body: "AI crawler engellenirse anında haber al" },
 ];
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ brand?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const summary = await getDashboardSummary(user.id);
+  const { brand } = await searchParams;
+  const [summary, geoBrands] = await Promise.all([getDashboardSummary(user.id), listGeoBrands(user.id)]);
+  const selectedBrand = geoBrands.find((b) => b.brandDomain === brand) ?? geoBrands[0];
+  const overviewRuns = selectedBrand ? await listGeoRunsForOverview(user.id, selectedBrand.brandDomain, 90) : [];
   const testsThisMonth = summary.thisMonth.auditRuns + summary.thisMonth.geoRuns;
 
   return (
     <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="Panel"
-        title="Panel"
-        body="Tüm araçların özeti — bu ay ne çalıştırıldı, ne üretildi, ne bekliyor. Her sayı, bu hesaba gerçekten kayıtlı satırların COUNT(*)'ı; tahmini veya örnek bir gösterge değil."
-      />
+      {selectedBrand ? (
+        <OverviewPanel brands={geoBrands} selectedDomain={selectedBrand.brandDomain} runs={overviewRuns} />
+      ) : (
+        <div className="rounded-2xl border border-border bg-panel p-8 text-center space-y-3">
+          <h2 className="text-lg font-bold">Genel bakış</h2>
+          <p className="text-sm text-ink/50 max-w-md mx-auto">
+            Markanın ChatGPT, Gemini, Perplexity ve Claude cevaplarında ne sıklıkla geçtiğini, rakiplerle karşılaştırmasını ve
+            hangi kaynakların alıntılandığını burada göreceksin. Başlamak için ilk GEO testini çalıştır.
+          </p>
+          <Link href="/geo" className="inline-block rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90">
+            İlk GEO testini başlat →
+          </Link>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-border">
+        <h2 className="text-lg font-bold">Hesap özeti</h2>
+        <p className="text-sm text-ink/50">Bu ay ne çalıştırıldı, ne üretildi, ne bekliyor.</p>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {QUICK_ACTIONS.map((a) => (

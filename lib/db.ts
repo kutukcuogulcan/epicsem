@@ -634,6 +634,44 @@ export async function listGeoRunHistory(userId: number, brandDomain: string, lim
   }));
 }
 
+/** Kart: Peec tarzı Overview (/dashboard) — kullanıcının GEO testi yaptığı markalar (en son
+ * çalıştırılan önce) ve seçilen markanın son `days` gündeki tüm koşuları, kaynak dağılımı
+ * dahil. Grafik/tablo/kaynak kartları hep bu gerçek geo_runs satırlarından hesaplanır. */
+export interface OverviewRun {
+  id: number;
+  createdAt: string;
+  demoMode: boolean;
+  summaries: GeoVisibilitySummary[];
+  sourceDistribution: SourceDomainStat[];
+}
+
+export async function listGeoBrands(userId: number): Promise<{ brandName: string; brandDomain: string; lastRunAt: string; runs: number }[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT brand_domain, (array_agg(brand_name ORDER BY id DESC))[1] AS brand_name, MAX(created_at) AS last_run_at, COUNT(*) AS runs
+       FROM geo_runs WHERE user_id = $1 GROUP BY brand_domain ORDER BY MAX(created_at) DESC`,
+    [userId]
+  );
+  return rows.map((r) => ({ brandName: r.brand_name, brandDomain: r.brand_domain, lastRunAt: toIso(r.last_run_at), runs: Number(r.runs) }));
+}
+
+export async function listGeoRunsForOverview(userId: number, brandDomain: string, days = 90): Promise<OverviewRun[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT id, created_at, demo_mode, summaries_json, source_distribution_json FROM geo_runs
+      WHERE user_id = $1 AND brand_domain = $2 AND created_at >= now() - ($3 || ' days')::interval
+      ORDER BY id ASC LIMIT 500`,
+    [userId, brandDomain, String(days)]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    createdAt: toIso(r.created_at),
+    demoMode: !!r.demo_mode,
+    summaries: JSON.parse(r.summaries_json),
+    sourceDistribution: r.source_distribution_json ? JSON.parse(r.source_distribution_json) : [],
+  }));
+}
+
 // ---------------- gap runs ----------------
 
 export async function saveGapRun(userId: number, params: {
