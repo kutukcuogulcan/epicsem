@@ -8,7 +8,7 @@ import {
   updateOnboardingStep,
   type OnboardingStepName,
 } from "./db";
-import { runCrawlStep, runProfileStep, runCompetitorsStep, domainFromUrl, type BrandProfileResult, type DiscoveredCompetitor } from "./brand-discovery";
+import { runCrawlStep, runProfileStep, runCompetitorsStep, domainFromUrl, activeCompetitorsOf, type BrandProfileResult, type DiscoveredCompetitor } from "./brand-discovery";
 import type { SiteCrawlResult } from "./site-crawler";
 import { normalizeUrl } from "./content-fetch";
 import { generateTopicsForBrand, type TopicCandidate, type TopicGenerationResult } from "./topic-generator";
@@ -107,7 +107,7 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
 
   const [profileSettled, competitorsSettled] = await Promise.allSettled([
     runProfileStep(page, domain, language, siteCrawl),
-    runCompetitorsStep(page, domain, language, siteCrawl),
+    runCompetitorsStep(page, domain, language, siteCrawl, country),
   ]);
 
   let profile: BrandProfileResult | null = null;
@@ -278,7 +278,7 @@ export async function generateTopicsAndPrompts(
     industry: profile.industry,
     productTags: profile.productTags,
   };
-  const activeCompetitors = profile.competitors.filter((c) => c.name && c.domain);
+  const activeCompetitors = activeCompetitorsOf(profile.competitors);
   const { prompts, demoMode: fillDemoMode, model } = await fillAllSlots({
     brand: brandForPrompts,
     competitors: activeCompetitors,
@@ -333,7 +333,7 @@ export async function generateTopicForProduct(
     industry: profile.industry,
     productTags: profile.productTags,
   };
-  const activeCompetitors = profile.competitors.filter((c) => c.name && c.domain);
+  const activeCompetitors = activeCompetitorsOf(profile.competitors);
   const { prompts, demoMode } = await fillAllSlots({
     brand: brandForPrompts,
     competitors: activeCompetitors,

@@ -76,6 +76,22 @@ interface BrandRow {
   domain: string;
 }
 
+/** Kart: Web aramalı rakip bulma — sunucunun doğruladığı ek alanlar (hepsi opsiyonel; elle
+ * eklenen satırlarda boş). `selected === false` olan rakip takibe girmez. */
+interface CompetitorRow extends BrandRow {
+  reason?: string;
+  confidence?: number;
+  faviconUrl?: string;
+  verified?: boolean;
+  selected?: boolean;
+}
+
+function activeCompetitors(list: CompetitorRow[]): BrandRow[] {
+  return list
+    .filter((c) => c.selected !== false && c.name.trim() && c.domain.trim())
+    .map((c) => ({ name: c.name.trim(), domain: c.domain.trim() }));
+}
+
 interface TopicCandidate {
   name: string;
   description: string;
@@ -226,7 +242,8 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   const [description, setDescription] = useState("");
   const [industry, setIndustry] = useState("");
   const [identityAdjectives, setIdentityAdjectives] = useState<string[]>([]);
-  const [competitorList, setCompetitorList] = useState<BrandRow[]>([]);
+  const [competitorList, setCompetitorList] = useState<CompetitorRow[]>([]);
+  const [competitorsWebSearch, setCompetitorsWebSearch] = useState<boolean | null>(null);
 
   const [productTags, setProductTags] = useState<string[]>([]);
   // Kart 8 — "Hedef pazarlar: harita ve ülke seçici". Diziydeki ilk kod "birincil pazar" —
@@ -337,7 +354,8 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
 
     if (s.competitorsStatus === "ready" && s.competitorsResult && !appliedStepsRef.current.has("competitors")) {
       appliedStepsRef.current.add("competitors");
-      const list: BrandRow[] = s.competitorsResult.competitors?.length ? s.competitorsResult.competitors : [{ name: "", domain: "" }];
+      const list: CompetitorRow[] = s.competitorsResult.competitors?.length ? s.competitorsResult.competitors : [{ name: "", domain: "" }];
+      setCompetitorsWebSearch(typeof s.competitorsResult.webSearch === "boolean" ? s.competitorsResult.webSearch : null);
       setCompetitorList(list);
       if (s.competitorsResult.demoMode) setAnyDemoMode(true);
     }
@@ -490,7 +508,18 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
   }
 
   function updateCompetitor(i: number, field: keyof BrandRow, value: string) {
-    setCompetitorList((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+    // Elle düzenlenen domain artık sunucunun doğruladığı domain değil — rozet/favicon düşer.
+    setCompetitorList((prev) =>
+      prev.map((c, idx) => (idx === i ? { ...c, [field]: value, ...(field === "domain" ? { verified: false, faviconUrl: undefined } : {}) } : c))
+    );
+  }
+
+  function toggleCompetitor(i: number) {
+    setCompetitorList((prev) => prev.map((c, idx) => (idx === i ? { ...c, selected: c.selected === false } : c)));
+  }
+
+  function removeCompetitor(i: number) {
+    setCompetitorList((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   // Kart 8 — haritadan tıklayarak veya "+ Pazar ekle" seçiciyle toggle. En az bir pazar her
@@ -616,7 +645,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       const res = await fetch(`/api/onboarding/sessions/${sessionId}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, industry, productTags, brandName, brandDomain, identityAdjectives, competitors: competitorList, audience }),
+        body: JSON.stringify({ description, industry, productTags, brandName, brandDomain, identityAdjectives, competitors: activeCompetitors(competitorList), audience }),
       });
       if (handleUnauthorized(res)) return;
       const data = await res.json();
@@ -693,7 +722,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
 
   function finish() {
     const brand = { name: brandName.trim(), domain: brandDomain.trim() };
-    const competitors = competitorList.filter((c) => c.name.trim() && c.domain.trim());
+    const competitors = activeCompetitors(competitorList);
     const chosen = (prompts ?? []).filter((_, i) => checkedPrompts.has(i));
     const promptsText = chosen.map((p) => `${p.topic}: ${p.text}`).join("\n");
     setStep("running");
@@ -954,16 +983,55 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                   {competitorsStatus === "error" && (
                     <p className="text-xs text-ink/40">Rakip önerisi başarısız oldu — aşağıya elle ekleyebilirsiniz.</p>
                   )}
-                  <p className="text-xs text-warn/90">
-                    ⚠️ Bu öneriler sayfa içeriğinden değil modelin genel sektör bilgisinden geliyor — yanlış olabilir (ör. bir
-                    dijital pazarlama ajansı için ERP yazılımı önerebilir). Mutlaka gözden geçirin, gerekirse silin/düzeltin.
-                  </p>
-                  {competitorList.map((c, i) => (
-                    <div key={i} className="grid grid-cols-2 gap-3">
-                      <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={inputClass} />
-                      <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip-domaini.com" className={inputClass} />
-                    </div>
-                  ))}
+                  {competitorsWebSearch === true ? (
+                    <p className="text-xs text-ink/50">
+                      🔎 Rakipler web'de aranarak bulundu ve her domain'in açıldığı doğrulandı. Güven skoru en yüksek{" "}
+                      {Math.min(5, competitorList.length)} tanesi seçili geldi — işaretini kaldırdığınız rakip takibe girmez.
+                    </p>
+                  ) : (
+                    competitorsStatus === "ready" && (
+                      <p className="text-xs text-warn/90">
+                        ⚠️ Web araması yapabilen bir model bağlı olmadığı için bu öneriler modelin genel bilgisinden geldi —
+                        yanlış olabilir. Mutlaka gözden geçirin, gerekirse silin/düzeltin.
+                      </p>
+                    )
+                  )}
+                  {competitorList.map((c, i) => {
+                    const on = c.selected !== false;
+                    return (
+                      <div key={i} className={`rounded-lg border border-border p-2 space-y-1 ${on ? "" : "opacity-50"}`}>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => toggleCompetitor(i)}
+                            title={on ? "Takipten çıkar" : "Takibe al"}
+                            className="accent-[#7c3aed] shrink-0"
+                          />
+                          {c.faviconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={c.faviconUrl} alt="" width={20} height={20} className="w-5 h-5 rounded shrink-0" />
+                          ) : (
+                            <span className="w-5 h-5 rounded bg-muted shrink-0" />
+                          )}
+                          <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={`${inputClass} flex-1`} />
+                          <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip-domaini.com" className={`${inputClass} flex-1`} />
+                          <button type="button" onClick={() => removeCompetitor(i)} title="Sil" className="text-ink/40 hover:text-danger text-xs shrink-0 px-1">
+                            ✕
+                          </button>
+                        </div>
+                        {(c.reason || c.verified || typeof c.confidence === "number") && (
+                          <div className="pl-12 flex flex-wrap items-center gap-2 text-xs text-ink/50">
+                            {c.verified && <span className="rounded-full bg-muted border border-border px-2 py-0.5">✓ domain açılıyor</span>}
+                            {typeof c.confidence === "number" && (
+                              <span className="rounded-full bg-muted border border-border px-2 py-0.5">güven %{Math.round(c.confidence * 100)}</span>
+                            )}
+                            {c.reason && <span>{c.reason}</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </RevealField>
             </>

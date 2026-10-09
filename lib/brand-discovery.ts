@@ -3,6 +3,7 @@ import { crawlSite, combinedCrawlText, type SiteCrawlResult } from "@/lib/site-c
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 import { PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
+import { discoverCompetitors, buildHomeSummary } from "@/lib/competitor-discovery";
 
 /**
  * Step 1-2 of the URL-first onboarding wizard (mirrors Peec AI's "enter a URL, we build the
@@ -33,6 +34,19 @@ export interface DiscoveredCompetitor {
   /** Best-guess domain, or "" when the model isn't confident — the wizard leaves this
    * editable rather than ever inventing a domain that might be wrong. */
   domain: string;
+  // Kart: Web aramalı rakip bulma — lib/competitor-discovery.ts doldurur; eski (aramasız)
+  // yollar ve elle eklenen satırlarda boş kalabilir.
+  reason?: string;
+  confidence?: number;
+  faviconUrl?: string;
+  verified?: boolean;
+  /** false ise bu rakip onboarding'de listede durur ama takibe/prompta girmez. */
+  selected?: boolean;
+}
+
+/** Seçili (veya seçim bilgisi olmayan eski kayıt) ve adı+domain'i dolu rakipler. */
+export function activeCompetitorsOf<T extends { name: string; domain: string; selected?: boolean }>(list: T[]): T[] {
+  return list.filter((c) => c.selected !== false && c.name && c.domain);
 }
 
 export interface DiscoveredBrand {
@@ -174,6 +188,9 @@ export interface CompetitorsResult {
   competitors: DiscoveredCompetitor[];
   demoMode: boolean;
   model: string;
+  /** Kart: Web aramalı rakip bulma — rakipler gerçekten web aramasıyla mı bulundu. */
+  webSearch?: boolean;
+  stats?: { proposed: number; verified: number; droppedUnreachable: string[]; droppedDuplicate: string[] };
 }
 
 /** Kart step "Tarama" — split out of discoverBrandFromUrl so it can be its own tracked job.
@@ -232,27 +249,6 @@ function buildProfilePrompt(
   ].join("\n");
 }
 
-function buildCompetitorsPrompt(
-  page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
-  language: "tr" | "en",
-  multiPageText?: string
-): string {
-  const lang = language === "en" ? "English" : "Turkish";
-  const contentSection = multiPageText && multiPageText.trim()
-    ? [`Real, just-fetched page content (home page + up to 5 crawled critical pages):`, multiPageText]
-    : [`URL: ${page.url}`, `Page <title>: ${page.title ?? "(none found)"}`, `Meta description: ${page.metaDescription ?? "(none found)"}`, `Visible body text (truncated): ${page.bodyText.slice(0, 4000)}`];
-  return [
-    `You are looking at real, just-fetched web pages to suggest competitors for AI-visibility (GEO) tracking setup.`,
-    ``,
-    ...contentSection,
-    ``,
-    `First silently work out what specific market/industry this brand competes in from the real content above (be literal — e.g. "digital marketing agency", not a generic adjacent category). Then suggest 2-4 real, well-known companies that compete in that SAME specific industry — this is general market knowledge, not something read off the page, so double-check each one actually operates in the same business (e.g. an ERP software vendor is NOT a competitor to a marketing agency). Write any text in ${lang}; for each, include "domain" only if you're confident of it, otherwise use an empty string.`,
-    ``,
-    `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
-    `{"competitors": [{"name": "...", "domain": "..."}]}`,
-  ].join("\n");
-}
-
 function demoProfileResult(domain: string): BrandProfileResult {
   const name = guessNameFromDomain(domain);
   return {
@@ -305,29 +301,19 @@ export async function runProfileStep(
 }
 
 /** Kart step "Rakipler" — runs in parallel with "Marka profili" (both only need the same
- * crawled page), not nested inside it. Same known limitation as before: these are the model's
- * general market knowledge, not read off the page — always presented as editable/removable. */
+ * crawled page). Kart: Web aramalı rakip bulma — artık modelin hafızasından değil, web araması
+ * yapabilen bir LLM çağrısıyla bulunur ve her domain kodda doğrulanır (bkz.
+ * lib/competitor-discovery.ts). Hâlâ düzenlenebilir/silinebilir olarak gösterilir. */
 export async function runCompetitorsStep(
   page: { url: string; title: string | null; metaDescription: string | null; bodyText: string },
   domain: string,
   language: "tr" | "en" = "tr",
-  siteCrawl?: SiteCrawlResult
+  siteCrawl?: SiteCrawlResult,
+  country = "Türkiye"
 ): Promise<CompetitorsResult> {
-  const provider = isDemoMode() ? null : pickProvider();
-  if (!provider) return { competitors: [{ name: "[DEMO DATA]", domain: "" }], demoMode: true, model: "demo (no API key configured)" };
-
   const multiPageText = siteCrawl ? combinedCrawlText(siteCrawl) : undefined;
-  const { text, model } = await provider.run(buildCompetitorsPrompt(page, language, multiPageText));
-  const parsed = extractJsonObject(text);
-
-  const competitors: DiscoveredCompetitor[] = Array.isArray(parsed.competitors)
-    ? parsed.competitors
-        .filter((c: any) => c && typeof c.name === "string" && c.name.trim())
-        .slice(0, 4)
-        .map((c: any) => ({ name: String(c.name).trim(), domain: typeof c.domain === "string" ? c.domain.trim() : "" }))
-    : [];
-
-  return { competitors, demoMode: false, model };
+  const r = await discoverCompetitors({ domain, homeSummary: buildHomeSummary(page, multiPageText), country, language });
+  return { competitors: r.competitors, demoMode: r.demoMode, model: r.model, webSearch: r.webSearch, stats: r.stats };
 }
 
 export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en" = "tr"): Promise<DiscoveredBrand> {
