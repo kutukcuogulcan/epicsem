@@ -4,6 +4,7 @@ import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
 import FeatureComparison from "@/components/FeatureComparison";
 import FeatureSteps from "@/components/FeatureSteps";
+import AiAnswerDemo from "@/components/marketing/AiAnswerDemo";
 
 const COMPARISON = {
   without: {
@@ -81,7 +82,7 @@ const FEATURES = [
 
 export default function BulkImportLandingPage() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-24 sm:space-y-28 pb-8">
       <FeatureHero
         breadcrumbLabel="Bulk Import"
         eyebrow="BULK IMPORT"
@@ -93,6 +94,8 @@ export default function BulkImportLandingPage() {
       />
 
       <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
+
+      <AiAnswerDemo />
 
       <FeatureSteps
         heading="Toplu içe aktarma nasıl çalışır?"

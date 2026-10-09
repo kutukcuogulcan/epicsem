@@ -4,6 +4,7 @@ import FeatureGrid from "@/components/FeatureGrid";
 import FeatureCTA from "@/components/FeatureCTA";
 import FeatureComparison from "@/components/FeatureComparison";
 import FeatureSteps from "@/components/FeatureSteps";
+import AiAnswerDemo from "@/components/marketing/AiAnswerDemo";
 
 const COMPARISON = {
   without: {
@@ -85,7 +86,7 @@ const FEATURES = [
 
 export default function SeoAxoAuditLandingPage() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-24 sm:space-y-28 pb-8">
       <FeatureHero
         breadcrumbLabel="SEO + AXO Denetimi"
         eyebrow="SEO + AXO AUDIT"
@@ -97,6 +98,8 @@ export default function SeoAxoAuditLandingPage() {
       />
 
       <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
+
+      <AiAnswerDemo />
 
       <FeatureSteps
         heading="Denetim nasıl çalışır?"

@@ -1,13 +1,8 @@
+import Reveal from "./marketing/Reveal";
+
 /**
- * Bigger, illustrated "how it works" block for the /features/* landing pages —
- * mirrors arvow.com's "STEP 1 / STEP 2 / STEP 3" section: a centered heading,
- * then up to 3 wide cards each with a large numbered circle, a bold title and
- * a description. This sits ON TOP of the page's own <ExampleScenario> (the
- * compact numbered list used across the whole app, tool pages included) —
- * it doesn't replace it, since ExampleScenario already carries the "this is a
- * fictional walkthrough" disclaimer other pages rely on; this component reuses
- * the same step copy just to give the landing page more visual weight, and
- * repeats a short version of that same disclaimer itself.
+ * "Nasıl çalışır" — arvow'daki ADIM 1/2/3 bölümünün akan hali: ortada dikey zaman çizgisi,
+ * adımlar sağa-sola sırayla kayarak gelir, numaralar nabız gibi atar.
  */
 export default function FeatureSteps({
   heading,
@@ -18,28 +13,46 @@ export default function FeatureSteps({
   subheading: string;
   steps: { title: string; body: string }[];
 }) {
-  const shown = steps.slice(0, 3);
+  const shown = steps.slice(0, 5);
   return (
-    <div className="space-y-8">
-      <div className="text-center max-w-2xl mx-auto space-y-2">
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{heading}</h2>
+    <section className="space-y-12">
+      <Reveal className="mx-auto max-w-2xl text-center space-y-3">
+        <span className="pill-outline bg-accent/5">NASIL ÇALIŞIR</span>
+        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{heading}</h2>
         <p className="text-ink/60">{subheading}</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {shown.map((s, i) => (
-          <div key={s.title} className="card p-6 space-y-3">
-            <div className="text-xs font-bold uppercase tracking-wide text-accent">Adım {i + 1}</div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white text-lg font-extrabold shadow-lg shadow-accent/20">
-              {i + 1}
-            </div>
-            <div className="font-bold">{s.title}</div>
-            <p className="text-sm text-ink/60">{s.body}</p>
-          </div>
-        ))}
+      </Reveal>
+
+      <div className="relative mx-auto max-w-4xl">
+        <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-gradient-to-b from-accent via-geo to-transparent" aria-hidden />
+        <ol className="space-y-10">
+          {shown.map((s, i) => {
+            const right = i % 2 === 1;
+            return (
+              <li key={s.title} className="relative grid grid-cols-1 md:grid-cols-2 md:gap-16">
+                <span className="absolute left-6 md:left-1/2 top-2 flex h-12 w-12 -translate-x-1/2 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-accent/30 animate-ping-soft" style={{ animationDelay: `${i * 0.4}s` }} />
+                  <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-accent text-lg font-extrabold text-white shadow-lg shadow-accent/30">
+                    {i + 1}
+                  </span>
+                </span>
+                <Reveal
+                  variant={right ? "right" : "left"}
+                  delay={80}
+                  spotlight
+                  className={`ml-16 md:ml-0 rounded-2xl border border-border bg-panel p-6 shadow-sm transition-shadow hover:shadow-lg ${right ? "md:col-start-2" : "md:col-start-1 md:text-right"}`}
+                >
+                  <div className="text-xs font-bold uppercase tracking-wide text-accent">Adım {i + 1}</div>
+                  <div className="mt-1.5 text-lg font-bold">{s.title}</div>
+                  <p className="mt-2 text-sm text-ink/60">{s.body}</p>
+                </Reveal>
+              </li>
+            );
+          })}
+        </ol>
       </div>
       <p className="text-center text-xs text-ink/30">
         Kurgusal bir örnek üzerinden anlatılmıştır — aracın gerçek koşularda nasıl çalıştığını somut şekilde göstermek içindir.
       </p>
-    </div>
+    </section>
   );
 }

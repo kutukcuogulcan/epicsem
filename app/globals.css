@@ -29,3 +29,117 @@ body {
 .badge-warning { @apply bg-warn/10 text-warn; }
 .badge-info { @apply bg-accent/10 text-accent; }
 .badge-pass { @apply bg-seo/10 text-seo; }
+
+/* ------------------------------------------------------------------------------------
+   Pazarlama sayfaları hareket sistemi (arvow.com / peec.ai tarzı "akan" sayfalar).
+   Reveal: components/marketing/Reveal.tsx görünür olunca .is-visible ekler.
+   prefers-reduced-motion'da her şey statik kalır.
+   ------------------------------------------------------------------------------------ */
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+
+.full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.reveal[data-variant="scale"] { transform: translateY(24px) scale(0.96); }
+.reveal[data-variant="left"] { transform: translateX(-36px); }
+.reveal[data-variant="right"] { transform: translateX(36px); }
+.reveal[data-variant="tilt"] { transform: perspective(1400px) rotateX(18deg) translateY(40px) scale(0.94); transform-origin: top center; }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 38s linear infinite; }
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+.marquee-mask:hover .animate-marquee { animation-play-state: paused; }
+
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.animate-float { animation: float-y 6s ease-in-out infinite; }
+.animate-float-slow { animation: float-y 9s ease-in-out infinite; }
+
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-30px, 20px) scale(0.95); }
+}
+.animate-blob { animation: blob-drift 18s ease-in-out infinite; }
+
+@keyframes gradient-pan { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+.text-gradient {
+  background: linear-gradient(90deg, #5d16ff, #a78bfa, #ec4899, #5d16ff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 6s linear infinite;
+}
+
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.animate-grow-x { transform-origin: left center; animation: grow-x 1.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes pop-in { 0% { opacity: 0; transform: scale(0.6); } 100% { opacity: 1; transform: scale(1); } }
+.animate-pop { animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+.typing-caret::after { content: "▍"; margin-left: 1px; color: #5d16ff; animation: caret 1s step-end infinite; }
+
+@keyframes ping-soft { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
+.animate-ping-soft { animation: ping-soft 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+.bg-grid {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+.bg-grid-dark {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+.fade-mask-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+/* Fare ile takip eden "spotlight" kart vurgusu (Reveal ile birlikte kullanılır). */
+.spotlight { position: relative; overflow: hidden; }
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(93, 22, 255, 0.09), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.spotlight:hover::before { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .animate-marquee, .animate-float, .animate-float-slow, .animate-blob, .text-gradient,
+  .animate-grow-x, .animate-pop, .animate-ping-soft { animation: none !important; }
+}
+
+.hero-title .text-accent {
+  background: linear-gradient(90deg, #5d16ff, #a78bfa, #ec4899, #5d16ff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .hero-title .text-accent { animation: none; } }

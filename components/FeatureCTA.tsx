@@ -1,7 +1,7 @@
 import Link from "next/link";
+import Reveal from "./marketing/Reveal";
 
-/** Closing CTA block for the /features/* pages — same accent-blob treatment as the
- * pricing/homepage heroes, so the last thing on the page matches the first. */
+/** Kapanış CTA — koyu zemin, ızgara, kayan renk lekeleri; sayfanın son "vuruşu". */
 export default function FeatureCTA({
   title,
   body,
@@ -12,14 +12,21 @@ export default function FeatureCTA({
   cta: { href: string; label: string };
 }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-accent text-white px-6 sm:px-10 py-10 text-center space-y-4">
-      <div className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-20 -right-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" aria-hidden />
-      <h2 className="relative text-xl sm:text-2xl font-semibold tracking-tight">{title}</h2>
-      <p className="relative text-white/80 max-w-xl mx-auto text-sm">{body}</p>
-      <Link href={cta.href} className="relative inline-block rounded-lg bg-white text-accent px-6 py-3 text-sm font-medium hover:opacity-90 transition-opacity">
-        {cta.label}
-      </Link>
-    </div>
+    <Reveal variant="scale" className="relative overflow-hidden rounded-[2rem] bg-ink px-6 sm:px-12 py-16 text-center text-white">
+      <div className="pointer-events-none absolute inset-0 bg-grid-dark" aria-hidden />
+      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-accent/50 blur-3xl animate-blob" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-28 -right-10 h-80 w-80 rounded-full bg-pink-500/30 blur-3xl animate-blob" style={{ animationDelay: "-8s" }} aria-hidden />
+      <div className="relative space-y-5">
+        <h2 className="mx-auto max-w-2xl text-3xl sm:text-4xl font-extrabold tracking-tight">{title}</h2>
+        <p className="mx-auto max-w-xl text-white/70">{body}</p>
+        <Link
+          href={cta.href}
+          className="group inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-ink shadow-xl transition-all hover:-translate-y-0.5"
+        >
+          {cta.label}
+          <span className="transition-transform group-hover:translate-x-1">→</span>
+        </Link>
+      </div>
+    </Reveal>
   );
 }
