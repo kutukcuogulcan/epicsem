@@ -366,9 +366,12 @@ export default function ContentStudioPage() {
                     {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
                   </p>
                 </div>
-                {selectedDraft.status === "published-to-wp" && (
-                  <span className="badge badge-pass">Yayınlandı</span>
-                )}
+                <div className="flex items-center gap-2">
+                  <a href={`/editor?draftId=${selectedDraft.id}`} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/5">✎ Editörde aç</a>
+                  {selectedDraft.status === "published-to-wp" && (
+                    <span className="badge badge-pass">Yayınlandı</span>
+                  )}
+                </div>
               </div>
 
               <p className="text-sm text-ink/70 italic">{selectedDraft.article.metaDescription}</p>

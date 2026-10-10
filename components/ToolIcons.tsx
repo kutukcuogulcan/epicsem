@@ -52,6 +52,14 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <path d="M2.5 13v1.5A1.5 1.5 0 0 0 4 16h10a1.5 1.5 0 0 0 1.5-1.5V13" />
     </ToolIcon>
   ),
+  editor: (
+    <ToolIcon>
+      <path d="M3 4h12" />
+      <path d="M3 7.5h7" />
+      <path d="M3 11h5" />
+      <path d="M12.5 9.5l1.2 2.3 2.3 1.2-2.3 1.2-1.2 2.3-1.2-2.3-2.3-1.2 2.3-1.2z" />
+    </ToolIcon>
+  ),
   content: (
     <ToolIcon>
       <path d="M11.5 2.5l4 4L6 16l-4.3.8L2.5 12.5z" />

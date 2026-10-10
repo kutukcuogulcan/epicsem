@@ -1103,6 +1103,30 @@ export async function getContentDraft(userId: number, id: number): Promise<Conte
   return row ? rowToContentDraft(row) : null;
 }
 
+/** AI SEO Editör'de düzenlenen taslağın makalesini günceller (sahiplik kontrollü). */
+export async function updateContentDraftArticle(userId: number, id: number, article: GeneratedArticle): Promise<ContentDraft | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `UPDATE content_drafts SET article_json = $1 WHERE id = $2 AND user_id = $3 RETURNING *`,
+    [JSON.stringify(article), id, userId]
+  );
+  return row ? rowToContentDraft(row) : null;
+}
+
+/** Bir alan adı için en son Site Taraması'nın sayfaları (editörde iç link önerisi için). */
+export async function getLatestCrawlPages(userId: number, host: string): Promise<{ url: string; title: string | null; h1: string | null }[]> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT result_json FROM import_runs WHERE user_id = $1 AND (filename = $2 OR filename LIKE $3) ORDER BY id DESC LIMIT 1`,
+    [userId, host, `${host} %`]
+  );
+  if (!row) return [];
+  const r = JSON.parse(row.result_json);
+  return (r.rows ?? [])
+    .filter((x: any) => x.statusCode >= 200 && x.statusCode < 300 && x.indexable !== false)
+    .map((x: any) => ({ url: x.url, title: x.title ?? null, h1: x.h1 ?? null }));
+}
+
 /** Ownership-checked — only marks the draft published if the calling user actually owns it. */
 export async function markDraftPublished(userId: number, id: number, params: { connectionId: number; postUrl: string; editUrl: string }): Promise<void> {
   await ensureSchema();

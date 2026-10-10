@@ -48,6 +48,11 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
       {open && (
         <tr className="bg-muted/20">
           <td colSpan={7} className="px-5 pb-5 pt-2">
+            {sc !== null && sc >= 200 && sc < 300 && (
+              <div className="mb-2 flex justify-end">
+                <a href={`/editor?url=${encodeURIComponent(row.url)}`} onClick={(e) => e.stopPropagation()} className="rounded-lg border border-accent/40 px-3 py-1 text-xs font-bold text-accent hover:bg-accent/5">✎ AI SEO Editör'de aç</a>
+              </div>
+            )}
             {sc !== null && sc >= 200 && sc < 300 && row.issues.length > 0 && (
               <div className="mb-4">
                 <AiFixSuggest url={row.url} issues={row.issues} />
