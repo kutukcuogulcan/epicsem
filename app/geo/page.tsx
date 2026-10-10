@@ -24,6 +24,7 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import GeoOverview from "@/components/tool/GeoOverview";
+import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 
 const SCENARIO_STEPS = [
@@ -439,41 +440,36 @@ export default function GeoPage() {
 
       <div id="yeni-test" className="scroll-mt-24 pt-4 border-t border-border">
         <h2 className="text-lg font-bold">Yeni test</h2>
-        <p className="text-sm text-ink/50">Adresini gir, gerisini biz kuralım — ya da markayı ve promptları elle yaz.</p>
+        <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler ve promptlar otomatik çıkarılır, test hemen başlar.</p>
       </div>
 
       {wizardOpen ? (
         <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} running={loading} />
       ) : (
-        <button
-          type="button"
-          onClick={() => setWizardOpen(true)}
-          className="group flex w-full items-center gap-4 rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/[0.06] to-transparent p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:shadow-accent/10"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-lg text-white shadow-md shadow-accent/30">🪄</span>
-          <span className="flex-1">
-            <span className="block font-bold">URL ile otomatik kur</span>
-            <span className="block text-sm text-ink/55">Adresini gir; marka profili, rakipler, konu başlıkları ve promptlar senin için üretilsin.</span>
-          </span>
-          <span className="text-accent transition-transform group-hover:translate-x-1">→</span>
-        </button>
+        <>
+          <QuickGeoAnalyze onReady={handleWizardComplete} running={loading} onOpenSettings={() => setManualOpen(true)} />
+          <p className="text-xs text-ink/40">
+            Her şeyi adım adım kendin seçmek istersen{" "}
+            <button type="button" onClick={() => setWizardOpen(true)} className="font-semibold text-accent hover:underline">
+              sihirbazla kur
+            </button>
+            .
+          </p>
+        </>
       )}
 
-      {!wizardOpen && (
-        <button
-          type="button"
-          onClick={() => setManualOpen((o) => !o)}
-          className="flex w-full items-center justify-center gap-2 text-sm font-semibold text-ink/50 hover:text-ink"
-        >
-          <span className="h-px flex-1 bg-border" />
-          <span>{manualOpen ? "Elle kurulumu gizle" : "veya markayı ve promptları elle gir"}</span>
-          <span className={`transition-transform ${manualOpen ? "rotate-180" : ""}`}>▾</span>
-          <span className="h-px flex-1 bg-border" />
-        </button>
-      )}
-
-      {!wizardOpen && manualOpen && (
-      <form onSubmit={runTest} className="manual-form overflow-hidden rounded-2xl border border-border bg-panel shadow-sm">
+      {manualOpen && (
+      <div className="fixed inset-0 z-50 flex justify-end">
+      <button type="button" aria-label="Kapat" onClick={() => setManualOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+      <div className="relative h-full w-full max-w-xl overflow-y-auto bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-panel/95 px-6 py-4 backdrop-blur">
+        <div>
+          <div className="font-bold">Ayarlar</div>
+          <div className="text-xs text-ink/50">Marka, rakipler, promptlar ve motorlar — değişiklikler bu testte kullanılır.</div>
+        </div>
+        <button type="button" onClick={() => setManualOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted text-ink/50">✕</button>
+      </div>
+      <form onSubmit={(e) => { setManualOpen(false); runTest(e); }} className="manual-form">
         <div className="card space-y-3">
           <h2 className="font-bold text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -597,6 +593,8 @@ export default function GeoPage() {
           </button>
         </div>
       </form>
+      </div>
+      </div>
       )}
 
       <SavedPromptsPanel
