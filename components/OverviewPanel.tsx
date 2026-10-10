@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import KpiCard from "@/components/tool/KpiCard";
 import type { GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
 
 /**
@@ -28,6 +29,9 @@ interface Props {
   brands: { brandName: string; brandDomain: string }[];
   selectedDomain: string;
   runs: OverviewRunData[];
+  /** Verilirse marka değişimi sayfa yönlendirmesi yerine bunu çağırır (ör. /geo içinde). */
+  onBrandChange?: (domain: string) => void;
+  newTestHref?: string;
 }
 
 const RANGES = [
@@ -133,7 +137,7 @@ function Dropdown<T extends string | number>({
   );
 }
 
-export default function OverviewPanel({ brands, selectedDomain, runs }: Props) {
+export default function OverviewPanel({ brands, selectedDomain, runs, onBrandChange, newTestHref = "/geo" }: Props) {
   const router = useRouter();
   const [days, setDays] = useState(14);
   const [granularity, setGranularity] = useState<Granularity>("D");
@@ -225,6 +229,26 @@ export default function OverviewPanel({ brands, selectedDomain, runs }: Props) {
     };
   }, [inRange, first, last]);
 
+  // Kendi markamızın KPI'ları (Ahrefs tarzı mini grafikli kartlar).
+  const own = useMemo(() => {
+    const pick = (r: OverviewRunData) => r.summaries.find((x) => x.domain === selectedDomain) ?? r.summaries[0];
+    const series = inRange.map(pick).filter(Boolean) as GeoVisibilitySummary[];
+    const lastS = series[series.length - 1];
+    const firstS = series[0];
+    const diff = (a?: number | null, b?: number | null, mul = 1) => (a != null && b != null && series.length > 1 ? Math.round((a - b) * mul * 10) / 10 : null);
+    return {
+      series,
+      vis: lastS ? `%${Math.round(lastS.visibility * 100)}` : "—",
+      sov: lastS ? `%${Math.round(lastS.shareOfVoice * 100)}` : "—",
+      pos: lastS?.avgPosition != null ? `#${lastS.avgPosition.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}` : "—",
+      sent: lastS?.avgSentiment != null ? String(lastS.avgSentiment) : "—",
+      dVis: diff(lastS?.visibility, firstS?.visibility, 100),
+      dSov: diff(lastS?.shareOfVoice, firstS?.shareOfVoice, 100),
+      dPos: diff(lastS?.avgPosition, firstS?.avgPosition),
+      dSent: diff(lastS?.avgSentiment, firstS?.avgSentiment),
+    };
+  }, [inRange, selectedDomain]);
+
   const sourceRows = (sourceTab === "top" ? sources.top : sourceTab === "new" ? sources.newOnes : sources.losing).slice(0, 8);
   const maxCount = Math.max(1, ...sourceRows.map((r) => r.count));
 
@@ -238,7 +262,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs }: Props) {
           icon={<span>▦</span>}
           value={selectedDomain}
           options={brandOptions}
-          onChange={(v) => router.push(`/dashboard?brand=${encodeURIComponent(String(v))}`)}
+          onChange={(v) => (onBrandChange ? onBrandChange(String(v)) : router.push(`/dashboard?brand=${encodeURIComponent(String(v))}`))}
         />
         <Dropdown icon={<span>📅</span>} value={days} options={RANGES.map((r) => ({ value: r.days, label: r.label }))} onChange={(v) => setDays(Number(v))} />
         {hidden.size > 0 && (
@@ -248,7 +272,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs }: Props) {
         )}
         <div className="ml-auto flex items-center gap-2">
           {anyDemo && <span className="rounded-full bg-warn/10 text-warn text-xs font-medium px-2.5 py-1">Demo veri içeriyor</span>}
-          <Link href="/geo" className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-bold hover:opacity-90">
+          <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-bold hover:opacity-90">
             Yeni test
           </Link>
         </div>
@@ -258,6 +282,15 @@ export default function OverviewPanel({ brands, selectedDomain, runs }: Props) {
         <h2 className="text-lg font-bold">Genel bakış</h2>
         <p className="text-sm text-ink/50">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
       </div>
+
+      {inRange.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <KpiCard label="Görünürlük" value={own.vis} delta={own.dVis} spark={own.series.map((x) => x.visibility * 100)} />
+          <KpiCard label="Share of Voice" value={own.sov} delta={own.dSov} spark={own.series.map((x) => x.shareOfVoice * 100)} color="#16a34a" />
+          <KpiCard label="Ort. pozisyon" value={own.pos} delta={own.dPos} deltaGoodWhen="down" spark={own.series.map((x) => x.avgPosition ?? 0)} color="#f59e0b" />
+          <KpiCard label="Duygu" value={own.sent} delta={own.dSent} spark={own.series.map((x) => x.avgSentiment ?? 0)} color="#ec4899" hint="0-100" />
+        </div>
+      )}
 
       {inRange.length === 0 ? (
         <div className="card text-sm text-ink/50">

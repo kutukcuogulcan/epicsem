@@ -531,6 +531,16 @@ function rowToAuditSummary(row: any): AuditRunSummary {
   };
 }
 
+/** Araç sayfası panosu (/audit) — kullanıcının son denetimleri, eskiden yeniye. */
+export async function listRecentAuditRuns(userId: number, limit = 120): Promise<AuditRunSummary[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT * FROM (SELECT * FROM audit_runs WHERE user_id = $1 ORDER BY id DESC LIMIT $2) r ORDER BY id ASC`,
+    [userId, limit]
+  );
+  return rows.map(rowToAuditSummary);
+}
+
 /**
  * The run before the one just inserted, for this exact user+URL — null on a page's
  * first ever recorded run (there's nothing to compare against yet, not "compare to

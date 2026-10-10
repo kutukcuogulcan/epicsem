@@ -10,6 +10,7 @@ import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import AuditOverview from "@/components/tool/AuditOverview";
 import { useAgencyName } from "@/lib/use-agency-name";
 
 const SCENARIO_STEPS = [
@@ -90,6 +91,7 @@ export default function AuditPage() {
   const [result, setResult] = useState<SeoAuditResult | null>(null);
   const [previousRun, setPreviousRun] = useState<PreviousAuditRun | null>(null);
   const [agencyName, setAgencyName] = useAgencyName();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     // Ana sayfadaki "siteniz.com" kutusundan gelen ?url= ön-doldurması.
@@ -131,6 +133,7 @@ export default function AuditPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Denetim başarısız oldu");
       setResult(data);
+      setRefreshKey((k) => k + 1);
       setPreviousRun(data.previousRun ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
@@ -173,25 +176,33 @@ export default function AuditPage() {
       <ToolPageHeader
         breadcrumbLabel="SEO + AXO Audit"
         title="SEO + AXO Audit"
-        body="Title, meta, başlıklar, schema ve sitemap gibi temelleri kontrol eder — ayrıca GPTBot, ClaudeBot, PerplexityBot, Google-Extended gibi AI crawler'ların sayfaya gerçekten erişip erişemediğini gösterir."
+        body="Teknik SEO temelleri ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişimi — tek taramada."
       />
 
-      <form onSubmit={runAudit} className="flex gap-3">
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="example.com"
-          required
-          className="flex-1 rounded-lg bg-panel border border-border px-4 py-2.5 text-sm outline-none focus:border-accent"
-        />
+      <form
+        onSubmit={runAudit}
+        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
+      >
+        <div className="flex flex-1 items-center gap-2 px-3">
+          <span className="text-ink/30">🌐</span>
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Denetlenecek adres — ör. siteniz.com"
+            required
+            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/35"
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? "Taranıyor…" : "Denetimi başlat"}
+          {loading ? "Taranıyor…" : "Denetimi başlat →"}
         </button>
       </form>
+
+      {!result && <AuditOverview refreshKey={refreshKey} onPick={setUrl} />}
 
       {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
 

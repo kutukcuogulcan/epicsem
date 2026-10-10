@@ -23,6 +23,7 @@ import ScoreBadge from "@/components/ScoreBadge";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import GeoOverview from "@/components/tool/GeoOverview";
 import OnboardingWizard from "@/components/OnboardingWizard";
 
 const SCENARIO_STEPS = [
@@ -197,6 +198,7 @@ export default function GeoPage() {
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
   const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls">("visibility");
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [overviewKey, setOverviewKey] = useState(0);
   const autoRunRef = useRef(false);
 
   useEffect(() => {
@@ -325,6 +327,7 @@ export default function GeoPage() {
       if (!res.ok) throw new Error(data.error ?? "Test başarısız oldu");
       setRuns(data.runs);
       setSummaries(data.summaries);
+      setOverviewKey((k) => k + 1);
       setSourceDistribution(data.sourceDistribution);
       if (Array.isArray(data.urlStats)) setUrlStats(data.urlStats);
       if (typeof data.chatCount === "number") setChatCount(data.chatCount);
@@ -424,11 +427,18 @@ export default function GeoPage() {
     <div className="space-y-8">
       <ToolPageHeader
         breadcrumbLabel="GEO/AEO Visibility"
-        title="GEO / AEO Visibility Test"
-        body="Promptlarınızı ChatGPT, Claude, Gemini ve Perplexity'e gönderir; markanızın anılıp anılmadığını, rakiplere göre nerede durduğunu ve hangi kaynakların referans gösterildiğini ölçer."
+        title="GEO / AEO Visibility"
+        body="Markanın ChatGPT, Claude, Gemini ve Perplexity cevaplarında ne sıklıkla, kaçıncı sırada ve hangi kaynaklarla geçtiği."
       >
         <UsageMeter metric="engineQueries" />
       </ToolPageHeader>
+
+      <GeoOverview refreshKey={overviewKey} />
+
+      <div id="yeni-test" className="scroll-mt-24 pt-4 border-t border-border">
+        <h2 className="text-lg font-bold">Yeni test</h2>
+        <p className="text-sm text-ink/50">Adresini gir, gerisini biz kuralım — ya da markayı ve promptları elle yaz.</p>
+      </div>
 
       {wizardOpen ? (
         <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} running={loading} />
@@ -436,10 +446,14 @@ export default function GeoPage() {
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="w-full card border-dashed border-accent/40 text-left text-sm hover:border-accent transition-colors"
+          className="group flex w-full items-center gap-4 rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/[0.06] to-transparent p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:shadow-accent/10"
         >
-          <span className="font-bold text-accent">🪄 URL ile otomatik kur</span>
-          <span className="text-ink/50"> — markanızın adresini girin, marka profilini, konu başlıklarını ve promptları sizin için üretelim.</span>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-lg text-white shadow-md shadow-accent/30">🪄</span>
+          <span className="flex-1">
+            <span className="block font-bold">URL ile otomatik kur</span>
+            <span className="block text-sm text-ink/55">Adresini gir; marka profili, rakipler, konu başlıkları ve promptlar senin için üretilsin.</span>
+          </span>
+          <span className="text-accent transition-transform group-hover:translate-x-1">→</span>
         </button>
       )}
 
