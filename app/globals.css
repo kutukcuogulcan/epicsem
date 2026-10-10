@@ -143,3 +143,21 @@ body { overflow-x: hidden; }
   animation: gradient-pan 6s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) { .hero-title .text-accent { animation: none; } }
+
+/* /geo elle kurulum formu: ayrı kartlar yerine tek premium kart, bölümler ince çizgiyle. */
+.manual-form > .card {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: transparent;
+  padding: 1.25rem 1.5rem;
+}
+.manual-form input:not([type="checkbox"]),
+.manual-form textarea {
+  background: #fff !important;
+  border-radius: 0.75rem !important;
+}
+.manual-form input:not([type="checkbox"]):focus,
+.manual-form textarea:focus {
+  box-shadow: 0 0 0 4px rgba(93, 22, 255, 0.08);
+}

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import KpiCard from "@/components/tool/KpiCard";
+import GhostChart from "@/components/tool/GhostChart";
 import type { GeoVisibilitySummary, SourceDomainStat, SourceDomainType } from "@/types";
 
 /**
@@ -139,7 +140,14 @@ function Dropdown<T extends string | number>({
 
 export default function OverviewPanel({ brands, selectedDomain, runs, onBrandChange, newTestHref = "/geo" }: Props) {
   const router = useRouter();
-  const [days, setDays] = useState(14);
+  // Varsayılan aralık: son testi kapsayan en kısa aralık (14 günde test yoksa boş ekran
+  // yerine otomatik 30/90 güne açılır).
+  const [days, setDays] = useState(() => {
+    const lastRun = runs[runs.length - 1];
+    if (!lastRun) return 14;
+    const ageDays = (Date.now() - new Date(lastRun.createdAt).getTime()) / 86400000;
+    return RANGES.find((r) => r.days >= ageDays + 0.5)?.days ?? 90;
+  });
   const [granularity, setGranularity] = useState<Granularity>("D");
   const [sourceTab, setSourceTab] = useState<"top" | "new" | "losing">("top");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -293,10 +301,22 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
       )}
 
       {inRange.length === 0 ? (
-        <div className="card text-sm text-ink/50">
-          Seçilen aralıkta bu marka için GEO testi yok. Aralığı genişletin ya da{" "}
-          <Link href="/geo" className="text-accent hover:underline">yeni bir test çalıştırın</Link>.
-        </div>
+        <GhostChart
+          title="Bu aralıkta test yok"
+          body={`Son ${days} günde bu marka için GEO testi çalıştırılmamış. Aralığı genişlet ya da yeni bir test başlat.`}
+          cta={
+            <div className="mt-1 flex gap-2">
+              {days < 90 && (
+                <button type="button" onClick={() => setDays(90)} className="rounded-lg border border-border bg-panel px-4 py-2 text-sm font-semibold hover:border-ink/30">
+                  Son 90 güne bak
+                </button>
+              )}
+              <Link href={newTestHref} className="rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
+                Yeni test
+              </Link>
+            </div>
+          }
+        />
       ) : (
         <div className="grid lg:grid-cols-2 gap-4">
           {/* Visibility grafiği */}

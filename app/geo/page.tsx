@@ -199,6 +199,7 @@ export default function GeoPage() {
   const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls">("visibility");
   const [wizardOpen, setWizardOpen] = useState(false);
   const [overviewKey, setOverviewKey] = useState(0);
+  const [manualOpen, setManualOpen] = useState(false);
   const autoRunRef = useRef(false);
 
   useEffect(() => {
@@ -209,6 +210,7 @@ export default function GeoPage() {
       .then((data) => {
         if (!data.client) return;
         setClientId(data.client.id);
+        setManualOpen(true);
         setBrand({ name: data.client.name, domain: data.client.domain });
         if (data.client.competitors.length > 0) setCompetitors(data.client.competitors);
       })
@@ -458,7 +460,20 @@ export default function GeoPage() {
       )}
 
       {!wizardOpen && (
-      <form onSubmit={runTest} className="space-y-5">
+        <button
+          type="button"
+          onClick={() => setManualOpen((o) => !o)}
+          className="flex w-full items-center justify-center gap-2 text-sm font-semibold text-ink/50 hover:text-ink"
+        >
+          <span className="h-px flex-1 bg-border" />
+          <span>{manualOpen ? "Elle kurulumu gizle" : "veya markayı ve promptları elle gir"}</span>
+          <span className={`transition-transform ${manualOpen ? "rotate-180" : ""}`}>▾</span>
+          <span className="h-px flex-1 bg-border" />
+        </button>
+      )}
+
+      {!wizardOpen && manualOpen && (
+      <form onSubmit={runTest} className="manual-form overflow-hidden rounded-2xl border border-border bg-panel shadow-sm">
         <div className="card space-y-3">
           <h2 className="font-bold text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -569,13 +584,18 @@ export default function GeoPage() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Çalışıyor…" : `${prompts.length} prompt × ${engines.length} motoru çalıştır`}
-        </button>
+        <div className="flex items-center justify-between gap-4 bg-muted/50 px-6 py-4">
+          <span className="text-xs text-ink/50">
+            {prompts.length} prompt × {engines.length} motor = <b className="text-ink/70">{prompts.length * engines.length}</b> sorgu
+          </span>
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-bold shadow-md shadow-accent/25 hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? "Çalışıyor…" : "Testi çalıştır →"}
+          </button>
+        </div>
       </form>
       )}
 
