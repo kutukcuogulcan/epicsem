@@ -101,7 +101,7 @@ export default function ImportOverview({ refreshKey = 0, onPick }: { refreshKey?
   return (
     <section className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Taranan sayfa" value={String(stats.pages)} spark={stats.sparkPages} hint={stats.last.filename} />
+        <KpiCard label="Taranan sayfa" value={String(stats.pages)} spark={stats.sparkPages} hint={stats.last.filename.split(" · ")[0]} />
         <KpiCard label="Toplam sorun" value={String(stats.issues)} delta={stats.dIssues} deltaGoodWhen="down" spark={stats.sparkIssues} color="#f59e0b" />
         <KpiCard label="Kırık sayfa" value={String(stats.broken)} delta={stats.dBroken} deltaGoodWhen="down" spark={stats.sparkBroken} color="#ef4444" hint="4xx/5xx" />
         <KpiCard label="Tekrarlayan title/meta" value={String(stats.dupes)} spark={stats.sparkDupes} hint="URL" />
@@ -152,7 +152,10 @@ export default function ImportOverview({ refreshKey = 0, onPick }: { refreshKey?
                     <span className="flex items-center gap-2 font-medium">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(r.filename.split(" ")[0])}&sz=32`} alt="" width={16} height={16} className="h-4 w-4 rounded" />
-                      <span className="truncate max-w-[9rem]">{r.filename}</span>
+                      <span className="truncate max-w-[9rem]">{r.filename.split(" · ")[0]}</span>
+                      {r.filename.includes("Screaming Frog") && (
+                        <span className="shrink-0 rounded bg-seo/10 px-1.5 py-0.5 text-[10px] font-bold text-seo" title="Screaming Frog taraması">SF</span>
+                      )}
                     </span>
                   </td>
                   <td className="py-2.5 tabular-nums text-ink/70">{r.rowCount}</td>

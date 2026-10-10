@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
     if (result.rows.length === 0) {
       return NextResponse.json({ error: "No usable rows found in this CSV." }, { status: 400 });
     }
+    // Panoda siteyle eşleşsin: dosya adı yerine taranan alan adı + kaynak.
+    try {
+      const host = new URL(result.rows[0].url).hostname.replace(/^www\./, "");
+      result.filename = `${host} · Screaming Frog`;
+    } catch {}
     let id: number | null = null;
     try {
       id = await saveImportRun(user.id, result);

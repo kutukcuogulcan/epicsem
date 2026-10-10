@@ -8,6 +8,7 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import ImportOverview from "@/components/tool/ImportOverview";
+import ScreamingFrogConnect from "@/components/tool/ScreamingFrogConnect";
 
 const SCENARIO_STEPS = [
   {
@@ -35,7 +36,7 @@ const SCENARIO_STEPS = [
 const FAQ_ITEMS = [
   {
     q: "Ek bir program ya da dosya gerekiyor mu?",
-    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder. Sadece alan adını yazman yeterli.",
+    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder. Bilgisayarında Screaming Frog varsa \"Screaming Frog ile tara\" bölümünden onunla da tarayabilirsin — sonuç aynı panoya SF etiketiyle düşer.",
   },
   {
     q: "Kaç sayfa taranıyor?",
@@ -198,6 +199,14 @@ export default function ImportPage() {
           </button>
         </div>
       </form>
+
+      <ScreamingFrogConnect
+        url={url}
+        onResult={(d) => {
+          show(d);
+          setRefreshKey((k) => k + 1);
+        }}
+      />
 
       {loading && (
         <div className="rounded-2xl border border-border bg-panel p-5">
