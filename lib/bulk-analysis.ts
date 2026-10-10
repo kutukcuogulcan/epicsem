@@ -5,7 +5,12 @@ export type RawBulkRow = Omit<BulkImportRow, "issues">;
 
 const THIN_CONTENT_WORDS = 200;
 const TITLE_MAX = 60;
+const TITLE_MIN = 30;
 const META_DESC_MAX = 160;
+const META_DESC_MIN = 70;
+const SLOW_MS = 1500;
+const LARGE_HTML_KB = 500;
+const DEEP_CLICKS = 4;
 
 /**
  * Site genelindeki teknik SEO sorunlarını satırlardan çıkarır: kırık/yönlendirme, eksik/uzun/
@@ -33,6 +38,30 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
       if (!h1) issues.push("missing-h1");
       if (h1Count > 1) issues.push("multiple-h1");
       if (wordCount !== null && wordCount < THIN_CONTENT_WORDS) issues.push("thin-content");
+    }
+    const m = r.metrics;
+    if (m) {
+      if (statusCode !== null && statusCode >= 300 && statusCode < 400 && m.redirectChain) issues.push("redirect-chain");
+      if (m.brokenOutlinks.length > 0) issues.push("broken-outlinks");
+      if (m.orphan) issues.push("orphan-page");
+      if (is2xx) {
+        if (m.responseMs !== null && m.responseMs > SLOW_MS) issues.push("slow-response");
+        if (m.htmlKb !== null && m.htmlKb > LARGE_HTML_KB) issues.push("large-page");
+        if (m.mixedContent > 0) issues.push("mixed-content");
+      }
+      if (isIndexableContext && is2xx) {
+        if (title && title.length < TITLE_MIN) issues.push("title-too-short");
+        if (metaDescription && metaDescription.length < META_DESC_MIN) issues.push("meta-description-too-short");
+        if (m.imagesMissingAlt > 0) issues.push("images-missing-alt");
+        if (!r.canonical) issues.push("missing-canonical");
+        if (m.schemaTypes.length === 0) issues.push("missing-schema");
+        if (!m.hasViewport) issues.push("missing-viewport");
+        if (!m.lang) issues.push("missing-lang");
+        if (!m.hasOpenGraph) issues.push("missing-open-graph");
+        if (m.h2Count === 0 && (wordCount ?? 0) >= THIN_CONTENT_WORDS) issues.push("missing-h2");
+        if (m.depth !== null && m.depth >= DEEP_CLICKS) issues.push("deep-page");
+        if (m.inSitemap === false && m.depth !== null && m.depth > 0) issues.push("not-in-sitemap");
+      }
     }
     if (indexable === false) issues.push("non-indexable");
     if (metaRobots && /noindex/i.test(metaRobots)) issues.push("noindex-tag");
@@ -76,6 +105,16 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
     nonIndexable: n("non-indexable"),
     noindexTag: n("noindex-tag"),
   };
+
+  const issueCounts: Record<string, number> = {};
+  for (const row of rows) for (const code of row.issues) issueCounts[code] = (issueCounts[code] ?? 0) + 1;
+  summary.issueCounts = issueCounts;
+  const withM = rows.filter((r) => r.metrics && r.statusCode !== null && r.statusCode >= 200 && r.statusCode < 300);
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+  if (withM.length) {
+    summary.avgResponseMs = avg(withM.map((r) => r.metrics!.responseMs).filter((x): x is number => x !== null));
+    summary.avgHtmlKb = avg(withM.map((r) => r.metrics!.htmlKb).filter((x): x is number => x !== null));
+  }
 
   return { filename, importedAt: new Date().toISOString(), columns, summary, rows, duplicateTitleGroups, duplicateMetaGroups };
 }

@@ -20,7 +20,7 @@ const COMPARISON = {
     title: "Epicsem Site Taraması ile",
     items: [
       "Sadece alan adını yazın, tüm site otomatik taransın",
-      "13 sorun kategorisi tüm site genelinde otomatik çıkar",
+      "30'a yakın kontrol tüm site genelinde otomatik çıkar",
       "Sorun tipine göre filtrelenebilir özet tablo",
       "Kategoriye göre gruplanmış tek fix prompt'u",
     ],
@@ -77,7 +77,7 @@ const FAQ_ITEMS = [
 
 const FEATURES = [
   { title: "Kurulumsuz tüm-site taraması", body: "Sitemap ve iç linkler üzerinden yüzlerce sayfa otomatik taranır — program ya da dosya gerekmez." },
-  { title: "13 sorun kategorisi", body: "Eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1, noindex ve daha fazlası." },
+  { title: "30'a yakın kontrol", body: "Yanıt kodları, yönlendirme zincirleri, kırık iç linkler, yetim sayfalar, title/meta, H1-H2, alt metni, schema, canonical, hız ve sayfa boyutu." },
   { title: "Filtrelenebilir sorun tablosu", body: "Sorun tipine göre filtreleyip yalnızca ilgilendiğiniz URL'leri görün." },
   { title: "Kategoriye göre gruplanmış fix prompt'u", body: "Tek prompt, her sorun kategorisi için örnek URL'lerle birlikte üretilir." },
   { title: "Tarama geçmişi ve trend", body: "Önceki taramaları tekrar açın, sorun sayısının zamanla nasıl düştüğünü grafikte görün." },

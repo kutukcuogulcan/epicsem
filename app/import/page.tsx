@@ -8,7 +8,8 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import ImportOverview from "@/components/tool/ImportOverview";
-import ScreamingFrogConnect from "@/components/tool/ScreamingFrogConnect";
+import { ISSUE_LABEL, ISSUE_GROUPS, CRITICAL_ISSUES } from "@/lib/bulk-labels";
+import type { BulkImportRow } from "@/types";
 
 const SCENARIO_STEPS = [
   {
@@ -36,7 +37,7 @@ const SCENARIO_STEPS = [
 const FAQ_ITEMS = [
   {
     q: "Ek bir program ya da dosya gerekiyor mu?",
-    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder. Bilgisayarında Screaming Frog varsa \"Screaming Frog ile tara\" bölümünden onunla da tarayabilirsin — sonuç aynı panoya SF etiketiyle düşer.",
+    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder.",
   },
   {
     q: "Kaç sayfa taranıyor?",
@@ -52,25 +53,101 @@ const FAQ_ITEMS = [
   },
 ];
 
-const ISSUE_LABEL: Record<string, string> = {
-  broken: "Kırık (4xx/5xx)",
-  redirect: "Yönlendirme",
-  "missing-title": "Eksik title",
-  "title-too-long": "Title çok uzun",
-  "duplicate-title": "Tekrarlayan title",
-  "missing-meta-description": "Eksik meta açıklaması",
-  "meta-description-too-long": "Meta açıklaması çok uzun",
-  "duplicate-meta-description": "Tekrarlayan meta açıklaması",
-  "missing-h1": "Eksik H1",
-  "multiple-h1": "Birden çok H1",
-  "thin-content": "Yetersiz içerik",
-  "non-indexable": "İndekslenemez",
-  "noindex-tag": "Noindex etiketi",
-};
-
 const ROWS_SHOWN = 300;
 
 const PAGE_LIMITS = [50, 150, 300];
+
+function short(u: string) {
+  return u.replace(/^https?:\/\/(www\.)?/, "");
+}
+
+function Stat({ label, value, bad = false }: { label: string; value: React.ReactNode; bad?: boolean }) {
+  return (
+    <div className="rounded-lg bg-muted/60 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-ink/40">{label}</div>
+      <div className={`mt-0.5 text-sm font-semibold ${bad ? "text-danger" : "text-ink/80"}`}>{value}</div>
+    </div>
+  );
+}
+
+/** Tablo satırı + tıklayınca açılan Screaming Frog tarzı sayfa ayrıntısı. */
+function PageRow({ row, open, onToggle }: { row: BulkImportRow; open: boolean; onToggle: () => void }) {
+  const m = row.metrics;
+  const sc = row.statusCode;
+  return (
+    <>
+      <tr onClick={onToggle} className={`cursor-pointer border-t border-border align-top hover:bg-muted/40 ${open ? "bg-muted/40" : ""}`}>
+        <td className="max-w-xs truncate px-5 py-2.5 font-medium" title={row.url}>
+          <span className="mr-1.5 inline-block text-ink/30">{open ? "▾" : "▸"}</span>
+          {short(row.url)}
+        </td>
+        <td className="py-2.5 pr-3">
+          <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums ${sc && sc >= 400 ? "bg-danger/10 text-danger" : sc && sc >= 300 ? "bg-warn/10 text-warn" : sc === 0 ? "bg-danger/10 text-danger" : "bg-muted text-ink/60"}`}>
+            {sc === 0 ? "hata" : sc ?? "—"}
+          </span>
+        </td>
+        <td className={`py-2.5 pr-3 tabular-nums ${m?.responseMs && m.responseMs > 1500 ? "text-danger" : "text-ink/60"}`}>{m?.responseMs != null ? `${m.responseMs} ms` : "—"}</td>
+        <td className="py-2.5 pr-3 tabular-nums text-ink/60">{row.wordCount ?? "—"}</td>
+        <td className="py-2.5 pr-3 tabular-nums text-ink/60">{m ? m.inlinks : "—"}</td>
+        <td className="py-2.5 pr-3 tabular-nums text-ink/60">{m?.depth ?? "—"}</td>
+        <td className="py-2.5 pr-5">
+          {row.issues.length === 0 ? (
+            <span className="text-xs font-semibold text-seo">✓</span>
+          ) : (
+            <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${row.issues.some((i) => CRITICAL_ISSUES.has(i)) ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}>{row.issues.length}</span>
+          )}
+        </td>
+      </tr>
+      {open && (
+        <tr className="bg-muted/20">
+          <td colSpan={7} className="px-5 pb-5 pt-2">
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+              <div className="space-y-2 text-sm">
+                <div><span className="text-xs text-ink/40">Title ({row.titleLength ?? 0})</span><div className="font-medium">{row.title ?? <span className="text-danger">yok</span>}</div></div>
+                <div><span className="text-xs text-ink/40">Meta açıklama ({row.metaDescriptionLength ?? 0})</span><div className="text-ink/70">{row.metaDescription ?? <span className="text-danger">yok</span>}</div></div>
+                <div><span className="text-xs text-ink/40">H1 ({row.h1Count})</span><div className="text-ink/70">{row.h1 ?? <span className="text-danger">yok</span>}</div></div>
+                <div><span className="text-xs text-ink/40">Canonical</span><div className="truncate text-ink/70">{row.canonical ?? "—"}</div></div>
+                {row.issues.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {row.issues.map((i) => (
+                      <span key={i} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${CRITICAL_ISSUES.has(i) ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}>{ISSUE_LABEL[i] ?? i}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {m && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <Stat label="Boyut" value={m.htmlKb != null ? `${m.htmlKb} KB` : "—"} bad={(m.htmlKb ?? 0) > 500} />
+                    <Stat label="Görsel / alt'sız" value={`${m.imagesTotal} / ${m.imagesMissingAlt}`} bad={m.imagesMissingAlt > 0} />
+                    <Stat label="H2" value={m.h2Count} />
+                    <Stat label="İç / dış link" value={`${m.internalOut} / ${m.externalOut}`} />
+                    <Stat label="Dil" value={m.lang ?? "—"} bad={!m.lang && sc === 200} />
+                    <Stat label="Sitemap" value={m.inSitemap ? "var" : "yok"} />
+                  </div>
+                  <div className="text-xs text-ink/60">
+                    <span className="text-ink/40">Schema: </span>
+                    {m.schemaTypes.length ? m.schemaTypes.join(", ") : <span className="text-warn">yok</span>}
+                    {row.metaRobots && <><span className="ml-3 text-ink/40">Robots: </span>{row.metaRobots}</>}
+                    {m.redirectTarget && <><span className="ml-3 text-ink/40">→ </span>{short(m.redirectTarget)}</>}
+                  </div>
+                  {m.brokenOutlinks.length > 0 && (
+                    <div className="text-xs">
+                      <div className="font-semibold text-danger">Kırık sayfalara giden linkler</div>
+                      {m.brokenOutlinks.slice(0, 5).map((u) => (
+                        <div key={u} className="truncate text-ink/60">{short(u)}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
 
 export default function ImportPage() {
   const [url, setUrl] = useState("");
@@ -81,6 +158,8 @@ export default function ImportPage() {
   const [result, setResult] = useState<BulkImportResult | null>(null);
   const [issueFilter, setIssueFilter] = useState<string>("all");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [view, setView] = useState<"issues" | "all">("issues");
+  const [openUrl, setOpenUrl] = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,6 +172,8 @@ export default function ImportPage() {
   function show(data: BulkImportResult) {
     setResult(data);
     setIssueFilter("all");
+    setView("issues");
+    setOpenUrl(null);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
@@ -137,24 +218,22 @@ export default function ImportPage() {
   }
 
   const problemRows = result ? result.rows.filter((r) => r.issues.length > 0) : [];
-  const filteredRows = result
-    ? issueFilter === "all"
-      ? problemRows
-      : result.rows.filter((r) => r.issues.includes(issueFilter))
-    : [];
-  const issueChips = result
-    ? Object.entries(ISSUE_LABEL)
-        .map(([code, label]) => ({ code, label, n: result.rows.filter((r) => r.issues.includes(code)).length }))
-        .filter((c) => c.n > 0)
-        .sort((a, b) => b.n - a.n)
-    : [];
+  const counts: Record<string, number> = {};
+  for (const r of result?.rows ?? []) for (const c of r.issues) counts[c] = (counts[c] ?? 0) + 1;
+  const tableRows = !result
+    ? []
+    : view === "all"
+      ? result.rows
+      : issueFilter === "all"
+        ? [...problemRows].sort((a, b) => b.issues.length - a.issues.length)
+        : result.rows.filter((r) => r.issues.includes(issueFilter));
 
   return (
     <div className="space-y-8">
       <ToolPageHeader
         breadcrumbLabel="Site Taraması"
         title="Site Taraması"
-        body="Tüm siteni tek seferde tara — kırık linkler, eksik/tekrarlayan title ve meta, thin content ve noindex sayfalar tek panoda."
+        body="Tüm siteni tek seferde tara — yanıt kodları, kırık iç linkler, yönlendirme zincirleri, yetim sayfalar, title/meta, görseller, schema ve hız tek panoda."
       />
 
       <ImportOverview refreshKey={refreshKey} onPick={loadRun} />
@@ -200,14 +279,6 @@ export default function ImportPage() {
         </div>
       </form>
 
-      <ScreamingFrogConnect
-        url={url}
-        onResult={(d) => {
-          show(d);
-          setRefreshKey((k) => k + 1);
-        }}
-      />
-
       {loading && (
         <div className="rounded-2xl border border-border bg-panel p-5">
           <div className="flex items-center gap-3 text-sm text-ink/70">
@@ -225,78 +296,98 @@ export default function ImportPage() {
 
       {result && (
         <div ref={resultRef} className="scroll-mt-24 space-y-5">
-          <div className="flex flex-wrap items-end justify-between gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold">{result.filename}</h2>
               <p className="text-sm text-ink/50">
                 {result.summary.totalRows} sayfa · {problemRows.length} sayfada sorun · {new Date(result.importedAt).toLocaleString("tr-TR")}
               </p>
             </div>
-          </div>
-
-          {issueChips.length === 0 ? (
-            <div className="rounded-2xl border border-seo/30 bg-seo/5 p-4 text-sm font-semibold text-seo">Herhangi bir sorun tespit edilmedi — bu tarama temiz döndü.</div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setIssueFilter("all")}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${issueFilter === "all" ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-ink/30"}`}
-              >
-                Tümü · {problemRows.length}
-              </button>
-              {issueChips.map((c) => (
+            <div className="flex rounded-xl border border-border bg-panel p-1 text-xs font-semibold">
+              {(["issues", "all"] as const).map((t) => (
                 <button
-                  key={c.code}
+                  key={t}
                   type="button"
-                  onClick={() => setIssueFilter(c.code)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${issueFilter === c.code ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-ink/30"}`}
+                  onClick={() => setView(t)}
+                  className={`rounded-lg px-3 py-1.5 ${view === t ? "bg-ink text-white" : "text-ink/55 hover:text-ink"}`}
                 >
-                  {c.label} · {c.n}
+                  {t === "issues" ? "Sorunlar" : `Tüm sayfalar · ${result.rows.length}`}
                 </button>
               ))}
             </div>
+          </div>
+
+          {view === "issues" && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ISSUE_GROUPS.map((g) => {
+                const items = g.codes.map((code) => ({ code, n: counts[code] ?? 0 })).filter((x) => x.n > 0);
+                return (
+                  <div key={g.label} className="rounded-2xl border border-border bg-panel p-4">
+                    <div className="flex items-center justify-between text-xs font-bold text-ink/50">
+                      <span>{g.label}</span>
+                      <span className={items.length ? "text-ink/70" : "text-seo"}>{items.length ? items.reduce((a, x) => a + x.n, 0) : "✓"}</span>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {items.length === 0 && <div className="text-xs text-ink/35">Sorun yok</div>}
+                      {items.map((x) => (
+                        <button
+                          key={x.code}
+                          type="button"
+                          onClick={() => setIssueFilter(issueFilter === x.code ? "all" : x.code)}
+                          className={`flex w-full items-center justify-between rounded-lg px-2 py-1 text-left text-xs transition-colors ${issueFilter === x.code ? "bg-accent text-white" : "hover:bg-muted"}`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <span className={`h-1.5 w-1.5 rounded-full ${CRITICAL_ISSUES.has(x.code) ? "bg-danger" : "bg-warn"}`} />
+                            {ISSUE_LABEL[x.code] ?? x.code}
+                          </span>
+                          <span className="font-bold tabular-nums">{x.n}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
-          {filteredRows.length > 0 && (
+          {problemRows.length === 0 && view === "issues" && (
+            <div className="rounded-2xl border border-seo/30 bg-seo/5 p-4 text-sm font-semibold text-seo">Herhangi bir sorun tespit edilmedi — bu tarama temiz döndü.</div>
+          )}
+
+          {tableRows.length > 0 && (
             <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
+                <span className="text-sm font-bold">
+                  {view === "all" ? "Tüm sayfalar" : issueFilter === "all" ? "Sorunlu sayfalar" : ISSUE_LABEL[issueFilter]}
+                  <span className="ml-2 font-normal text-ink/40">{tableRows.length}</span>
+                </span>
+                {issueFilter !== "all" && view === "issues" && (
+                  <button type="button" onClick={() => setIssueFilter("all")} className="text-xs font-semibold text-accent hover:underline">Filtreyi temizle</button>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs text-ink/45">
                       <th className="px-5 py-2.5 font-medium">Sayfa</th>
                       <th className="py-2.5 pr-3 font-medium">Durum</th>
-                      <th className="py-2.5 pr-3 font-medium">Title</th>
+                      <th className="py-2.5 pr-3 font-medium">Yanıt</th>
                       <th className="py-2.5 pr-3 font-medium">Kelime</th>
-                      <th className="py-2.5 pr-5 font-medium">Sorunlar</th>
+                      <th className="py-2.5 pr-3 font-medium" title="Gelen iç link">İç link</th>
+                      <th className="py-2.5 pr-3 font-medium" title="Ana sayfadan tık sayısı">Derinlik</th>
+                      <th className="py-2.5 pr-5 font-medium">Sorun</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRows.slice(0, ROWS_SHOWN).map((row) => (
-                      <tr key={row.url} className="border-t border-border align-top hover:bg-muted/40">
-                        <td className="px-5 py-2.5 max-w-xs truncate font-medium" title={row.url}>{row.url.replace(/^https?:\/\/(www\.)?/, "")}</td>
-                        <td className="py-2.5 pr-3">
-                          <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums ${row.statusCode && row.statusCode >= 400 ? "bg-danger/10 text-danger" : row.statusCode && row.statusCode >= 300 ? "bg-warn/10 text-warn" : "bg-muted text-ink/60"}`}>
-                            {row.statusCode || "—"}
-                          </span>
-                        </td>
-                        <td className="py-2.5 pr-3 max-w-[14rem] truncate text-ink/70" title={row.title ?? ""}>{row.title ?? <span className="text-danger">yok</span>}</td>
-                        <td className="py-2.5 pr-3 tabular-nums text-ink/60">{row.wordCount ?? "—"}</td>
-                        <td className="py-2.5 pr-5">
-                          <div className="flex flex-wrap gap-1">
-                            {row.issues.map((i) => (
-                              <span key={i} className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-ink/60">{ISSUE_LABEL[i] ?? i}</span>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
+                    {tableRows.slice(0, ROWS_SHOWN).map((row) => (
+                      <PageRow key={row.url} row={row} open={openUrl === row.url} onToggle={() => setOpenUrl(openUrl === row.url ? null : row.url)} />
                     ))}
                   </tbody>
                 </table>
               </div>
-              {filteredRows.length > ROWS_SHOWN && (
+              {tableRows.length > ROWS_SHOWN && (
                 <p className="border-t border-border px-5 py-2 text-xs text-ink/40">
-                  {filteredRows.length} sayfadan ilk {ROWS_SHOWN} tanesi gösteriliyor — filtreyi daraltın.
+                  {tableRows.length} sayfadan ilk {ROWS_SHOWN} tanesi gösteriliyor — filtreyi daraltın.
                 </p>
               )}
             </div>

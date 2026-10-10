@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import type { BulkImportResult } from "@/types";
 import KpiCard from "./KpiCard";
 import GhostChart from "./GhostChart";
+import { CRITICAL_ISSUES, ISSUE_LABEL } from "@/lib/bulk-labels";
 
 type Summary = BulkImportResult["summary"];
 interface Run {
@@ -30,10 +31,13 @@ export const SUMMARY_LABEL: Record<string, string> = {
   nonIndexable: "İndekslenemez",
   noindexTag: "Noindex",
 };
-const RED = new Set(["brokenLinks", "missingTitle", "noindexTag"]);
+const RED = new Set(["brokenLinks", "missingTitle", "noindexTag", ...CRITICAL_ISSUES]);
 
+const NOT_COUNTED = new Set(["redirect", "non-indexable"]);
 const totalIssues = (s: Summary) =>
-  Object.entries(s).reduce((a, [k, v]) => (k === "totalRows" || k === "redirects" || k === "nonIndexable" ? a : a + (v as number)), 0);
+  s.issueCounts
+    ? Object.entries(s.issueCounts).reduce((a, [k, v]) => (NOT_COUNTED.has(k) ? a : a + v), 0)
+    : Object.entries(s).reduce((a, [k, v]) => (k === "totalRows" || k === "redirects" || k === "nonIndexable" || typeof v !== "number" ? a : a + v), 0);
 
 /**
  * /import'a girince ilk görülen pano — taramalardan gelen sorun sayıları, en çok görülen
@@ -67,8 +71,21 @@ export default function ImportOverview({ refreshKey = 0, onPick }: { refreshKey?
       sparkIssues: chrono.slice(-12).map((r) => totalIssues(r.summary)),
       sparkBroken: chrono.slice(-12).map((r) => r.summary.brokenLinks),
       sparkDupes: chrono.slice(-12).map((r) => r.summary.duplicateTitles + r.summary.duplicateMetaDescriptions),
-      bars: Object.entries(SUMMARY_LABEL)
-        .map(([k, label]) => ({ key: k, label, value: (s as any)[k] as number }))
+      extra: s.issueCounts
+        ? {
+            avgMs: s.avgResponseMs ?? null,
+            avgKb: s.avgHtmlKb ?? null,
+            brokenOut: s.issueCounts["broken-outlinks"] ?? 0,
+            orphan: s.issueCounts["orphan-page"] ?? 0,
+            noAlt: s.issueCounts["images-missing-alt"] ?? 0,
+            noSchema: s.issueCounts["missing-schema"] ?? 0,
+          }
+        : null,
+      bars: (s.issueCounts
+        ? Object.entries(s.issueCounts)
+            .filter(([k]) => !NOT_COUNTED.has(k))
+            .map(([k, v]) => ({ key: k, label: ISSUE_LABEL[k] ?? k, value: v }))
+        : Object.entries(SUMMARY_LABEL).map(([k, label]) => ({ key: k, label, value: (s as any)[k] as number })))
         .filter((b) => b.value > 0)
         .sort((a, b) => b.value - a.value)
         .slice(0, 8),
@@ -107,6 +124,24 @@ export default function ImportOverview({ refreshKey = 0, onPick }: { refreshKey?
         <KpiCard label="Tekrarlayan title/meta" value={String(stats.dupes)} spark={stats.sparkDupes} hint="URL" />
       </div>
 
+      {stats.extra && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            { l: "Ort. yanıt", v: stats.extra.avgMs != null ? `${stats.extra.avgMs} ms` : "—", bad: (stats.extra.avgMs ?? 0) > 1500 },
+            { l: "Ort. sayfa boyutu", v: stats.extra.avgKb != null ? `${stats.extra.avgKb} KB` : "—", bad: false },
+            { l: "Kırık iç link içeren", v: stats.extra.brokenOut, bad: stats.extra.brokenOut > 0 },
+            { l: "Yetim sayfa", v: stats.extra.orphan, bad: stats.extra.orphan > 0 },
+            { l: "Alt'sız görselli", v: stats.extra.noAlt, bad: false },
+            { l: "Schema'sız", v: stats.extra.noSchema, bad: false },
+          ].map((x) => (
+            <div key={x.l} className="rounded-xl border border-border bg-panel px-3.5 py-2.5">
+              <div className="text-[11px] text-ink/45">{x.l}</div>
+              <div className={`text-base font-extrabold tabular-nums ${x.bad ? "text-danger" : ""}`}>{x.v}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4">
         <div className="rounded-2xl border border-border bg-panel">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
@@ -121,7 +156,7 @@ export default function ImportOverview({ refreshKey = 0, onPick }: { refreshKey?
                 <BarChart data={stats.bars} layout="vertical" margin={{ left: 8, right: 16 }} barCategoryGap="22%">
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
                   <XAxis type="number" allowDecimals={false} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="label" width={140} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="label" width={170} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: "rgba(93,22,255,0.04)" }} contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 12 }} />
                   <Bar dataKey="value" name="Sayfa" radius={[0, 6, 6, 0]}>
                     {stats.bars.map((b) => (

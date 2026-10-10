@@ -183,6 +183,36 @@ export interface BulkImportRow {
   metaRobots: string | null;
   /** Issue codes, e.g. "missing-title", "thin-content", "duplicate-title", "broken". */
   issues: string[];
+  /** Epicsem'in kendi tarayıcısından gelen ayrıntılı ölçümler (CSV içe aktarmada yok). */
+  metrics?: BulkPageMetrics;
+}
+
+export interface BulkPageMetrics {
+  responseMs: number | null;
+  htmlKb: number | null;
+  imagesTotal: number;
+  imagesMissingAlt: number;
+  internalOut: number;
+  externalOut: number;
+  /** Bu sayfaya taranan diğer sayfalardan gelen iç link sayısı. */
+  inlinks: number;
+  /** Ana sayfadan kaç tıkla ulaşıldığı (bulunamadıysa null). */
+  depth: number | null;
+  h2Count: number;
+  schemaTypes: string[];
+  hasViewport: boolean;
+  lang: string | null;
+  hasOpenGraph: boolean;
+  redirectTarget: string | null;
+  /** Yönlendirmenin hedefi de yönlendiriyor. */
+  redirectChain: boolean;
+  /** Bu sayfadaki, kırık (4xx/5xx) bir sayfaya giden iç linkler. */
+  brokenOutlinks: string[];
+  inSitemap: boolean;
+  /** Sitemap'te var ama taranan hiçbir sayfadan link almıyor. */
+  orphan: boolean;
+  /** HTTPS sayfada http:// kaynak (görsel/script/css). */
+  mixedContent: number;
 }
 
 export interface BulkImportSummary {
@@ -200,6 +230,10 @@ export interface BulkImportSummary {
   redirects: number;
   nonIndexable: number;
   noindexTag: number;
+  /** Her sorun kodunun kaç sayfada görüldüğü (yeni taramalarda; tüm kodları kapsar). */
+  issueCounts?: Record<string, number>;
+  avgResponseMs?: number | null;
+  avgHtmlKb?: number | null;
 }
 
 export interface BulkImportResult {

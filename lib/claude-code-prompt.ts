@@ -127,6 +127,16 @@ export function buildBulkImportFixPrompt(result: BulkImportResult): string {
   section("Missing H1", "missing-h1", "add one clear H1 per page matching the page's actual topic");
   section("Thin content (<200 words)", "thin-content", "flag for editorial review — don't auto-generate filler content, that's the opposite of what this fixes");
   section("Pages with multiple H1s", "multiple-h1", "keep one, demote the rest to H2/H3 as appropriate to the page structure");
+  section("Pages linking to broken URLs", "broken-outlinks", "update or remove the internal links that point to 4xx/5xx pages");
+  section("Redirect chains", "redirect-chain", "point the first redirect (and internal links) straight to the final URL");
+  section("Images missing alt text", "images-missing-alt", "add descriptive alt text based on what each image actually shows; use alt=\"\" only for purely decorative images");
+  section("Orphan pages (in sitemap, no internal links)", "orphan-page", "link them from relevant category/hub pages, or remove them from the sitemap if they shouldn't exist");
+  section("Missing structured data (schema)", "missing-schema", "add appropriate JSON-LD (Organization/WebSite on home, Article/Product/FAQPage/BreadcrumbList where the content fits) — only with facts present on the page");
+  section("Missing canonical", "missing-canonical", "add a self-referencing canonical tag");
+  section("Missing mobile viewport", "missing-viewport", "add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+  section("Missing html lang", "missing-lang", "set the correct lang attribute on <html>");
+  section("Mixed content (http resources on https)", "mixed-content", "switch those resource URLs to https");
+  section("Slow responses (>1.5s)", "slow-response", "investigate server/cache — these are a hosting/perf task, not a content task");
 
   if (result.duplicateTitleGroups.length > 0) {
     lines.push("");
