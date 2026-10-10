@@ -14,8 +14,10 @@ export default function LoginPage() {
   const [nextPath, setNextPath] = useState("/audit");
 
   useEffect(() => {
-    const next = new URLSearchParams(window.location.search).get("next");
+    const qs = new URLSearchParams(window.location.search);
+    const next = qs.get("next");
     if (next) setNextPath(next);
+    if (qs.get("mode") === "signup") setMode("signup");
   }, []);
 
   async function submit(e: React.FormEvent) {

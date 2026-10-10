@@ -44,6 +44,13 @@ body { overflow-x: hidden; }
   left: 50%;
   margin-left: -50vw;
 }
+/* Sidebar'lı app-shell içinde: tam genişlik = ana sütun (sidebar'ın altına taşmaz). */
+@media (min-width: 768px) {
+  .app-main .full-bleed {
+    width: calc(100vw - 16rem); /* sidebar md:w-64 */
+    margin-left: calc(-50vw + 8rem);
+  }
+}
 
 .reveal {
   opacity: 0;

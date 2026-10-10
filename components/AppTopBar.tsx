@@ -13,17 +13,33 @@ interface Usage {
 /** Thin bar above every app page: current plan + this month's engine usage + upgrade. */
 export default function AppTopBar() {
   const [u, setU] = useState<Usage | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const load = () =>
       fetch("/api/usage")
         .then((r) => (r.ok ? r.json() : null))
         .then(setU)
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setLoaded(true));
     load();
     window.addEventListener("epicsem:usage-changed", load);
     return () => window.removeEventListener("epicsem:usage-changed", load);
   }, []);
+
+  // Oturum yok (ör. ana sayfa sidebar'lı açıldığında): gezinme + giriş/kayıt.
+  if (!u && loaded)
+    return (
+      <div className="hidden md:flex h-14 items-center justify-end gap-6 border-b border-border bg-panel px-6 text-sm">
+        <Link href="/#nasil-calisir" className="text-ink/60 hover:text-ink">Nasıl çalışır</Link>
+        <Link href="/#tum-araclar" className="text-ink/60 hover:text-ink">Araçlar</Link>
+        <Link href="/pricing" className="text-ink/60 hover:text-ink">Fiyatlar</Link>
+        <Link href="/login" className="font-semibold text-ink/80 hover:text-ink">Giriş yap</Link>
+        <Link href="/login?mode=signup" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-bold hover:opacity-90">
+          Ücretsiz başla
+        </Link>
+      </div>
+    );
 
   if (!u) return <div className="hidden md:block h-14 border-b border-border bg-panel" />;
 

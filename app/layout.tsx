@@ -64,8 +64,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Set by middleware.ts on every request — decides which chrome this page gets.
-  // Tool pages (dashboard, audit, geo, …) get the sidebar app-shell; everything else
-  // (homepage, pricing, login, legal pages) keeps the original top-nav marketing shell.
+  // Homepage + tool pages (dashboard, audit, geo, …) get the sidebar app-shell; everything else
+  // (pricing, login, legal pages) keeps the original top-nav marketing shell.
   const headersList = await headers();
   const isAppShell = headersList.get("x-shell") === "app";
 
@@ -79,7 +79,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {isAppShell ? (
           <div className="min-h-screen flex flex-col md:flex-row">
             <Sidebar />
-            <main className="flex-1 min-w-0">
+            <main className="app-main flex-1 min-w-0">
               <AppTopBar />
               <div className="mx-auto max-w-6xl px-4 md:px-8 py-8">{children}</div>
             </main>

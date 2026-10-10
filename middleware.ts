@@ -38,7 +38,7 @@ export function middleware(req: NextRequest) {
   // headers() and pick the sidebar app-shell vs. the marketing top-nav shell.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);
-  const isAppShell = APP_SHELL_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isAppShell = pathname === "/" || APP_SHELL_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   requestHeaders.set("x-shell", isAppShell ? "app" : "marketing");
   const passthrough = () => NextResponse.next({ request: { headers: requestHeaders } });
 

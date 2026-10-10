@@ -711,6 +711,23 @@ export async function saveGapRun(userId: number, params: {
   );
 }
 
+/** /gap panosu — kullanıcının son Gap Analysis koşuları (eskiden yeniye), satır matrisiyle. */
+export async function listRecentGapRuns(userId: number, limit = 60): Promise<{ id: number; brandName: string; brandDomain: string; demoMode: boolean; gapMatrix: GapRow[]; createdAt: string }[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT * FROM (SELECT id, brand_name, brand_domain, demo_mode, gap_matrix_json, created_at FROM gap_runs WHERE user_id = $1 ORDER BY id DESC LIMIT $2) r ORDER BY id ASC`,
+    [userId, limit]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    brandName: r.brand_name,
+    brandDomain: r.brand_domain,
+    demoMode: !!r.demo_mode,
+    gapMatrix: JSON.parse(r.gap_matrix_json || "[]"),
+    createdAt: toIso(r.created_at),
+  }));
+}
+
 /** Most recent Gap Analysis content briefs for this brand domain — what a Campaign
  * draws its next topic from. Null when Gap Analysis has never been run for it. */
 export async function getLatestGapRunBriefs(
