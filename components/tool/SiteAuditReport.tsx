@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BulkImportResult } from "@/types";
-import { ISSUE_INFO, ISSUE_LABEL, ISSUE_SEVERITY, SEVERITY_LABEL, THEMES, type Severity } from "@/lib/bulk-labels";
+import { ISSUE_INFO, ISSUE_LABEL, ISSUE_SEVERITY, SEVERITY_LABEL, THEMES, pageAdvice, priorityScore, type IssueInfo, type Severity } from "@/lib/bulk-labels";
+import type { BulkImportRow } from "@/types";
 import PageRow, { short } from "./PageRow";
 
 export interface RunSummary {
@@ -136,7 +137,17 @@ export default function SiteAuditReport({
       skor: r.summary.healthScore ?? null,
     })).filter((x) => x.skor !== null);
 
-    return { counts, prev, health, prevHealth: prev?.summary.healthScore ?? null, sev, sevTypes, prevSev, crawled, statusDist, depthDist, indexable, themes, issues, trend };
+    const htmlN = html.length || 1;
+    const plan = Object.entries(counts)
+      .filter(([c]) => sevOf(c) !== "notice" || ["missing-schema", "noindex-tag", "non-indexable"].includes(c))
+      .map(([code, n]) => {
+        const onlyThis = sevOf(code) === "error" ? html.filter((r) => r.issues.includes(code) && !r.issues.some((x) => x !== code && sevOf(x) === "error")).length : 0;
+        return { code, n, sev: sevOf(code), gain: Math.round((onlyThis / htmlN) * 100), p: priorityScore(code, n) + (sevOf(code) === "error" ? 3 : 0) };
+      })
+      .sort((a, b) => b.p - a.p)
+      .slice(0, 6);
+
+    return { plan, counts, prev, health, prevHealth: prev?.summary.healthScore ?? null, sev, sevTypes, prevSev, crawled, statusDist, depthDist, indexable, themes, issues, trend };
   }, [rows, runs, currentId, result.filename, s.healthScore]);
 
   const pageRows = useMemo(() => {
@@ -306,8 +317,56 @@ export default function SiteAuditReport({
             ))}
           </div>
 
+          {/* öneriler: öncelik sırasına göre yapılacaklar */}
+          <Card
+            title="Öneriler — önce bunları düzelt"
+            right={<button type="button" onClick={() => setTab("issues")} className="text-xs font-semibold text-accent hover:underline">Tüm sorunlar →</button>}
+          >
+            {data.plan.length === 0 ? (
+              <div className="px-5 py-6 text-sm font-semibold text-seo">Kritik bir sorun yok — site sağlıklı görünüyor.</div>
+            ) : (
+              <ol className="divide-y divide-border">
+                {data.plan.map((it, i) => {
+                  const info = ISSUE_INFO[it.code];
+                  return (
+                    <li key={it.code}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenIssue(it.code);
+                          setSevFilter("all");
+                          setTab("issues");
+                        }}
+                        className="flex w-full items-start gap-4 px-5 py-3.5 text-left hover:bg-muted/40"
+                      >
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">{i + 1}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold">{ISSUE_LABEL[it.code] ?? it.code}</span>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
+                            <span className="text-xs text-ink/45">{it.n} sayfa</span>
+                          </span>
+                          {info && <span className="mt-0.5 block text-sm text-ink/60">{info.steps[0]}</span>}
+                        </span>
+                        <span className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
+                          {info && (
+                            <span className="flex gap-1 text-[10px] font-semibold">
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Etki: {info.impact}</span>
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Zorluk: {info.effort}</span>
+                            </span>
+                          )}
+                          {it.gain > 0 && <span className="text-xs font-bold text-seo">Sağlık skoru +{it.gain}</span>}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </Card>
+
           {/* 3. satır: grafikler */}
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Card title="HTTP durum kodları">
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="h-36 w-36 shrink-0">
@@ -357,30 +416,6 @@ export default function SiteAuditReport({
                 )}
               </div>
             </Card>
-
-            <Card title="Öncelikli sorunlar" right={<button type="button" onClick={() => setTab("issues")} className="text-xs font-semibold text-accent hover:underline">Tümü →</button>}>
-              <div className="divide-y divide-border">
-                {data.issues.slice(0, 6).map((i) => (
-                  <button
-                    key={i.code}
-                    type="button"
-                    onClick={() => {
-                      setOpenIssue(i.code);
-                      setSevFilter("all");
-                      setTab("issues");
-                    }}
-                    className="flex w-full items-center justify-between gap-3 px-5 py-2.5 text-left text-sm hover:bg-muted/50"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${SEV_STYLE[i.sev].dot}`} />
-                      <span className="truncate">{ISSUE_LABEL[i.code] ?? i.code}</span>
-                    </span>
-                    <span className="shrink-0 font-bold tabular-nums">{i.n}</span>
-                  </button>
-                ))}
-                {data.issues.length === 0 && <div className="px-5 py-6 text-sm font-semibold text-seo">Sorun bulunmadı.</div>}
-              </div>
-            </Card>
           </div>
         </>
       )}
@@ -405,6 +440,7 @@ export default function SiteAuditReport({
               <tr className="text-left text-xs text-ink/45">
                 <th className="px-5 py-2.5 font-medium">Sorun</th>
                 <th className="py-2.5 pr-3 font-medium">Önem</th>
+                <th className="py-2.5 pr-3 font-medium max-md:hidden">Etki</th>
                 <th className="py-2.5 pr-3 text-right font-medium">URL</th>
                 <th className="py-2.5 pr-3 text-right font-medium">Değişim</th>
                 <th className="w-40 py-2.5 pr-5 font-medium max-md:hidden">Pay</th>
@@ -420,6 +456,7 @@ export default function SiteAuditReport({
                   return (
                     <IssueRow
                       key={i.code}
+                      code={i.code}
                       open={open}
                       onToggle={() => setOpenIssue(open ? null : i.code)}
                       label={ISSUE_LABEL[i.code] ?? i.code}
@@ -428,8 +465,7 @@ export default function SiteAuditReport({
                       prev={i.prev}
                       pct={(i.n / total) * 100}
                       info={info}
-                      urls={affected.slice(0, 12).map((r) => r.url)}
-                      more={affected.length - 12}
+                      affected={affected}
                       onShowAll={() => showPages(i.code)}
                     />
                   );
@@ -491,7 +527,30 @@ export default function SiteAuditReport({
   );
 }
 
+function CopyCode({ code }: { code: string }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="relative mt-1">
+      <pre className="overflow-x-auto rounded-lg bg-ink py-2.5 pl-3 pr-20 text-[11px] leading-relaxed text-white/90">{code}</pre>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard?.writeText(code).then(() => {
+            setOk(true);
+            setTimeout(() => setOk(false), 1500);
+          });
+        }}
+        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-white/20"
+      >
+        {ok ? "Kopyalandı" : "Kopyala"}
+      </button>
+    </div>
+  );
+}
+
 function IssueRow({
+  code,
   open,
   onToggle,
   label,
@@ -500,10 +559,10 @@ function IssueRow({
   prev,
   pct,
   info,
-  urls,
-  more,
+  affected,
   onShowAll,
 }: {
+  code: string;
   open: boolean;
   onToggle: () => void;
   label: string;
@@ -511,9 +570,8 @@ function IssueRow({
   n: number;
   prev: number | null;
   pct: number;
-  info?: { why: string; fix: string };
-  urls: string[];
-  more: number;
+  info?: IssueInfo;
+  affected: BulkImportRow[];
   onShowAll: () => void;
 }) {
   const d = prev == null ? null : n - prev;
@@ -527,6 +585,7 @@ function IssueRow({
         <td className="py-3 pr-3">
           <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
         </td>
+        <td className="py-3 pr-3 text-xs text-ink/55 max-md:hidden">{info?.impact ?? "—"}</td>
         <td className="py-3 pr-3 text-right font-bold tabular-nums">{n}</td>
         <td className="py-3 pr-3 text-right tabular-nums">
           {d == null ? <span className="text-ink/30">—</span> : d === 0 ? <span className="text-ink/40">0</span> : <span className={d < 0 ? "text-seo" : "text-danger"}>{d > 0 ? `+${d}` : d}</span>}
@@ -539,34 +598,61 @@ function IssueRow({
       </tr>
       {open && (
         <tr className="bg-muted/20">
-          <td colSpan={5} className="px-5 pb-5 pt-1">
-            <div className="grid gap-4 lg:grid-cols-2">
+          <td colSpan={6} className="px-5 pb-5 pt-1">
+            <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
               <div className="space-y-3 text-sm">
-                {info && (
+                {info ? (
                   <>
+                    <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+                      <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Etki: {info.impact}</span>
+                      <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Zorluk: {info.effort}</span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-ink/50">Sorun nedir?</div>
+                      <p className="mt-0.5 text-ink/80">{info.what}</p>
+                    </div>
                     <div>
                       <div className="text-xs font-bold text-ink/50">Neden önemli?</div>
                       <p className="mt-0.5 text-ink/75">{info.why}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-ink/50">Nasıl düzeltilir?</div>
-                      <p className="mt-0.5 text-ink/75">{info.fix}</p>
+                      <div className="text-xs font-bold text-ink/50">Nasıl çözülür?</div>
+                      <ol className="mt-1 space-y-1">
+                        {info.steps.map((st, i) => (
+                          <li key={i} className="flex gap-2 text-ink/75">
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent">{i + 1}</span>
+                            <span>{st}</span>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
+                    {info.example && (
+                      <div>
+                        <div className="text-xs font-bold text-ink/50">Örnek</div>
+                        <CopyCode code={info.example} />
+                      </div>
+                    )}
                   </>
-                )}
+                ) : null}
               </div>
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-ink/50">
-                  <span>Etkilenen URL'ler</span>
+                  <span>Etkilenen sayfalar ({affected.length})</span>
                   <button type="button" onClick={onShowAll} className="font-semibold text-accent hover:underline">Sayfa gezgininde aç →</button>
                 </div>
-                <div className="mt-1 space-y-0.5">
-                  {urls.map((u) => (
-                    <a key={u} href={u} target="_blank" rel="noreferrer" className="block truncate text-xs text-ink/65 hover:text-accent" onClick={(e) => e.stopPropagation()}>
-                      {short(u)}
-                    </a>
-                  ))}
-                  {more > 0 && <div className="text-xs text-ink/40">+{more} sayfa daha</div>}
+                <div className="mt-1.5 divide-y divide-border rounded-xl border border-border bg-panel">
+                  {affected.slice(0, 10).map((r) => {
+                    const note = pageAdvice(code, r as any);
+                    return (
+                      <div key={r.url} className="px-3 py-2">
+                        <a href={r.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="block truncate text-xs font-medium text-ink/75 hover:text-accent">
+                          {short(r.url)}
+                        </a>
+                        {note && <div className="mt-0.5 truncate text-[11px] text-ink/45">{note}</div>}
+                      </div>
+                    );
+                  })}
+                  {affected.length > 10 && <div className="px-3 py-2 text-xs text-ink/40">+{affected.length - 10} sayfa daha</div>}
                 </div>
               </div>
             </div>
