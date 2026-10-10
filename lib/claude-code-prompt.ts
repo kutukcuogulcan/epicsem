@@ -91,7 +91,7 @@ export function buildContentBriefPrompt(brief: ContentBrief, brandName?: string)
 }
 
 /**
- * From a bulk Screaming Frog CSV import — a full-site technical sweep instead of one
+ * From a full-site crawl (Epicsem's own crawler, or an imported CSV) — a full-site technical sweep instead of one
  * page. Row counts can run into the thousands, so this deliberately summarizes (counts
  * + a capped sample of URLs per issue) rather than dumping every row — an agent working
  * in the actual repo/CMS can re-derive the rest from the codebase itself.
@@ -106,7 +106,7 @@ export function buildBulkImportFixPrompt(result: BulkImportResult): string {
   const s = result.summary;
   const lines: string[] = [];
   lines.push(
-    `I imported a Screaming Frog crawl (${result.filename}, ${s.totalRows} URLs) into Epicsem. Here's the aggregated technical SEO findings — help me fix what's safe to fix in bulk across this codebase/CMS, and flag anything that needs a per-page editorial decision instead of a mechanical fix.`
+    `I ran a full-site technical crawl of ${result.filename} (${s.totalRows} URLs) in Epicsem. Here's the aggregated technical SEO findings — help me fix what's safe to fix in bulk across this codebase/CMS, and flag anything that needs a per-page editorial decision instead of a mechanical fix.`
   );
   lines.push("");
   lines.push(

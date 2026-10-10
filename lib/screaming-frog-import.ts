@@ -1,4 +1,5 @@
-import type { BulkImportResult, BulkImportRow, BulkImportSummary } from "@/types";
+import type { BulkImportResult } from "@/types";
+import { buildBulkResult, type RawBulkRow } from "@/lib/bulk-analysis";
 
 /**
  * Screaming Frog "Internal → All" (or "Internal → HTML") CSV export import.
@@ -99,10 +100,6 @@ function toInt(v: string | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const THIN_CONTENT_WORDS = 200;
-const TITLE_MAX = 60;
-const META_DESC_MAX = 160;
-
 export function parseScreamingFrogCsv(csvText: string, filename: string): BulkImportResult {
   const table = parseCsv(csvText);
   if (table.length < 2) {
@@ -116,119 +113,30 @@ export function parseScreamingFrogCsv(csvText: string, filename: string): BulkIm
     );
   }
 
-  const rows: BulkImportRow[] = [];
-  const titleCounts = new Map<string, string[]>();
-  const metaCounts = new Map<string, string[]>();
-
+  const raw: RawBulkRow[] = [];
   for (let r = 1; r < table.length; r++) {
     const line = table[r];
     if (!line || line.every((c) => c.trim() === "")) continue;
     const get = (field: string) => (col[field] !== undefined ? line[col[field]]?.trim() ?? "" : "");
-
     const url = get("url");
     if (!url) continue;
-
-    const statusCode = toInt(get("statusCode"));
     const indexabilityRaw = get("indexability").toLowerCase();
-    const indexable = indexabilityRaw ? indexabilityRaw === "indexable" : null;
     const title = get("title") || null;
-    const titleLength = toInt(get("titleLength")) ?? (title ? title.length : null);
     const metaDescription = get("metaDescription") || null;
-    const metaDescriptionLength = toInt(get("metaDescriptionLength")) ?? (metaDescription ? metaDescription.length : null);
-    const h1 = get("h1") || null;
-    const h1Count = (get("h1") ? 1 : 0) + (get("h1Second") ? 1 : 0);
-    const wordCount = toInt(get("wordCount"));
-    const canonical = get("canonical") || null;
-    const metaRobots = get("metaRobots") || null;
-
-    const issues: string[] = [];
-    const is2xx = statusCode !== null && statusCode >= 200 && statusCode < 300;
-    const isIndexableContext = indexable !== false && (statusCode === null || is2xx);
-
-    if (statusCode !== null && statusCode >= 400) issues.push("broken");
-    else if (statusCode !== null && statusCode >= 300 && statusCode < 400) issues.push("redirect");
-
-    if (isIndexableContext) {
-      if (!title) issues.push("missing-title");
-      else if (titleLength !== null && titleLength > TITLE_MAX) issues.push("title-too-long");
-
-      if (!metaDescription) issues.push("missing-meta-description");
-      else if (metaDescriptionLength !== null && metaDescriptionLength > META_DESC_MAX) issues.push("meta-description-too-long");
-
-      if (!h1) issues.push("missing-h1");
-      if (h1Count > 1) issues.push("multiple-h1");
-
-      if (wordCount !== null && wordCount < THIN_CONTENT_WORDS) issues.push("thin-content");
-    }
-    if (indexable === false) issues.push("non-indexable");
-    if (metaRobots && /noindex/i.test(metaRobots)) issues.push("noindex-tag");
-
-    if (title) {
-      const key = title.toLowerCase();
-      if (!titleCounts.has(key)) titleCounts.set(key, []);
-      titleCounts.get(key)!.push(url);
-    }
-    if (metaDescription) {
-      const key = metaDescription.toLowerCase();
-      if (!metaCounts.has(key)) metaCounts.set(key, []);
-      metaCounts.get(key)!.push(url);
-    }
-
-    rows.push({
+    raw.push({
       url,
-      statusCode,
-      indexable,
+      statusCode: toInt(get("statusCode")),
+      indexable: indexabilityRaw ? indexabilityRaw === "indexable" : null,
       title,
-      titleLength,
+      titleLength: toInt(get("titleLength")) ?? (title ? title.length : null),
       metaDescription,
-      metaDescriptionLength,
-      h1,
-      h1Count,
-      wordCount,
-      canonical,
-      metaRobots,
-      issues,
+      metaDescriptionLength: toInt(get("metaDescriptionLength")) ?? (metaDescription ? metaDescription.length : null),
+      h1: get("h1") || null,
+      h1Count: (get("h1") ? 1 : 0) + (get("h1Second") ? 1 : 0),
+      wordCount: toInt(get("wordCount")),
+      canonical: get("canonical") || null,
+      metaRobots: get("metaRobots") || null,
     });
   }
-
-  const duplicateTitleGroups = [...titleCounts.entries()]
-    .filter(([, urls]) => urls.length > 1)
-    .map(([value, urls]) => ({ value, urls }));
-  const duplicateMetaGroups = [...metaCounts.entries()]
-    .filter(([, urls]) => urls.length > 1)
-    .map(([value, urls]) => ({ value, urls }));
-
-  const dupTitleUrls = new Set(duplicateTitleGroups.flatMap((g) => g.urls));
-  const dupMetaUrls = new Set(duplicateMetaGroups.flatMap((g) => g.urls));
-  for (const row of rows) {
-    if (dupTitleUrls.has(row.url) && row.title) row.issues.push("duplicate-title");
-    if (dupMetaUrls.has(row.url) && row.metaDescription) row.issues.push("duplicate-meta-description");
-  }
-
-  const summary: BulkImportSummary = {
-    totalRows: rows.length,
-    missingTitle: rows.filter((r) => r.issues.includes("missing-title")).length,
-    duplicateTitles: dupTitleUrls.size,
-    titleTooLong: rows.filter((r) => r.issues.includes("title-too-long")).length,
-    missingMetaDescription: rows.filter((r) => r.issues.includes("missing-meta-description")).length,
-    duplicateMetaDescriptions: dupMetaUrls.size,
-    metaDescriptionTooLong: rows.filter((r) => r.issues.includes("meta-description-too-long")).length,
-    missingH1: rows.filter((r) => r.issues.includes("missing-h1")).length,
-    multipleH1: rows.filter((r) => r.issues.includes("multiple-h1")).length,
-    thinContent: rows.filter((r) => r.issues.includes("thin-content")).length,
-    brokenLinks: rows.filter((r) => r.issues.includes("broken")).length,
-    redirects: rows.filter((r) => r.issues.includes("redirect")).length,
-    nonIndexable: rows.filter((r) => r.issues.includes("non-indexable")).length,
-    noindexTag: rows.filter((r) => r.issues.includes("noindex-tag")).length,
-  };
-
-  return {
-    filename,
-    importedAt: new Date().toISOString(),
-    columns: header,
-    summary,
-    rows,
-    duplicateTitleGroups,
-    duplicateMetaGroups,
-  };
+  return buildBulkResult(raw, filename, header);
 }

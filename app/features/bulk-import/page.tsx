@@ -13,13 +13,13 @@ const COMPARISON = {
       "Yüzlerce sayfayı tek tek /audit'e girmeniz gerekir",
       "Site genelinde ortak sorunları görmek zor",
       "Hangi sayfanın hangi kategoriye girdiğini elle gruplamanız gerekir",
-      "Screaming Frog verisini ayrıca yorumlamanız gerekir",
+      "Ayrı bir masaüstü crawler'ı kurup çıktısını yorumlamanız gerekir",
     ],
   },
   withItems: {
-    title: "Epicsem Bulk Import ile",
+    title: "Epicsem Site Taraması ile",
     items: [
-      "Screaming Frog CSV'sini tek seferde yükleyin",
+      "Sadece alan adını yazın, tüm site otomatik taransın",
       "13 sorun kategorisi tüm site genelinde otomatik çıkar",
       "Sorun tipine göre filtrelenebilir özet tablo",
       "Kategoriye göre gruplanmış tek fix prompt'u",
@@ -28,42 +28,46 @@ const COMPARISON = {
 };
 
 export const metadata = {
-  title: "Bulk Import — Screaming Frog CSV'nizi Tek Seferde Analiz Edin | Epicsem",
+  title: "Site Taraması — Tüm Sitenizin SEO Sorunlarını Tek Seferde Görün | Epicsem",
   description:
-    "Screaming Frog'la taranmış tüm bir sitenin eksik meta, kırık link, thin content ve noindex sorunlarını tek CSV yükleyerek tüm site genelinde ücretsiz görün.",
+    "Sadece alan adını yazın: Epicsem tüm sitenizi tarar, eksik meta, kırık link, thin content ve noindex sorunlarını site genelinde tek panoda gösterir.",
 };
 
 const SCENARIO_STEPS = [
   {
-    title: "Screaming Frog ile site taranır",
-    body: "Kullanıcı kendi Screaming Frog'unda siteyi tarar ve \"Internal → All\" olarak CSV dışa aktarır.",
+    title: "Sadece site adresi yazılır",
+    body: "Kurulum, eklenti ya da masaüstü programı yok — alan adını yazıp \"Siteyi tara\"ya basmak yeterli.",
   },
   {
-    title: "CSV /import'a yüklenir",
-    body: "Dosya sürükle-bırak ile yüklenir, 25MB'a kadar dosyalar kabul edilir.",
+    title: "Epicsem tüm siteyi kendisi tarar",
+    body: "robots.txt ve sitemap'ler okunur, iç linkler takip edilir; her sayfanın durum kodu, title'ı, meta açıklaması, H1'leri, kelime sayısı, canonical ve noindex bilgisi toplanır.",
   },
   {
     title: "Site genelinde sorunlar tek seferde çıkar",
-    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi tek bir özet tabloda.",
+    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi grafikli tek bir panoda.",
   },
   {
     title: "Fix prompt'u kategoriye göre gruplanır",
     body: "\"Fix with Claude Code\" ile her sorun kategorisi için örnek URL'li bir prompt üretilir.",
   },
   {
-    title: "Geliştirici toplu düzeltme yapar",
-    body: "Prompt, sitenin reposunda çalışan Claude Code'a yapıştırılır ve sorunlar toplu şekilde düzeltilir.",
+    title: "Düzelt, tekrar tara, farkı gör",
+    body: "Düzeltmelerden sonra aynı siteyi yeniden tara — pano, sorun sayısının taramadan taramaya nasıl düştüğünü gösterir.",
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "Hangi dosyayı yükleyebilirim?",
-    a: "Screaming Frog'da Internal → All olarak dışa aktardığın CSV dosyasını, 25MB'a kadar. Başka bir crawler'ın CSV'si aynı sütun isimlerini kullanmıyorsa doğru eşlenmeyebilir.",
+    q: "Ek bir program ya da dosya gerekiyor mu?",
+    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder. Sadece alan adını yazman yeterli.",
+  },
+  {
+    q: "Kaç sayfa taranıyor?",
+    a: "Tarama başına 50, 150 ya da 300 sayfa seçebilirsin. Büyük sitelerde sitemap'teki sayfalar önceliklidir; süre sınırına takılan taramalar \"kısmi\" olarak işaretlenir.",
   },
   {
     q: "Bunun Audit'ten farkı ne?",
-    a: "Audit tek bir URL'yi anlık olarak tarar. Bulk Import ise daha önce Screaming Frog'la taranmış tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları tek seferde, tüm site genelinde gösterir.",
+    a: "Audit tek bir URL'yi derinlemesine (SEO + AI erişimi) inceler. Site Taraması ise tüm siteyi gezip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları site genelinde tek panoda gösterir.",
   },
   {
     q: "Bulunan sorunları nasıl düzeltirim?",
@@ -72,25 +76,25 @@ const FAQ_ITEMS = [
 ];
 
 const FEATURES = [
-  { title: "Tüm site, tek CSV", body: "Screaming Frog'la taranmış binlerce URL'yi tek seferde yükleyip analiz edin." },
+  { title: "Kurulumsuz tüm-site taraması", body: "Sitemap ve iç linkler üzerinden yüzlerce sayfa otomatik taranır — program ya da dosya gerekmez." },
   { title: "13 sorun kategorisi", body: "Eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1, noindex ve daha fazlası." },
   { title: "Filtrelenebilir sorun tablosu", body: "Sorun tipine göre filtreleyip yalnızca ilgilendiğiniz URL'leri görün." },
   { title: "Kategoriye göre gruplanmış fix prompt'u", body: "Tek prompt, her sorun kategorisi için örnek URL'lerle birlikte üretilir." },
-  { title: "Geçmiş içe aktarmalar", body: "Önceki CSV yüklemelerinizi tekrar açıp karşılaştırabilirsiniz." },
-  { title: "Tek URL'lik Audit'in tamamlayıcısı", body: "Audit tek sayfayı anlık tarar; Bulk Import tüm siteyi toplu işler." },
+  { title: "Tarama geçmişi ve trend", body: "Önceki taramaları tekrar açın, sorun sayısının zamanla nasıl düştüğünü grafikte görün." },
+  { title: "Tek URL'lik Audit'in tamamlayıcısı", body: "Audit tek sayfayı anlık tarar; Site Taraması tüm siteyi toplu işler." },
 ];
 
 export default function BulkImportLandingPage() {
   return (
     <div className="space-y-24 sm:space-y-28 pb-8">
       <FeatureHero
-        breadcrumbLabel="Bulk Import"
-        eyebrow="BULK IMPORT"
+        breadcrumbLabel="Site Taraması"
+        eyebrow="SİTE TARAMASI"
         title={<>Yüzlerce sayfanın SEO sorunlarını tek tek değil, <span className="text-accent">tek seferde</span> görün.</>}
-        body="Epicsem'in Audit'i tek bir URL'yi anlık tarar. Bulk Import ise Screaming Frog'la taranmış tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link ve noindex sayfaları tüm site genelinde, tek bir özet tabloda gösterir."
-        primaryCta={{ href: "/import", label: "Ücretsiz CSV yükle" }}
+        body="Sadece alan adını yazın — Epicsem tüm sitenizi kendisi tarar ve eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link ve noindex sayfaları site genelinde, grafikli tek bir panoda gösterir."
+        primaryCta={{ href: "/import", label: "Siteni ücretsiz tara" }}
         secondaryCta={{ href: "/features/seo-axo-audit", label: "Tek sayfa Audit'i incele" }}
-        image={{ src: "/screenshots/bulk-import-form.png", alt: "Epicsem Bulk Import — Screaming Frog CSV yükleme alanı", path: "epicsem.app/import", width: 1399, height: 101 }}
+        image={{ src: "/screenshots/bulk-import-form.png", alt: "Epicsem Site Taraması panosu", path: "epicsem.app/import", width: 1116, height: 482 }}
       />
 
       <FeatureComparison without={COMPARISON.without} withItems={COMPARISON.withItems} />
@@ -98,8 +102,8 @@ export default function BulkImportLandingPage() {
       <AiAnswerDemo />
 
       <FeatureSteps
-        heading="Toplu içe aktarma nasıl çalışır?"
-        subheading="CSV yüklemekten toplu düzeltmeye, üç adımda"
+        heading="Site taraması nasıl çalışır?"
+        subheading="Adres yazmaktan toplu düzeltmeye"
         steps={SCENARIO_STEPS}
       />
 
@@ -108,9 +112,9 @@ export default function BulkImportLandingPage() {
       <FAQSection items={FAQ_ITEMS} />
 
       <FeatureCTA
-        title="Sitenizin CSV'sini şimdi yükleyin"
+        title="Sitenizi şimdi tarayın"
         body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
-        cta={{ href: "/import", label: "CSV yüklemeyi başlat" }}
+        cta={{ href: "/import", label: "Taramayı başlat" }}
       />
     </div>
   );

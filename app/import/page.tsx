@@ -7,51 +7,49 @@ import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import ImportOverview from "@/components/tool/ImportOverview";
 
 const SCENARIO_STEPS = [
   {
-    title: "Screaming Frog ile site taranır",
-    body: "Kullanıcı kendi Screaming Frog'unda siteyi tarar ve \"Internal → All\" olarak CSV dışa aktarır.",
+    title: "Sadece site adresi yazılır",
+    body: "Kurulum, eklenti ya da masaüstü programı yok — alan adını yazıp \"Siteyi tara\"ya basmak yeterli.",
   },
   {
-    title: "CSV /import'a yüklenir",
-    body: "Dosya sürükle-bırak ile yüklenir, 25MB'a kadar dosyalar kabul edilir.",
+    title: "Epicsem tüm siteyi kendisi tarar",
+    body: "robots.txt ve sitemap'ler okunur, iç linkler takip edilir; her sayfanın durum kodu, title'ı, meta açıklaması, H1'leri, kelime sayısı, canonical ve noindex bilgisi toplanır.",
   },
   {
     title: "Site genelinde sorunlar tek seferde çıkar",
-    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi tek bir özet tabloda.",
+    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi grafikli tek bir panoda.",
   },
   {
     title: "Fix prompt'u kategoriye göre gruplanır",
     body: "\"Fix with Claude Code\" ile her sorun kategorisi için örnek URL'li bir prompt üretilir.",
   },
   {
-    title: "Geliştirici toplu düzeltme yapar",
-    body: "Prompt, sitenin reposunda çalışan Claude Code'a yapıştırılır ve sorunlar toplu şekilde düzeltilir.",
+    title: "Düzelt, tekrar tara, farkı gör",
+    body: "Düzeltmelerden sonra aynı siteyi yeniden tara — pano, sorun sayısının taramadan taramaya nasıl düştüğünü gösterir.",
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "Hangi dosyayı yükleyebilirim?",
-    a: "Screaming Frog'da Internal → All olarak dışa aktardığın CSV dosyasını, 25MB'a kadar. Başka bir crawler'ın CSV'si aynı sütun isimlerini kullanmıyorsa doğru eşlenmeyebilir.",
+    q: "Ek bir program ya da dosya gerekiyor mu?",
+    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder. Sadece alan adını yazman yeterli.",
+  },
+  {
+    q: "Kaç sayfa taranıyor?",
+    a: "Tarama başına 50, 150 ya da 300 sayfa seçebilirsin. Büyük sitelerde sitemap'teki sayfalar önceliklidir; süre sınırına takılan taramalar \"kısmi\" olarak işaretlenir.",
   },
   {
     q: "Bunun Audit'ten farkı ne?",
-    a: "Audit tek bir URL'yi anlık olarak tarar. Bulk Import ise daha önce Screaming Frog'la taranmış tüm bir sitenin sonucunu işleyip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları tek seferde, tüm site genelinde gösterir.",
+    a: "Audit tek bir URL'yi derinlemesine (SEO + AI erişimi) inceler. Site Taraması ise tüm siteyi gezip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları site genelinde tek panoda gösterir.",
   },
   {
     q: "Bulunan sorunları nasıl düzeltirim?",
     a: "\"Fix with Claude Code\" ile her sorun kategorisine göre gruplanmış, örnek URL'li bir prompt üretilir — bunu kendi site kodun/deposu üzerinde çalışan Claude Code'a yapıştırıp toplu düzeltebilirsin.",
   },
 ];
-
-interface RunListItem {
-  id: number;
-  filename: string;
-  rowCount: number;
-  createdAt: string;
-}
 
 const ISSUE_LABEL: Record<string, string> = {
   broken: "Kırık (4xx/5xx)",
@@ -69,70 +67,55 @@ const ISSUE_LABEL: Record<string, string> = {
   "noindex-tag": "Noindex etiketi",
 };
 
-const SUMMARY_LABEL: Record<string, string> = {
-  missingTitle: "Eksik title",
-  duplicateTitles: "Tekrarlayan title'lı URL",
-  titleTooLong: "Title çok uzun",
-  missingMetaDescription: "Eksik meta açıklaması",
-  duplicateMetaDescriptions: "Tekrarlayan meta açıklamalı URL",
-  metaDescriptionTooLong: "Meta açıklaması çok uzun",
-  missingH1: "Eksik H1",
-  multipleH1: "Birden çok H1",
-  thinContent: "Yetersiz içerik (<200 kelime)",
-  brokenLinks: "Kırık (4xx/5xx)",
-  redirects: "Yönlendirmeler",
-  nonIndexable: "İndekslenemez",
-  noindexTag: "Noindex etiketi",
-};
-
 const ROWS_SHOWN = 300;
 
-function SummaryTile({ label, value, warn = false }: { label: string; value: number; warn?: boolean }) {
-  if (value === 0) return null;
-  return (
-    <div className="rounded-lg bg-muted px-3 py-2 text-sm flex items-center justify-between gap-3">
-      <span className="text-ink/60">{label}</span>
-      <span className={warn ? "text-danger font-medium" : "font-medium"}>{value}</span>
-    </div>
-  );
-}
+const PAGE_LIMITS = [50, 150, 300];
 
 export default function ImportPage() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
+  const [url, setUrl] = useState("");
+  const [maxPages, setMaxPages] = useState(150);
   const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BulkImportResult | null>(null);
   const [issueFilter, setIssueFilter] = useState<string>("all");
-  const [history, setHistory] = useState<RunListItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/import/screaming-frog")
-      .then((res) => (res.status === 401 ? { runs: [] } : res.json()))
-      .then((data) => setHistory(data.runs ?? []))
-      .catch(() => {});
-  }, [result]);
+    if (!loading) return;
+    setElapsed(0);
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [loading]);
 
-  async function upload(file: File) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Yalnızca .csv dosyaları destekleniyor — Screaming Frog'dan 'Internal → All' olarak dışa aktarın.");
-      return;
-    }
+  function show(data: BulkImportResult) {
+    setResult(data);
+    setIssueFilter("all");
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  async function crawl(e: React.FormEvent) {
+    e.preventDefault();
+    const v = url.trim();
+    if (!v) return;
     setLoading(true);
     setError(null);
     setResult(null);
-    setIssueFilter("all");
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/import/screaming-frog", { method: "POST", body: form });
+      const res = await fetch("/api/import/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: v, maxPages }),
+      });
       if (res.status === 401) {
         window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "İçe aktarma başarısız oldu");
-      setResult(data);
+      if (!res.ok) throw new Error(data.error ?? "Tarama başarısız oldu");
+      show(data);
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -141,185 +124,184 @@ export default function ImportPage() {
   }
 
   async function loadRun(id: number) {
-    setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/import/screaming-frog?id=${id}`);
-      if (res.status === 401) {
-        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
-        return;
-      }
+      const res = await fetch(`/api/import/runs?id=${id}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "İçe aktarma yüklenemedi");
-      setResult(data);
-      setIssueFilter("all");
+      if (!res.ok) throw new Error(data.error ?? "Tarama yüklenemedi");
+      show(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
-    } finally {
-      setLoading(false);
     }
   }
 
+  const problemRows = result ? result.rows.filter((r) => r.issues.length > 0) : [];
   const filteredRows = result
     ? issueFilter === "all"
-      ? result.rows.filter((r) => r.issues.length > 0)
+      ? problemRows
       : result.rows.filter((r) => r.issues.includes(issueFilter))
     : [];
-
-  const issueCounts = result
-    ? Object.entries(result.summary).filter(([k, v]) => k !== "totalRows" && (v as number) > 0)
+  const issueChips = result
+    ? Object.entries(ISSUE_LABEL)
+        .map(([code, label]) => ({ code, label, n: result.rows.filter((r) => r.issues.includes(code)).length }))
+        .filter((c) => c.n > 0)
+        .sort((a, b) => b.n - a.n)
     : [];
 
   return (
     <div className="space-y-8">
       <ToolPageHeader
-        breadcrumbLabel="Toplu İçe Aktarma"
-        title="Toplu Site İçe Aktarma (Screaming Frog)"
-        body={
-          <>
-            Epicsem&apos;in kendi denetimi tek seferde bir URL&apos;yi kontrol eder — tüm site için{" "}
-            <span className="text-ink/80">Internal → All</span> olarak Screaming Frog&apos;dan CSV dışa aktarıp
-            buraya bırakın. Epicsem sütunları eşler, taramadaki her URL genelinde eksik/tekrarlayan title &amp; meta
-            açıklamaları, thin content, kırık linkler, eksik H1&apos;ler ve noindex sayfaları işaretler — tek sayfalık
-            hiçbir aracın (Arvow dahil) yapamadığı bir şey.
-          </>
-        }
+        breadcrumbLabel="Site Taraması"
+        title="Site Taraması"
+        body="Tüm siteni tek seferde tara — kırık linkler, eksik/tekrarlayan title ve meta, thin content ve noindex sayfalar tek panoda."
       />
 
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          const file = e.dataTransfer.files?.[0];
-          if (file) upload(file);
-        }}
-        className={`card border-2 border-dashed text-center py-10 cursor-pointer transition-colors ${
-          dragOver ? "border-accent bg-accent/5" : "border-border"
-        }`}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) upload(file);
-            e.target.value = "";
-          }}
-        />
-        <p className="text-sm text-ink/70">
-          {loading ? "Ayrıştırılıyor…" : "Bir Screaming Frog CSV dışa aktarımını buraya bırakın, ya da dosya seçmek için tıklayın"}
-        </p>
-        <p className="text-xs text-ink/40 mt-1">Yalnızca .csv, 25MB'a kadar</p>
+      <ImportOverview refreshKey={refreshKey} onPick={loadRun} />
+
+      <div id="yeni-tarama" className="scroll-mt-24 pt-4 border-t border-border">
+        <h2 className="text-lg font-bold">Yeni tarama</h2>
+        <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — sitemap ve iç linkler üzerinden tüm sayfalar otomatik taranır.</p>
       </div>
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
-
-      {history.length > 0 && !result && (
-        <div className="card space-y-2">
-          <h2 className="font-bold text-sm">Önceki içe aktarmalar</h2>
-          <div className="space-y-1">
-            {history.map((h) => (
-              <button
-                key={h.id}
-                onClick={() => loadRun(h.id)}
-                className="w-full flex items-center justify-between text-sm rounded-lg hover:bg-muted px-3 py-2 text-left"
-              >
-                <span>{h.filename}</span>
-                <span className="text-ink/40 text-xs">{h.rowCount} URL · {new Date(h.createdAt).toLocaleString()}</span>
-              </button>
+      <form
+        onSubmit={crawl}
+        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
+      >
+        <div className="flex flex-1 items-center gap-2 px-3">
+          <span className="text-ink/30">🌐</span>
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Taranacak site — ör. siteniz.com"
+            disabled={loading}
+            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/35 disabled:opacity-60"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={maxPages}
+            onChange={(e) => setMaxPages(Number(e.target.value))}
+            disabled={loading}
+            className="rounded-xl border border-border bg-panel px-3 py-2.5 text-sm font-semibold text-ink/70 outline-none"
+            title="En fazla taranacak sayfa"
+          >
+            {PAGE_LIMITS.map((n) => (
+              <option key={n} value={n}>{n} sayfa</option>
             ))}
+          </select>
+          <button
+            type="submit"
+            disabled={loading || !url.trim()}
+            className="rounded-xl bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-accent/25 hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? "Taranıyor…" : "Siteyi tara →"}
+          </button>
+        </div>
+      </form>
+
+      {loading && (
+        <div className="rounded-2xl border border-border bg-panel p-5">
+          <div className="flex items-center gap-3 text-sm text-ink/70">
+            <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+            Sitemap okunuyor, sayfalar taranıyor… <span className="tabular-nums text-ink/40">{elapsed} sn</span>
           </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${Math.min(95, (elapsed / 90) * 100)}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-ink/40">Sayfa sayısına göre 20 sn – 2 dk sürer.</p>
         </div>
       )}
 
+      {error && <div className="rounded-2xl border border-danger/40 bg-danger/5 p-4 text-sm text-danger">{error}</div>}
+
       {result && (
-        <div className="space-y-6">
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="font-bold">{result.filename}</h2>
-              <span className="text-xs text-ink/40">{result.summary.totalRows} URL · içe aktarıldı {new Date(result.importedAt).toLocaleString()}</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {issueCounts.map(([key, value]) => (
-                <SummaryTile
-                  key={key}
-                  label={SUMMARY_LABEL[key] ?? key}
-                  value={value as number}
-                  warn={["brokenLinks", "missingTitle", "missingMetaDescription"].includes(key)}
-                />
-              ))}
-              {issueCounts.length === 0 && (
-                <div className="text-sm text-seo col-span-full">Herhangi bir sorun tespit edilmedi — bu tarama temiz döndü.</div>
-              )}
+        <div ref={resultRef} className="scroll-mt-24 space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-bold">{result.filename}</h2>
+              <p className="text-sm text-ink/50">
+                {result.summary.totalRows} sayfa · {problemRows.length} sayfada sorun · {new Date(result.importedAt).toLocaleString("tr-TR")}
+              </p>
             </div>
           </div>
 
-          <PromptBlock
-            title="Fix with Claude Code"
-            description="Bu taramanın bulduğu her sorunu kategoriye göre gruplayıp örnek URL'lerle özetleyen bir prompt — sitenizin repo/CMS'inde çalışan Claude Code'a yapıştırın ve toplu düzeltmesi güvenli olanları düzeltin."
-            prompt={buildBulkImportFixPrompt(result)}
-          />
+          {issueChips.length === 0 ? (
+            <div className="rounded-2xl border border-seo/30 bg-seo/5 p-4 text-sm font-semibold text-seo">Herhangi bir sorun tespit edilmedi — bu tarama temiz döndü.</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setIssueFilter("all")}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${issueFilter === "all" ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-ink/30"}`}
+              >
+                Tümü · {problemRows.length}
+              </button>
+              {issueChips.map((c) => (
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => setIssueFilter(c.code)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${issueFilter === c.code ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-ink/30"}`}
+                >
+                  {c.label} · {c.n}
+                </button>
+              ))}
+            </div>
+          )}
 
           {filteredRows.length > 0 && (
-            <div className="card space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="font-bold">Sorunlu URL'ler ({result.rows.filter((r) => r.issues.length > 0).length})</h2>
-                <select
-                  value={issueFilter}
-                  onChange={(e) => setIssueFilter(e.target.value)}
-                  className="text-xs rounded-lg bg-panel border border-border px-2 py-1.5 outline-none"
-                >
-                  <option value="all">Tüm sorunlar</option>
-                  {Object.entries(ISSUE_LABEL).map(([code, label]) => (
-                    <option key={code} value={code}>{label}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-ink/40 border-b border-border">
-                      <th className="py-2 pr-3">URL</th>
-                      <th className="py-2 pr-3">Durum</th>
-                      <th className="py-2 pr-3">Title</th>
-                      <th className="py-2 pr-3">Kelime</th>
-                      <th className="py-2">Sorunlar</th>
+                    <tr className="text-left text-xs text-ink/45">
+                      <th className="px-5 py-2.5 font-medium">Sayfa</th>
+                      <th className="py-2.5 pr-3 font-medium">Durum</th>
+                      <th className="py-2.5 pr-3 font-medium">Title</th>
+                      <th className="py-2.5 pr-3 font-medium">Kelime</th>
+                      <th className="py-2.5 pr-5 font-medium">Sorunlar</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredRows.slice(0, ROWS_SHOWN).map((row) => (
-                      <tr key={row.url} className="border-b border-border/50 align-top">
-                        <td className="py-2 pr-3 max-w-xs truncate" title={row.url}>{row.url}</td>
-                        <td className="py-2 pr-3">{row.statusCode ?? "—"}</td>
-                        <td className="py-2 pr-3 max-w-xs truncate" title={row.title ?? ""}>{row.title ?? <span className="text-danger">yok</span>}</td>
-                        <td className="py-2 pr-3">{row.wordCount ?? "—"}</td>
-                        <td className="py-2 text-ink/60">
-                          {row.issues.map((i) => ISSUE_LABEL[i] ?? i).join(", ")}
+                      <tr key={row.url} className="border-t border-border align-top hover:bg-muted/40">
+                        <td className="px-5 py-2.5 max-w-xs truncate font-medium" title={row.url}>{row.url.replace(/^https?:\/\/(www\.)?/, "")}</td>
+                        <td className="py-2.5 pr-3">
+                          <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums ${row.statusCode && row.statusCode >= 400 ? "bg-danger/10 text-danger" : row.statusCode && row.statusCode >= 300 ? "bg-warn/10 text-warn" : "bg-muted text-ink/60"}`}>
+                            {row.statusCode || "—"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-3 max-w-[14rem] truncate text-ink/70" title={row.title ?? ""}>{row.title ?? <span className="text-danger">yok</span>}</td>
+                        <td className="py-2.5 pr-3 tabular-nums text-ink/60">{row.wordCount ?? "—"}</td>
+                        <td className="py-2.5 pr-5">
+                          <div className="flex flex-wrap gap-1">
+                            {row.issues.map((i) => (
+                              <span key={i} className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-ink/60">{ISSUE_LABEL[i] ?? i}</span>
+                            ))}
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {filteredRows.length > ROWS_SHOWN && (
-                  <p className="text-xs text-ink/40 pt-2">
-                    {filteredRows.length} eşleşen URL'den ilk {ROWS_SHOWN} tanesi gösteriliyor — daha spesifik sonuçlar için yukarıdaki filtreyi daraltın.
-                  </p>
-                )}
               </div>
+              {filteredRows.length > ROWS_SHOWN && (
+                <p className="border-t border-border px-5 py-2 text-xs text-ink/40">
+                  {filteredRows.length} sayfadan ilk {ROWS_SHOWN} tanesi gösteriliyor — filtreyi daraltın.
+                </p>
+              )}
             </div>
           )}
+
+          <PromptBlock
+            title="Fix with Claude Code"
+            description="Bu taramanın bulduğu her sorunu kategoriye göre gruplayıp örnek URL'lerle özetleyen bir prompt — sitenizin repo/CMS'inde çalışan Claude Code'a yapıştırın."
+            prompt={buildBulkImportFixPrompt(result)}
+          />
         </div>
       )}
 
-      <ExampleScenario heading="50 sayfalık bir site, tek CSV ile toplu taranıyor" steps={SCENARIO_STEPS} />
+      <ExampleScenario heading="50 sayfalık bir site, tek adresle baştan sona taranıyor" steps={SCENARIO_STEPS} />
 
       <FAQSection items={FAQ_ITEMS} />
     </div>

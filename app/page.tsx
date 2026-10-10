@@ -65,7 +65,7 @@ const GROUPS = [
     items: [
       { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir.", landingHref: "/features/axo-monitoring" },
       { label: "Kampanyalar", href: "/campaigns", body: "Bir domain için kur, Gap Analysis'teki gerçek içerik boşluklarını haftalık/aylık otomatik taslak makaleye çevirir — hiçbir zaman uydurma bir konu kullanmaz." },
-      { label: "Bulk Import", href: "/import", body: "Screaming Frog CSV'ini yükle, tüm site için eksik meta/başlık/thin content sorunlarını tek seferde gör.", landingHref: "/features/bulk-import" },
+      { label: "Site Taraması", href: "/import", body: "Sadece adresi yaz; tüm siteyi tarayıp eksik meta/başlık, kırık link ve thin content sorunlarını tek panoda gör.", landingHref: "/features/bulk-import" },
       { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress veya Shopify'a yayınlar.", landingHref: "/features/content-studio" },
       { label: "Yerel İşletme (GBP)", href: "/local", body: "Google Business Profile gönderisi ve müşteri yorumlarına yanıt taslağı üretir — kopyala, yapıştır, sen onayla." },
     ],
