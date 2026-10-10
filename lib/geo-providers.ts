@@ -119,7 +119,7 @@ class AnthropicProvider implements LlmProvider {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: 4096,
         temperature: options?.temperature,
         messages: [{ role: "user", content: prompt }],
       }),
