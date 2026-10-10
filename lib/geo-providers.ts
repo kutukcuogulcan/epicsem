@@ -60,15 +60,56 @@ class OpenAiProvider implements LlmProvider {
   }
 }
 
+/**
+ * Anthropic model adları zamanla değişiyor ve her anahtar her modele erişemiyor (canlıda
+ * "model: claude-sonnet-4-5 not_found" hatası görüldü). Sabit ad yerine: önce env
+ * (ANTHROPIC_MODEL / ANTHROPIC_FAST_MODEL), yoksa anahtarın gerçekten erişebildiği modelleri
+ * GET /v1/models ile listele ve en yeni Sonnet'i (hızlı katman için en yeni Haiku'yu) seç.
+ * Sonuç süreç boyunca önbellekte tutulur.
+ */
+const anthropicModelCache: Partial<Record<"flagship" | "fast", string>> = {};
+
+export async function resolveAnthropicModel(tier: "flagship" | "fast" = "flagship"): Promise<string> {
+  const envModel = tier === "fast" ? process.env.ANTHROPIC_FAST_MODEL : process.env.ANTHROPIC_MODEL;
+  if (envModel) return envModel;
+  if (anthropicModelCache[tier]) return anthropicModelCache[tier]!;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/models?limit=100", {
+      headers: { "x-api-key": process.env.ANTHROPIC_API_KEY ?? "", "anthropic-version": "2023-06-01" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const ids: string[] = Array.isArray(data.data) ? data.data.map((m: { id: string }) => m.id) : [];
+      // Liste en yeniden eskiye gelir.
+      const pick =
+        (tier === "fast" ? ids.find((id) => id.includes("haiku")) : ids.find((id) => id.includes("sonnet"))) ??
+        ids.find((id) => id.includes("sonnet")) ??
+        ids[0];
+      if (pick) {
+        anthropicModelCache[tier] = pick;
+        return pick;
+      }
+    }
+  } catch {
+    // düş
+  }
+  return tier === "fast" ? "claude-3-5-haiku-latest" : "claude-sonnet-4-5";
+}
+
 /** Anthropic — powers Claude's answers. */
 class AnthropicProvider implements LlmProvider {
   engine: EngineId = "anthropic";
-  defaultModel = "claude-sonnet-4-5";
+  defaultModel = "claude (en yeni Sonnet)";
   isConfigured() {
     return Boolean(process.env.ANTHROPIC_API_KEY);
   }
   async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
-    const model = options?.model ?? this.defaultModel;
+    const model =
+      !options?.model || options.model === this.defaultModel
+        ? await resolveAnthropicModel("flagship")
+        : options.model === FAST_MODEL.anthropic
+          ? await resolveAnthropicModel("fast")
+          : options.model;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {

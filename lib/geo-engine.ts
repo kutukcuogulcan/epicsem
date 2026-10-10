@@ -43,9 +43,12 @@ export async function runPromptAcrossEngines(
 ): Promise<GeoRunResult[]> {
   const demo = isDemoMode();
   const branded = isBrandedPrompt(promptText, brand.name);
+  // Gerçek modda anahtarı olmayan motorlar SİMÜLE EDİLMEZ, atlanır — aksi halde sahte
+  // cevaplar gerçek sonuçlarla karışıp panodaki görünürlüğü bozar.
+  const activeEngines = demo ? engines : engines.filter((e) => PROVIDERS[e].isConfigured());
 
   const results = await Promise.all(
-    engines.map(async (engineId): Promise<GeoRunResult> => {
+    activeEngines.map(async (engineId): Promise<GeoRunResult | null> => {
       const provider = PROVIDERS[engineId];
       let text: string;
       let model: string;
@@ -60,9 +63,9 @@ export async function runPromptAcrossEngines(
           text = res.text;
           model = res.model;
         } catch (err) {
-          const sim = simulateResponse(promptText, engineId, brand.name, brand.domain, competitors);
-          text = `[Live call failed, showing simulated fallback: ${err instanceof Error ? err.message : "unknown error"}]\n\n${sim.text}`;
-          model = sim.model;
+          // Canlı çağrı başarısızsa bu motor-prompt sonucu atlanır (sahte veri yazılmaz).
+          console.error(`[geo] ${engineId} çağrısı başarısız:`, err instanceof Error ? err.message : err);
+          return null;
         }
       }
 
@@ -83,7 +86,7 @@ export async function runPromptAcrossEngines(
     })
   );
 
-  return results;
+  return results.filter((r): r is GeoRunResult => r !== null);
 }
 
 /** Own-brand visibility broken down by prompt topic — mentioned is always computed against the

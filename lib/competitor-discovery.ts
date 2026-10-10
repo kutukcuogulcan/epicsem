@@ -1,4 +1,4 @@
-import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
+import { PROVIDERS, isDemoMode, resolveAnthropicModel } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 
 /**
@@ -155,7 +155,7 @@ const WEB_SEARCH_CALLERS: WebSearchCaller[] = [
     id: "anthropic",
     configured: () => Boolean(process.env.ANTHROPIC_API_KEY),
     run: async (prompt) => {
-      const model = "claude-sonnet-4-5";
+      const model = await resolveAnthropicModel("flagship");
       const data = await fetchJson("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
