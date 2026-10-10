@@ -92,6 +92,12 @@ export default function AuditPage() {
   const [agencyName, setAgencyName] = useAgencyName();
 
   useEffect(() => {
+    // Ana sayfadaki "siteniz.com" kutusundan gelen ?url= ön-doldurması.
+    const pre = new URLSearchParams(window.location.search).get("url");
+    if (pre) setUrl(pre);
+  }, []);
+
+  useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
     if (!id) return;
     fetch(`/api/clients/${id}`)

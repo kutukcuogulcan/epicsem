@@ -8,10 +8,12 @@ export default function FeatureSteps({
   heading,
   subheading,
   steps,
+  note = "Kurgusal bir örnek üzerinden anlatılmıştır — aracın gerçek koşularda nasıl çalıştığını somut şekilde göstermek içindir.",
 }: {
   heading: string;
   subheading: string;
   steps: { title: string; body: string }[];
+  note?: string | null;
 }) {
   const shown = steps.slice(0, 5);
   return (
@@ -50,9 +52,7 @@ export default function FeatureSteps({
           })}
         </ol>
       </div>
-      <p className="text-center text-xs text-ink/30">
-        Kurgusal bir örnek üzerinden anlatılmıştır — aracın gerçek koşularda nasıl çalıştığını somut şekilde göstermek içindir.
-      </p>
+      {note && <p className="text-center text-xs text-ink/30">{note}</p>}
     </section>
   );
 }
