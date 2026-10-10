@@ -1,4 +1,5 @@
 import type { BulkImportResult, BulkImportRow, BulkImportSummary } from "@/types";
+import { ISSUE_SEVERITY, THEMES } from "@/lib/bulk-labels";
 
 /** Bir taramadan (kendi tarayıcımız ya da içe aktarılan CSV) gelen ham sayfa satırı. */
 export type RawBulkRow = Omit<BulkImportRow, "issues">;
@@ -115,6 +116,36 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
     summary.avgResponseMs = avg(withM.map((r) => r.metrics!.responseMs).filter((x): x is number => x !== null));
     summary.avgHtmlKb = avg(withM.map((r) => r.metrics!.htmlKb).filter((x): x is number => x !== null));
   }
+
+  // --- Ahrefs/Semrush tarzı özet: sağlık skoru, hata/uyarı/bildirim, durum kodu ve derinlik dağılımı ---
+  const sev = (code: string) => ISSUE_SEVERITY[code] ?? "notice";
+  const internalHtml = rows.filter((r) => r.statusCode !== null);
+  const withError = internalHtml.filter((r) => r.issues.some((c) => sev(c) === "error")).length;
+  summary.healthScore = internalHtml.length ? Math.round(((internalHtml.length - withError) / internalHtml.length) * 100) : null;
+  summary.severity = { error: 0, warning: 0, notice: 0 };
+  for (const [code, n] of Object.entries(issueCounts)) summary.severity[sev(code)] += n;
+  const statusDist: Record<string, number> = {};
+  for (const r of rows) {
+    const k = r.statusCode === null ? "?" : r.statusCode === 0 ? "hata" : `${Math.floor(r.statusCode / 100)}xx`;
+    statusDist[k] = (statusDist[k] ?? 0) + 1;
+  }
+  summary.statusDist = statusDist;
+  const depthDist: Record<string, number> = {};
+  for (const r of rows) {
+    const d = r.metrics?.depth;
+    if (d === undefined) continue;
+    const k = d === null ? "bulunamadı" : d >= 5 ? "5+" : String(d);
+    depthDist[k] = (depthDist[k] ?? 0) + 1;
+  }
+  if (Object.keys(depthDist).length) summary.depthDist = depthDist;
+  summary.pagesWithErrors = withError;
+  summary.pagesWithIssuesOnly = internalHtml.filter((r) => r.issues.length > 0 && !r.issues.some((c) => sev(c) === "error")).length;
+  summary.themes = Object.fromEntries(
+    THEMES.map((t) => {
+      const bad = internalHtml.filter((r) => r.issues.some((c) => t.codes.includes(c))).length;
+      return [t.key, internalHtml.length ? Math.round(((internalHtml.length - bad) / internalHtml.length) * 100) : 100];
+    })
+  );
 
   return { filename, importedAt: new Date().toISOString(), columns, summary, rows, duplicateTitleGroups, duplicateMetaGroups };
 }

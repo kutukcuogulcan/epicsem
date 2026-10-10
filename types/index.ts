@@ -234,6 +234,16 @@ export interface BulkImportSummary {
   issueCounts?: Record<string, number>;
   avgResponseMs?: number | null;
   avgHtmlKb?: number | null;
+  /** Hata içermeyen taranmış URL yüzdesi (Ahrefs Health Score mantığı). */
+  healthScore?: number | null;
+  /** Sorun örneği sayıları (sorun × URL), önem derecesine göre. */
+  severity?: { error: number; warning: number; notice: number };
+  statusDist?: Record<string, number>;
+  depthDist?: Record<string, number>;
+  pagesWithErrors?: number;
+  pagesWithIssuesOnly?: number;
+  /** Tema puanları (0-100): crawl, links, content, perf, tech, ai. */
+  themes?: Record<string, number>;
 }
 
 export interface BulkImportResult {
