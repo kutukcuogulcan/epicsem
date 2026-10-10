@@ -6,6 +6,7 @@ import type { BulkImportResult } from "@/types";
 import { ISSUE_INFO, ISSUE_LABEL, ISSUE_SEVERITY, SEVERITY_LABEL, THEMES, pageAdvice, priorityScore, type IssueInfo, type Severity } from "@/lib/bulk-labels";
 import type { BulkImportRow } from "@/types";
 import PageRow, { short } from "./PageRow";
+import { CompareTab, DuplicateGroups, ImagesTab, LinksTab, RedirectsTab } from "./AuditDetailTabs";
 
 export interface RunSummary {
   id: number;
@@ -65,7 +66,7 @@ export default function SiteAuditReport({
   currentId: number | null;
   onSelectRun: (id: number) => void;
 }) {
-  const [tab, setTab] = useState<"overview" | "issues" | "pages">("overview");
+  const [tab, setTab] = useState<"overview" | "issues" | "pages" | "links" | "images" | "redirects" | "compare">("overview");
   const [openIssue, setOpenIssue] = useState<string | null>(null);
   const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
   const [pageFilter, setPageFilter] = useState<string | null>(null);
@@ -194,11 +195,15 @@ export default function SiteAuditReport({
             )}
           </div>
         </div>
-        <div className="flex rounded-xl border border-border bg-panel p-1 text-xs font-semibold">
+        <div className="flex flex-wrap rounded-xl border border-border bg-panel p-1 text-xs font-semibold">
           {([
             ["overview", "Genel bakış"],
             ["issues", `Sorunlar · ${data.issues.length}`],
-            ["pages", `Sayfa gezgini · ${rows.length}`],
+            ["pages", `Sayfalar · ${rows.length}`],
+            ["links", "Linkler"],
+            ["images", "Görseller"],
+            ["redirects", "Yönlendirmeler"],
+            ["compare", "Karşılaştırma"],
           ] as const).map(([k, l]) => (
             <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 ${tab === k ? "bg-ink text-white" : "text-ink/55 hover:text-ink"}`}>
               {l}
@@ -365,6 +370,8 @@ export default function SiteAuditReport({
             )}
           </Card>
 
+          <DuplicateGroups result={result} />
+
           {/* 3. satır: grafikler */}
           <div className="grid gap-4 lg:grid-cols-2">
             <Card title="HTTP durum kodları">
@@ -474,6 +481,17 @@ export default function SiteAuditReport({
           </table>
           {data.issues.length === 0 && <div className="px-5 py-8 text-center text-sm font-semibold text-seo">Bu taramada sorun bulunmadı.</div>}
         </div>
+      )}
+
+      {tab === "links" && <LinksTab result={result} />}
+      {tab === "images" && <ImagesTab result={result} />}
+      {tab === "redirects" && <RedirectsTab result={result} />}
+      {tab === "compare" && (
+        <CompareTab
+          result={result}
+          prevId={data.prev?.id ?? null}
+          prevLabel={data.prev ? new Date(data.prev.createdAt).toLocaleString("tr-TR") : null}
+        />
       )}
 
       {tab === "pages" && (

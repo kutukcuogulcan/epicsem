@@ -30,21 +30,44 @@ export const ISSUE_LABEL: Record<string, string> = {
   "mixed-content": "Karışık içerik (http)",
   "slow-response": "Yavaş yanıt (1,5 sn+)",
   "large-page": "Büyük sayfa (500 KB+)",
+  "redirect-loop": "Yönlendirme döngüsü",
+  "redirect-temporary": "Geçici yönlendirme (302/307)",
+  "https-to-http": "HTTPS'ten HTTP'ye yönlendirme",
+  "broken-external-links": "Kırık dış link içeriyor",
+  "broken-images": "Kırık görsel içeriyor",
+  "large-images": "Büyük görsel (100 KB+)",
+  "images-no-dimensions": "Boyutsuz görsel (genişlik/yükseklik yok)",
+  "empty-anchor": "Boş link metni",
+  "generic-anchor": "Anlamsız link metni (tıklayın, devamı…)",
+  "nofollow-internal": "Nofollow iç link",
+  "too-many-links": "Çok fazla link (150+)",
+  "canonical-to-non200": "Canonical kırık/yönlenen adresi gösteriyor",
+  "title-equals-h1": "Title ile H1 birebir aynı",
+  "near-duplicate": "Neredeyse aynı içerik",
+  "noindex-in-sitemap": "Sitemap'te noindex sayfa",
+  "hreflang-invalid": "Geçersiz hreflang dil kodu",
+  "hreflang-no-self": "hreflang kendini göstermiyor",
+  "hreflang-no-return": "hreflang karşı link eksik",
+  "no-https": "Site HTTPS kullanmıyor",
+  "no-hsts": "HSTS başlığı yok",
+  "http-not-redirected": "HTTP sürümü HTTPS'e yönlenmiyor",
 };
 
 export const ISSUE_GROUPS: { label: string; codes: string[] }[] = [
-  { label: "Yanıt kodları", codes: ["broken", "redirect", "redirect-chain"] },
-  { label: "Linkler & yapı", codes: ["broken-outlinks", "orphan-page", "deep-page", "not-in-sitemap"] },
+  { label: "Yanıt kodları", codes: ["broken", "redirect", "redirect-chain", "redirect-loop", "redirect-temporary", "https-to-http"] },
+  { label: "Linkler & yapı", codes: ["broken-outlinks", "broken-external-links", "orphan-page", "deep-page", "not-in-sitemap", "empty-anchor", "generic-anchor", "nofollow-internal", "too-many-links"] },
   { label: "Title & meta", codes: ["missing-title", "title-too-long", "title-too-short", "duplicate-title", "missing-meta-description", "meta-description-too-long", "meta-description-too-short", "duplicate-meta-description"] },
   { label: "Başlıklar & içerik", codes: ["missing-h1", "multiple-h1", "missing-h2", "thin-content"] },
-  { label: "Görseller", codes: ["images-missing-alt"] },
-  { label: "İndekslenme", codes: ["non-indexable", "noindex-tag", "missing-canonical"] },
+  { label: "Görseller", codes: ["images-missing-alt", "broken-images", "large-images", "images-no-dimensions"] },
+  { label: "İndekslenme", codes: ["non-indexable", "noindex-tag", "missing-canonical", "canonical-to-non200", "noindex-in-sitemap", "near-duplicate", "title-equals-h1"] },
+  { label: "Çok dilli (hreflang)", codes: ["hreflang-invalid", "hreflang-no-self", "hreflang-no-return"] },
+  { label: "Güvenlik", codes: ["no-https", "no-hsts", "http-not-redirected"] },
   { label: "Teknik & AI hazırlığı", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content"] },
   { label: "Performans", codes: ["slow-response", "large-page"] },
 ];
 
 /** Kritik (kırmızı) sayılan sorunlar. */
-export const CRITICAL_ISSUES = new Set(["broken", "broken-outlinks", "missing-title", "noindex-tag", "redirect-chain", "mixed-content"]);
+export const CRITICAL_ISSUES = new Set(["broken", "broken-outlinks", "missing-title", "noindex-tag", "redirect-chain", "mixed-content", "redirect-loop", "https-to-http", "broken-images", "canonical-to-non200", "no-https", "http-not-redirected"]);
 
 export type Severity = "error" | "warning" | "notice";
 
@@ -80,6 +103,27 @@ export const ISSUE_SEVERITY: Record<string, Severity> = {
   "missing-lang": "notice",
   "missing-open-graph": "notice",
   "not-in-sitemap": "notice",
+  "redirect-loop": "error",
+  "redirect-temporary": "warning",
+  "https-to-http": "error",
+  "broken-external-links": "warning",
+  "broken-images": "error",
+  "large-images": "warning",
+  "images-no-dimensions": "notice",
+  "empty-anchor": "warning",
+  "generic-anchor": "notice",
+  "nofollow-internal": "notice",
+  "too-many-links": "notice",
+  "canonical-to-non200": "error",
+  "title-equals-h1": "notice",
+  "near-duplicate": "warning",
+  "noindex-in-sitemap": "warning",
+  "hreflang-invalid": "warning",
+  "hreflang-no-self": "notice",
+  "hreflang-no-return": "warning",
+  "no-https": "error",
+  "no-hsts": "notice",
+  "http-not-redirected": "error",
 };
 
 export const SEVERITY_LABEL: Record<Severity, string> = { error: "Hata", warning: "Uyarı", notice: "Bildirim" };
@@ -331,6 +375,164 @@ export const ISSUE_INFO: Record<string, IssueInfo> = {
   },
 };
 
+/* — ek kontroller — */
+Object.assign(ISSUE_INFO, {
+  "redirect-loop": {
+    what: "Yönlendirme zinciri bir yerde başa dönüyor (A → B → A); sayfa hiç açılmıyor.",
+    why: "Tarayıcı 'çok fazla yönlendirme' hatası verir; Google sayfayı hiç indeksleyemez.",
+    steps: ["Yönlendirmeler sekmesinde döngüyü adım adım görün.", "Döngüdeki kurallardan birini kaldırıp son adresi sabitleyin (genelde http/https veya www kuralı çakışıyordur)."],
+    impact: "yüksek",
+    effort: "orta",
+  },
+  "redirect-temporary": {
+    what: "Sayfa 302/307 (geçici) yönlendirme kullanıyor.",
+    why: "Geçici yönlendirmede Google eski adresi indekste tutar ve link değerini yeni adrese tam aktarmayabilir.",
+    steps: ["Taşıma kalıcıysa yönlendirmeyi 301'e çevirin.", "Gerçekten geçiciyse (kampanya, bakım) olduğu gibi bırakın."],
+    example: "# Apache\nRedirect 301 /eski /yeni",
+    impact: "orta",
+    effort: "kolay",
+  },
+  "https-to-http": {
+    what: "HTTPS bir adres, HTTP bir adrese yönleniyor.",
+    why: "Güvenli bağlantı bozulur, tarayıcı uyarı gösterebilir ve sinyal kaybı olur.",
+    steps: ["Yönlendirme hedefini https:// ile değiştirin.", "Sunucuda tüm http isteklerini https'e çeviren tek bir kural bırakın."],
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "broken-external-links": {
+    what: "Sayfada başka bir siteye giden ve artık açılmayan (4xx/5xx) link var.",
+    why: "Ziyaretçiyi ölü sayfaya gönderir; içeriğin güncel olmadığı izlenimini verir.",
+    steps: ["Linkler sekmesinde 'Kırık dış' filtresiyle linkleri bulun.", "Güncel adresle değiştirin ya da kaldırın."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "broken-images": {
+    what: "Sayfadaki bir görsel açılmıyor (4xx/5xx).",
+    why: "Sayfa bozuk görünür, görsel aramada hiç çıkmaz.",
+    steps: ["Görseller sekmesinde kırık görselleri bulun.", "Dosyayı tekrar yükleyin ya da img etiketini doğru adresle güncelleyin."],
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "large-images": {
+    what: "Sayfada 100 KB'tan büyük görsel var.",
+    why: "Büyük görseller sayfayı yavaşlatır (LCP kötüleşir), mobil veri tüketir.",
+    steps: ["Görselleri WebP/AVIF formatına çevirin.", "Ekranda gösterildiği boyuta küçültün (ör. 1600 px genişlik yeter).", "Sıkıştırın (TinyPNG, Squoosh) ve lazy-load açın."],
+    example: '<img src="urun.webp" width="800" height="800" loading="lazy" alt="…">',
+    impact: "orta",
+    effort: "kolay",
+  },
+  "images-no-dimensions": {
+    what: "Görsellerde width/height belirtilmemiş.",
+    why: "Görsel yüklenince sayfa aşağı kayar (CLS); Core Web Vitals puanı düşer.",
+    steps: ["Her <img> etiketine gerçek oranını veren width ve height ekleyin.", "Duyarlı tasarımda CSS'te height:auto kullanın."],
+    example: '<img src="kapak.jpg" width="1200" height="630" style="height:auto">',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "empty-anchor": {
+    what: "Metni olmayan iç link var (ör. sadece ikon, alt metinsiz görsel).",
+    why: "Google ve ekran okuyucular linkin nereye gittiğini anlayamaz; link sinyali zayıflar.",
+    steps: ["Linke görünür metin ekleyin ya da içindeki görsele alt metni verin.", "Sadece ikonsa aria-label ekleyin."],
+    example: '<a href="/sepet" aria-label="Sepetim"><svg…/></a>',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "generic-anchor": {
+    what: "İç linklerde 'tıklayın', 'devamı', 'buraya' gibi anlamsız metinler kullanılıyor.",
+    why: "Link metni hedef sayfanın konusunu Google'a anlatır; anlamsız metin bu fırsatı harcar.",
+    steps: ["Link metnini hedef sayfanın konusuyla değiştirin (ör. 'devamı' → 'abiye beden rehberi')."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "nofollow-internal": {
+    what: "Site içi linklerde rel=\"nofollow\" kullanılmış.",
+    why: "Kendi sayfalarınıza link değerini aktarmayı engeller; genelde tema/eklenti hatasıdır.",
+    steps: ["İç linklerden nofollow'u kaldırın.", "Bir sayfanın indekslenmesini istemiyorsanız o sayfaya noindex verin, linke nofollow değil."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "too-many-links": {
+    what: "Sayfada 150'den fazla link var.",
+    why: "Link değeri çok fazla hedefe bölünür; kullanıcı için de karmaşıktır.",
+    steps: ["Mega menü ve footer'daki gereksiz linkleri azaltın.", "Uzun listeleri kategori sayfalarına bölün."],
+    impact: "düşük",
+    effort: "orta",
+  },
+  "canonical-to-non200": {
+    what: "Canonical etiketi yönlenen ya da kırık bir adresi gösteriyor.",
+    why: "Google canonical'ı yok sayar ya da yanlış sayfayı indeksler.",
+    steps: ["Canonical'ı açılan (200) son adrese çevirin.", "Çoğu zaman sayfanın kendi adresini göstermesi doğrudur."],
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "title-equals-h1": {
+    what: "Title ve H1 kelimesi kelimesine aynı.",
+    why: "Hata değil ama farklı yazarsanız aynı sayfa için iki ayrı anahtar kelime varyasyonu hedefleyebilirsiniz.",
+    steps: ["Title'ı arama sonucu için (anahtar kelime + marka), H1'i sayfadaki okuyucu için yazın."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "near-duplicate": {
+    what: "Bu sayfanın metni başka bir sayfayla %85'ten fazla benziyor.",
+    why: "Google benzer sayfalardan birini seçip diğerlerini göstermez; sayfalar birbirinin sıralamasını yer.",
+    steps: ["Benzer sayfaları (Genel bakış › kopya grupları) birlikte inceleyin.", "Gerçekten aynıysa birleştirip 301 verin ya da canonical ile tek sayfayı gösterin.", "Ayrı kalacaksa her birine özgün içerik ekleyin (renk/beden/şehir farkı, özel SSS)."],
+    impact: "orta",
+    effort: "orta",
+  },
+  "noindex-in-sitemap": {
+    what: "Noindex olan sayfa sitemap'te listeleniyor.",
+    why: "Google'a çelişkili sinyal verir: 'bu sayfayı tara' ama 'indeksleme'.",
+    steps: ["Sayfa indekslenmeyecekse sitemap'ten çıkarın.", "İndekslenmeliyse noindex'i kaldırın."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "hreflang-invalid": {
+    what: "hreflang etiketinde geçersiz bir dil/ülke kodu var.",
+    why: "Google geçersiz kodu yok sayar; yanlış dildeki sayfa yanlış ülkede gösterilebilir.",
+    steps: ["Kodları ISO formatında yazın: tr, en, en-GB, de-DE, x-default.", "'tr-TR' doğru, 'TR-tr' veya 'turkish' yanlış."],
+    example: '<link rel="alternate" hreflang="en-GB" href="https://site.com/en/">',
+    impact: "orta",
+    effort: "kolay",
+  },
+  "hreflang-no-self": {
+    what: "Sayfanın hreflang listesinde kendisi yok.",
+    why: "Google her dil sürümünün kendini de listelemesini bekler.",
+    steps: ["hreflang listesine sayfanın kendi dilini ve adresini ekleyin."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "hreflang-no-return": {
+    what: "Bu sayfa başka bir dil sürümünü gösteriyor ama o sayfa geri göstermiyor.",
+    why: "Karşılıklı link yoksa Google hreflang eşleşmesini yok sayar.",
+    steps: ["Her dil sürümünün diğer tüm sürümleri (ve kendini) listelediğinden emin olun."],
+    impact: "orta",
+    effort: "orta",
+  },
+  "no-https": {
+    what: "Site HTTPS (SSL) kullanmıyor.",
+    why: "Tarayıcılar 'güvenli değil' uyarısı gösterir; HTTPS bir Google sıralama sinyalidir.",
+    steps: ["Hosting panelinden ücretsiz SSL (Let's Encrypt) açın.", "Tüm http adresleri https'e 301 ile yönlendirin."],
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "no-hsts": {
+    what: "Sunucu HSTS (Strict-Transport-Security) başlığı göndermiyor.",
+    why: "Tarayıcıya siteye her zaman HTTPS ile girmesini söyler; araya girme saldırılarını engeller.",
+    steps: ["Sunucu veya CDN (Cloudflare › SSL › HSTS) ayarlarından HSTS'yi açın."],
+    example: "Strict-Transport-Security: max-age=31536000; includeSubDomains",
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "http-not-redirected": {
+    what: "Sitenin http:// sürümü https://'e yönlenmeden açılıyor.",
+    why: "Aynı site iki adreste açılır (kopya içerik) ve ziyaretçi güvensiz bağlantıda kalabilir.",
+    steps: ["Sunucuda tüm http isteklerini https'e 301 ile yönlendiren kural ekleyin."],
+    example: "# .htaccess\nRewriteEngine On\nRewriteCond %{HTTPS} off\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]",
+    impact: "yüksek",
+    effort: "kolay",
+  },
+} satisfies Record<string, IssueInfo>);
+
 /** Etkilenen URL için o sayfaya özgü kısa not (ör. mevcut title'ın uzunluğu). */
 export function pageAdvice(code: string, row: { title: string | null; metaDescription: string | null; titleLength: number | null; metaDescriptionLength: number | null; h1Count: number; wordCount: number | null; metrics?: { imagesMissingAlt: number; imagesTotal: number; responseMs: number | null; htmlKb: number | null; depth: number | null; brokenOutlinks: string[]; redirectTarget: string | null; mixedContent: number } }): string | null {
   const m = row.metrics;
@@ -380,10 +582,10 @@ export function priorityScore(code: string, affected: number): number {
 
 /** Semrush'ın "tematik raporları" gibi: her tema, ilgili sorunlardan arınmış sayfa yüzdesiyle puanlanır. */
 export const THEMES: { key: string; label: string; codes: string[] }[] = [
-  { key: "crawl", label: "Taranabilirlik", codes: ["broken", "redirect-chain", "non-indexable", "noindex-tag", "not-in-sitemap", "deep-page"] },
-  { key: "links", label: "İç linkleme", codes: ["broken-outlinks", "orphan-page", "redirect"] },
+  { key: "crawl", label: "Taranabilirlik", codes: ["broken", "redirect-chain", "redirect-loop", "non-indexable", "noindex-tag", "not-in-sitemap", "deep-page", "canonical-to-non200", "noindex-in-sitemap"] },
+  { key: "links", label: "Linkleme", codes: ["broken-outlinks", "broken-external-links", "orphan-page", "redirect", "empty-anchor", "nofollow-internal"] },
   { key: "content", label: "İçerik & meta", codes: ["missing-title", "duplicate-title", "title-too-long", "title-too-short", "missing-meta-description", "duplicate-meta-description", "meta-description-too-long", "meta-description-too-short", "missing-h1", "multiple-h1", "thin-content", "missing-h2"] },
-  { key: "perf", label: "Performans", codes: ["slow-response", "large-page"] },
-  { key: "tech", label: "Mobil & teknik", codes: ["missing-viewport", "missing-lang", "mixed-content", "missing-canonical", "images-missing-alt"] },
+  { key: "perf", label: "Performans", codes: ["slow-response", "large-page", "large-images", "images-no-dimensions"] },
+  { key: "tech", label: "Mobil & teknik", codes: ["missing-viewport", "missing-lang", "mixed-content", "missing-canonical", "images-missing-alt", "broken-images", "https-to-http", "no-https", "http-not-redirected"] },
   { key: "ai", label: "Yapısal veri & AI", codes: ["missing-schema", "missing-open-graph"] },
 ];

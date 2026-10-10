@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { BulkImportResult, BulkPageMetrics } from "@/types";
+import type { BulkCrawlAssets, BulkImportResult, BulkPageMetrics } from "@/types";
 import { buildBulkResult, type RawBulkRow } from "@/lib/bulk-analysis";
 
 /**
@@ -92,6 +92,37 @@ interface PageOutcome {
   row: RawBulkRow;
   /** Bu sayfanın link verdiği iç URL'ler (kanonikleştirilmiş, tekrarsız). */
   links: string[];
+  /** Kopya içerik tespiti için metin parmak izi (MinHash). */
+  sig?: number[];
+}
+
+// --- Kopya içerik: 5 kelimelik parçaların MinHash imzası ---
+const MH = 48;
+function hash32(str: string, seed: number): number {
+  let h = 2166136261 ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function minhash(text: string): number[] | undefined {
+  const w = text.toLowerCase().split(/\s+/).filter((x) => x.length > 1);
+  if (w.length < 60) return undefined;
+  const sig = new Array<number>(MH).fill(0xffffffff);
+  for (let i = 0; i + 5 <= w.length; i++) {
+    const sh = w.slice(i, i + 5).join(" ");
+    for (let k = 0; k < MH; k++) {
+      const v = hash32(sh, k * 7919);
+      if (v < sig[k]) sig[k] = v;
+    }
+  }
+  return sig;
+}
+function similarity(a: number[], b: number[]) {
+  let same = 0;
+  for (let i = 0; i < MH; i++) if (a[i] === b[i]) same++;
+  return same / MH;
 }
 
 function emptyMetrics(): BulkPageMetrics {
@@ -200,21 +231,54 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
 
   const links = new Set<string>();
   let externalOut = 0;
+  let totalLinks = 0;
+  const outLinks: { to: string; anchor: string; nofollow: boolean; external: boolean }[] = [];
+  const seenOut = new Set<string>();
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
     if (!href || /^(mailto:|tel:|javascript:|#)/i.test(href)) return;
     try {
       const abs = canon(new URL(href, url).toString());
-      if (sameSite(abs, host)) {
+      if (!/^https?:/i.test(abs)) return;
+      totalLinks++;
+      const external = !sameSite(abs, host);
+      if (!external) {
         if (!SKIP_EXT.test(abs)) links.add(abs);
-      } else if (/^https?:/i.test(abs)) externalOut++;
+      } else externalOut++;
+      const anchor = ($(el).text().replace(/\s+/g, " ").trim() || $(el).find("img").attr("alt") || $(el).attr("aria-label") || "").slice(0, 120);
+      const nofollow = /nofollow/i.test($(el).attr("rel") ?? "");
+      const key = `${abs}|${anchor}`;
+      if (!seenOut.has(key) && outLinks.length < 150) {
+        seenOut.add(key);
+        outLinks.push({ to: abs, anchor, nofollow, external });
+      }
     } catch {}
   });
 
   const imgs = $("img");
   let imagesMissingAlt = 0;
+  const images: { src: string; alt: string | null; hasSize: boolean }[] = [];
   imgs.each((_, el) => {
-    if ($(el).attr("alt") === undefined) imagesMissingAlt++;
+    const altAttr = $(el).attr("alt");
+    if (altAttr === undefined) imagesMissingAlt++;
+    const raw = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-lazy-src") || "";
+    if (!raw || raw.startsWith("data:") || images.length >= 60) return;
+    try {
+      images.push({
+        src: new URL(raw, url).toString(),
+        alt: altAttr === undefined ? null : altAttr,
+        hasSize: !!($(el).attr("width") && $(el).attr("height")) || /aspect-ratio|width\s*:/i.test($(el).attr("style") ?? ""),
+      });
+    } catch {}
+  });
+  const hreflang: { lang: string; href: string }[] = [];
+  $('link[rel="alternate" i][hreflang]').each((_, el) => {
+    const lang = $(el).attr("hreflang")?.trim();
+    const href = $(el).attr("href")?.trim();
+    if (!lang || !href) return;
+    try {
+      hreflang.push({ lang, href: canon(new URL(href, url).toString()) });
+    } catch {}
   });
   let mixedContent = 0;
   if (url.startsWith("https://")) {
@@ -231,6 +295,10 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     imagesMissingAlt,
     internalOut: links.size,
     externalOut,
+    outLinks,
+    images,
+    hreflang,
+    totalLinks,
     h2Count: $("h2").length,
     schemaTypes,
     hasViewport: $('meta[name="viewport" i]').length > 0,
@@ -267,6 +335,7 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
       metrics: { ...emptyMetrics(), ...metricsPartial },
     },
     links: [...links],
+    sig: minhash(text),
   };
 }
 
@@ -291,6 +360,7 @@ export async function crawlSiteBulk(input: string, maxPages = 150): Promise<Bulk
   const seen = new Set<string>(queue);
   const rows: RawBulkRow[] = [];
   const outlinks = new Map<string, string[]>();
+  const sigs = new Map<string, number[]>();
   let partial = false;
 
   let idx = 0;
@@ -311,10 +381,11 @@ export async function crawlSiteBulk(input: string, maxPages = 150): Promise<Bulk
       const url = queue[idx++];
       inFlight++;
       try {
-        const { row, links } = await crawlOne(url, host);
+        const { row, links, sig } = await crawlOne(url, host);
         if (rows.length < maxPages) {
           rows.push(row);
           outlinks.set(url, links);
+          if (sig) sigs.set(url, sig);
         }
         for (const l of links) {
           if (seen.size >= maxPages * 4) break;
@@ -365,5 +436,131 @@ export async function crawlSiteBulk(input: string, maxPages = 150): Promise<Bulk
     }
   }
 
-  return buildBulkResult(rows, `${host}${partial ? " (kısmi)" : ""}`, ["url", "status", "title", "meta", "h1", "words", "canonical", "robots", "metrics"]);
+  // --- Ek kontroller (Ahrefs/Semrush'taki gibi): yönlendirme adımları, dış linkler, görseller, kopya içerik, site güvenliği ---
+  const assets = await collectAssets(rows, sigs, origin);
+  return buildBulkResult(rows, `${host}${partial ? " (kısmi)" : ""}`, ["url", "status", "title", "meta", "h1", "words", "canonical", "robots", "metrics"], assets);
+}
+
+async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>, deadline: number) {
+  let i = 0;
+  await Promise.all(
+    Array.from({ length: n }, async () => {
+      while (i < items.length && Date.now() < deadline) await fn(items[i++]);
+    })
+  );
+}
+
+async function headStatus(u: string): Promise<{ status: number; kb: number | null }> {
+  const once = async (method: "HEAD" | "GET") => {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 6000);
+    try {
+      const r = await fetch(u, { method, signal: c.signal, redirect: "follow", headers: { "User-Agent": UA } });
+      const len = Number(r.headers.get("content-length"));
+      if (method === "GET") r.body?.cancel().catch(() => {});
+      return { status: r.status, kb: Number.isFinite(len) && len > 0 ? Math.round(len / 102.4) / 10 : null };
+    } finally {
+      clearTimeout(t);
+    }
+  };
+  try {
+    const h = await once("HEAD");
+    // Bazı sunucular HEAD'i desteklemez (405/403/501) — GET ile doğrula.
+    if ([403, 405, 501].includes(h.status)) return await once("GET");
+    return h;
+  } catch {
+    try {
+      return await once("GET");
+    } catch {
+      return { status: 0, kb: null };
+    }
+  }
+}
+
+async function collectAssets(rows: RawBulkRow[], sigs: Map<string, number[]>, origin: string): Promise<BulkCrawlAssets> {
+  const deadline = Date.now() + 35_000;
+
+  // 1) Yönlendirme adımları (A → B → C), en fazla 6 adım.
+  const redirects = rows.filter((r) => r.statusCode !== null && r.statusCode >= 300 && r.statusCode < 400).slice(0, 60);
+  await pool(
+    redirects,
+    6,
+    async (r) => {
+      const hops: { url: string; status: number }[] = [{ url: r.url, status: r.statusCode! }];
+      let next = r.metrics?.redirectTarget ?? null;
+      const visited = new Set([r.url]);
+      while (next && hops.length < 7) {
+        if (visited.has(next)) {
+          hops.push({ url: next, status: -1 }); // döngü
+          break;
+        }
+        visited.add(next);
+        const cur: string = next;
+        try {
+          const res = await get(cur, 6000);
+          const loc = res.headers.get("location");
+          hops.push({ url: cur, status: res.status });
+          next = res.status >= 300 && res.status < 400 && loc ? canon(new URL(loc, cur).toString()) : null;
+        } catch {
+          hops.push({ url: cur, status: 0 });
+          next = null;
+        }
+      }
+      r.metrics!.redirectHops = hops;
+      r.metrics!.redirectChain = hops.length > 2;
+    },
+    deadline
+  );
+
+  // 2) Dış linkler (benzersiz, en fazla 150).
+  const ext = [...new Set(rows.flatMap((r) => (r.metrics?.outLinks ?? []).filter((l) => l.external).map((l) => l.to)))].slice(0, 150);
+  const externalLinks: Record<string, number> = {};
+  await pool(ext, 10, async (u) => void (externalLinks[u] = (await headStatus(u)).status), deadline);
+
+  // 3) Görseller (benzersiz, en fazla 200): durum + boyut.
+  const imgs = [...new Set(rows.flatMap((r) => (r.metrics?.images ?? []).map((i) => i.src)))].slice(0, 200);
+  const images: Record<string, { status: number; kb: number | null }> = {};
+  await pool(imgs, 10, async (u) => void (images[u] = await headStatus(u)), deadline);
+
+  // 4) Neredeyse aynı içerik (MinHash benzerliği ≥ %85).
+  const keys = [...sigs.keys()];
+  const groupOf = new Map<string, number>();
+  const groups: string[][] = [];
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      if (similarity(sigs.get(keys[i])!, sigs.get(keys[j])!) < 0.85) continue;
+      const gi = groupOf.get(keys[i]);
+      const gj = groupOf.get(keys[j]);
+      if (gi === undefined && gj === undefined) {
+        groups.push([keys[i], keys[j]]);
+        groupOf.set(keys[i], groups.length - 1).set(keys[j], groups.length - 1);
+      } else if (gi !== undefined && gj === undefined) {
+        groups[gi].push(keys[j]);
+        groupOf.set(keys[j], gi);
+      } else if (gj !== undefined && gi === undefined) {
+        groups[gj].push(keys[i]);
+        groupOf.set(keys[i], gj);
+      }
+    }
+  }
+
+  // 5) Site güvenliği: HTTPS, HSTS, http:// sürümünün https'e yönlenmesi.
+  const https = origin.startsWith("https://");
+  let hsts = false;
+  let httpRedirectsToHttps: boolean | null = null;
+  try {
+    const r = await get(`${origin}/`, 8000);
+    hsts = !!r.headers.get("strict-transport-security");
+  } catch {}
+  if (https) {
+    try {
+      const r = await get(origin.replace(/^https:/, "http:") + "/", 8000);
+      const loc = r.headers.get("location") ?? "";
+      httpRedirectsToHttps = r.status >= 300 && r.status < 400 && /^https:/i.test(new URL(loc, origin).toString());
+    } catch {
+      httpRedirectsToHttps = null;
+    }
+  }
+
+  return { externalLinks, images, duplicateGroups: groups, site: { https, hsts, httpRedirectsToHttps } };
 }

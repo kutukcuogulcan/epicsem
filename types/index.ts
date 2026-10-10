@@ -213,6 +213,28 @@ export interface BulkPageMetrics {
   orphan: boolean;
   /** HTTPS sayfada http:// kaynak (görsel/script/css). */
   mixedContent: number;
+  /** Sayfadaki linkler (en fazla 150): hedef, link metni, nofollow, dış link mi. */
+  outLinks?: { to: string; anchor: string; nofollow: boolean; external: boolean }[];
+  /** Sayfadaki görseller (en fazla 60). */
+  images?: { src: string; alt: string | null; hasSize: boolean }[];
+  /** hreflang alternatifleri. */
+  hreflang?: { lang: string; href: string }[];
+  /** Yönlendirme zinciri adımları: [{url, status}] — ilk adım bu sayfa. */
+  redirectHops?: { url: string; status: number }[];
+  /** Sayfada kaç link olduğu (iç + dış, tekrarlar dahil). */
+  totalLinks?: number;
+}
+
+/** Tarama genelinde toplanan varlıklar — Linkler/Görseller/Yönlendirmeler sekmeleri için. */
+export interface BulkCrawlAssets {
+  /** Kontrol edilen dış link → HTTP durum kodu (0 = ulaşılamadı). */
+  externalLinks: Record<string, number>;
+  /** Kontrol edilen görsel → durum ve boyut. */
+  images: Record<string, { status: number; kb: number | null }>;
+  /** Neredeyse aynı içerikli sayfa grupları. */
+  duplicateGroups: string[][];
+  /** Site düzeyi güvenlik kontrolleri. */
+  site: { https: boolean; hsts: boolean; httpRedirectsToHttps: boolean | null };
 }
 
 export interface BulkImportSummary {
@@ -254,6 +276,8 @@ export interface BulkImportResult {
   rows: BulkImportRow[];
   duplicateTitleGroups: { value: string; urls: string[] }[];
   duplicateMetaGroups: { value: string; urls: string[] }[];
+  /** Epicsem tarayıcısının topladığı linkler/görseller/kopya içerik/site güvenliği (yeni taramalarda). */
+  assets?: BulkCrawlAssets;
 }
 
 /**

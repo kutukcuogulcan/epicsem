@@ -1,4 +1,4 @@
-import type { BulkImportResult, BulkImportRow, BulkImportSummary } from "@/types";
+import type { BulkCrawlAssets, BulkImportResult, BulkImportRow, BulkImportSummary } from "@/types";
 import { ISSUE_SEVERITY, THEMES } from "@/lib/bulk-labels";
 
 /** Bir taramadan (kendi tarayıcımız ya da içe aktarılan CSV) gelen ham sayfa satırı. */
@@ -17,7 +17,13 @@ const DEEP_CLICKS = 4;
  * Site genelindeki teknik SEO sorunlarını satırlardan çıkarır: kırık/yönlendirme, eksik/uzun/
  * tekrarlayan title ve meta, H1, thin content, indekslenemez/noindex. Kaynaktan bağımsızdır.
  */
-export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: string[]): BulkImportResult {
+const GENERIC_ANCHORS = /^(tıkla(yın|yınız)?|buraya tıkla(yın)?|burada|buraya|devamı|devamını oku|daha fazla|detay(lar)?|incele|click here|here|read more|more|learn more|link)$/i;
+const LANG_CODE = /^(x-default|[a-z]{2,3}(-[a-z]{4})?(-([a-z]{2}|\d{3}))?)$/i;
+
+export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: string[], assets?: BulkCrawlAssets): BulkImportResult {
+  const byUrl = new Map(raw.map((r) => [r.url, r]));
+  const sitemapNoindex = (r: RawBulkRow) => !!r.metrics?.inSitemap && !!r.metaRobots && /noindex/i.test(r.metaRobots);
+  const dupOf = new Set((assets?.duplicateGroups ?? []).flat());
   const rows: BulkImportRow[] = [];
   const titleCounts = new Map<string, string[]>();
   const metaCounts = new Map<string, string[]>();
@@ -64,6 +70,50 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
         if (m.inSitemap === false && m.depth !== null && m.depth > 0) issues.push("not-in-sitemap");
       }
     }
+    if (m && assets) {
+      // Yönlendirme ayrıntıları
+      const hops = m.redirectHops ?? [];
+      if (hops.some((h) => h.status === -1)) issues.push("redirect-loop");
+      if (statusCode === 302 || statusCode === 307) issues.push("redirect-temporary");
+      if (hops.some((h, i) => i > 0 && /^http:/i.test(h.url) && /^https:/i.test(hops[i - 1].url))) issues.push("https-to-http");
+      // Dış linkler / görseller
+      const brokenExt = (m.outLinks ?? []).filter((l) => l.external && (assets.externalLinks[l.to] ?? 200) >= 400);
+      if (brokenExt.length) issues.push("broken-external-links");
+      const imgs = m.images ?? [];
+      if (imgs.some((i) => {
+        const st = assets.images[i.src]?.status;
+        return st !== undefined && (st >= 400 || st === 0);
+      })) issues.push("broken-images");
+      if (imgs.some((i) => (assets.images[i.src]?.kb ?? 0) > 100)) issues.push("large-images");
+      if (is2xx && imgs.some((i) => !i.hasSize)) issues.push("images-no-dimensions");
+      // Link kalitesi
+      const anchors = (m.outLinks ?? []).filter((l) => !l.external);
+      if (anchors.some((l) => !l.anchor)) issues.push("empty-anchor");
+      if (anchors.some((l) => GENERIC_ANCHORS.test(l.anchor.trim()))) issues.push("generic-anchor");
+      if (anchors.some((l) => l.nofollow)) issues.push("nofollow-internal");
+      if ((m.totalLinks ?? 0) > 150) issues.push("too-many-links");
+      // Canonical hedefi sağlıklı mı?
+      if (r.canonical && r.canonical !== url) {
+        const t = byUrl.get(r.canonical);
+        if (t && t.statusCode !== null && (t.statusCode >= 300 || t.statusCode === 0)) issues.push("canonical-to-non200");
+      }
+      // İçerik
+      if (is2xx && title && r.h1 && title.trim().toLowerCase() === r.h1.trim().toLowerCase()) issues.push("title-equals-h1");
+      if (dupOf.has(url)) issues.push("near-duplicate");
+      if (sitemapNoindex(r)) issues.push("noindex-in-sitemap");
+      // hreflang
+      const hl = m.hreflang ?? [];
+      if (hl.length) {
+        if (hl.some((h) => !LANG_CODE.test(h.lang))) issues.push("hreflang-invalid");
+        if (!hl.some((h) => h.href === url)) issues.push("hreflang-no-self");
+        const noReturn = hl.some((h) => {
+          if (h.href === url) return false;
+          const t = byUrl.get(h.href);
+          return !!t?.metrics?.hreflang && !t.metrics.hreflang.some((x) => x.href === url);
+        });
+        if (noReturn) issues.push("hreflang-no-return");
+      }
+    }
     if (indexable === false) issues.push("non-indexable");
     if (metaRobots && /noindex/i.test(metaRobots)) issues.push("noindex-tag");
 
@@ -78,6 +128,15 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
       metaCounts.get(key)!.push(url);
     }
     rows.push({ ...r, issues });
+  }
+
+  if (assets && rows.length) {
+    const home = rows.find((r) => { try { return new URL(r.url).pathname === "/"; } catch { return false; } }) ?? rows[0];
+    if (!assets.site.https) home.issues.push("no-https");
+    else {
+      if (!assets.site.hsts) home.issues.push("no-hsts");
+      if (assets.site.httpRedirectsToHttps === false) home.issues.push("http-not-redirected");
+    }
   }
 
   const duplicateTitleGroups = [...titleCounts.entries()].filter(([, u]) => u.length > 1).map(([value, urls]) => ({ value, urls }));
