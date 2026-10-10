@@ -30,9 +30,15 @@ export default function QuickGeoAnalyze({
   onReady,
   running,
   onOpenSettings,
+  nextPath = "/geo",
+  runLabel,
 }: {
-  /** Zincir bittiğinde çağrılır — sayfa bunu mevcut test akışına verir (otomatik çalışır). */
-  onReady: (brand: BrandRow, competitors: BrandRow[], promptsText: string) => void;
+  /** Zincir bittiğinde çağrılır — sayfa bunu mevcut test akışına verir (otomatik çalışır).
+   * `pageUrls`: taramanın seçtiği kritik sayfalar (ana sayfa önce). */
+  onReady: (brand: BrandRow, competitors: BrandRow[], promptsText: string, pageUrls: string[]) => void;
+  nextPath?: string;
+  /** Son adımın etiketi (ör. Gap'te "Sayfalar denetleniyor"). */
+  runLabel?: string;
   /** Sayfanın gerçek testi şu an çalışıyor mu (son adımın durumu). */
   running: boolean;
   onOpenSettings: () => void;
@@ -72,7 +78,7 @@ export default function QuickGeoAnalyze({
         body: JSON.stringify({ url: v, language: "tr", country: "Türkiye" }),
       });
       if (res.status === 401) {
-        window.location.href = `/login?next=${encodeURIComponent("/geo")}`;
+        window.location.href = `/login?next=${encodeURIComponent(nextPath)}`;
         return;
       }
       const data = await res.json();
@@ -116,8 +122,10 @@ export default function QuickGeoAnalyze({
             all.filter((p) => p.topic === t).slice(0, PROMPTS_PER_TOPIC).forEach((p) => picked.push(`${p.topic}: ${p.text}`));
           }
           const promptsText = (picked.length ? picked : all.slice(0, 10).map((p) => `${p.topic}: ${p.text}`)).join("\n");
+          const crawl = s.crawlResult?.siteCrawl;
+          const pageUrls: string[] = (crawl?.criticalPageUrls?.length ? crawl.criticalPageUrls : [brand.domain]).slice(0, 5);
           setHandedOff(true);
-          onReadyRef.current(brand, competitors, promptsText);
+          onReadyRef.current(brand, competitors, promptsText, pageUrls);
           return;
         }
         setTimeout(tick, 1000);
@@ -175,7 +183,8 @@ export default function QuickGeoAnalyze({
       {(sessionId != null || error) && (
         <div className="rounded-2xl border border-border bg-panel p-4">
           <ol className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-            {STEPS.map((st) => {
+            {STEPS.map((st0) => {
+              const st = st0.key === "run" && runLabel ? { ...st0, label: runLabel } : st0;
               const s = stepState(st.key);
               return (
                 <li

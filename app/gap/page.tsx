@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
@@ -10,6 +10,8 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
+import GapOverview from "@/components/tool/GapOverview";
+import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 
 const SCENARIO_STEPS = [
   {
@@ -93,9 +95,7 @@ interface BrandRow {
 export default function GapPage() {
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
-  const [promptsText, setPromptsText] = useState(
-    "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]"
-  );
+  const [promptsText, setPromptsText] = useState("");
   const [pageUrlsText, setPageUrlsText] = useState("");
   const [engines, setEngines] = useState<EngineId[]>(DEFAULT_ENGINES);
   const [loading, setLoading] = useState(false);
@@ -107,6 +107,9 @@ export default function GapPage() {
   const [generatingUrl, setGeneratingUrl] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useAgencyName();
+  const [overviewKey, setOverviewKey] = useState(0);
+  const [manualOpen, setManualOpen] = useState(false);
+  const autoRunRef = useRef(false);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -118,6 +121,7 @@ export default function GapPage() {
         setBrand({ name: data.client.name, domain: data.client.domain });
         if (data.client.competitors.length > 0) setCompetitors(data.client.competitors);
         setPageUrlsText(data.client.domain);
+        setManualOpen(true);
       })
       .catch(() => {});
   }, []);
@@ -130,6 +134,23 @@ export default function GapPage() {
     () => pageUrlsText.split("\n").map((p) => p.trim()).filter(Boolean),
     [pageUrlsText]
   );
+
+  // Tek kutudan gelen marka/rakip/prompt/sayfalar state'e oturduktan sonra analizi kendiliğinden başlat.
+  useEffect(() => {
+    if (autoRunRef.current && brand.name && brand.domain && prompts.length > 0 && pageUrls.length > 0) {
+      autoRunRef.current = false;
+      runAnalysis();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand, prompts, pageUrls]);
+
+  function handleQuickReady(b: BrandRow, comps: BrandRow[], text: string, urls: string[]) {
+    setBrand(b);
+    setCompetitors(comps.length > 0 ? comps : [{ name: "", domain: "" }]);
+    setPromptsText(text);
+    setPageUrlsText((urls.length ? urls : [b.domain]).join("\n"));
+    autoRunRef.current = true;
+  }
 
   function updateCompetitor(i: number, field: keyof BrandRow, value: string) {
     setCompetitors((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
@@ -180,8 +201,8 @@ export default function GapPage() {
     URL.revokeObjectURL(objectUrl);
   }
 
-  async function runAnalysis(e: React.FormEvent) {
-    e.preventDefault();
+  async function runAnalysis(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!brand.name || !brand.domain) {
       setError("Enter your brand name and domain.");
       return;
@@ -225,6 +246,7 @@ export default function GapPage() {
       setGapMatrix(data.gapMatrix);
       setContentBriefs(data.contentBriefs);
       setDemoMode(data.demoMode);
+      setOverviewKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -237,15 +259,41 @@ export default function GapPage() {
       <ToolPageHeader
         breadcrumbLabel="Gap Analysis"
         title="Gap Analysis"
-        body="SEO + AXO denetiminizi GEO görünürlük testiyle çaprazlar: listelediğiniz her sayfa teknik olarak sağlam mı, AI crawler'lara açık mı — ve ikisinin tek başına cevaplayamadığı soru: herhangi bir AI motoru bu sayfayı gerçekten anıyor mu?"
+        body="Sayfaların teknik olarak sağlam mı, AI botlarına açık mı — ve asıl soru: AI motorları onları gerçekten anıyor mu?"
       >
         <UsageMeter metric="engineQueries" />
       </ToolPageHeader>
 
-      <form onSubmit={runAnalysis} className="space-y-5">
+      <GapOverview refreshKey={overviewKey} />
+
+      <div id="yeni-analiz" className="scroll-mt-24 pt-4 border-t border-border">
+        <h2 className="text-lg font-bold">Yeni analiz</h2>
+        <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler, promptlar ve kritik sayfalar otomatik çıkarılır, analiz hemen başlar.</p>
+      </div>
+
+      <QuickGeoAnalyze
+        onReady={handleQuickReady}
+        running={loading}
+        onOpenSettings={() => setManualOpen(true)}
+        nextPath="/gap"
+        runLabel="Sayfalar denetleniyor"
+      />
+
+      {manualOpen && (
+      <div className="fixed inset-0 z-50 flex justify-end">
+      <button type="button" aria-label="Kapat" onClick={() => setManualOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+      <div className="relative h-full w-full max-w-xl overflow-y-auto bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-panel/95 px-6 py-4 backdrop-blur">
+        <div>
+          <div className="font-bold">Ayarlar</div>
+          <div className="text-xs text-ink/50">Marka, rakipler, promptlar, sayfalar ve motorlar.</div>
+        </div>
+        <button type="button" onClick={() => setManualOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted text-ink/50">✕</button>
+      </div>
+      <form onSubmit={(e) => { setManualOpen(false); runAnalysis(e); }} className="manual-form">
         <div className="card space-y-3">
           <h2 className="font-bold text-sm">Markanız</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               value={brand.name}
               onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))}
@@ -308,7 +356,8 @@ export default function GapPage() {
           <textarea
             value={promptsText}
             onChange={(e) => setPromptsText(e.target.value)}
-            rows={4}
+            rows={6}
+            placeholder={"[kategori] için en iyi markalar hangileri?\n[marka] ile [rakip] arasındaki fark ne?"}
             className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
           />
         </div>
@@ -344,14 +393,26 @@ export default function GapPage() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
-        </button>
+        <div className="sticky bottom-0 border-t border-border bg-panel/95 px-6 py-4 backdrop-blur">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-accent text-white px-5 py-3 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
+          </button>
+        </div>
       </form>
+      </div>
+      </div>
+      )}
+
+      {loading && !gapMatrix && (
+        <div className="rounded-2xl border border-border bg-panel p-5 text-sm text-ink/60 flex items-center gap-3">
+          <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          Sayfalar denetleniyor ve AI motorlarına soruluyor — bu bir iki dakika sürebilir.
+        </div>
+      )}
 
       {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
 
