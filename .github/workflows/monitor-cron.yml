@@ -23,3 +23,8 @@ jobs:
           APP_URL: https://epicsem-web.onrender.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: node scripts/run-campaigns.mjs
+      - name: Run rank tracking sweep
+        env:
+          APP_URL: https://epicsem-web.onrender.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/check-rankings.mjs

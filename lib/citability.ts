@@ -8,6 +8,10 @@
  * Puanlar sezgiseldir: "AI kesin alıntılar" anlamına gelmez, iyileştirme yönünü gösterir.
  *
  * Hem Markdown (Editör, Autoblog) hem HTML (Site Taraması) girdisiyle çalışır.
+ *
+ * Ek içerik kontrolleri (belirsiz açılış, özet kutusu, uzun bölüm, kaynaksız istatistik,
+ * açılmamış kısaltma, belirsiz başlık, uzun giriş, SSS derinliği) geo-lint projesinin
+ * (IJONIS, MIT lisansı — github.com/IJONIS/geo-lint) kural fikirlerinden uyarlanmıştır.
  */
 
 export interface CitCheck {
@@ -36,11 +40,21 @@ export interface CitInput {
   tables: number;
   externalLinks: number;
   text: string;
+  /** H2 bölümleri: kelime sayısı ve içindeki H3 sayısı (geo-lint kontrolleri için). */
+  h2Sections?: { heading: string; words: number; h3: number }[];
+  /** İlk H2'den önceki giriş metninin kelime sayısı. */
+  introWords?: number;
 }
 
 const PRONOUN_START = /^(bu|bunlar|bunu|bunun|şu|o|onlar|ayrıca|ancak|fakat|yani|dolayısıyla|this|these|it|they|also|however|so)\b/i;
 const QUESTION_HEAD = /\?\s*$|^(ne|neden|nasıl|hangi|kim|nerede|ne zaman|kaç|niçin|what|how|why|which|when|where|who|can|is|are|does)\b/i;
 const ATTRIBUTION = /\b(göre|kaynağına göre|verilerine göre|raporuna göre|araştırmasına göre|araştırma|çalışma|rapor|istatistik|according to|study|survey|report|research|data from)\b/gi;
+const VAGUE_OPEN = /^(bu (yazıda|yazımızda|makalede|içerikte|rehberde)|günümüzde|hepimizin bildiği|son yıllarda|merhaba|herkese merhaba|in this (article|post|guide)|in today's|nowadays|welcome to)/i;
+const SUMMARY_HEAD = /(özet|kısaca|önemli noktalar|öne çıkanlar|tl;?dr|key takeaways|summary|in short|at a glance)/i;
+const VAGUE_HEAD = /^(giriş|sonuç|özet sonuç|genel bakış|genel bilgi|detaylar|diğer|bilgi|hakkında|açıklama|son söz|introduction|conclusion|overview|details|more|other|info)$/i;
+const KNOWN_ACRONYMS = new Set(
+  "AI SEO GEO AEO URL PDF HTML CSS API ABD AB TL KDV SSS FAQ CEO USB TV PC SMS PDF GPS LED SUV PVC ATM TC IT HR UX UI KPI ROI PR B2B B2C SaaS CRM ERP SSL HTTP HTTPS WWW USA UK EU OK DIY TL;DR GB MB KB TB CPU GPU RAM SSD HDD NATO BM TBMM SGK MEB YKS KPSS ÖSYM PTT".split(" ")
+);
 const STOP = new Set(
   "ve veya ile için gibi bir bu şu da de ki mi mı mu mü ne çok daha en olan olarak ise ama fakat ancak her hem kadar sonra önce göre ya nasıl neden hangi the and for with that this from are was were have has not but you your can will".split(" ")
 );
@@ -61,12 +75,21 @@ export function citInputFromMarkdown(md: string): CitInput {
   let inTable = false;
   let para: string[] = [];
   let pendingHead: { level: number; text: string } | null = null;
+  const h2Sections: NonNullable<CitInput["h2Sections"]> = [];
+  let introWords = 0;
+  const addWords = (t: string) => {
+    const n = wordsOf(t).length;
+    const cur = h2Sections[h2Sections.length - 1];
+    if (cur) cur.words += n;
+    else introWords += n;
+  };
 
   const flush = () => {
     if (!para.length) return;
     const p = para.join(" ").trim();
     para = [];
     if (!p) return;
+    addWords(p);
     paragraphs.push(p);
     if (pendingHead) {
       sectionLeads.push({ level: pendingHead.level, heading: pendingHead.text, lead: p });
@@ -81,17 +104,21 @@ export function citInputFromMarkdown(md: string): CitInput {
       if (pendingHead) sectionLeads.push({ level: pendingHead.level, heading: pendingHead.text, lead: "" });
       pendingHead = { level: h[1].length, text: h[2].trim() };
       headings.push(pendingHead);
+      if (pendingHead.level === 2) h2Sections.push({ heading: pendingHead.text, words: 0, h3: 0 });
+      else if (pendingHead.level >= 3 && h2Sections.length) h2Sections[h2Sections.length - 1].h3++;
       inList = inTable = false;
       continue;
     }
     if (/^([-*+]|\d+[.)])\s+/.test(l)) {
       flush();
+      addWords(l.replace(/^([-*+]|\d+[.)])\s+/, ""));
       if (!inList) lists++;
       inList = true;
       continue;
     }
     if (/^\|.*\|$/.test(l)) {
       flush();
+      if (!/^\|[\s:|-]+\|$/.test(l)) addWords(l);
       if (!inTable) tables++;
       inTable = true;
       continue;
@@ -108,7 +135,7 @@ export function citInputFromMarkdown(md: string): CitInput {
   flush();
   if (pendingHead) sectionLeads.push({ level: pendingHead.level, heading: pendingHead.text, lead: "" });
   const externalLinks = (md.match(/\]\(https?:\/\/[^)]+\)/g) ?? []).length;
-  return { headings, sectionLeads, paragraphs, lists, tables, externalLinks, text: plain(md) };
+  return { headings, sectionLeads, paragraphs, lists, tables, externalLinks, text: plain(md), h2Sections, introWords };
 }
 
 /** HTML (cheerio kökü) → ortak girdi. $ = cheerio.load(html) sonucu; script/style temizlenmiş olmalı. */
@@ -120,16 +147,32 @@ export function citInputFromHtml($: any, host: string): CitInput {
   const paragraphs: string[] = [];
   const clean = (s: string) => s.replace(/\s+/g, " ").trim();
   let pending: { level: number; text: string } | null = null;
-  root.find("h1, h2, h3, h4, p").each((_: number, el: any) => {
+  const h2Sections: NonNullable<CitInput["h2Sections"]> = [];
+  let introWords = 0;
+  root.find("h1, h2, h3, h4, p, li, td").each((_: number, el: any) => {
     const tag = (el.tagName || el.name || "").toLowerCase();
     const t = clean($(el).text());
     if (!t) return;
+    if (tag === "li" || tag === "td") {
+      if ($(el).closest("nav, header, footer").length || $(el).find("p").length) return;
+      const n = wordsOf(t).length;
+      if (h2Sections.length) h2Sections[h2Sections.length - 1].words += n;
+      else introWords += n;
+      return;
+    }
     if (/^h\d$/.test(tag)) {
+      const lv = Number(tag[1]);
+      if (lv === 2) h2Sections.push({ heading: t, words: 0, h3: 0 });
+      else if (lv >= 3 && h2Sections.length) h2Sections[h2Sections.length - 1].h3++;
       if (pending) sectionLeads.push({ level: pending.level, heading: pending.text, lead: "" });
       pending = { level: Number(tag[1]), text: t };
       headings.push(pending);
     } else {
-      if (wordsOf(t).length < 4) return;
+      if ($(el).closest("li, td").length) return;
+      const n = wordsOf(t).length;
+      if (h2Sections.length) h2Sections[h2Sections.length - 1].words += n;
+      else introWords += n;
+      if (n < 4) return;
       paragraphs.push(t);
       if (pending) {
         sectionLeads.push({ level: pending.level, heading: pending.text, lead: t });
@@ -154,6 +197,8 @@ export function citInputFromHtml($: any, host: string): CitInput {
     tables: root.find("table").length,
     externalLinks,
     text: clean(root.text()),
+    h2Sections,
+    introWords,
   };
 }
 
@@ -214,6 +259,39 @@ export function scoreCitability(input: CitInput, opts: { keyword?: string; now?:
   const fresh = new RegExp(`\\b(${year}|${year - 1})\\b`).test(text);
   // 14) Doldurulmamış yer tutucular
   const placeholders = (text.match(/\[NEEDS:[^\]]*\]/g) ?? []).length;
+
+  // --- geo-lint kökenli kontroller ---
+  // 15) Belirsiz / dolgu açılış
+  const vagueOpen = VAGUE_OPEN.test(plain(lead).trim());
+  // 16) Özet kutusu (uzun yazılarda)
+  const needsSummary = wc >= 600;
+  const hasSummary = headings.some((h) => SUMMARY_HEAD.test(h.text)) || /^(kısaca|özetle|tl;dr|in short)\s*[:—-]/im.test(text.slice(0, 1500));
+  // 17) Ara başlıksız uzun bölümler
+  const longSections = (input.h2Sections ?? []).filter((s) => s.words > 300 && s.h3 === 0 && !isFaqHead(s.heading));
+  // 18) Kaynaksız istatistik
+  const statSents = sentencesOf(paragraphs.join(" ")).filter((x) => /%\s?\d|\d\s?%|\b\d+([.,]\d+)?\s?(milyon|milyar|million|billion)\b/i.test(x));
+  const unsourced = statSents.filter((x) => !new RegExp(ATTRIBUTION.source, "i").test(x)).length;
+  // 19) Açılmamış kısaltmalar
+  const acronyms = [...new Set((text.match(/\b[A-ZÇĞİÖŞÜ]{2,6}\b/g) ?? []).filter((a) => !KNOWN_ACRONYMS.has(a)))];
+  const unexpanded = acronyms.filter((a) => {
+    const re = new RegExp(`\\(${a}\\)|\\b${a}\\s*\\(|${a}\\s*[:—–-]\\s*\\p{Lu}`, "u");
+    return !re.test(text) && (text.match(new RegExp(`\\b${a}\\b`, "g")) ?? []).length >= 1;
+  });
+  // 20) Belirsiz başlıklar
+  const vagueHeads = headings.filter((h) => h.level >= 2 && VAGUE_HEAD.test(h.text.trim().replace(/[:.]$/, "")));
+  // 21) Uzun giriş
+  const introW = input.introWords ?? 0;
+  // 22) SSS derinliği
+  const faqIdx = headings.findIndex((h) => isFaqHead(h.text));
+  let faqCount = 0;
+  if (faqIdx >= 0) {
+    const fl = headings[faqIdx].level;
+    for (let i = faqIdx + 1; i < headings.length && headings[i].level > fl; i++) faqCount++;
+    if (faqCount < 3) {
+      const at = text.toLocaleLowerCase("tr").indexOf(headings[faqIdx].text.toLocaleLowerCase("tr").slice(0, 30));
+      if (at >= 0) faqCount = Math.max(faqCount, (text.slice(at).match(/\?/g) ?? []).length);
+    }
+  }
 
   const checks: CitCheck[] = [
     {
@@ -322,6 +400,64 @@ export function scoreCitability(input: CitInput, opts: { keyword?: string; now?:
       ok: placeholders === 0,
       hint: "[NEEDS: …] yazan yerleri gerçek bilgiyle doldurun; eksik bilgi güveni düşürür.",
       weight: 4,
+    },
+    {
+      key: "vague-open",
+      label: vagueOpen ? "Dolgu cümlesiyle açılış" : "Doğrudan açılış",
+      ok: !vagueOpen,
+      hint: "'Bu yazıda…', 'Günümüzde…' gibi dolgu açılışları silin; ilk cümle doğrudan cevabı ya da tanımı versin.",
+      weight: 3,
+    },
+    {
+      key: "summary",
+      label: needsSummary ? (hasSummary ? "Özet / kısaca bölümü var" : "Özet / kısaca bölümü yok") : "Özet bölümü (kısa yazıda gerekmez)",
+      ok: !needsSummary || hasSummary,
+      hint: "600+ kelimelik yazılarda başa 'Kısaca' ya da 'Önemli noktalar' başlıklı 3–5 maddelik bir özet koyun; AI özetleri bu bloğu sık kullanır.",
+      weight: 3,
+    },
+    {
+      key: "long-section",
+      label: longSections.length ? `Ara başlıksız uzun bölüm (${longSections.length})` : "Bölüm uzunlukları dengeli",
+      ok: longSections.length === 0,
+      part: input.h2Sections?.length ? 1 - longSections.length / input.h2Sections.length : 1,
+      hint: `300 kelimeyi geçen bölümleri H3 alt başlıklarla bölün${longSections[0] ? ` (ör. "${longSections[0].heading.slice(0, 50)}")` : ""}. AI motorları metni başlık başlık parçalar.`,
+      weight: 3,
+    },
+    {
+      key: "stat-source",
+      label: unsourced ? `Kaynaksız istatistik (${unsourced}/${statSents.length})` : "İstatistikler kaynaklı",
+      ok: statSents.length === 0 || unsourced / statSents.length <= 0.5,
+      part: statSents.length ? 1 - unsourced / statSents.length : 1,
+      hint: "Yüzde ve büyük rakamların geçtiği cümlelere kaynağını ekleyin ('… raporuna göre %32'). Kaynaksız sayı AI'ın güvenini azaltır.",
+      weight: 3,
+    },
+    {
+      key: "acronyms",
+      label: unexpanded.length ? `Açılmamış kısaltma (${unexpanded.slice(0, 4).join(", ")})` : "Kısaltmalar açıklanmış",
+      ok: unexpanded.length <= 1,
+      hint: "Kısaltmaları ilk geçtiği yerde açın: 'Yapay Zekâ Optimizasyonu (GEO)'. AI motorları ve okuyucu terimi ancak böyle eşleştirir.",
+      weight: 2,
+    },
+    {
+      key: "vague-heads",
+      label: vagueHeads.length ? `Belirsiz başlık (${vagueHeads.slice(0, 3).map((h) => h.text).join(", ")})` : "Başlıklar açıklayıcı",
+      ok: vagueHeads.length === 0,
+      hint: "'Giriş', 'Detaylar', 'Sonuç' gibi tek kelimelik başlıkları konuyu anlatan başlıklarla değiştirin ('X seçerken 5 kriter').",
+      weight: 2,
+    },
+    {
+      key: "intro-len",
+      label: introW > 150 ? `Uzun giriş (${introW} kelime)` : "Giriş kısa",
+      ok: introW <= 150 || !(input.h2Sections ?? []).length,
+      hint: "İlk ara başlıktan önceki giriş 150 kelimeyi geçmesin; okuyucu ve AI cevaba hızla ulaşsın.",
+      weight: 2,
+    },
+    {
+      key: "faq-depth",
+      label: faqIdx >= 0 ? `SSS soru sayısı (${faqCount})` : "SSS derinliği (SSS yok)",
+      ok: faqIdx < 0 || faqCount >= 3,
+      hint: "SSS bölümünde en az 3 soru-cevap olsun; her soruyu ayrı başlık ya da kalın satırla yazın.",
+      weight: 2,
     },
   ];
 

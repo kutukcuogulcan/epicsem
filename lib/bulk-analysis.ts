@@ -65,6 +65,26 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
         if (!m.hasViewport) issues.push("missing-viewport");
         if (!m.lang) issues.push("missing-lang");
         if (!m.hasOpenGraph) issues.push("missing-open-graph");
+        else if (m.tech && !m.tech.ogImage) issues.push("missing-og-image");
+        if (m.tech) {
+          const t = m.tech;
+          if (!t.twitterCard) issues.push("missing-twitter-card");
+          if (!t.charset || !/utf-?8/.test(t.charset)) issues.push("bad-charset");
+          if (t.placeholder) issues.push("placeholder-text");
+          if (t.devLeak) issues.push("dev-leakage");
+          if (t.headingSkip) issues.push("heading-skip");
+          if (t.emptyHeadings > 0) issues.push("empty-heading");
+          if (t.unsafeBlank > 0) issues.push("unsafe-target-blank");
+          if (t.metaRefresh) issues.push("meta-refresh");
+          if (t.unrenderedMarkdown) issues.push("unrendered-markdown");
+          if (m.internalOut === 0) issues.push("dead-end-page");
+        }
+        try {
+          const path = new URL(url).pathname;
+          if (/[A-ZÇĞİÖŞÜ]/.test(path)) issues.push("url-uppercase");
+          if (path.includes("_")) issues.push("url-underscore");
+          if (url.length > 115) issues.push("url-too-long");
+        } catch {}
         if (m.h2Count === 0 && (wordCount ?? 0) >= THIN_CONTENT_WORDS) issues.push("missing-h2");
         if (m.depth !== null && m.depth >= DEEP_CLICKS) issues.push("deep-page");
         if (m.inSitemap === false && m.depth !== null && m.depth > 0) issues.push("not-in-sitemap");
@@ -149,6 +169,17 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
       if (assets.site.httpRedirectsToHttps === false) home.issues.push("http-not-redirected");
     }
     if (assets.site.aiBlockedCitation?.length) home.issues.push("ai-citation-bots-blocked");
+    if (assets.site.securityMissing?.length) home.issues.push("missing-security-headers");
+    if (assets.site.compressed === false) home.issues.push("no-compression");
+    const ht = home.metrics?.tech;
+    if (ht && !ht.favicon) home.issues.push("no-favicon");
+    if (ht?.copyrightYear && ht.copyrightYear < new Date().getFullYear() - 1) home.issues.push("stale-copyright");
+    if (home.metrics && !home.metrics.schemaTypes.some((t) => /Organization|LocalBusiness|Store|Corporation|Brand/i.test(t))) home.issues.push("no-organization-schema");
+    // Güven sayfaları: taranan adreslerde ya da ana sayfa linklerinde var mı?
+    const hay = [...rows.map((r) => r.url), ...(home.metrics?.outLinks ?? []).flatMap((l) => [l.to, l.anchor])].join(" ").toLocaleLowerCase("tr");
+    if (!/hakkimizda|hakkımızda|about|kurumsal|biz-kimiz|kimdir/.test(hay)) home.issues.push("no-about-page");
+    if (!/iletisim|iletişim|contact|bize-ulasin|bize ulaşın/.test(hay)) home.issues.push("no-contact-page");
+    if (!/gizlilik|privacy|kvkk|kisisel-veri|kişisel veri|aydinlatma|aydınlatma/.test(hay)) home.issues.push("no-privacy-page");
     if (assets.site.aiBlockedTraining?.length) home.issues.push("ai-training-bots-blocked");
     if (assets.site.robotsFound && assets.site.sitemapInRobots === false) home.issues.push("no-sitemap-in-robots");
   }
@@ -223,6 +254,6 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
     })
   );
 
-  if (assets) summary.site = { aiBlockedCitation: assets.site.aiBlockedCitation ?? [], aiBlockedTraining: assets.site.aiBlockedTraining ?? [] };
+  if (assets) summary.site = { aiBlockedCitation: assets.site.aiBlockedCitation ?? [], aiBlockedTraining: assets.site.aiBlockedTraining ?? [], securityMissing: assets.site.securityMissing ?? [] };
   return { filename, importedAt: new Date().toISOString(), columns, summary, rows, duplicateTitleGroups, duplicateMetaGroups };
 }

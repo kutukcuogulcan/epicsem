@@ -198,10 +198,18 @@ export default function EditorPage() {
     if (nw) {
       // GEO Fırsatlar / Rakip kartlarından: soruyu cevaplayan GEO uyumlu bir iskeletle başla.
       const q = nw.trim();
+      const hs = (qs.get("h") ?? "").split("|").map((x) => x.trim()).filter(Boolean).slice(0, 8);
+      const faqs = (qs.get("faq") ?? "").split("|").map((x) => x.trim()).filter(Boolean).slice(0, 6);
+      const words = qs.get("words");
+      const cap = (t: string) => t.charAt(0).toLocaleUpperCase("tr") + t.slice(1);
+      const sections = hs.length
+        ? hs.map((h) => `## ${cap(h)}\n\nBu bölümün sorusunu ilk cümlede doğrudan cevaplayın, sonra ayrıntı ve somut sayılar verin.`).join("\n\n")
+        : `## Nelere dikkat edilmeli?\n\nBu bölümün sorusunu ilk cümlede cevaplayın, sonra ayrıntı ve somut sayılar verin.\n\n## Karşılaştırma\n\n| Seçenek | Artısı | Eksisi |\n|---|---|---|\n| A | | |`;
+      const faq = faqs.length ? faqs.map((f) => `### ${f}\n\nKısa, net cevap (20–60 kelime).`).join("\n\n") : `### İlk soru?\n\nKısa, net cevap.`;
       openDoc({
-        title: q.length > 60 ? q.slice(0, 57) + "…" : q,
+        title: q.length > 60 ? q.slice(0, 57) + "…" : cap(q),
         metaDescription: "",
-        markdown: `# ${q}\n\nKısa cevap: Soruyu 2–3 cümlede doğrudan cevaplayın (AI motorları bu paragrafı alıntılar).\n\n## Öne çıkanlar\n\n- Birinci önemli nokta\n- İkinci önemli nokta\n- Üçüncü önemli nokta\n\n## Nelere dikkat edilmeli?\n\nBu bölümün sorusunu ilk cümlede cevaplayın, sonra ayrıntı ve somut sayılar verin.\n\n## Karşılaştırma\n\n| Seçenek | Artısı | Eksisi |\n|---|---|---|\n| A | | |\n\n## Sık sorulan sorular\n\n### İlk soru?\n\nKısa, net cevap.`,
+        markdown: `# ${cap(q)}\n\nKısa cevap: Soruyu 2–3 cümlede doğrudan cevaplayın (AI motorları bu paragrafı alıntılar).${words ? ` Google'daki ilk sonuçlar ortalama ${words} kelime; konuyu en az bu kapsamda anlatın.` : ""}\n\n## Öne çıkanlar\n\n- Birinci önemli nokta\n- İkinci önemli nokta\n- Üçüncü önemli nokta\n\n${sections}\n\n## Sık sorulan sorular\n\n${faq}`,
         keyword: q,
         id: null,
       });

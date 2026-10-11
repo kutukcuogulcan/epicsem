@@ -351,6 +351,29 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_feeds_user ON feeds(user_id);
   `);
+  // Sıralama takibi (SerpBear mantığı, SerpApi ile).
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS rank_keywords (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      domain TEXT NOT NULL,
+      keyword TEXT NOT NULL,
+      gl TEXT NOT NULL DEFAULT 'tr',
+      last_position INTEGER,
+      last_url TEXT,
+      last_checked_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (user_id, domain, keyword, gl)
+    );
+    CREATE TABLE IF NOT EXISTS rank_history (
+      id SERIAL PRIMARY KEY,
+      keyword_id INTEGER NOT NULL REFERENCES rank_keywords(id) ON DELETE CASCADE,
+      position INTEGER,
+      url TEXT,
+      checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_rank_history_kw ON rank_history(keyword_id, checked_at);
+  `);
   // Taslak kapak görselleri (markalı ücretsiz kapak ya da AI görseli).
   await p.query(`
     CREATE TABLE IF NOT EXISTS draft_covers (
@@ -2384,4 +2407,80 @@ export async function setOnboardingDomainCache(
       JSON.stringify(data.topicsInputProducts),
     ]
   );
+}
+
+
+// ---------------- sıralama takibi ----------------
+
+export interface RankKeyword {
+  id: number;
+  userId: number;
+  domain: string;
+  keyword: string;
+  gl: string;
+  lastPosition: number | null;
+  lastUrl: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
+}
+
+function rowToRank(r: any): RankKeyword {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    domain: r.domain,
+    keyword: r.keyword,
+    gl: r.gl,
+    lastPosition: r.last_position ?? null,
+    lastUrl: r.last_url ?? null,
+    lastCheckedAt: r.last_checked_at ? toIso(r.last_checked_at) : null,
+    createdAt: toIso(r.created_at),
+  };
+}
+
+export async function addRankKeywords(userId: number, domain: string, keywords: string[], gl = "tr"): Promise<number> {
+  await ensureSchema();
+  let n = 0;
+  for (const k of keywords) {
+    const row = await one<any>(
+      `INSERT INTO rank_keywords (user_id, domain, keyword, gl) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`,
+      [userId, domain, k, gl]
+    );
+    if (row) n++;
+  }
+  return n;
+}
+
+export async function listRankKeywords(userId: number): Promise<RankKeyword[]> {
+  await ensureSchema();
+  return (await many<any>(`SELECT * FROM rank_keywords WHERE user_id = $1 ORDER BY domain, keyword`, [userId])).map(rowToRank);
+}
+
+export async function listAllRankKeywords(): Promise<RankKeyword[]> {
+  await ensureSchema();
+  return (await many<any>(`SELECT * FROM rank_keywords ORDER BY user_id`)).map(rowToRank);
+}
+
+export async function deleteRankKeyword(userId: number, id: number): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM rank_keywords WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export async function saveRankCheck(id: number, position: number | null, url: string | null): Promise<void> {
+  await ensureSchema();
+  await exec(`INSERT INTO rank_history (keyword_id, position, url) VALUES ($1, $2, $3)`, [id, position, url]);
+  await exec(`UPDATE rank_keywords SET last_position = $1, last_url = $2, last_checked_at = now() WHERE id = $3`, [position, url, id]);
+}
+
+/** Son 60 günün sıralama geçmişi (anahtar kelime başına). */
+export async function rankHistory(userId: number): Promise<Record<number, { position: number | null; at: string }[]>> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT h.keyword_id, h.position, h.checked_at FROM rank_history h JOIN rank_keywords k ON k.id = h.keyword_id
+      WHERE k.user_id = $1 AND h.checked_at >= now() - interval '60 days' ORDER BY h.checked_at`,
+    [userId]
+  );
+  const out: Record<number, { position: number | null; at: string }[]> = {};
+  for (const r of rows) (out[r.keyword_id] ??= []).push({ position: r.position, at: toIso(r.checked_at) });
+  return out;
 }

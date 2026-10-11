@@ -5,9 +5,10 @@
  *   epicsem_title     → <title> (Yoast / Rank Math varsa onların filtresiyle, yoksa çekirdekle)
  *   epicsem_metadesc  → <meta name="description"> (Yoast / Rank Math filtresi ya da doğrudan)
  *   epicsem_schema    → <script type="application/ld+json"> wp_head'e
+ *   epicsem_ogimage   → og:image / twitter:image (Yoast / Rank Math filtresiyle, yoksa doğrudan)
  * Görsel alt metni için eklenti gerekmez (çekirdek REST'te alt_text yazılabilir).
  */
-export const WP_PLUGIN_VERSION = "1.0.0";
+export const WP_PLUGIN_VERSION = "1.1.0";
 
 export const WP_PLUGIN_PHP = `<?php
 /**
@@ -22,7 +23,7 @@ if (!defined('ABSPATH')) exit;
 add_action('init', function () {
   $types = get_post_types(['public' => true]);
   foreach ($types as $t) {
-    foreach (['epicsem_title', 'epicsem_metadesc', 'epicsem_schema'] as $key) {
+    foreach (['epicsem_title', 'epicsem_metadesc', 'epicsem_schema', 'epicsem_ogimage'] as $key) {
       register_post_meta($t, $key, [
         'type' => 'string',
         'single' => true,
@@ -60,6 +61,18 @@ add_action('wp_head', function () {
   $v = epicsem_meta('epicsem_metadesc');
   if ($v !== '') echo '<meta name="description" content="' . esc_attr($v) . '" />' . "\\n";
 }, 1);
+
+/* ---- Paylaşım görseli (og:image) ---- */
+add_filter('wpseo_opengraph_image', function ($i) { $v = epicsem_meta('epicsem_ogimage'); return $v !== '' ? $v : $i; }, 99);
+add_filter('rank_math/opengraph/facebook/image', function ($i) { $v = epicsem_meta('epicsem_ogimage'); return $v !== '' ? $v : $i; }, 99);
+add_action('wp_head', function () {
+  if (defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION')) return;
+  $v = epicsem_meta('epicsem_ogimage');
+  if ($v === '') return;
+  echo '<meta property="og:image" content="' . esc_url($v) . '" />' . "\n";
+  echo '<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />' . "\n";
+  echo '<meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="' . esc_url($v) . '" />' . "\n";
+}, 5);
 
 /* ---- Schema (JSON-LD) ---- */
 add_action('wp_head', function () {

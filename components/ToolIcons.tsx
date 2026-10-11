@@ -105,6 +105,21 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="9" cy="9" r="0.5" fill="currentColor" />
     </ToolIcon>
   ),
+  keywords: (
+    <ToolIcon>
+      <circle cx="7.5" cy="7.5" r="4.5" />
+      <path d="M11 11l4 4" />
+      <path d="M5.5 7.5h4" />
+    </ToolIcon>
+  ),
+  rankings: (
+    <ToolIcon>
+      <path d="M3 14.5h12" />
+      <path d="M5 12V9" />
+      <path d="M9 12V6" />
+      <path d="M13 12V3.5" />
+    </ToolIcon>
+  ),
   feeds: (
     <ToolIcon>
       <path d="M4 3.5a10.5 10.5 0 0 1 10.5 10.5" />

@@ -225,6 +225,21 @@ export interface BulkPageMetrics {
   redirectHops?: { url: string; status: number }[];
   /** Sayfada kaç link olduğu (iç + dış, tekrarlar dahil). */
   totalLinks?: number;
+  /** Teknik kontroller (favicon, charset, başlık sırası, geliştirme adresi sızıntısı…). */
+  tech?: {
+    ogImage: boolean;
+    twitterCard: boolean;
+    favicon: boolean;
+    charset: string | null;
+    headingSkip: boolean;
+    emptyHeadings: number;
+    unsafeBlank: number;
+    metaRefresh: boolean;
+    devLeak: boolean;
+    placeholder: boolean;
+    unrenderedMarkdown: boolean;
+    copyrightYear: number | null;
+  };
   /** GEO / Google AI hazırlığı sinyalleri. */
   geo?: {
     snippetBlocked: boolean;
@@ -260,6 +275,10 @@ export interface BulkCrawlAssets {
     /** robots.txt'de engellenen AI eğitim botları (bilinçli tercih olabilir). */
     aiBlockedTraining?: string[];
     sitemapInRobots?: boolean | null;
+    /** Ana sayfada eksik güvenlik başlıkları. */
+    securityMissing?: string[];
+    /** Ana sayfa sıkıştırılmış (gzip/br) geliyor mu (null = belirlenemedi). */
+    compressed?: boolean | null;
   };
 }
 
@@ -285,7 +304,7 @@ export interface BulkImportSummary {
   avgCitability?: number | null;
   citabilityPages?: number;
   /** Site düzeyi AI bot erişimi (robots.txt). */
-  site?: { aiBlockedCitation: string[]; aiBlockedTraining: string[] };
+  site?: { aiBlockedCitation: string[]; aiBlockedTraining: string[]; securityMissing?: string[] };
   avgHtmlKb?: number | null;
   /** Hata içermeyen taranmış URL yüzdesi (Ahrefs Health Score mantığı). */
   healthScore?: number | null;

@@ -10,6 +10,7 @@ export const NAV_GROUPS = [
       { href: "/audit", label: "SEO + AXO Audit", icon: "audit" },
       { href: "/geo", label: "GEO/AEO Visibility", icon: "geo" },
       { href: "/gap", label: "Gap Analysis", icon: "gap" },
+      { href: "/keywords", label: "Anahtar Kelime", icon: "keywords" },
       { href: "/article-writer", label: "Article Writer", icon: "article" },
       { href: "/editor", label: "AI SEO Editör", icon: "editor" },
       { href: "/assistant", label: "SEO Asistanı", icon: "assistant" },
@@ -19,6 +20,7 @@ export const NAV_GROUPS = [
     title: "Otomasyon",
     items: [
       { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
+      { href: "/rankings", label: "Sıralama Takibi", icon: "rankings" },
       { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
       { href: "/feeds", label: "Beslemeler", icon: "feeds" },
       { href: "/import", label: "Site Taraması", icon: "import" },

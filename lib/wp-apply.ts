@@ -1,3 +1,4 @@
+import { brandedCover } from "./covers";
 /**
  * Site Taraması → "WordPress'e uygula". AI kullanmaz; sadece WordPress REST API'ye yazar.
  *  - Sayfa/yazı başlığı (H1)  → çekirdek: title
@@ -10,6 +11,8 @@ export interface WpFixes {
   h1?: string;
   schemaJsonLd?: string;
   altTexts?: { src: string; alt: string }[];
+  /** Paylaşım görseli: başlık + marka ile üretilen 1200×630 PNG (ücretsiz). */
+  ogImage?: { title: string; brand: string; domain: string };
 }
 export interface ApplyResult {
   field: string;
@@ -74,7 +77,7 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
   const results: ApplyResult[] = [];
   const plugin = await wpPluginInstalled(base);
 
-  const needsItem = !!(f.h1 || f.seoTitle || f.metaDescription || f.schemaJsonLd);
+  const needsItem = !!(f.h1 || f.seoTitle || f.metaDescription || f.schemaJsonLd || f.ogImage);
   let item: Awaited<ReturnType<typeof findItem>> = null;
   if (needsItem) {
     item = await findItem(base, a, params.pageUrl);
@@ -109,6 +112,33 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
       if (meta.epicsem_title) results.push({ field: "SEO title", ok: r.ok, detail: okMsg });
       if (meta.epicsem_metadesc) results.push({ field: "Meta açıklama", ok: r.ok, detail: okMsg });
       if (meta.epicsem_schema) results.push({ field: "Schema", ok: r.ok, detail: okMsg });
+    }
+  }
+
+  if (item && f.ogImage) {
+    try {
+      const png = await brandedCover(f.ogImage.title, f.ogImage.brand, f.ogImage.domain);
+      const up = await fetch(`${base}/wp-json/wp/v2/media`, {
+        method: "POST",
+        headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="paylasim-${item.id}.png"`, Authorization: a },
+        body: new Uint8Array(png),
+        signal: AbortSignal.timeout(60_000),
+      });
+      const media = await up.json().catch(() => null);
+      if (!up.ok || !media?.id) {
+        results.push({ field: "Paylaşım görseli", ok: false, detail: `Görsel yüklenemedi (HTTP ${up.status}).` });
+      } else {
+        const body: Record<string, unknown> = { featured_media: media.id };
+        if (plugin) body.meta = { epicsem_ogimage: media.source_url };
+        const r = await wp(base, a, `/wp/v2/${item.type}/${item.id}`, { method: "POST", body: JSON.stringify(body) });
+        results.push({
+          field: "Paylaşım görseli",
+          ok: r.ok,
+          detail: r.ok ? (plugin ? "Yüklendi, öne çıkan görsel ve og:image yapıldı" : "Yüklendi ve öne çıkan görsel yapıldı (og:image için SEO eklentisi ya da Epicsem Connector gerekir)") : `HTTP ${r.status}`,
+        });
+      }
+    } catch (e) {
+      results.push({ field: "Paylaşım görseli", ok: false, detail: e instanceof Error ? e.message : "Üretilemedi" });
     }
   }
 

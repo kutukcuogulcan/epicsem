@@ -330,6 +330,26 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     const t = new Date(d).getTime();
     return !isNaN(t) && t > Date.now() + 2 * 864e5;
   });
+  // ---- Teknik kontroller (squirrelscan tarzı, AI'sız) ----
+  const levels = $("h1, h2, h3, h4, h5, h6").map((_, el) => Number((el as any).tagName?.[1] ?? (el as any).name?.[1] ?? 0)).get().filter(Boolean);
+  let headingSkip = false;
+  for (let i = 1; i < levels.length; i++) if (levels[i] - levels[i - 1] > 1) headingSkip = true;
+  const charsetRaw = ($("meta[charset]").attr("charset") ?? $('meta[http-equiv="Content-Type" i]').attr("content")?.match(/charset=([^;]+)/i)?.[1] ?? type.match(/charset=([^;]+)/i)?.[1] ?? "").trim().toLowerCase();
+  const rawHtmlLower = html.slice(0, 400000).toLowerCase();
+  const tech = {
+    ogImage: $('meta[property="og:image"], meta[name="og:image"]').length > 0,
+    twitterCard: $('meta[name="twitter:card"]').length > 0,
+    favicon: $('link[rel~="icon" i], link[rel="shortcut icon" i], link[rel="apple-touch-icon" i]').length > 0,
+    charset: charsetRaw || null,
+    headingSkip,
+    emptyHeadings: $("h1, h2, h3, h4, h5, h6").filter((_, el) => !$(el).text().trim() && !$(el).find("img").length).length,
+    unsafeBlank: $('a[target="_blank"]').filter((_, el) => {
+      const href = $(el).attr("href") ?? "";
+      return /^https?:/i.test(href) && !sameSite(href, host) && !/noopener|noreferrer/i.test($(el).attr("rel") ?? "");
+    }).length,
+    metaRefresh: $('meta[http-equiv="refresh" i]').length > 0,
+    devLeak: /(https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)[:/"']|https?:\/\/[a-z0-9.-]*\b(staging|stage|dev|test)\.[a-z0-9-]+\.[a-z]{2,})/.test(rawHtmlLower),
+  };
   const metricsPartial = {
     responseMs,
     htmlKb,
@@ -357,6 +377,12 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     .replace(/\s+/g, " ")
     .trim();
   const wordCount = text ? text.split(" ").length : 0;
+  const yearM = text.match(/(?:©|&copy;|copyright)\s*(?:\d{4}\s*[-–]\s*)?(\d{4})/i);
+  const techText = {
+    placeholder: /lorem ipsum|dolor sit amet|consectetur adipiscing/i.test(text),
+    unrenderedMarkdown: /\*\*[^*\s][^*]{2,60}\*\*|\]\(https?:\/\/|(^|\s)#{2,3} [A-ZÇĞİÖŞÜa-zçğıöşü]/.test(text),
+    copyrightYear: yearM ? Number(yearM[1]) : null,
+  };
   const lowerText = text.toLocaleLowerCase("tr");
   const schemaNameHidden = ld.names.length > 0 && !ld.names.some((n) => lowerText.includes(n.toLocaleLowerCase("tr").slice(0, 40)));
   let nosnippetChars = 0;
@@ -394,7 +420,7 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
       wordCount,
       canonical,
       metaRobots,
-      metrics: { ...emptyMetrics(), ...metricsPartial, geo },
+      metrics: { ...emptyMetrics(), ...metricsPartial, geo, tech: { ...tech, ...techText } },
     },
     links: [...links],
     sig: minhash(text),
@@ -609,10 +635,19 @@ async function collectAssets(rows: RawBulkRow[], sigs: Map<string, number[]>, or
   // 5) Site güvenliği: HTTPS, HSTS, http:// sürümünün https'e yönlenmesi.
   const https = origin.startsWith("https://");
   let hsts = false;
+  let securityMissing: string[] = [];
+  let compressed: boolean | null = null;
   let httpRedirectsToHttps: boolean | null = null;
   try {
     const r = await get(`${origin}/`, 8000);
     hsts = !!r.headers.get("strict-transport-security");
+    const h = (k: string) => r.headers.get(k);
+    securityMissing = [
+      !h("x-content-type-options") && "X-Content-Type-Options",
+      !h("x-frame-options") && !/frame-ancestors/i.test(h("content-security-policy") ?? "") && "X-Frame-Options",
+      !h("referrer-policy") && "Referrer-Policy",
+    ].filter(Boolean) as string[];
+    compressed = /gzip|br|deflate|zstd/i.test(h("content-encoding") ?? "");
   } catch {}
   if (https) {
     try {
@@ -648,6 +683,6 @@ async function collectAssets(rows: RawBulkRow[], sigs: Map<string, number[]>, or
     externalLinks,
     images,
     duplicateGroups: groups,
-    site: { https, hsts, httpRedirectsToHttps, robotsFound, aiBlockedCitation, aiBlockedTraining, sitemapInRobots },
+    site: { https, hsts, httpRedirectsToHttps, robotsFound, aiBlockedCitation, aiBlockedTraining, sitemapInRobots, securityMissing, compressed },
   };
 }

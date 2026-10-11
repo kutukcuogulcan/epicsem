@@ -1,5 +1,27 @@
 /** Site taraması sorun kodlarının Türkçe adları ve Screaming Frog sekmelerine benzer grupları. */
 export const ISSUE_LABEL: Record<string, string> = {
+  "missing-og-image": "Paylaşım görseli (og:image) yok",
+  "missing-twitter-card": "Twitter/X kartı yok",
+  "no-favicon": "Favicon yok",
+  "bad-charset": "Karakter kodlaması UTF-8 değil / yok",
+  "placeholder-text": "Örnek metin (lorem ipsum) kalmış",
+  "dev-leakage": "Geliştirme adresi sızmış (localhost/staging)",
+  "heading-skip": "Başlık sırası atlanıyor (H2→H4)",
+  "empty-heading": "Boş başlık etiketi",
+  "unsafe-target-blank": "Yeni sekme linkinde noopener yok",
+  "meta-refresh": "Meta refresh yönlendirmesi",
+  "unrendered-markdown": "İşlenmemiş Markdown görünüyor",
+  "dead-end-page": "Çıkmaz sayfa (iç link yok)",
+  "url-uppercase": "URL'de büyük harf",
+  "url-underscore": "URL'de alt çizgi (_)",
+  "url-too-long": "URL çok uzun",
+  "missing-security-headers": "Güvenlik başlıkları eksik",
+  "no-compression": "Sıkıştırma (gzip/br) kapalı",
+  "stale-copyright": "Telif yılı eski",
+  "no-organization-schema": "Organization schema yok",
+  "no-about-page": "Hakkımızda sayfası bulunamadı",
+  "no-contact-page": "İletişim sayfası bulunamadı",
+  "no-privacy-page": "Gizlilik / KVKK sayfası bulunamadı",
   "ai-citation-bots-blocked": "AI arama botları engelli (robots.txt)",
   "ai-training-bots-blocked": "AI eğitim botları engelli",
   "no-sitemap-in-robots": "robots.txt'de sitemap yok",
@@ -73,7 +95,10 @@ export const ISSUE_GROUPS: { label: string; codes: string[] }[] = [
   { label: "Çok dilli (hreflang)", codes: ["hreflang-invalid", "hreflang-no-self", "hreflang-no-return"] },
   { label: "Güvenlik", codes: ["no-https", "no-hsts", "http-not-redirected"] },
   { label: "AI & GEO hazırlığı", codes: ["ai-citation-bots-blocked", "ai-training-bots-blocked", "snippet-blocked", "nosnippet-heavy", "low-citability", "no-author", "no-date", "future-date", "schema-name-hidden", "no-sitemap-in-robots"] },
-  { label: "Teknik", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content"] },
+  { label: "Teknik", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content", "bad-charset", "meta-refresh", "dev-leakage", "unrendered-markdown", "placeholder-text", "no-favicon", "no-compression", "missing-security-headers", "unsafe-target-blank"] },
+  { label: "Sosyal paylaşım", codes: ["missing-og-image", "missing-twitter-card"] },
+  { label: "Başlık yapısı & URL", codes: ["heading-skip", "empty-heading", "dead-end-page", "url-uppercase", "url-underscore", "url-too-long"] },
+  { label: "Güven (E-E-A-T)", codes: ["no-about-page", "no-contact-page", "no-privacy-page", "no-organization-schema", "stale-copyright"] },
   { label: "Performans", codes: ["slow-response", "large-page"] },
 ];
 
@@ -84,6 +109,28 @@ export type Severity = "error" | "warning" | "notice";
 
 /** Ahrefs/Semrush Site Audit mantığı: Hata = sıralamayı doğrudan bozar, Uyarı = düzeltilmeli, Bildirim = bilgi. */
 export const ISSUE_SEVERITY: Record<string, Severity> = {
+  "missing-og-image": "warning",
+  "missing-twitter-card": "notice",
+  "no-favicon": "notice",
+  "bad-charset": "notice",
+  "placeholder-text": "warning",
+  "dev-leakage": "warning",
+  "heading-skip": "notice",
+  "empty-heading": "notice",
+  "unsafe-target-blank": "notice",
+  "meta-refresh": "warning",
+  "unrendered-markdown": "warning",
+  "dead-end-page": "notice",
+  "url-uppercase": "notice",
+  "url-underscore": "notice",
+  "url-too-long": "notice",
+  "missing-security-headers": "notice",
+  "no-compression": "warning",
+  "stale-copyright": "notice",
+  "no-organization-schema": "notice",
+  "no-about-page": "notice",
+  "no-contact-page": "notice",
+  "no-privacy-page": "notice",
   "ai-citation-bots-blocked": "error",
   "ai-training-bots-blocked": "notice",
   "no-sitemap-in-robots": "notice",
@@ -167,6 +214,167 @@ export interface IssueInfo {
 
 /** Her sorun için Ahrefs/Semrush'taki "About this issue / How to fix" karşılığı. */
 export const ISSUE_INFO: Record<string, IssueInfo> = {
+  "missing-og-image": {
+    what: "Sayfada og:image (paylaşım görseli) etiketi yok.",
+    why: "Link WhatsApp, LinkedIn, Facebook ya da X'te paylaşıldığında görselsiz, sönük bir kart çıkar; tıklanma düşer.",
+    steps: ["Sayfa detayında 'Paylaşım görseli' alanından 1200×630 görseli ücretsiz üretin.", "'WordPress'e uygula' ile öne çıkan görsel olarak yükleyin (Epicsem Connector varsa og:image olarak da basılır)."],
+    example: '<meta property="og:image" content="https://siteniz.com/paylasim.png" />',
+    impact: "orta",
+    effort: "kolay",
+  },
+  "missing-twitter-card": {
+    what: "twitter:card etiketi yok.",
+    why: "X (Twitter) paylaşımlarında büyük görselli kart yerine küçük bağlantı görünür.",
+    steps: ["<head> içine twitter:card etiketini ekleyin; SEO eklentileri bunu ayarlardan açar."],
+    example: '<meta name="twitter:card" content="summary_large_image" />',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "no-favicon": {
+    what: "Sitede favicon tanımlı değil.",
+    why: "Google arama sonuçlarında ve tarayıcı sekmelerinde site ikonu görünmez; marka tanınırlığı düşer.",
+    steps: ["En az 48×48 px bir ikon yükleyin (WordPress: Görünüm › Özelleştir › Site Kimliği)."],
+    example: '<link rel="icon" href="/favicon.ico" sizes="any" />',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "bad-charset": {
+    what: "Sayfa karakter kodlamasını UTF-8 olarak bildirmiyor.",
+    why: "Türkçe karakterler (ğ, ş, ı) bozuk görünebilir; arama motorları metni yanlış okuyabilir.",
+    steps: ["<head>'in en başına meta charset etiketini ekleyin."],
+    example: '<meta charset="utf-8" />',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "placeholder-text": {
+    what: "Sayfada 'lorem ipsum' gibi örnek metin kalmış.",
+    why: "Yarım kalmış izlenimi verir; Google ve AI motorları bu sayfayı düşük kaliteli sayar.",
+    steps: ["Örnek metni gerçek içerikle değiştirin ya da sayfayı yayından kaldırın."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "dev-leakage": {
+    what: "Sayfa kodunda localhost ya da staging/test sunucusu adresi var.",
+    why: "Kırık görsel/linklere yol açar ve geliştirme ortamınızı dışarı açabilir.",
+    steps: ["Veritabanında eski adresleri canlı adresle değiştirin (WordPress: Better Search Replace eklentisi)."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "heading-skip": {
+    what: "Başlık seviyeleri atlanıyor (ör. H2'den sonra doğrudan H4).",
+    why: "Sayfanın içerik ağacı bozulur; ekran okuyucular ve AI motorları bölümleri yanlış yorumlayabilir.",
+    steps: ["Başlıkları sırayla kullanın: H1 › H2 › H3. Görsel boyut için CSS kullanın, başlık seviyesini değil."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "empty-heading": {
+    what: "İçi boş başlık etiketi (H1–H6) var.",
+    why: "Erişilebilirlik hatasıdır ve sayfa yapısını bozar.",
+    steps: ["Boş başlıkları silin ya da içini doldurun (genelde tema/sayfa oluşturucu kalıntısıdır)."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "unsafe-target-blank": {
+    what: "Yeni sekmede açılan dış linklerde rel=\"noopener\" yok.",
+    why: "Eski tarayıcılarda açılan sayfa sizin sekmenizi yönlendirebilir (güvenlik).",
+    steps: ["target=\"_blank\" olan dış linklere rel=\"noopener noreferrer\" ekleyin."],
+    example: '<a href="https://..." target="_blank" rel="noopener noreferrer">',
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "meta-refresh": {
+    what: "Sayfa meta refresh ile yönlendiriyor ya da kendini yeniliyor.",
+    why: "Google bunu zayıf bir yönlendirme sayar; kullanıcı deneyimini ve erişilebilirliği bozar.",
+    steps: ["Meta refresh yerine sunucu tarafında 301 yönlendirme kullanın."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "unrendered-markdown": {
+    what: "Sayfada işlenmemiş Markdown görünüyor (**kalın**, ## başlık, [link](...)).",
+    why: "Okuyucuya bozuk görünür; içerik kopyalanırken biçim kaybolmuş demektir.",
+    steps: ["İçeriği HTML olarak yapıştırın ya da editörde Markdown'u biçimlendirilmiş hâle çevirin."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "dead-end-page": {
+    what: "Sayfada sitenin diğer sayfalarına giden hiç link yok.",
+    why: "Ziyaretçi ve tarayıcı sayfada sıkışır; link değeri başka sayfalara aktarılmaz.",
+    steps: ["İlgili 2–3 sayfaya bağlam içi link ekleyin (AI SEO Editör'ün 'Linkler' sekmesi öneri verir)."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "url-uppercase": {
+    what: "Adreste büyük harf var.",
+    why: "Aynı sayfa büyük/küçük harfli iki adreste açılabilir (kopya içerik).",
+    steps: ["Adresleri küçük harfe çevirin, eski adresten 301 yönlendirme yapın."],
+    impact: "düşük",
+    effort: "orta",
+  },
+  "url-underscore": {
+    what: "Adreste kelimeler alt çizgiyle (_) ayrılmış.",
+    why: "Google kelime ayırıcı olarak tireyi (-) tanır; alt çizgi kelimeleri birleştirir.",
+    steps: ["Yeni sayfalarda tire kullanın; eski adresleri değiştirirseniz 301 yönlendirme ekleyin."],
+    impact: "düşük",
+    effort: "orta",
+  },
+  "url-too-long": {
+    what: "Adres 115 karakterden uzun.",
+    why: "Paylaşımda kesilir, okunması zordur; kısa adresler daha çok tıklanır.",
+    steps: ["Slug'ı ana kelimeye indirin (ör. /abiye-secimi), eski adresten 301 yönlendirin."],
+    impact: "düşük",
+    effort: "orta",
+  },
+  "missing-security-headers": {
+    what: "Ana sayfa temel güvenlik başlıklarını göndermiyor (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).",
+    why: "Tıklama hırsızlığı (clickjacking) ve içerik türü saldırılarına karşı koruma eksik; güven sinyali zayıflar.",
+    steps: ["Sunucu, CDN (Cloudflare › Transform Rules) ya da bir güvenlik eklentisiyle başlıkları ekleyin."],
+    example: "X-Content-Type-Options: nosniff\nX-Frame-Options: SAMEORIGIN\nReferrer-Policy: strict-origin-when-cross-origin",
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "no-compression": {
+    what: "Sunucu sayfaları sıkıştırmadan (gzip/Brotli olmadan) gönderiyor.",
+    why: "Sayfa 3–5 kat daha yavaş iner; mobilde hız ve Core Web Vitals kötüleşir.",
+    steps: ["Hosting panelinden ya da CDN'den gzip/Brotli sıkıştırmayı açın (Cloudflare'de varsayılan açıktır)."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "stale-copyright": {
+    what: "Alt bilgideki telif yılı eski.",
+    why: "Sitenin güncellenmediği izlenimini verir; güven sinyalini zayıflatır.",
+    steps: ["Alt bilgideki yılı otomatik güncellenecek şekilde ayarlayın."],
+    example: "© <?php echo date('Y'); ?> Marka Adı",
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "no-organization-schema": {
+    what: "Ana sayfada Organization (ya da LocalBusiness) yapısal verisi yok.",
+    why: "Google ve AI motorları markanızı bir varlık olarak tanımlamakta zorlanır (logo, sosyal hesaplar, iletişim).",
+    steps: ["Ana sayfa detayında 'Schema' alanından Organization schema'sını üretip WordPress'e uygulayın.", "sameAs alanına sosyal medya hesaplarını ekleyin."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "no-about-page": {
+    what: "Hakkımızda / kurumsal sayfası bulunamadı.",
+    why: "Kim olduğunuzu anlatan sayfa E-E-A-T (güven) sinyalidir; AI motorları markayı tanıtırken buradan bilgi alır.",
+    steps: ["Kuruluş hikâyesi, ekip, adres ve uzmanlığı anlatan bir Hakkımızda sayfası ekleyin ve menüden linkleyin."],
+    impact: "orta",
+    effort: "orta",
+  },
+  "no-contact-page": {
+    what: "İletişim sayfası bulunamadı.",
+    why: "Gerçek bir işletme olduğunuzu gösteren temel güven sinyalidir.",
+    steps: ["Telefon, e-posta, adres ve harita içeren bir İletişim sayfası ekleyin; menüden ve alt bilgiden linkleyin."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "no-privacy-page": {
+    what: "Gizlilik politikası / KVKK aydınlatma metni bulunamadı.",
+    why: "Türkiye'de KVKK gereği zorunludur; ayrıca güven ve reklam platformu onayları için gereklidir.",
+    steps: ["Gizlilik politikası ve KVKK aydınlatma metnini yayınlayın, alt bilgiden linkleyin."],
+    impact: "orta",
+    effort: "kolay",
+  },
   "ai-citation-bots-blocked": {
     what: "robots.txt, AI arama ve alıntı botlarından en az birini engelliyor (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, Bingbot…).",
     why: "Bu botlar ChatGPT, Claude, Perplexity, Google AI Overviews ve Copilot cevaplarında gösterilecek sayfaları toplar. Engellenirse site bu cevaplarda kaynak olarak çıkamaz.",
@@ -639,7 +847,7 @@ Object.assign(ISSUE_INFO, {
 } satisfies Record<string, IssueInfo>);
 
 /** Etkilenen URL için o sayfaya özgü kısa not (ör. mevcut title'ın uzunluğu). */
-export function pageAdvice(code: string, row: { title: string | null; metaDescription: string | null; titleLength: number | null; metaDescriptionLength: number | null; h1Count: number; wordCount: number | null; metrics?: { imagesMissingAlt: number; imagesTotal: number; responseMs: number | null; htmlKb: number | null; depth: number | null; brokenOutlinks: string[]; redirectTarget: string | null; mixedContent: number; geo?: { citability: number | null; citabilityTop: string[]; maxSnippet: number | null; nosnippetRatio: number } } }, site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[] }): string | null {
+export function pageAdvice(code: string, row: { title: string | null; metaDescription: string | null; titleLength: number | null; metaDescriptionLength: number | null; h1Count: number; wordCount: number | null; metrics?: { imagesMissingAlt: number; imagesTotal: number; responseMs: number | null; htmlKb: number | null; depth: number | null; brokenOutlinks: string[]; redirectTarget: string | null; mixedContent: number; geo?: { citability: number | null; citabilityTop: string[]; maxSnippet: number | null; nosnippetRatio: number } } }, site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[]; securityMissing?: string[] }): string | null {
   const m = row.metrics;
   switch (code) {
     case "title-too-long":
@@ -679,6 +887,8 @@ export function pageAdvice(code: string, row: { title: string | null; metaDescri
       return m?.geo ? `metnin %${Math.round(m.geo.nosnippetRatio * 100)}'i` : null;
     case "ai-citation-bots-blocked":
       return site?.aiBlockedCitation?.length ? site.aiBlockedCitation.join(", ") : null;
+    case "missing-security-headers":
+      return site?.securityMissing?.length ? `eksik: ${site.securityMissing.join(", ")}` : null;
     case "ai-training-bots-blocked":
       return site?.aiBlockedTraining?.length ? site.aiBlockedTraining.join(", ") : null;
     default:
@@ -701,6 +911,6 @@ export const THEMES: { key: string; label: string; codes: string[] }[] = [
   { key: "links", label: "Linkleme", codes: ["broken-outlinks", "broken-external-links", "orphan-page", "redirect", "empty-anchor", "nofollow-internal"] },
   { key: "content", label: "İçerik & meta", codes: ["missing-title", "duplicate-title", "title-too-long", "title-too-short", "missing-meta-description", "duplicate-meta-description", "meta-description-too-long", "meta-description-too-short", "missing-h1", "multiple-h1", "thin-content", "missing-h2"] },
   { key: "perf", label: "Performans", codes: ["slow-response", "large-page", "large-images", "images-no-dimensions"] },
-  { key: "tech", label: "Mobil & teknik", codes: ["missing-viewport", "missing-lang", "mixed-content", "missing-canonical", "images-missing-alt", "broken-images", "https-to-http", "no-https", "http-not-redirected"] },
+  { key: "tech", label: "Mobil & teknik", codes: ["bad-charset", "meta-refresh", "dev-leakage", "unrendered-markdown", "placeholder-text", "no-favicon", "no-compression", "heading-skip", "empty-heading", "dead-end-page", "missing-og-image", "missing-twitter-card", "no-about-page", "no-contact-page", "no-privacy-page", "no-organization-schema", "missing-viewport", "missing-lang", "mixed-content", "missing-canonical", "images-missing-alt", "broken-images", "https-to-http", "no-https", "http-not-redirected"] },
   { key: "ai", label: "AI & GEO", codes: ["missing-schema", "missing-open-graph", "ai-citation-bots-blocked", "snippet-blocked", "nosnippet-heavy", "low-citability", "no-author", "no-date", "future-date", "schema-name-hidden", "no-sitemap-in-robots"] },
 ];

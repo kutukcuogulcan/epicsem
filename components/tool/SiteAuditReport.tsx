@@ -594,7 +594,7 @@ function IssueRow({
   info?: IssueInfo;
   affected: BulkImportRow[];
   onShowAll: () => void;
-  site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[] };
+  site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[]; securityMissing?: string[] };
 }) {
   const d = prev == null ? null : n - prev;
   return (

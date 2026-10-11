@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { campaignKeywordIdeas, saveFeedItems, type Feed, type FeedEntry } from "./db";
 import { fetchFeed, matchesFilter } from "./rss";
 import { normalizeUrl } from "./content-fetch";
+import { autocomplete } from "./keyword-research";
 
 /**
  * Beslemeler — Autoblog'un konu kaynakları. Hiçbiri AI kullanmaz:
@@ -39,19 +40,6 @@ async function getText(url: string, ms = 8000): Promise<string | null> {
     return null;
   } finally {
     clearTimeout(t);
-  }
-}
-
-/** Google otomatik tamamlama — ücretsiz, anahtar gerektirmez. Hata olursa sessizce boş döner. */
-async function autocomplete(q: string, lang: string, country: string): Promise<string[]> {
-  const url = `https://suggestqueries.google.com/complete/search?client=firefox&ie=utf-8&oe=utf-8&hl=${encodeURIComponent(lang)}&gl=${encodeURIComponent(country)}&q=${encodeURIComponent(q)}`;
-  const text = await getText(url, 5000);
-  if (!text) return [];
-  try {
-    const j = JSON.parse(text);
-    return Array.isArray(j?.[1]) ? j[1].map(String) : [];
-  } catch {
-    return [];
   }
 }
 

@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
     altTexts: Array.isArray(fx.altTexts)
       ? fx.altTexts.filter((x: any) => x && typeof x.src === "string" && typeof x.alt === "string" && x.alt.trim()).slice(0, 30).map((x: any) => ({ src: x.src, alt: x.alt.trim().slice(0, 250) }))
       : [],
+    ogImage:
+      fx.ogImage && typeof fx.ogImage.title === "string" && fx.ogImage.title.trim()
+        ? { title: fx.ogImage.title.trim().slice(0, 140), brand: String(fx.ogImage.brand ?? "").slice(0, 60), domain: String(fx.ogImage.domain ?? "").slice(0, 100) }
+        : undefined,
   };
   try {
     return NextResponse.json(await applyFixesToWordpress({ siteUrl: conn.siteUrl, username: conn.authIdentifier, appPassword: conn.authSecret, pageUrl, fixes }));

@@ -76,7 +76,11 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
   const [h1, setH1] = useState(row.h1 ?? "");
   const [schema, setSchema] = useState("");
   const [alts, setAlts] = useState<{ src: string; alt: string }[]>(missingAlt);
-  const [on, setOn] = useState({ title: false, meta: false, h1: false, schema: false, alts: false });
+  const needsOg = row.issues.includes("missing-og-image") || row.issues.includes("missing-open-graph");
+  const host = url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+  const [ogTitle, setOgTitle] = useState(row.h1 || row.title || "");
+  const [ogBrand, setOgBrand] = useState(host.split(".")[0].replace(/^./, (c) => c.toLocaleUpperCase("tr")));
+  const [on, setOn] = useState({ title: false, meta: false, h1: false, schema: false, alts: false, og: needsOg });
 
   // WordPress
   const [conns, setConns] = useState<Conn[] | null>(null);
@@ -125,7 +129,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
       if (d.h1) setH1(d.h1);
       if (d.schemaJsonLd) setSchema(d.schemaJsonLd);
       if (d.altTexts.length) setAlts(d.altTexts);
-      setOn({ title: !!d.title, meta: !!d.metaDescription, h1: !!d.h1, schema: !!d.schemaJsonLd, alts: d.altTexts.length > 0 });
+      setOn((o) => ({ ...o, title: !!d.title, meta: !!d.metaDescription, h1: !!d.h1, schema: !!d.schemaJsonLd, alts: d.altTexts.length > 0 }));
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : "Öneri üretilemedi");
     } finally {
@@ -150,6 +154,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
             h1: on.h1 ? h1 : undefined,
             schemaJsonLd: on.schema ? schema : undefined,
             altTexts: on.alts ? alts.filter((a) => a.alt.trim()) : [],
+            ogImage: on.og && ogTitle.trim() ? { title: ogTitle, brand: ogBrand, domain: host } : undefined,
           },
         }),
       });
@@ -226,6 +231,23 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
           </div>
         </div>
       )}
+
+      <div className={`rounded-xl border bg-panel p-3 ${on.og ? "border-accent/40" : "border-border"}`}>
+        <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-ink/45">
+          <input type="checkbox" checked={on.og} onChange={(e) => setOn((o) => ({ ...o, og: e.target.checked }))} />
+          Paylaşım görseli (og:image){needsOg ? " — eksik" : ""}
+        </label>
+        <div className="mt-2 grid gap-3 md:grid-cols-[1fr_14rem]">
+          <div className="space-y-2">
+            <input value={ogTitle} onChange={(e) => { setOgTitle(e.target.value); setOn((o) => ({ ...o, og: true })); }} placeholder="Görseldeki başlık" className="w-full rounded-lg border border-border px-2 py-1.5 text-sm outline-none focus:border-accent" />
+            <input value={ogBrand} onChange={(e) => setOgBrand(e.target.value)} placeholder="Marka adı" className="w-full rounded-lg border border-border px-2 py-1.5 text-sm outline-none focus:border-accent" />
+            <a href={`/api/og?download=1&title=${encodeURIComponent(ogTitle)}&brand=${encodeURIComponent(ogBrand)}&domain=${encodeURIComponent(host)}`} className="inline-block text-xs font-semibold text-accent hover:underline">PNG indir</a>
+            <p className="text-[10px] text-ink/45">1200×630 · ücretsiz, AI yok. WordPress'e uygularken öne çıkan görsel yapılır; Epicsem Connector varsa og:image olarak da basılır.</p>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/api/og?title=${encodeURIComponent(ogTitle || "Başlık")}&brand=${encodeURIComponent(ogBrand)}&domain=${encodeURIComponent(host)}`} alt="Paylaşım görseli önizlemesi" className="aspect-[1200/630] w-full rounded-lg border border-border object-cover" />
+        </div>
+      </div>
 
       <div className={`rounded-xl border bg-panel p-3 ${on.schema ? "border-accent/40" : "border-border"}`}>
         <div className="flex items-center justify-between">
