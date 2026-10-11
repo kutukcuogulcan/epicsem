@@ -380,7 +380,7 @@ export default function ContentStudioPage() {
                 <div>
                   <h2 className="font-bold">{selectedDraft.article.title}</h2>
                   <p className="text-xs text-ink/40 mt-1">
-                    {selectedDraft.sourceUrl} için · {selectedDraft.article.model}
+                    {selectedDraft.sourceUrl.replace(/^keyword:/, "Anahtar kelime: ")} için · {selectedDraft.article.model}
                     {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
                   </p>
                 </div>

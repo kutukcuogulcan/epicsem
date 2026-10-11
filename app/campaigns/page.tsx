@@ -1,126 +1,236 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { CampaignsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
-import EmptyState from "@/components/EmptyState";
 
-const SCENARIO_STEPS = [
-  {
-    title: "Bir domain için Gap Analysis çalıştırılır",
-    body: "Bu, kampanyanın konu havuzunu doldurur — gerçek kayıp promptlar ve içerik boşlukları.",
-  },
-  {
-    title: "O domain için bir kampanya kurulur",
-    body: "Marka adı, domain ve sıklık (haftalık/aylık) seçilir, \"Kampanyayı başlat\" ile aktif edilir.",
-  },
-  {
-    title: "GitHub Actions her 6 saatte bir kontrol eder",
-    body: "Kampanya süresi dolmuşsa (örn. son çalışmadan 7 gün geçmişse), Gap Analysis'teki bir sonraki kullanılmamış konu otomatik makaleye çevrilir.",
-  },
-  {
-    title: "Taslak olarak Content Studio'da belirir",
-    body: "Otomatik üretilen makale de her zamanki gibi bir taslaktır — direkt yayına çıkmaz, [NEEDS: ...] alanları doldurulup gözden geçirilmesi gerekir.",
-  },
-  {
-    title: "Konular biterse kampanya bekler",
-    body: "Son Gap Analysis'teki tüm konular taslağa dönüştüyse, kampanya durumunda bunu belirtir — yeni konu için Gap Analysis'i tekrar çalıştırman yeterli.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Kampanya konuları nereden geliyor, uyduruluyor mu?",
-    a: "Hayır. Her kampanya, o domain için en son çalıştırdığın Gap Analysis sonucundaki gerçek content brief'leri (kayıp promptlar, teknik içerik boşlukları) sırayla kullanır. Hiçbir zaman serbest bir anahtar kelimeden makale üretmez.",
-  },
-  {
-    q: "Otomatik üretilen makale direkt yayınlanıyor mu?",
-    a: "Hayır — her zamanki gibi bir taslak olarak Content Studio'da belirir. Yayınlama kararı ve WordPress/Shopify'a gönderme her zaman senin elinle olur.",
-  },
-  {
-    q: "Ne sıklıkla çalışıyor?",
-    a: "GitHub Actions'taki otomasyon her 6 saatte bir tüm aktif kampanyaları kontrol eder, ama bir kampanya sadece kendi sıklığı (haftalık = 7 gün, aylık = 30 gün) dolduğunda gerçekten yeni bir taslak üretir — aradaki kontroller çoğunlukla hiçbir şey yapmaz.",
-  },
-  {
-    q: "Gap Analysis'teki konular biterse ne olur?",
-    a: "Kampanya o dönem için atlanır ve durumunda bunu açıkça belirtir (\"tüm konular kullanıldı, Gap Analysis'i tekrar çalıştır\") — asla uydurma bir konuya geçmez.",
-  },
-];
+type Source = "gap" | "rss" | "keywords";
+type Frequency = "daily" | "weekly" | "monthly";
+type Format = "article" | "listicle";
 
 interface Campaign {
   id: number;
   brandName: string;
   brandDomain: string;
-  frequency: "weekly" | "monthly";
+  frequency: Frequency;
   status: "active" | "paused";
+  source: Source;
+  config: { rssUrl?: string; rssFilter?: string[]; keywords?: string[] };
+  postsPerRun: number;
+  format: Format;
   lastRunAt: string | null;
   lastRunNote: string | null;
   createdAt: string;
+  drafts: number;
+  lastDraft: { id: number; title: string; sourceUrl: string; createdAt: string } | null;
+  queue: { total: number; done: number } | null;
 }
 
-const FREQUENCY_LABEL: Record<Campaign["frequency"], string> = {
-  weekly: "Haftalık",
-  monthly: "Aylık",
+interface FeedPreview {
+  feedUrl: string;
+  title: string | null;
+  total: number;
+  items: { title: string; link: string; summary: string; publishedAt: string | null; used: boolean; matches: boolean }[];
+}
+
+const SOURCES: { id: Source; title: string; body: string; icon: string }[] = [
+  { id: "keywords", title: "Anahtar kelimeler", body: "Hedeflediğin kelimeleri yaz, sırayla makaleye dönüşsün.", icon: "#" },
+  { id: "rss", title: "RSS beslemesi", body: "Sektör blogu ya da haber sitesi yeni yazı yayınladıkça kendi yorumunla yaz.", icon: "◉" },
+  { id: "gap", title: "Gap Analysis", body: "AI motorlarında kaybettiğin gerçek sorulardan içerik üret.", icon: "◎" },
+];
+const SOURCE_LABEL: Record<Source, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime" };
+const FREQ_LABEL: Record<Frequency, string> = { daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" };
+const FREQ_DAYS: Record<Frequency, number> = { daily: 1, weekly: 7, monthly: 30 };
+const FORMAT_LABEL: Record<Format, string> = { article: "Makale", listicle: "Liste yazısı" };
+
+const SCENARIO_STEPS = [
+  { title: "Kaynak seçilir", body: "Anahtar kelime listesi, bir RSS beslemesi ya da domainin son Gap Analysis sonucu." },
+  { title: "Takvim ayarlanır", body: "Günlük, haftalık ya da aylık; her çalışmada 1–3 yazı." },
+  { title: "Arka planda çalışır", body: "Zamanı gelen autoblog sıradaki kullanılmamış konuyu alır ve marka bilgi bankanı kullanarak makale yazar." },
+  { title: "Taslak olarak düşer", body: "Hiçbir şey kendiliğinden yayınlanmaz. Taslak Content Studio'ya düşer; Editörde düzeltip WordPress, Shopify ya da webhook ile yayınlarsın." },
+];
+
+const FAQ_ITEMS = [
+  { q: "Autoblog API kredisi harcar mı?", a: "Yalnızca makale yazarken. Her makale 1 içerik üretim kredisi kullanır. Besleme okuma, konu seçimi, önizleme ve zamanlama AI kullanmaz." },
+  { q: "Otomatik yayınlıyor mu?", a: "Hayır. Her çıktı Content Studio'da bir taslaktır. Gözden geçirip [NEEDS: …] alanlarını doldurduktan sonra yayınlarsın." },
+  { q: "Aynı konu iki kez yazılır mı?", a: "Hayır. Daha önce taslağı üretilmiş anahtar kelime, besleme öğesi ya da Gap konusu atlanır." },
+  { q: "RSS'teki yazıyı kopyalıyor mu?", a: "Hayır. Kaynak yazı yalnızca bilgi kaynağı olarak okunur; makale kendi cümleleriyle, markanın bakış açısıyla yazılır ve kaynak adresi taslakta saklanır." },
+  { q: "Ne sıklıkla kontrol ediliyor?", a: "Arka plandaki zamanlayıcı her 6 saatte bir zamanı gelen autoblog'ları çalıştırır. Beklemek istemezsen \"Şimdi çalıştır\"a bas." },
+];
+
+const emptyForm = {
+  id: null as number | null,
+  brandName: "",
+  brandDomain: "",
+  source: "keywords" as Source,
+  frequency: "weekly" as Frequency,
+  postsPerRun: 1,
+  format: "article" as Format,
+  rssUrl: "",
+  rssFilter: "",
+  keywords: "",
 };
+
+function ago(iso: string) {
+  const d = (Date.now() - new Date(iso).getTime()) / 864e5;
+  if (d < 1 / 24) return "az önce";
+  if (d < 1) return `${Math.round(d * 24)} sa önce`;
+  return `${Math.round(d)} gün önce`;
+}
+
+function nextRun(c: Campaign) {
+  if (c.status !== "active") return "Duraklatıldı";
+  if (!c.lastRunAt) return "İlk çalışma 6 saat içinde";
+  const t = new Date(c.lastRunAt).getTime() + FREQ_DAYS[c.frequency] * 864e5;
+  if (t <= Date.now()) return "Sırada";
+  return new Date(t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
-  const [brandName, setBrandName] = useState("");
-  const [brandDomain, setBrandDomain] = useState("");
-  const [frequency, setFrequency] = useState<Campaign["frequency"]>("weekly");
+  const [sites, setSites] = useState<string[]>([]);
+  const [rk, setRk] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [feed, setFeed] = useState<FeedPreview | null>(null);
+  const [feedBusy, setFeedBusy] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
+  const [ideas, setIdeas] = useState<string[] | null>(null);
 
   function redirectToLogin() {
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
   }
 
-  const [rk, setRk] = useState(0);
-
   async function refresh() {
     setRk((k) => k + 1);
     const res = await fetch("/api/campaigns");
-    if (res.status === 401) {
-      redirectToLogin();
-      return;
-    }
+    if (res.status === 401) return redirectToLogin();
     const data = await res.json();
     setCampaigns(data.campaigns ?? []);
   }
 
   useEffect(() => {
     refresh();
+    fetch("/api/assistant")
+      .then((r) => (r.ok ? r.json() : { sites: [] }))
+      .then((d) => setSites(d.sites ?? []))
+      .catch(() => {});
   }, []);
 
-  async function addCampaign(e: React.FormEvent) {
-    e.preventDefault();
-    if (!brandName.trim() || !brandDomain.trim()) {
-      setError("Bir marka adı ve domain girin.");
-      return;
-    }
-    setBusy("add");
-    setError(null);
+  const set = <K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  function openNew(source: Source = "keywords") {
+    setForm({ ...emptyForm, source, brandDomain: sites[0] ?? "", brandName: sites[0] ? sites[0].split(".")[0].replace(/^./, (c) => c.toUpperCase()) : "" });
+    setFeed(null);
+    setFeedError(null);
+    setIdeas(null);
+    setFormError(null);
+    setOpen(true);
+  }
+
+  function openEdit(c: Campaign) {
+    setForm({
+      id: c.id,
+      brandName: c.brandName,
+      brandDomain: c.brandDomain,
+      source: c.source,
+      frequency: c.frequency,
+      postsPerRun: c.postsPerRun,
+      format: c.format,
+      rssUrl: c.config.rssUrl ?? "",
+      rssFilter: (c.config.rssFilter ?? []).join(", "),
+      keywords: (c.config.keywords ?? []).join("\n"),
+    });
+    setFeed(null);
+    setFeedError(null);
+    setIdeas(null);
+    setFormError(null);
+    setOpen(true);
+  }
+
+  const keywordList = useMemo(
+    () => Array.from(new Set(form.keywords.split(/\n|;/).map((k) => k.trim()).filter(Boolean))),
+    [form.keywords]
+  );
+  const filterList = form.rssFilter.split(",").map((w) => w.trim()).filter(Boolean);
+  const perMonth = Math.round((30 / FREQ_DAYS[form.frequency]) * form.postsPerRun);
+
+  async function previewFeed() {
+    if (!form.rssUrl.trim()) return;
+    setFeedBusy(true);
+    setFeedError(null);
+    setFeed(null);
     try {
-      const res = await fetch("/api/campaigns", {
+      const r = await fetch("/api/campaigns/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brandName, brandDomain, frequency }),
+        body: JSON.stringify({ rssUrl: form.rssUrl, rssFilter: filterList }),
       });
-      if (res.status === 401) {
-        redirectToLogin();
-        return;
-      }
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Besleme okunamadı");
+      setFeed(d);
+      set("rssUrl", d.feedUrl);
+    } catch (e) {
+      setFeedError(e instanceof Error ? e.message : "Besleme okunamadı");
+    } finally {
+      setFeedBusy(false);
+    }
+  }
+
+  async function loadIdeas() {
+    if (!form.brandDomain.trim()) return setIdeas([]);
+    const r = await fetch(`/api/campaigns/preview?domain=${encodeURIComponent(form.brandDomain)}`);
+    const d = await r.json().catch(() => ({ ideas: [] }));
+    setIdeas(d.ideas ?? []);
+  }
+
+  function addIdea(q: string) {
+    if (keywordList.some((k) => k.toLowerCase() === q.toLowerCase())) return;
+    set("keywords", (form.keywords.trim() ? form.keywords.trim() + "\n" : "") + q);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setBusy("save");
+    try {
+      const payload = {
+        id: form.id ?? undefined,
+        brandName: form.brandName,
+        brandDomain: form.brandDomain,
+        frequency: form.frequency,
+        source: form.source,
+        postsPerRun: form.postsPerRun,
+        format: form.format,
+        config:
+          form.source === "rss"
+            ? { rssUrl: form.rssUrl.trim(), rssFilter: filterList }
+            : form.source === "keywords"
+              ? { keywords: keywordList }
+              : {},
+      };
+      const res = await fetch("/api/campaigns", {
+        method: form.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 401) return redirectToLogin();
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kampanya oluşturulamadı");
-      setBrandName("");
-      setBrandDomain("");
-      setFrequency("weekly");
+      if (!res.ok) throw new Error(data.error ?? "Kaydedilemedi");
+      setOpen(false);
+      setNotice(form.id ? "Autoblog güncellendi." : "Autoblog kuruldu — ilk taslak 6 saat içinde gelir. Beklemek istemezsen \"Şimdi çalıştır\"a bas.");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
+      setFormError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
       setBusy(null);
     }
@@ -134,10 +244,7 @@ export default function CampaignsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: c.id, status: c.status === "active" ? "paused" : "active" }),
       });
-      if (res.status === 401) {
-        redirectToLogin();
-        return;
-      }
+      if (res.status === 401) return redirectToLogin();
       await refresh();
     } finally {
       setBusy(null);
@@ -147,18 +254,18 @@ export default function CampaignsPage() {
   async function runNow(id: number) {
     setBusy(`run-${id}`);
     setError(null);
+    setNotice(null);
     try {
       const res = await fetch("/api/campaigns/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ campaignId: id }),
       });
-      if (res.status === 401) {
-        redirectToLogin();
-        return;
-      }
+      if (res.status === 401) return redirectToLogin();
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kampanya çalıştırılamadı");
+      if (!res.ok) throw new Error(data.error ?? "Çalıştırılamadı");
+      const r = data.results?.[0];
+      if (r) (r.status === "generated" ? setNotice : setError)(r.message);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
@@ -167,147 +274,298 @@ export default function CampaignsPage() {
     }
   }
 
-  async function removeCampaign(id: number) {
-    setBusy(`remove-${id}`);
+  async function removeCampaign(c: Campaign) {
+    if (!window.confirm(`"${c.brandName}" autoblog'u silinsin mi? Üretilmiş taslaklar Content Studio'da kalır.`)) return;
+    setBusy(`remove-${c.id}`);
     try {
       const res = await fetch("/api/campaigns", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: c.id }),
       });
-      if (res.status === 401) {
-        redirectToLogin();
-        return;
-      }
+      if (res.status === 401) return redirectToLogin();
       await refresh();
     } finally {
       setBusy(null);
     }
   }
 
+  const input = "w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm outline-none focus:border-accent";
+  const seg = (on: boolean) =>
+    `rounded-lg px-3 py-2 text-xs font-semibold transition ${on ? "bg-accent text-white shadow-sm" : "bg-muted text-ink/60 hover:text-ink"}`;
+
   return (
     <div className="space-y-8">
       <ToolPageHeader
-        breadcrumbLabel="Kampanyalar"
-        title="Kampanyalar"
+        breadcrumbLabel="Autoblog"
+        title="Autoblog"
         body={
           <>
-            Bir kere kur, arkasında çalışsın: bir domain için kampanya kurduğunda, o domainin en son Gap
-            Analysis sonucundaki gerçek içerik boşlukları haftalık/aylık olarak otomatik taslak makaleye
-            dönüşür — GitHub Actions üzerinden, elle tetiklemene gerek kalmadan. Hiçbir zaman uydurma bir
-            konu kullanmaz ve hiçbir zaman doğrudan yayınlamaz, her zaman gözden geçirilecek bir taslak
-            üretir.
+            Anahtar kelime listesi, bir RSS beslemesi ya da Gap Analysis sonuçlarından düzenli olarak SEO + GEO uyumlu makale
+            taslağı üretir. Hiçbir şey kendiliğinden yayınlanmaz; her yazı Content Studio&apos;da onayını bekler.
           </>
         }
       >
-        <UsageMeter metric="contentGenerations" />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => openNew()} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+            + Yeni autoblog
+          </button>
+          <UsageMeter metric="contentGenerations" />
+        </div>
       </ToolPageHeader>
 
       <CampaignsOverview refreshKey={rk} campaigns={campaigns ?? []} />
 
-      <form onSubmit={addCampaign} className="card space-y-3">
-        <h2 className="font-bold text-sm">Bir kampanya kur</h2>
-        <p className="text-xs text-ink/40">
-          Not: Bu domain için önce en az bir kez Gap Analysis çalıştırmış olman gerekir — kampanya konularını
-          oradan alır.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
-            value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
-            placeholder="Marka adı"
-            required
-            className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-          />
-          <input
-            value={brandDomain}
-            onChange={(e) => setBrandDomain(e.target.value)}
-            placeholder="domaininiz.com"
-            required
-            className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-          />
-          <select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as Campaign["frequency"])}
-            className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-          >
-            <option value="weekly">Haftalık</option>
-            <option value="monthly">Aylık</option>
-          </select>
-        </div>
-        <button
-          type="submit"
-          disabled={busy === "add"}
-          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {busy === "add" ? "Kuruluyor…" : "Kampanyayı başlat"}
-        </button>
-      </form>
-
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
-
-      {campaigns && campaigns.length > 0 && (
-        <div className="space-y-3">
-          {campaigns.map((c) => (
-            <div key={c.id} className="card space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="font-medium text-sm flex items-center gap-2">
-                    {c.brandName}
-                    <span
-                      className={`badge ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}
-                    >
-                      {c.status === "active" ? "Aktif" : "Duraklatıldı"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-ink/40">{c.brandDomain} · {FREQUENCY_LABEL[c.frequency]}</div>
-                </div>
-                <div className="flex items-center gap-2 text-xs shrink-0">
-                  <button
-                    onClick={() => runNow(c.id)}
-                    disabled={busy === `run-${c.id}`}
-                    className="rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
-                  >
-                    {busy === `run-${c.id}` ? "Çalışıyor…" : "Şimdi çalıştır"}
-                  </button>
-                  <button
-                    onClick={() => toggleStatus(c)}
-                    disabled={busy === `toggle-${c.id}`}
-                    className="rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
-                  >
-                    {c.status === "active" ? "Duraklat" : "Devam ettir"}
-                  </button>
-                  <button
-                    onClick={() => removeCampaign(c.id)}
-                    disabled={busy === `remove-${c.id}`}
-                    className="text-danger/70 hover:text-danger px-1"
-                  >
-                    Sil
-                  </button>
-                </div>
-              </div>
-              <div className="text-xs text-ink/50">
-                {c.lastRunAt
-                  ? `Son çalışma: ${new Date(c.lastRunAt).toLocaleString("tr-TR")}`
-                  : "Henüz hiç çalışmadı — bir sonraki otomatik taramada (en geç 6 saat içinde) ilk kez çalışacak."}
-              </div>
-              {c.lastRunNote && <div className="text-xs text-ink/40 border-t border-border pt-2">{c.lastRunNote}</div>}
-            </div>
-          ))}
-        </div>
-      )}
+      {notice && <div className="rounded-xl border border-seo/30 bg-seo/5 px-4 py-3 text-sm text-seo">{notice}</div>}
+      {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</div>}
 
       {campaigns && campaigns.length === 0 && (
-        <EmptyState
-          title="Henüz kampanya kurulmadı"
-          body="Önce bir domain için Gap Analysis çalıştır, sonra yukarıdan aynı domain için bir kampanya kur — oradaki gerçek content brief'lerden otomatik taslak üretmeye başlar."
-          actionLabel="Gap Analysis'e git"
-          actionHref="/gap"
-        />
+        <section className="card space-y-4">
+          <div>
+            <h2 className="text-lg font-extrabold">İlk autoblog&apos;unu kur</h2>
+            <p className="text-sm text-ink/50">Konuların nereden gelsin?</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {SOURCES.map((s) => (
+              <button key={s.id} type="button" onClick={() => openNew(s.id)} className="group rounded-2xl border border-border bg-paper p-5 text-left transition hover:border-accent hover:shadow-md">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-lg font-bold text-accent">{s.icon}</div>
+                <div className="font-bold group-hover:text-accent">{s.title}</div>
+                <p className="mt-1 text-sm text-ink/55">{s.body}</p>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
-      <ExampleScenario heading="Bir ajans 3 müşteri için kampanya kurup unutuyor" steps={SCENARIO_STEPS} />
+      {campaigns && campaigns.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold">Autoblog&apos;ların</h2>
+            <span className="text-xs text-ink/45">{campaigns.length} autoblog</span>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {campaigns.map((c) => (
+              <article key={c.id} className="flex flex-col rounded-2xl border border-border bg-panel p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-bold">{c.brandName}</span>
+                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>
+                        {c.status === "active" ? "Aktif" : "Duraklatıldı"}
+                      </span>
+                    </div>
+                    <div className="truncate text-xs text-ink/45">{c.brandDomain}</div>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">{SOURCE_LABEL[c.source]}</span>
+                </div>
 
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-muted/60 px-2 py-2">
+                    <div className="text-[10px] text-ink/45">Takvim</div>
+                    <div className="text-sm font-bold">{FREQ_LABEL[c.frequency]}</div>
+                    <div className="text-[10px] text-ink/45">{c.postsPerRun} yazı · {FORMAT_LABEL[c.format]}</div>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 px-2 py-2">
+                    <div className="text-[10px] text-ink/45">Üretilen</div>
+                    <div className="text-sm font-bold tabular-nums">{c.drafts}</div>
+                    <div className="text-[10px] text-ink/45">taslak</div>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 px-2 py-2">
+                    <div className="text-[10px] text-ink/45">Sonraki</div>
+                    <div className="text-sm font-bold">{nextRun(c)}</div>
+                    <div className="text-[10px] text-ink/45">{c.lastRunAt ? `son: ${ago(c.lastRunAt)}` : "henüz çalışmadı"}</div>
+                  </div>
+                </div>
+
+                {c.source === "keywords" && c.queue && (
+                  <div className="mt-3">
+                    <div className="mb-1 flex justify-between text-[11px] text-ink/50">
+                      <span>Anahtar kelime kuyruğu</span>
+                      <span className="tabular-nums">{c.queue.done}/{c.queue.total} yazıldı</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-accent" style={{ width: `${c.queue.total ? (c.queue.done / c.queue.total) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+                )}
+                {c.source === "rss" && c.config.rssUrl && <div className="mt-3 truncate text-[11px] text-ink/50">Besleme: {c.config.rssUrl}{c.config.rssFilter?.length ? ` · filtre: ${c.config.rssFilter.join(", ")}` : ""}</div>}
+
+                {c.lastDraft && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-ink/45">Son taslak · {ago(c.lastDraft.createdAt)}</div>
+                      <div className="truncate text-sm font-semibold">{c.lastDraft.title}</div>
+                    </div>
+                    <Link href={`/editor?draftId=${c.lastDraft.id}`} className="shrink-0 text-xs font-semibold text-accent hover:underline">Editörde aç →</Link>
+                  </div>
+                )}
+                {c.lastRunNote && <p className="mt-3 line-clamp-2 text-xs text-ink/50">{c.lastRunNote}</p>}
+
+                <div className="mt-auto flex flex-wrap items-center gap-2 pt-4 text-xs">
+                  <button onClick={() => runNow(c.id)} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 font-bold text-white hover:opacity-90 disabled:opacity-50">
+                    {busy === `run-${c.id}` ? "Yazılıyor…" : "Şimdi çalıştır"}
+                  </button>
+                  <button onClick={() => openEdit(c)} className="rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-muted">Düzenle</button>
+                  <button onClick={() => toggleStatus(c)} disabled={busy === `toggle-${c.id}`} className="rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-muted disabled:opacity-50">
+                    {c.status === "active" ? "Duraklat" : "Devam ettir"}
+                  </button>
+                  <Link href="/content" className="rounded-lg px-2 py-1.5 font-semibold text-ink/55 hover:text-ink">Taslaklar</Link>
+                  <button onClick={() => removeCampaign(c)} disabled={busy === `remove-${c.id}`} className="ml-auto px-1 text-danger/70 hover:text-danger">Sil</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <div className="font-bold">{form.id ? "Autoblog'u düzenle" : "Yeni autoblog"}</div>
+                <div className="text-xs text-ink/50">Kaynak, takvim ve yazı ayarları.</div>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
+            </div>
+
+            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Site</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={form.brandName} onChange={(e) => set("brandName", e.target.value)} placeholder="Marka adı" required className={input} />
+                  <input value={form.brandDomain} onChange={(e) => { set("brandDomain", e.target.value); setIdeas(null); }} placeholder="siteniz.com" required list="autoblog-sites" className={input} />
+                  <datalist id="autoblog-sites">{sites.map((s) => <option key={s} value={s} />)}</datalist>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Konular nereden gelsin?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SOURCES.map((s) => (
+                    <button key={s.id} type="button" onClick={() => set("source", s.id)} className={`rounded-xl border p-3 text-left transition ${form.source === s.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
+                      <div className="text-sm font-bold">{s.title}</div>
+                      <div className="mt-0.5 text-[11px] leading-4 text-ink/50">{s.body}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {form.source === "keywords" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Anahtar kelimeler · {keywordList.length}</label>
+                    <button type="button" onClick={loadIdeas} className="text-xs font-semibold text-accent hover:underline">Verilerimden öner (ücretsiz)</button>
+                  </div>
+                  <textarea value={form.keywords} onChange={(e) => set("keywords", e.target.value)} rows={7} placeholder={"Her satıra bir anahtar kelime ya da soru\nör. abiye elbise nasıl seçilir\nkapalı abiye modelleri 2026"} className={`${input} font-mono text-[13px] leading-6`} />
+                  <p className="text-[11px] text-ink/45">Sırayla yazılır, daha önce yazılanlar atlanır. Kuyruğa istediğin zaman ekleyebilirsin.</p>
+                  {ideas && (
+                    <div className="rounded-xl border border-border p-3">
+                      {ideas.length === 0 ? (
+                        <p className="text-xs text-ink/50">Bu domain için öneri çıkacak veri yok — önce <Link href="/gap" className="font-semibold text-accent">Gap Analysis</Link> ya da <Link href="/geo" className="font-semibold text-accent">GEO testi</Link> çalıştır.</p>
+                      ) : (
+                        <>
+                          <div className="mb-2 text-[11px] text-ink/50">Gap Analysis ve GEO promptlarından — eklemek için tıkla:</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ideas.map((q) => {
+                              const added = keywordList.some((k) => k.toLowerCase() === q.toLowerCase());
+                              return (
+                                <button key={q} type="button" disabled={added} onClick={() => addIdea(q)} className={`rounded-full border px-2.5 py-1 text-[11px] ${added ? "border-seo/30 bg-seo/5 text-seo" : "border-border hover:border-accent hover:text-accent"}`}>
+                                  {added ? "✓ " : "+ "}{q}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {form.source === "rss" && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Besleme</label>
+                  <div className="flex gap-2">
+                    <input value={form.rssUrl} onChange={(e) => { set("rssUrl", e.target.value); setFeed(null); }} placeholder="site.com/feed ya da sadece site.com" className={input} />
+                    <button type="button" onClick={previewFeed} disabled={feedBusy || !form.rssUrl.trim()} className="shrink-0 rounded-xl border border-border px-3 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                      {feedBusy ? "Okunuyor…" : "Önizle"}
+                    </button>
+                  </div>
+                  <input value={form.rssFilter} onChange={(e) => set("rssFilter", e.target.value)} placeholder="Filtre (opsiyonel): virgülle kelimeler — ör. seo, google, yapay zeka" className={input} />
+                  {feedError && <p className="text-xs text-danger">{feedError}</p>}
+                  {feed && (
+                    <div className="rounded-xl border border-border">
+                      <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[11px] text-ink/50">
+                        <span className="truncate font-semibold text-ink/70">{feed.title ?? feed.feedUrl}</span>
+                        <span>{feed.total} öğe · {feed.items.filter((i) => !i.used && i.matches).length} yeni</span>
+                      </div>
+                      <ul className="max-h-60 divide-y divide-border overflow-y-auto">
+                        {feed.items.map((it) => (
+                          <li key={it.link} className={`px-3 py-2 ${!it.matches || it.used ? "opacity-45" : ""}`}>
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-xs font-semibold leading-5">{it.title}</span>
+                              <span className="shrink-0 text-[10px] text-ink/45">{it.used ? "yazıldı" : !it.matches ? "filtre dışı" : it.publishedAt ? new Date(it.publishedAt).toLocaleDateString("tr-TR") : ""}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-ink/45">Her çalışmada en yeni, henüz yazılmamış öğeler alınır. Kaynak yazı kopyalanmaz; bilgi kaynağı olarak okunur.</p>
+                </div>
+              )}
+
+              {form.source === "gap" && (
+                <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs leading-5 text-ink/60">
+                  Bu domainin <strong>son Gap Analysis</strong> sonucundaki içerik brief&apos;leri sırayla yazılır: AI motorlarının sorduğu ama markanın kaybettiği sorular, eksik başlıklar ve içerik boşlukları.
+                  Henüz çalıştırmadıysan önce <Link href="/gap" className="font-semibold text-accent">Gap Analysis</Link>&apos;e git.
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Takvim</label>
+                <div className="flex flex-wrap gap-2">
+                  {(["daily", "weekly", "monthly"] as Frequency[]).map((f) => (
+                    <button key={f} type="button" onClick={() => set("frequency", f)} className={seg(form.frequency === f)}>{FREQ_LABEL[f]}</button>
+                  ))}
+                  <span className="mx-1 w-px bg-border" />
+                  {[1, 2, 3].map((n) => (
+                    <button key={n} type="button" onClick={() => set("postsPerRun", n)} className={seg(form.postsPerRun === n)}>{n} yazı</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Yazı tipi</label>
+                <div className="flex gap-2">
+                  {(["article", "listicle"] as Format[]).map((f) => (
+                    <button key={f} type="button" onClick={() => set("format", f)} className={seg(form.format === f)}>{FORMAT_LABEL[f]}</button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-ink/45">
+                  Makaleler doğrudan cevapla başlar, SSS bölümü içerir ve <Link href="/content" className="text-accent">marka bilgi bankanı</Link> kullanır.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">
+                Ayda yaklaşık <strong>{perMonth} makale</strong> → {perMonth} içerik üretim kredisi (AI). Önizleme, konu seçimi ve zamanlama ücretsizdir.
+              </div>
+              {formError && <p className="text-sm text-danger">{formError}</p>}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+              <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/60 hover:bg-muted">Vazgeç</button>
+              <button type="submit" disabled={busy === "save"} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+                {busy === "save" ? "Kaydediliyor…" : form.id ? "Kaydet" : "Autoblog'u başlat"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <ExampleScenario heading="Autoblog nasıl çalışır" steps={SCENARIO_STEPS} />
       <FAQSection items={FAQ_ITEMS} />
     </div>
   );

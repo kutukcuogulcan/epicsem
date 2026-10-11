@@ -321,6 +321,13 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_campaigns_user ON campaigns(user_id);
   `);
+  // Autoblog — kampanyalar artık üç kaynaktan konu alabilir: Gap Analysis (varsayılan),
+  // bir RSS/Atom beslemesi ya da kullanıcının yazdığı anahtar kelime kuyruğu.
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'gap'`);
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS config_json TEXT NOT NULL DEFAULT '{}'`);
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS posts_per_run INTEGER NOT NULL DEFAULT 1`);
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS format TEXT NOT NULL DEFAULT 'article'`);
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS campaign_id INTEGER`);
 
   // Saved GEO prompts — a persistent per-brand prompt library (Prompts tab, re-run one
   // at a time) instead of the ad-hoc "type prompts, run the whole batch, results vanish
@@ -1260,11 +1267,11 @@ function rowToContentDraft(row: any): ContentDraft {
   };
 }
 
-export async function saveContentDraft(userId: number, sourceUrl: string, article: GeneratedArticle): Promise<ContentDraft> {
+export async function saveContentDraft(userId: number, sourceUrl: string, article: GeneratedArticle, campaignId?: number | null): Promise<ContentDraft> {
   await ensureSchema();
   const row = await one<any>(
-    `INSERT INTO content_drafts (user_id, source_url, article_json) VALUES ($1, $2, $3) RETURNING *`,
-    [userId, sourceUrl, JSON.stringify(article)]
+    `INSERT INTO content_drafts (user_id, source_url, article_json, campaign_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [userId, sourceUrl, JSON.stringify(article), campaignId ?? null]
   );
   return rowToContentDraft(row);
 }
@@ -1549,8 +1556,19 @@ export async function applySubscriptionState(opts: {
 
 // ---------------- campaigns (automatic, grounded content generation) ----------------
 
-export type CampaignFrequency = "weekly" | "monthly";
+export type CampaignFrequency = "daily" | "weekly" | "monthly";
 export type CampaignStatus = "active" | "paused";
+export type CampaignSource = "gap" | "rss" | "keywords";
+export type CampaignFormat = "article" | "listicle";
+
+export interface CampaignConfig {
+  /** RSS/Atom besleme adresi (ya da beslemesini otomatik bulacağımız site adresi). */
+  rssUrl?: string;
+  /** Yalnızca başlığında bu kelimelerden biri geçen besleme öğelerini kullan (boşsa hepsi). */
+  rssFilter?: string[];
+  /** Anahtar kelime kuyruğu — sırayla kullanılır. */
+  keywords?: string[];
+}
 
 export interface Campaign {
   id: number;
@@ -1559,12 +1577,22 @@ export interface Campaign {
   brandDomain: string;
   frequency: CampaignFrequency;
   status: CampaignStatus;
+  source: CampaignSource;
+  config: CampaignConfig;
+  postsPerRun: number;
+  format: CampaignFormat;
   lastRunAt: string | null;
   lastRunNote: string | null;
   createdAt: string;
 }
 
 function rowToCampaign(row: any): Campaign {
+  let config: CampaignConfig = {};
+  try {
+    config = JSON.parse(row.config_json || "{}");
+  } catch {
+    config = {};
+  }
   return {
     id: row.id,
     userId: row.user_id,
@@ -1572,28 +1600,93 @@ function rowToCampaign(row: any): Campaign {
     brandDomain: row.brand_domain,
     frequency: row.frequency,
     status: row.status,
+    source: (row.source ?? "gap") as CampaignSource,
+    config,
+    postsPerRun: Number(row.posts_per_run ?? 1),
+    format: (row.format ?? "article") as CampaignFormat,
     lastRunAt: row.last_run_at ? toIso(row.last_run_at) : null,
     lastRunNote: row.last_run_note,
     createdAt: toIso(row.created_at),
   };
 }
 
-export async function createCampaign(
-  userId: number,
-  params: { brandName: string; brandDomain: string; frequency: CampaignFrequency }
-): Promise<Campaign> {
+export interface CampaignInput {
+  brandName: string;
+  brandDomain: string;
+  frequency: CampaignFrequency;
+  source: CampaignSource;
+  config: CampaignConfig;
+  postsPerRun: number;
+  format: CampaignFormat;
+}
+
+export async function createCampaign(userId: number, params: CampaignInput): Promise<Campaign> {
   await ensureSchema();
   const row = await one<any>(
-    `INSERT INTO campaigns (user_id, brand_name, brand_domain, frequency) VALUES ($1, $2, $3, $4) RETURNING *`,
-    [userId, params.brandName, params.brandDomain, params.frequency]
+    `INSERT INTO campaigns (user_id, brand_name, brand_domain, frequency, source, config_json, posts_per_run, format)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [userId, params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format]
   );
   return rowToCampaign(row);
+}
+
+export async function updateCampaign(userId: number, id: number, params: CampaignInput): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `UPDATE campaigns SET brand_name = $1, brand_domain = $2, frequency = $3, source = $4, config_json = $5, posts_per_run = $6, format = $7
+      WHERE id = $8 AND user_id = $9`,
+    [params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format, id, userId]
+  );
 }
 
 export async function listCampaigns(userId: number): Promise<Campaign[]> {
   await ensureSchema();
   const rows = await many<any>(`SELECT * FROM campaigns WHERE user_id = $1 ORDER BY id DESC`, [userId]);
   return rows.map(rowToCampaign);
+}
+
+/** Her kampanyanın ürettiği taslak sayısı ve son taslağı — kampanya kartlarında gösterilir. */
+export async function campaignDraftStats(
+  userId: number
+): Promise<Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string } | null }>> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT DISTINCT ON (campaign_id) campaign_id, id, source_url, article_json, created_at,
+            COUNT(*) OVER (PARTITION BY campaign_id) AS n
+       FROM content_drafts WHERE user_id = $1 AND campaign_id IS NOT NULL
+      ORDER BY campaign_id, id DESC`,
+    [userId]
+  );
+  const out: Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string } | null }> = {};
+  for (const r of rows) {
+    let title = r.source_url;
+    try {
+      title = JSON.parse(r.article_json).title || title;
+    } catch {
+      /* başlık okunamazsa kaynak adresi göster */
+    }
+    out[r.campaign_id] = { count: Number(r.n), last: { id: r.id, title, sourceUrl: r.source_url, createdAt: toIso(r.created_at) } };
+  }
+  return out;
+}
+
+/** Autoblog anahtar kelime fikirleri — AI kullanmadan, kullanıcının kendi verisinden:
+ * son Gap Analysis'teki hedef sorular ve bu domain için kayıtlı GEO promptları. */
+export async function campaignKeywordIdeas(userId: number, brandDomain: string): Promise<string[]> {
+  await ensureSchema();
+  const ideas: string[] = [];
+  const gap = await getLatestGapRunBriefs(userId, brandDomain);
+  for (const b of gap?.contentBriefs ?? []) for (const q of b.targetQuestions ?? []) ideas.push(q);
+  const prompts = await many<{ prompt_text: string }>(
+    `SELECT prompt_text FROM saved_prompts WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC LIMIT 40`,
+    [userId, brandDomain]
+  );
+  for (const r of prompts) ideas.push(r.prompt_text);
+  const seen = new Set<string>();
+  return ideas
+    .map((x) => x.trim())
+    .filter((x) => x && x.length <= 160 && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()))
+    .slice(0, 30);
 }
 
 /** Every active campaign across every user — the cron sweep's input (mirrors

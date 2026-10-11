@@ -236,3 +236,61 @@ export async function generateArticleFromUrlInput(
   const { text, model } = await provider.run(lines.join("\n") + knowledgeBlock(knowledge));
   return parseArticleResponse(text, model);
 }
+
+/**
+ * Autoblog: bir anahtar kelimeden (ya da metni okunamayan bir RSS öğesinden) makale.
+ * Yine "uydurma yok" kuralı geçerli — markanın kendi ana sayfası ve varsa kaynak özeti
+ * modele verilir, bilinmeyen her şey [NEEDS: ...] olarak bırakılır.
+ */
+export async function generateArticleFromTopic(
+  topic: string,
+  brand: BrandRef,
+  opts: { format?: "article" | "listicle"; context?: string | null; sourceUrl?: string | null; knowledge?: string } = {}
+): Promise<GeneratedArticle> {
+  const format = opts.format ?? "article";
+  const provider = isDemoMode() ? null : pickProvider();
+  if (!provider) {
+    const body = [
+      `## ${topic}`,
+      `[DEMO DATA — gerçek bir API anahtarı tanımlı olmadığı için bu taslak simüle edildi.] ${brand.name}, "${topic}" sorusunu ilk cümlede doğrudan cevaplar, sonra ayrıntılara iner. [NEEDS: ${brand.domain} için gerçek bir örnek ya da veri]`,
+      `## Sık sorulan sorular`,
+      `### ${topic} neden önemli?`,
+      `[NEEDS: markaya özgü gerçek cevap]`,
+    ].join("\n\n");
+    return {
+      title: `[DEMO] ${topic}`.slice(0, 60),
+      metaDescription: `[DEMO DATA] ${brand.name}: ${topic}`.slice(0, 160),
+      bodyMarkdown: body,
+      openPlaceholders: body.match(/\[NEEDS:[^\]]*\]/g) ?? [],
+      demoMode: true,
+      model: "demo (no API key configured)",
+    };
+  }
+
+  const own = await fetchPageSummary(brand.domain).catch(() => null);
+  const lines: string[] = [];
+  lines.push(
+    format === "listicle"
+      ? `You are writing a LISTICLE (numbered list-format article, ## heading per item) for ${brand.name} (${brand.domain}) targeting the search topic / keyword: "${topic}".`
+      : `You are writing an SEO + GEO (generative engine optimization) optimized article for ${brand.name} (${brand.domain}) targeting the search topic / keyword: "${topic}".`
+  );
+  lines.push(
+    "Write in the same language as the topic (default: Turkish). Open with a 2-3 sentence direct answer to the topic (answer-first, quotable by AI answer engines). Use ## / ### headings phrased the way people actually ask, short paragraphs, bullet lists or a table where useful, and end with a '## Sık sorulan sorular' section of 3-5 real questions with concise answers. Mention the brand naturally where it is genuinely relevant — never as an advert in every paragraph."
+  );
+  if (opts.context) {
+    lines.push("");
+    lines.push(`Source material${opts.sourceUrl ? ` (${opts.sourceUrl})` : ""} — use it as the factual basis, rewrite in your own words, never copy sentences:`);
+    lines.push(opts.context.slice(0, 4000));
+  }
+  if (own) {
+    lines.push("");
+    lines.push(summarizeForPrompt(`${brand.name}'s own page`, own));
+  }
+  lines.push("");
+  lines.push(NO_FABRICATION_RULE);
+  lines.push("");
+  lines.push(RESPONSE_SHAPE_INSTRUCTIONS);
+
+  const { text, model } = await provider.run(lines.join("\n") + knowledgeBlock(opts.knowledge));
+  return parseArticleResponse(text, model);
+}

@@ -19,7 +19,7 @@ export const NAV_GROUPS = [
     title: "Otomasyon",
     items: [
       { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
-      { href: "/campaigns", label: "Kampanyalar", icon: "campaigns" },
+      { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
       { href: "/import", label: "Site Taraması", icon: "import" },
       { href: "/content", label: "Content Studio", icon: "content" },
       { href: "/local", label: "Yerel İşletme (GBP)", icon: "local" },

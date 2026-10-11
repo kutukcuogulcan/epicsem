@@ -130,17 +130,23 @@ interface CampaignLite {
   status: string;
   lastRunAt: string | null;
   lastRunNote: string | null;
+  source?: string;
+  postsPerRun?: number;
 }
+
+const FREQ_DAYS: Record<string, number> = { daily: 1, weekly: 7, monthly: 30 };
+const FREQ_TR: Record<string, string> = { daily: "günlük", weekly: "haftalık", monthly: "aylık" };
+const SRC_TR: Record<string, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime" };
 
 export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: CampaignLite[]; refreshKey?: number }) {
   const d = useTool<CampaignData>("campaigns", refreshKey);
   if (!d) return <Skeleton />;
   const active = campaigns.filter((c) => c.status === "active").length;
-  if (!campaigns.length && !d.drafts) return <GhostChart title="Henüz kampanya yok" body="Aşağıdan bir domain için kampanya kur — Gap Analysis'teki içerik boşlukları haftalık/aylık taslak makaleye dönüşür ve üretim burada grafikte izlenir." />;
+  if (!campaigns.length && !d.drafts) return <GhostChart title="Henüz autoblog yok" body="Bir autoblog kur — Gap Analysis, bir RSS beslemesi ya da anahtar kelime listen düzenli olarak taslak makaleye dönüşür ve üretim burada grafikte izlenir." />;
   const next = (c: CampaignLite) => {
     if (c.status !== "active") return "duraklatıldı";
     if (!c.lastRunAt) return "ilk çalıştırma bekleniyor";
-    const t = new Date(c.lastRunAt).getTime() + (c.frequency === "monthly" ? 30 : 7) * 864e5;
+    const t = new Date(c.lastRunAt).getTime() + (FREQ_DAYS[c.frequency] ?? 7) * 864e5;
     return t < Date.now() ? "sırada" : day(new Date(t).toISOString());
   };
   return (
@@ -178,7 +184,7 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
               <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold">{c.brandName}</div>
-                  <div className="truncate text-[11px] text-ink/45">{c.brandDomain} · {c.frequency === "monthly" ? "aylık" : "haftalık"}</div>
+                  <div className="truncate text-[11px] text-ink/45">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>

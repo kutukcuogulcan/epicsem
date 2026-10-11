@@ -165,7 +165,7 @@ export default function EditorPage() {
       const r = await fetch(`/api/content?id=${id}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Taslak açılamadı");
-      openDoc({ title: d.draft.article.title, metaDescription: d.draft.article.metaDescription, markdown: d.draft.article.bodyMarkdown, sourceUrl: d.draft.sourceUrl, id: d.draft.id, keyword: "" });
+      openDoc({ title: d.draft.article.title, metaDescription: d.draft.article.metaDescription, markdown: d.draft.article.bodyMarkdown, sourceUrl: d.draft.sourceUrl, id: d.draft.id, keyword: String(d.draft.sourceUrl ?? "").startsWith("keyword:") ? String(d.draft.sourceUrl).slice(8) : "" });
       window.history.replaceState(null, "", `/editor?draftId=${id}`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "Taslak açılamadı", true);
@@ -377,7 +377,7 @@ export default function EditorPage() {
                 <button key={d.id} type="button" onClick={() => loadDraft(d.id)} className="flex w-full items-center justify-between gap-3 px-5 py-3 text-left hover:bg-muted/50">
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{d.article.title || "Başlıksız"}</span>
-                    <span className="block truncate text-xs text-ink/45">{d.sourceUrl}</span>
+                    <span className="block truncate text-xs text-ink/45">{d.sourceUrl.replace(/^keyword:/, "Anahtar kelime: ")}</span>
                   </span>
                   <span className="shrink-0 text-xs text-ink/40">{new Date(d.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
                 </button>
