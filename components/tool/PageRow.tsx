@@ -55,7 +55,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
             )}
             {sc !== null && sc >= 200 && sc < 300 && row.issues.length > 0 && (
               <div className="mb-4">
-                <AiFixSuggest url={row.url} issues={row.issues} />
+                <AiFixSuggest row={row} />
               </div>
             )}
             <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
