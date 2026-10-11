@@ -108,8 +108,30 @@ export async function publishDraftToWordpress(params: {
   title: string;
   bodyMarkdown: string;
   excerpt?: string;
+  /** "publish" yalnızca kullanıcı Autoblog'da tam otomatik modu bilerek seçtiyse gönderilir. */
+  status?: "draft" | "publish";
+  cover?: { mime: string; data: Buffer } | null;
 }): Promise<WpPublishResult> {
   const base = normalizeBase(params.siteUrl);
+  let featuredMedia: number | undefined;
+  if (params.cover) {
+    try {
+      const ext = params.cover.mime.includes("png") ? "png" : "jpg";
+      const m = await fetch(`${base}/wp-json/wp/v2/media`, {
+        method: "POST",
+        headers: {
+          "Content-Type": params.cover.mime,
+          "Content-Disposition": `attachment; filename="kapak-${Date.now()}.${ext}"`,
+          Authorization: authHeader(params.username, params.appPassword),
+        },
+        body: new Uint8Array(params.cover.data),
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (m.ok) featuredMedia = (await m.json()).id;
+    } catch {
+      /* kapak yüklenemezse yazıyı kapaksız gönder */
+    }
+  }
   const res = await fetch(`${base}/wp-json/wp/v2/posts`, {
     method: "POST",
     headers: {
@@ -120,7 +142,8 @@ export async function publishDraftToWordpress(params: {
       title: params.title,
       content: markdownToHtml(params.bodyMarkdown),
       excerpt: params.excerpt ?? "",
-      status: "draft",
+      status: params.status === "publish" ? "publish" : "draft",
+      ...(featuredMedia ? { featured_media: featuredMedia } : {}),
     }),
     signal: AbortSignal.timeout(30_000),
   });

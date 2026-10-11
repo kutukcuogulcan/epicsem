@@ -376,6 +376,14 @@ export default function ContentStudioPage() {
 
           {!loadingDraft && selectedDraft && (
             <div className="card space-y-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={selectedDraft.id}
+                src={`/api/cover/${selectedDraft.id}`}
+                alt=""
+                className="aspect-[1200/630] w-full rounded-xl border border-border object-cover"
+                onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
+              />
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <h2 className="font-bold">{selectedDraft.article.title}</h2>

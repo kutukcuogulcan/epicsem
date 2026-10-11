@@ -105,4 +105,11 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="9" cy="9" r="0.5" fill="currentColor" />
     </ToolIcon>
   ),
+  feeds: (
+    <ToolIcon>
+      <path d="M4 3.5a10.5 10.5 0 0 1 10.5 10.5" />
+      <path d="M4 7.5A6.5 6.5 0 0 1 10.5 14" />
+      <circle cx="4.75" cy="13.25" r="1.25" fill="currentColor" />
+    </ToolIcon>
+  ),
 };

@@ -121,11 +121,25 @@ function demoArticle(brief: ContentBrief, brand: BrandRef): GeneratedArticle {
   };
 }
 
+const LANG_NAMES: Record<string, string> = { tr: "Turkish", en: "English", de: "German", fr: "French", es: "Spanish", it: "Italian", nl: "Dutch", ar: "Arabic", ru: "Russian", pt: "Portuguese" };
+
+/** Autoblog stil seçenekleri — dil ve "Öne çıkanlar" bölümü. */
+export function styleInstructions(opts: { language?: string; takeaways?: boolean } = {}): string {
+  const lines: string[] = [];
+  if (opts.language) lines.push(`Write the entire article (title, meta description, body) in ${LANG_NAMES[opts.language] ?? opts.language}.`);
+  if (opts.takeaways)
+    lines.push(
+      `Right after the opening answer paragraph, add a "## ${opts.language && opts.language !== "tr" ? "Key takeaways" : "Öne çıkanlar"}" section with 3-5 short bullet points summarizing the article.`
+    );
+  return lines.length ? "\n\n" + lines.join("\n") : "";
+}
+
 export async function generateArticleFromBrief(
   brief: ContentBrief,
   brand: BrandRef,
   format: "article" | "listicle" = "article",
-  knowledge?: string
+  knowledge?: string,
+  extra?: string
 ): Promise<GeneratedArticle> {
   // Respect the global DEMO_MODE override the same way lib/geo-engine.ts does — a key
   // being present shouldn't force a real (billable) call if DEMO_MODE=true was set
@@ -133,7 +147,7 @@ export async function generateArticleFromBrief(
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return demoArticle(brief, brand);
 
-  const prompt = buildGenerationPrompt(brief, brand, format) + knowledgeBlock(knowledge);
+  const prompt = buildGenerationPrompt(brief, brand, format) + (extra ?? "") + knowledgeBlock(knowledge);
   const { text, model } = await provider.run(prompt);
   return parseArticleResponse(text, model);
 }
@@ -245,7 +259,7 @@ export async function generateArticleFromUrlInput(
 export async function generateArticleFromTopic(
   topic: string,
   brand: BrandRef,
-  opts: { format?: "article" | "listicle"; context?: string | null; sourceUrl?: string | null; knowledge?: string } = {}
+  opts: { format?: "article" | "listicle"; context?: string | null; sourceUrl?: string | null; knowledge?: string; language?: string; takeaways?: boolean } = {}
 ): Promise<GeneratedArticle> {
   const format = opts.format ?? "article";
   const provider = isDemoMode() ? null : pickProvider();
@@ -275,7 +289,7 @@ export async function generateArticleFromTopic(
       : `You are writing an SEO + GEO (generative engine optimization) optimized article for ${brand.name} (${brand.domain}) targeting the search topic / keyword: "${topic}".`
   );
   lines.push(
-    "Write in the same language as the topic (default: Turkish). Open with a 2-3 sentence direct answer to the topic (answer-first, quotable by AI answer engines). Use ## / ### headings phrased the way people actually ask, short paragraphs, bullet lists or a table where useful, and end with a '## Sık sorulan sorular' section of 3-5 real questions with concise answers. Mention the brand naturally where it is genuinely relevant — never as an advert in every paragraph."
+    (opts.language ? "" : "Write in the same language as the topic (default: Turkish). ") + "Open with a 2-3 sentence direct answer to the topic (answer-first, quotable by AI answer engines). Use ## / ### headings phrased the way people actually ask, short paragraphs, bullet lists or a table where useful, and end with a '## Sık sorulan sorular' section of 3-5 real questions with concise answers. Mention the brand naturally where it is genuinely relevant — never as an advert in every paragraph."
   );
   if (opts.context) {
     lines.push("");
@@ -291,6 +305,6 @@ export async function generateArticleFromTopic(
   lines.push("");
   lines.push(RESPONSE_SHAPE_INSTRUCTIONS);
 
-  const { text, model } = await provider.run(lines.join("\n") + knowledgeBlock(opts.knowledge));
+  const { text, model } = await provider.run(lines.join("\n") + styleInstructions(opts) + knowledgeBlock(opts.knowledge));
   return parseArticleResponse(text, model);
 }

@@ -20,6 +20,7 @@ export const NAV_GROUPS = [
     items: [
       { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
       { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
+      { href: "/feeds", label: "Beslemeler", icon: "feeds" },
       { href: "/import", label: "Site Taraması", icon: "import" },
       { href: "/content", label: "Content Studio", icon: "content" },
       { href: "/local", label: "Yerel İşletme (GBP)", icon: "local" },

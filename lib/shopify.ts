@@ -133,6 +133,8 @@ export async function publishDraftToShopify(params: {
   title: string;
   bodyMarkdown: string;
   excerpt?: string;
+  status?: "draft" | "publish";
+  cover?: { mime: string; data: Buffer } | null;
 }): Promise<ShopifyPublishResult> {
   const domain = normalizeShopDomain(params.shopDomain);
   const base = apiBase(domain);
@@ -150,7 +152,8 @@ export async function publishDraftToShopify(params: {
         summary_html: params.excerpt ?? "",
         // Unpublished — Shopify's equivalent of a WordPress draft. A human reviews and
         // publishes it from the Shopify admin; nothing here ever goes live automatically.
-        published: false,
+        published: params.status === "publish",
+        ...(params.cover ? { image: { attachment: params.cover.data.toString("base64"), alt: params.title } } : {}),
       },
     }),
     signal: AbortSignal.timeout(30_000),

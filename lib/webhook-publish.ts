@@ -16,6 +16,9 @@ export interface WebhookPayload {
   sourceUrl: string;
   draftId: number | null;
   sentAt: string;
+  /** "draft" (varsayılan) ya da "publish" — Autoblog tam otomatik modunda "publish". */
+  status?: "draft" | "publish";
+  coverImageUrl?: string | null;
 }
 
 async function send(url: string, secret: string, payload: WebhookPayload) {
@@ -48,7 +51,7 @@ export async function testWebhook(url: string, secret: string): Promise<{ ok: bo
   }
 }
 
-export async function publishDraftToWebhook(params: { url: string; secret: string; title: string; bodyMarkdown: string; excerpt: string; sourceUrl: string; draftId: number }): Promise<{ postUrl: string; editUrl: string }> {
+export async function publishDraftToWebhook(params: { url: string; secret: string; title: string; bodyMarkdown: string; excerpt: string; sourceUrl: string; draftId: number; status?: "draft" | "publish"; coverImageUrl?: string | null }): Promise<{ postUrl: string; editUrl: string }> {
   const r = await send(params.url, params.secret, {
     event: "draft.published",
     title: params.title,
@@ -58,6 +61,8 @@ export async function publishDraftToWebhook(params: { url: string; secret: strin
     sourceUrl: params.sourceUrl,
     draftId: params.draftId,
     sentAt: new Date().toISOString(),
+    status: params.status ?? "draft",
+    coverImageUrl: params.coverImageUrl ?? null,
   });
   if (r.status < 200 || r.status >= 300) throw new Error(`Webhook ${r.status} döndürdü`);
   // Alıcı { "url": "...", "editUrl": "..." } dönerse onları göster.

@@ -8,7 +8,8 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
 
-type Source = "gap" | "rss" | "keywords";
+type Source = "gap" | "rss" | "keywords" | "feed";
+type Mode = "review" | "cms-draft" | "publish";
 type Frequency = "daily" | "weekly" | "monthly";
 type Format = "article" | "listicle";
 
@@ -19,9 +20,14 @@ interface Campaign {
   frequency: Frequency;
   status: "active" | "paused";
   source: Source;
-  config: { rssUrl?: string; rssFilter?: string[]; keywords?: string[] };
+  config: { rssUrl?: string; rssFilter?: string[]; keywords?: string[]; feedId?: number };
   postsPerRun: number;
   format: Format;
+  mode: Mode;
+  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean };
+  nextRunAt: string | null;
+  feed: { id: number; name: string; kind: string } | null;
+  connection: { id: number; label: string; platform: string } | null;
   lastRunAt: string | null;
   lastRunNote: string | null;
   createdAt: string;
@@ -38,11 +44,22 @@ interface FeedPreview {
 }
 
 const SOURCES: { id: Source; title: string; body: string; icon: string }[] = [
+  { id: "feed", title: "Kayıtlı besleme", body: "Kendini yenileyen kelime, haber, RSS ya da YouTube beslemesi.", icon: "≋" },
   { id: "keywords", title: "Anahtar kelimeler", body: "Hedeflediğin kelimeleri yaz, sırayla makaleye dönüşsün.", icon: "#" },
   { id: "rss", title: "RSS beslemesi", body: "Sektör blogu ya da haber sitesi yeni yazı yayınladıkça kendi yorumunla yaz.", icon: "◉" },
   { id: "gap", title: "Gap Analysis", body: "AI motorlarında kaybettiğin gerçek sorulardan içerik üret.", icon: "◎" },
 ];
-const SOURCE_LABEL: Record<Source, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime" };
+const SOURCE_LABEL: Record<Source, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
+const MODES: { id: Mode; title: string; body: string; steps: [string, boolean][] }[] = [
+  { id: "review", title: "Onaylı otomasyon", body: "Yazılar Content Studio'da onayını bekler. Sen yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", false]] },
+  { id: "cms-draft", title: "Sitede taslak", body: "Yazılar sitene taslak olarak gider. Sitende tek tıkla yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Sitede taslak", true]] },
+  { id: "publish", title: "Tam otomasyon", body: "Yazılar sitende doğrudan yayınlanır. Kontrol etmeden yayına çıkar.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", true]] },
+];
+const MODE_LABEL: Record<Mode, string> = { review: "Onaylı", "cms-draft": "Sitede taslak", publish: "Tam otomatik" };
+const LANGS = [
+  ["tr", "Türkçe"], ["en", "İngilizce"], ["de", "Almanca"], ["fr", "Fransızca"], ["es", "İspanyolca"], ["it", "İtalyanca"], ["nl", "Felemenkçe"], ["ar", "Arapça"], ["ru", "Rusça"],
+];
+const RANDOM_OPTS: [number, string][] = [[0, "Rastgele değil"], [60, "1 saate kadar"], [180, "3 saate kadar"], [360, "6 saate kadar"], [720, "12 saate kadar"]];
 const FREQ_LABEL: Record<Frequency, string> = { daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" };
 const FREQ_DAYS: Record<Frequency, number> = { daily: 1, weekly: 7, monthly: 30 };
 const FORMAT_LABEL: Record<Format, string> = { article: "Makale", listicle: "Liste yazısı" };
@@ -51,12 +68,13 @@ const SCENARIO_STEPS = [
   { title: "Kaynak seçilir", body: "Anahtar kelime listesi, bir RSS beslemesi ya da domainin son Gap Analysis sonucu." },
   { title: "Takvim ayarlanır", body: "Günlük, haftalık ya da aylık; her çalışmada 1–3 yazı." },
   { title: "Arka planda çalışır", body: "Zamanı gelen autoblog sıradaki kullanılmamış konuyu alır ve marka bilgi bankanı kullanarak makale yazar." },
-  { title: "Taslak olarak düşer", body: "Hiçbir şey kendiliğinden yayınlanmaz. Taslak Content Studio'ya düşer; Editörde düzeltip WordPress, Shopify ya da webhook ile yayınlarsın." },
+  { title: "Seçtiğin moda göre yayınlanır", body: "Onaylı: Content Studio'da bekler. Sitede taslak: WordPress, Shopify ya da webhook'a taslak gider. Tam otomasyon: doğrudan yayınlanır." },
 ];
 
 const FAQ_ITEMS = [
   { q: "Autoblog API kredisi harcar mı?", a: "Yalnızca makale yazarken. Her makale 1 içerik üretim kredisi kullanır. Besleme okuma, konu seçimi, önizleme ve zamanlama AI kullanmaz." },
-  { q: "Otomatik yayınlıyor mu?", a: "Hayır. Her çıktı Content Studio'da bir taslaktır. Gözden geçirip [NEEDS: …] alanlarını doldurduktan sonra yayınlarsın." },
+  { q: "Otomatik yayınlıyor mu?", a: "Sen seçersin. Onaylı modda yazılar Content Studio'da bekler; Sitede taslak modunda sitene taslak olarak gider; Tam otomasyon modunda doğrudan yayınlanır. Varsayılan Onaylı moddur." },
+  { q: "Beslemeler nedir?", a: "Autoblog'un konu kaynaklarıdır: kendini haftalık yenileyen anahtar kelime listesi, Google Haberler, RSS ya da YouTube kanalı. Bir besleme birden fazla autoblog'da kullanılabilir ve AI kullanmaz." },
   { q: "Aynı konu iki kez yazılır mı?", a: "Hayır. Daha önce taslağı üretilmiş anahtar kelime, besleme öğesi ya da Gap konusu atlanır." },
   { q: "RSS'teki yazıyı kopyalıyor mu?", a: "Hayır. Kaynak yazı yalnızca bilgi kaynağı olarak okunur; makale kendi cümleleriyle, markanın bakış açısıyla yazılır ve kaynak adresi taslakta saklanır." },
   { q: "Ne sıklıkla kontrol ediliyor?", a: "Arka plandaki zamanlayıcı her 6 saatte bir zamanı gelen autoblog'ları çalıştırır. Beklemek istemezsen \"Şimdi çalıştır\"a bas." },
@@ -73,6 +91,14 @@ const emptyForm = {
   rssUrl: "",
   rssFilter: "",
   keywords: "",
+  feedId: 0,
+  mode: "review" as Mode,
+  connectionId: 0,
+  randomMinutes: 0,
+  language: "tr",
+  cover: "branded" as "none" | "branded" | "ai",
+  toc: true,
+  takeaways: true,
 };
 
 function ago(iso: string) {
@@ -85,7 +111,7 @@ function ago(iso: string) {
 function nextRun(c: Campaign) {
   if (c.status !== "active") return "Duraklatıldı";
   if (!c.lastRunAt) return "İlk çalışma 6 saat içinde";
-  const t = new Date(c.lastRunAt).getTime() + FREQ_DAYS[c.frequency] * 864e5;
+  const t = c.nextRunAt ? new Date(c.nextRunAt).getTime() : new Date(c.lastRunAt).getTime() + FREQ_DAYS[c.frequency] * 864e5;
   if (t <= Date.now()) return "Sırada";
   return new Date(t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
@@ -93,6 +119,8 @@ function nextRun(c: Campaign) {
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [sites, setSites] = useState<string[]>([]);
+  const [feedList, setFeedList] = useState<{ id: number; name: string; kind: string; items: number }[]>([]);
+  const [connections, setConnections] = useState<{ id: number; label: string; platform: string; siteUrl: string }[]>([]);
   const [rk, setRk] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,10 +144,16 @@ export default function CampaignsPage() {
     if (res.status === 401) return redirectToLogin();
     const data = await res.json();
     setCampaigns(data.campaigns ?? []);
+    setFeedList(data.feeds ?? []);
+    setConnections(data.connections ?? []);
+    return data;
   }
 
   useEffect(() => {
-    refresh();
+    refresh().then((data) => {
+      const fid = Number(new URLSearchParams(window.location.search).get("feed"));
+      if (fid && data?.feeds?.some((f: { id: number }) => f.id === fid)) openNew("feed", fid);
+    });
     fetch("/api/assistant")
       .then((r) => (r.ok ? r.json() : { sites: [] }))
       .then((d) => setSites(d.sites ?? []))
@@ -128,8 +162,8 @@ export default function CampaignsPage() {
 
   const set = <K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  function openNew(source: Source = "keywords") {
-    setForm({ ...emptyForm, source, brandDomain: sites[0] ?? "", brandName: sites[0] ? sites[0].split(".")[0].replace(/^./, (c) => c.toUpperCase()) : "" });
+  function openNew(source: Source = "keywords", feedId = 0) {
+    setForm({ ...emptyForm, source, feedId, brandDomain: sites[0] ?? "", brandName: sites[0] ? sites[0].split(".")[0].replace(/^./, (c) => c.toUpperCase()) : "" });
     setFeed(null);
     setFeedError(null);
     setIdeas(null);
@@ -149,6 +183,14 @@ export default function CampaignsPage() {
       rssUrl: c.config.rssUrl ?? "",
       rssFilter: (c.config.rssFilter ?? []).join(", "),
       keywords: (c.config.keywords ?? []).join("\n"),
+      feedId: c.config.feedId ?? 0,
+      mode: c.mode ?? "review",
+      connectionId: c.options.connectionId ?? 0,
+      randomMinutes: c.options.randomMinutes ?? 0,
+      language: c.options.language ?? "tr",
+      cover: c.options.cover ?? "none",
+      toc: !!c.options.toc,
+      takeaways: !!c.options.takeaways,
     });
     setFeed(null);
     setFeedError(null);
@@ -163,6 +205,7 @@ export default function CampaignsPage() {
   );
   const filterList = form.rssFilter.split(",").map((w) => w.trim()).filter(Boolean);
   const perMonth = Math.round((30 / FREQ_DAYS[form.frequency]) * form.postsPerRun);
+  const credits = perMonth * (form.cover === "ai" ? 2 : 1);
 
   async function previewFeed() {
     if (!form.rssUrl.trim()) return;
@@ -211,12 +254,23 @@ export default function CampaignsPage() {
         source: form.source,
         postsPerRun: form.postsPerRun,
         format: form.format,
+        mode: form.mode,
+        options: {
+          connectionId: form.mode === "review" ? null : form.connectionId || null,
+          randomMinutes: form.randomMinutes,
+          language: form.language,
+          cover: form.cover,
+          toc: form.toc,
+          takeaways: form.takeaways,
+        },
         config:
           form.source === "rss"
             ? { rssUrl: form.rssUrl.trim(), rssFilter: filterList }
             : form.source === "keywords"
               ? { keywords: keywordList }
-              : {},
+              : form.source === "feed"
+                ? { feedId: form.feedId || undefined }
+                : {},
       };
       const res = await fetch("/api/campaigns", {
         method: form.id ? "PUT" : "POST",
@@ -302,7 +356,7 @@ export default function CampaignsPage() {
         body={
           <>
             Anahtar kelime listesi, bir RSS beslemesi ya da Gap Analysis sonuçlarından düzenli olarak SEO + GEO uyumlu makale
-            taslağı üretir. Hiçbir şey kendiliğinden yayınlanmaz; her yazı Content Studio&apos;da onayını bekler.
+            taslağı üretir. İster Content Studio&apos;da onayını beklesin, ister sitene taslak olarak gitsin, ister doğrudan yayınlansın.
           </>
         }
       >
@@ -325,7 +379,7 @@ export default function CampaignsPage() {
             <h2 className="text-lg font-extrabold">İlk autoblog&apos;unu kur</h2>
             <p className="text-sm text-ink/50">Konuların nereden gelsin?</p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {SOURCES.map((s) => (
               <button key={s.id} type="button" onClick={() => openNew(s.id)} className="group rounded-2xl border border-border bg-paper p-5 text-left transition hover:border-accent hover:shadow-md">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-lg font-bold text-accent">{s.icon}</div>
@@ -356,7 +410,12 @@ export default function CampaignsPage() {
                     </div>
                     <div className="truncate text-xs text-ink/45">{c.brandDomain}</div>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">{SOURCE_LABEL[c.source]}</span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">{c.feed ? c.feed.name : SOURCE_LABEL[c.source]}</span>
+                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${c.mode === "publish" ? "bg-danger/10 text-danger" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-ink/55"}`}>
+                      {MODE_LABEL[c.mode ?? "review"]}{c.connection ? ` → ${c.connection.label}` : ""}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -377,10 +436,10 @@ export default function CampaignsPage() {
                   </div>
                 </div>
 
-                {c.source === "keywords" && c.queue && (
+                {(c.source === "keywords" || c.source === "feed") && c.queue && (
                   <div className="mt-3">
                     <div className="mb-1 flex justify-between text-[11px] text-ink/50">
-                      <span>Anahtar kelime kuyruğu</span>
+                      <span>{c.source === "feed" ? "Besleme konuları" : "Anahtar kelime kuyruğu"}</span>
                       <span className="tabular-nums">{c.queue.done}/{c.queue.total} yazıldı</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -441,8 +500,51 @@ export default function CampaignsPage() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Otomasyon modu</label>
+                <div className="space-y-2">
+                  {MODES.map((m) => (
+                    <button key={m.id} type="button" onClick={() => set("mode", m.id)} className={`w-full rounded-xl border p-3 text-left transition ${form.mode === m.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${form.mode === m.id ? "border-accent" : "border-ink/25"}`}>
+                            {form.mode === m.id && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                          </span>
+                          <div>
+                            <div className="text-sm font-bold">{m.title}</div>
+                            <div className="text-[11px] leading-4 text-ink/55">{m.body}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-1.5 pl-6">
+                        {m.steps.map(([label, on]) => (
+                          <span key={label} className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${on ? "border-border bg-panel text-ink/70" : "border-dashed border-border text-ink/30"}`}>{label}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {form.mode !== "review" && (
+                  <div className="space-y-1.5 pt-1">
+                    {connections.length === 0 ? (
+                      <p className="rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
+                        Henüz site bağlantın yok — <Link href="/content" className="font-semibold underline">Content Studio</Link>&apos;dan WordPress, Shopify ya da webhook bağla.
+                      </p>
+                    ) : (
+                      <select value={form.connectionId || ""} onChange={(e) => set("connectionId", Number(e.target.value))} className={input}>
+                        <option value="">Entegrasyon seç…</option>
+                        {connections.map((c) => (
+                          <option key={c.id} value={c.id}>{c.label} · {c.platform === "wordpress" ? "WordPress" : c.platform === "shopify" ? "Shopify" : "Webhook"}</option>
+                        ))}
+                      </select>
+                    )}
+                    {form.mode === "publish" && <p className="text-[11px] text-danger/80">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Konular nereden gelsin?</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {SOURCES.map((s) => (
                     <button key={s.id} type="button" onClick={() => set("source", s.id)} className={`rounded-xl border p-3 text-left transition ${form.source === s.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
                       <div className="text-sm font-bold">{s.title}</div>
@@ -451,6 +553,27 @@ export default function CampaignsPage() {
                   ))}
                 </div>
               </div>
+
+              {form.source === "feed" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Besleme</label>
+                    <Link href="/feeds" className="text-xs font-semibold text-accent hover:underline">+ Yeni besleme</Link>
+                  </div>
+                  {feedList.length === 0 ? (
+                    <p className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-ink/60">
+                      Henüz beslemen yok. <Link href="/feeds" className="font-semibold text-accent">Beslemeler</Link> sayfasından anahtar kelime, haber, RSS ya da YouTube beslemesi kur.
+                    </p>
+                  ) : (
+                    <select value={form.feedId || ""} onChange={(e) => set("feedId", Number(e.target.value))} className={input}>
+                      <option value="">Besleme seç…</option>
+                      {feedList.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name} · {f.kind === "keyword" ? "Anahtar kelime" : f.kind === "news" ? "Haber" : f.kind === "youtube" ? "YouTube" : "RSS"} · {f.items} konu</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
 
               {form.source === "keywords" && (
                 <div className="space-y-2">
@@ -549,8 +672,50 @@ export default function CampaignsPage() {
                 </p>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Dil</label>
+                  <select value={form.language} onChange={(e) => set("language", e.target.value)} className={input}>
+                    {LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Rastgele saat</label>
+                  <select value={form.randomMinutes} onChange={(e) => set("randomMinutes", Number(e.target.value))} className={input}>
+                    {RANDOM_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Kapak görseli</label>
+                <div className="flex flex-wrap gap-2">
+                  {([["none", "Yok"], ["branded", "Markalı kapak (ücretsiz)"], ["ai", "AI görseli (+1 kredi)"]] as const).map(([v, l]) => (
+                    <button key={v} type="button" onClick={() => set("cover", v)} className={seg(form.cover === v)}>{l}</button>
+                  ))}
+                </div>
+                {form.cover === "ai" && <p className="text-[11px] text-ink/45">AI görseli için OpenAI anahtarı gerekir; yoksa markalı kapak kullanılır.</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
+                  <span>
+                    <span className="block text-sm font-semibold">İçindekiler</span>
+                    <span className="block text-[11px] text-ink/50">Başlıklardan otomatik liste (ücretsiz)</span>
+                  </span>
+                  <input type="checkbox" checked={form.toc} onChange={(e) => set("toc", e.target.checked)} className="h-4 w-4 accent-[#5d16ff]" />
+                </label>
+                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
+                  <span>
+                    <span className="block text-sm font-semibold">Öne çıkanlar</span>
+                    <span className="block text-[11px] text-ink/50">Girişten sonra 3–5 maddelik özet</span>
+                  </span>
+                  <input type="checkbox" checked={form.takeaways} onChange={(e) => set("takeaways", e.target.checked)} className="h-4 w-4 accent-[#5d16ff]" />
+                </label>
+              </div>
+
               <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">
-                Ayda yaklaşık <strong>{perMonth} makale</strong> → {perMonth} içerik üretim kredisi (AI). Önizleme, konu seçimi ve zamanlama ücretsizdir.
+                Ayda yaklaşık <strong>{perMonth} makale</strong> → {credits} içerik üretim kredisi (AI). Beslemeler, konu seçimi, kapak (markalı), içindekiler ve zamanlama ücretsizdir.
               </div>
               {formError && <p className="text-sm text-danger">{formError}</p>}
             </div>

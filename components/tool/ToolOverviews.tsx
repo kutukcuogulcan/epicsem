@@ -132,11 +132,12 @@ interface CampaignLite {
   lastRunNote: string | null;
   source?: string;
   postsPerRun?: number;
+  nextRunAt?: string | null;
 }
 
 const FREQ_DAYS: Record<string, number> = { daily: 1, weekly: 7, monthly: 30 };
 const FREQ_TR: Record<string, string> = { daily: "günlük", weekly: "haftalık", monthly: "aylık" };
-const SRC_TR: Record<string, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime" };
+const SRC_TR: Record<string, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
 
 export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: CampaignLite[]; refreshKey?: number }) {
   const d = useTool<CampaignData>("campaigns", refreshKey);
@@ -146,13 +147,13 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
   const next = (c: CampaignLite) => {
     if (c.status !== "active") return "duraklatıldı";
     if (!c.lastRunAt) return "ilk çalıştırma bekleniyor";
-    const t = new Date(c.lastRunAt).getTime() + (FREQ_DAYS[c.frequency] ?? 7) * 864e5;
+    const t = c.nextRunAt ? new Date(c.nextRunAt).getTime() : new Date(c.lastRunAt).getTime() + (FREQ_DAYS[c.frequency] ?? 7) * 864e5;
     return t < Date.now() ? "sırada" : day(new Date(t).toISOString());
   };
   return (
     <section className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Aktif kampanya" value={`${active}/${campaigns.length}`} />
+        <KpiCard label="Aktif autoblog" value={`${active}/${campaigns.length}`} />
         <KpiCard label="Son 30 gün taslak" value={String(d.last30)} spark={d.weeks.map((w) => w.drafts)} />
         <KpiCard label="Toplam taslak" value={String(d.drafts)} spark={d.weeks.map((w) => w.drafts)} color="#0ea5e9" />
         <KpiCard label="Yayına gönderilen" value={String(d.published)} spark={d.weeks.map((w) => w.published)} color="#16a34a" hint={d.drafts ? `%${Math.round((d.published / d.drafts) * 100)}` : undefined} />
@@ -177,7 +178,7 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
             )}
           </div>
         </Panel>
-        <Panel title="Kampanya durumu">
+        <Panel title="Autoblog durumu">
           <div className="divide-y divide-border">
             {campaigns.length === 0 && <div className="px-5 py-6 text-sm text-ink/45">Kampanya yok.</div>}
             {campaigns.slice(0, 6).map((c) => (

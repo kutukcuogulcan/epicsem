@@ -81,7 +81,10 @@ export function parseFeed(xml: string, baseUrl: string): { title: string | null;
     items.push({
       title,
       link: abs(link),
-      summary: clean(it.children("summary").first().text() || it.children("content").first().text()),
+      summary: clean(
+        it.children("summary").first().text() || it.children("content").first().text() || it.find("media\\:description").first().text(),
+        1200
+      ),
       publishedAt: toIso(it.children("published").first().text() || it.children("updated").first().text()),
     });
   });

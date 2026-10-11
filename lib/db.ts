@@ -328,6 +328,37 @@ async function initSchema(): Promise<void> {
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS posts_per_run INTEGER NOT NULL DEFAULT 1`);
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS format TEXT NOT NULL DEFAULT 'article'`);
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS campaign_id INTEGER`);
+  // Autoblog v2 — otomasyon modu, entegrasyon, rastgele saat, dil, kapak, içindekiler.
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 'review'`);
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS options_json TEXT NOT NULL DEFAULT '{}'`);
+  await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS next_run_at TIMESTAMPTZ`);
+  // Beslemeler — birden fazla autoblog'un kullanabildiği konu kaynakları.
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS feeds (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      kind TEXT NOT NULL,
+      name TEXT NOT NULL,
+      config_json TEXT NOT NULL DEFAULT '{}',
+      items_json TEXT NOT NULL DEFAULT '[]',
+      last_error TEXT,
+      refreshed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_feeds_user ON feeds(user_id);
+  `);
+  // Taslak kapak görselleri (markalı ücretsiz kapak ya da AI görseli).
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS draft_covers (
+      draft_id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      kind TEXT NOT NULL,
+      mime TEXT NOT NULL,
+      data BYTEA NOT NULL,
+      token TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
 
   // Saved GEO prompts — a persistent per-brand prompt library (Prompts tab, re-run one
   // at a time) instead of the ad-hoc "type prompts, run the whole batch, results vanish
@@ -1558,7 +1589,7 @@ export async function applySubscriptionState(opts: {
 
 export type CampaignFrequency = "daily" | "weekly" | "monthly";
 export type CampaignStatus = "active" | "paused";
-export type CampaignSource = "gap" | "rss" | "keywords";
+export type CampaignSource = "gap" | "rss" | "keywords" | "feed";
 export type CampaignFormat = "article" | "listicle";
 
 export interface CampaignConfig {
@@ -1568,6 +1599,25 @@ export interface CampaignConfig {
   rssFilter?: string[];
   /** Anahtar kelime kuyruğu — sırayla kullanılır. */
   keywords?: string[];
+  /** Kayıtlı besleme (source = "feed"). */
+  feedId?: number;
+}
+
+export type CampaignMode = "review" | "cms-draft" | "publish";
+
+export interface CampaignOptions {
+  /** Yayın modu "review" dışındaysa yazının gönderileceği CMS bağlantısı. */
+  connectionId?: number | null;
+  /** Bir sonraki çalışmaya eklenecek rastgele gecikme (dakika, 0 = yok). */
+  randomMinutes?: number;
+  /** Yazı dili, ör. "tr", "en". */
+  language?: string;
+  /** Kapak görseli: yok, markalı (ücretsiz), AI görseli (ücretli). */
+  cover?: "none" | "branded" | "ai";
+  /** Başa otomatik içindekiler listesi ekle. */
+  toc?: boolean;
+  /** "Öne çıkanlar" maddeleri ekle. */
+  takeaways?: boolean;
 }
 
 export interface Campaign {
@@ -1581,6 +1631,9 @@ export interface Campaign {
   config: CampaignConfig;
   postsPerRun: number;
   format: CampaignFormat;
+  mode: CampaignMode;
+  options: CampaignOptions;
+  nextRunAt: string | null;
   lastRunAt: string | null;
   lastRunNote: string | null;
   createdAt: string;
@@ -1604,6 +1657,9 @@ function rowToCampaign(row: any): Campaign {
     config,
     postsPerRun: Number(row.posts_per_run ?? 1),
     format: (row.format ?? "article") as CampaignFormat,
+    mode: (row.mode ?? "review") as CampaignMode,
+    options: safeJson(row.options_json, {}),
+    nextRunAt: row.next_run_at ? toIso(row.next_run_at) : null,
     lastRunAt: row.last_run_at ? toIso(row.last_run_at) : null,
     lastRunNote: row.last_run_note,
     createdAt: toIso(row.created_at),
@@ -1618,14 +1674,24 @@ export interface CampaignInput {
   config: CampaignConfig;
   postsPerRun: number;
   format: CampaignFormat;
+  mode: CampaignMode;
+  options: CampaignOptions;
+}
+
+function safeJson<T>(text: string | null | undefined, fallback: T): T {
+  try {
+    return text ? (JSON.parse(text) as T) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function createCampaign(userId: number, params: CampaignInput): Promise<Campaign> {
   await ensureSchema();
   const row = await one<any>(
-    `INSERT INTO campaigns (user_id, brand_name, brand_domain, frequency, source, config_json, posts_per_run, format)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-    [userId, params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format]
+    `INSERT INTO campaigns (user_id, brand_name, brand_domain, frequency, source, config_json, posts_per_run, format, mode, options_json)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+    [userId, params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format, params.mode, JSON.stringify(params.options ?? {})]
   );
   return rowToCampaign(row);
 }
@@ -1633,9 +1699,10 @@ export async function createCampaign(userId: number, params: CampaignInput): Pro
 export async function updateCampaign(userId: number, id: number, params: CampaignInput): Promise<void> {
   await ensureSchema();
   await exec(
-    `UPDATE campaigns SET brand_name = $1, brand_domain = $2, frequency = $3, source = $4, config_json = $5, posts_per_run = $6, format = $7
-      WHERE id = $8 AND user_id = $9`,
-    [params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format, id, userId]
+    `UPDATE campaigns SET brand_name = $1, brand_domain = $2, frequency = $3, source = $4, config_json = $5, posts_per_run = $6, format = $7,
+            mode = $8, options_json = $9, next_run_at = NULL
+      WHERE id = $10 AND user_id = $11`,
+    [params.brandName, params.brandDomain, params.frequency, params.source, JSON.stringify(params.config ?? {}), params.postsPerRun, params.format, params.mode, JSON.stringify(params.options ?? {}), id, userId]
   );
 }
 
@@ -1707,9 +1774,125 @@ export async function deleteCampaign(userId: number, id: number): Promise<void> 
   await exec(`DELETE FROM campaigns WHERE id = $1 AND user_id = $2`, [id, userId]);
 }
 
-export async function markCampaignRun(id: number, note: string): Promise<void> {
+export async function markCampaignRun(id: number, note: string, nextRunAt?: Date | null): Promise<void> {
   await ensureSchema();
-  await exec(`UPDATE campaigns SET last_run_at = now(), last_run_note = $1 WHERE id = $2`, [note, id]);
+  await exec(`UPDATE campaigns SET last_run_at = now(), last_run_note = $1, next_run_at = $2 WHERE id = $3`, [note, nextRunAt ?? null, id]);
+}
+
+// ---------------- beslemeler (autoblog konu kaynakları) ----------------
+
+export type FeedKind = "keyword" | "news" | "rss" | "youtube";
+
+export interface FeedConfig {
+  // keyword
+  siteUrl?: string;
+  seeds?: string[];
+  competitors?: string[];
+  country?: string;
+  language?: string;
+  // news
+  query?: string;
+  // rss / youtube
+  url?: string;
+  filter?: string[];
+}
+
+export interface FeedEntry {
+  /** content_drafts.source_url ile eşleşen benzersiz anahtar (keyword:… ya da bağlantı). */
+  key: string;
+  title: string;
+  link?: string;
+  summary?: string;
+  publishedAt?: string | null;
+  source?: string;
+  addedAt?: string;
+}
+
+export interface Feed {
+  id: number;
+  userId: number;
+  kind: FeedKind;
+  name: string;
+  config: FeedConfig;
+  items: FeedEntry[];
+  lastError: string | null;
+  refreshedAt: string | null;
+  createdAt: string;
+}
+
+function rowToFeed(row: any): Feed {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    kind: row.kind,
+    name: row.name,
+    config: safeJson(row.config_json, {}),
+    items: safeJson(row.items_json, []),
+    lastError: row.last_error,
+    refreshedAt: row.refreshed_at ? toIso(row.refreshed_at) : null,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+export async function listFeeds(userId: number): Promise<Feed[]> {
+  await ensureSchema();
+  return (await many<any>(`SELECT * FROM feeds WHERE user_id = $1 ORDER BY id DESC`, [userId])).map(rowToFeed);
+}
+
+export async function getFeed(userId: number, id: number): Promise<Feed | null> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT * FROM feeds WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return row ? rowToFeed(row) : null;
+}
+
+export async function createFeed(userId: number, p: { kind: FeedKind; name: string; config: FeedConfig }): Promise<Feed> {
+  await ensureSchema();
+  const row = await one<any>(`INSERT INTO feeds (user_id, kind, name, config_json) VALUES ($1, $2, $3, $4) RETURNING *`, [userId, p.kind, p.name, JSON.stringify(p.config)]);
+  return rowToFeed(row);
+}
+
+export async function updateFeedConfig(userId: number, id: number, p: { name: string; config: FeedConfig }): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE feeds SET name = $1, config_json = $2 WHERE id = $3 AND user_id = $4`, [p.name, JSON.stringify(p.config), id, userId]);
+}
+
+export async function saveFeedItems(id: number, items: FeedEntry[], error: string | null): Promise<void> {
+  await ensureSchema();
+  if (error) {
+    await exec(`UPDATE feeds SET last_error = $1, refreshed_at = now() WHERE id = $2`, [error, id]);
+  } else {
+    await exec(`UPDATE feeds SET items_json = $1, last_error = NULL, refreshed_at = now() WHERE id = $2`, [JSON.stringify(items), id]);
+  }
+}
+
+export async function deleteFeed(userId: number, id: number): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM feeds WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+// ---------------- taslak kapak görselleri ----------------
+
+export async function saveDraftCover(userId: number, draftId: number, kind: string, mime: string, data: Buffer): Promise<string> {
+  await ensureSchema();
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+  await exec(
+    `INSERT INTO draft_covers (draft_id, user_id, kind, mime, data, token) VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (draft_id) DO UPDATE SET kind = EXCLUDED.kind, mime = EXCLUDED.mime, data = EXCLUDED.data, token = EXCLUDED.token, created_at = now()`,
+    [draftId, userId, kind, mime, data, token]
+  );
+  return token;
+}
+
+export async function getDraftCover(draftId: number): Promise<{ userId: number; kind: string; mime: string; data: Buffer; token: string } | null> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT * FROM draft_covers WHERE draft_id = $1`, [draftId]);
+  return row ? { userId: row.user_id, kind: row.kind, mime: row.mime, data: row.data, token: row.token } : null;
+}
+
+export async function listDraftCoverIds(userId: number): Promise<Set<number>> {
+  await ensureSchema();
+  const rows = await many<{ draft_id: number }>(`SELECT draft_id FROM draft_covers WHERE user_id = $1`, [userId]);
+  return new Set(rows.map((r) => r.draft_id));
 }
 
 /** Every URL this user has ever generated a content draft for — a campaign skips

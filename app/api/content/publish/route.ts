@@ -3,10 +3,8 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { getCmsConnectionSecret, getContentDraft, markDraftPublished } from "@/lib/db";
-import { publishDraftToWordpress } from "@/lib/wordpress";
-import { publishDraftToShopify } from "@/lib/shopify";
-import { publishDraftToWebhook } from "@/lib/webhook-publish";
+import { getCmsConnectionSecret, getContentDraft } from "@/lib/db";
+import { publishDraftToConnection } from "@/lib/publish-draft";
 
 const bodySchema = z.object({
   draftId: z.number(),
@@ -41,38 +39,7 @@ export async function POST(req: NextRequest) {
   if (!connection) return NextResponse.json({ error: "CMS connection not found" }, { status: 404 });
 
   try {
-    const result =
-      connection.platform === "webhook"
-        ? await publishDraftToWebhook({
-            url: connection.siteUrl,
-            secret: connection.authSecret,
-            title: draft.article.title,
-            bodyMarkdown: draft.article.bodyMarkdown,
-            excerpt: draft.article.metaDescription,
-            sourceUrl: draft.sourceUrl,
-            draftId: draft.id,
-          })
-        : connection.platform === "shopify"
-        ? await publishDraftToShopify({
-            shopDomain: connection.siteUrl,
-            accessToken: connection.authSecret,
-            title: draft.article.title,
-            bodyMarkdown: draft.article.bodyMarkdown,
-            excerpt: draft.article.metaDescription,
-          })
-        : await publishDraftToWordpress({
-            siteUrl: connection.siteUrl,
-            username: connection.authIdentifier,
-            appPassword: connection.authSecret,
-            title: draft.article.title,
-            bodyMarkdown: draft.article.bodyMarkdown,
-            excerpt: draft.article.metaDescription,
-          });
-    await markDraftPublished(user.id, draft.id, {
-      connectionId: connection.id,
-      postUrl: result.postUrl,
-      editUrl: result.editUrl,
-    });
+    const result = await publishDraftToConnection(user.id, draft, connection);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     return NextResponse.json(
