@@ -689,6 +689,47 @@ export async function listGeoRunsForOverview(userId: number, brandDomain: string
   }));
 }
 
+/** SEO Asistanı için: bir alan adının son iki GEO koşusu (özet + konu kırılımı + kaynaklar). */
+export async function getLatestGeoRuns(userId: number, brandDomain: string, limit = 2): Promise<{ id: number; createdAt: string; brandName: string; summaries: GeoVisibilitySummary[]; topics: { topic: string; visibility: number; mentionedCount: number; totalCount: number }[]; sources: SourceDomainStat[] }[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT id, created_at, brand_name, summaries_json, topic_breakdown_json, source_distribution_json FROM geo_runs WHERE user_id = $1 AND brand_domain = $2 ORDER BY id DESC LIMIT $3`,
+    [userId, brandDomain, limit]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    createdAt: toIso(r.created_at),
+    brandName: r.brand_name,
+    summaries: JSON.parse(r.summaries_json || "[]"),
+    topics: JSON.parse(r.topic_breakdown_json || "[]"),
+    sources: JSON.parse(r.source_distribution_json || "[]"),
+  }));
+}
+
+/** SEO Asistanı'nın site seçicisi: kullanıcının veri olan tüm alan adları. */
+export async function listKnownSites(userId: number): Promise<string[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT d FROM (
+       SELECT brand_domain AS d, MAX(created_at) AS t FROM geo_runs WHERE user_id = $1 GROUP BY brand_domain
+       UNION ALL SELECT brand_domain, MAX(created_at) FROM gap_runs WHERE user_id = $1 GROUP BY brand_domain
+       UNION ALL SELECT split_part(filename, ' ', 1), MAX(created_at) FROM import_runs WHERE user_id = $1 GROUP BY split_part(filename, ' ', 1)
+     ) x GROUP BY d ORDER BY MAX(t) DESC LIMIT 30`,
+    [userId]
+  );
+  return [...new Set(rows.map((r) => String(r.d).replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "")).filter(Boolean))];
+}
+
+/** Bir alan adının son N site taramasının tam sonucu (en yenisi önce). */
+export async function getLatestCrawls(userId: number, host: string, limit = 2): Promise<{ id: number; createdAt: string; result: BulkImportResult }[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT id, created_at, result_json FROM import_runs WHERE user_id = $1 AND (filename = $2 OR filename LIKE $3) ORDER BY id DESC LIMIT $4`,
+    [userId, host, `${host} %`, limit]
+  );
+  return rows.map((r) => ({ id: r.id, createdAt: toIso(r.created_at), result: JSON.parse(r.result_json) }));
+}
+
 // ---------------- gap runs ----------------
 
 export async function saveGapRun(userId: number, params: {
