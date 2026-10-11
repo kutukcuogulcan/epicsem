@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { runFast } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
+import { knowledgeBlock } from "@/lib/knowledge-prompt";
 
 /**
  * Site Taraması'ndaki tek bir sayfa için somut düzeltme önerisi: sayfanın GERÇEK içeriğinden
@@ -29,7 +30,7 @@ function cut(s: string, n: number) {
   return (i > n * 0.6 ? c.slice(0, i) : c).replace(/[,.;:\s]+$/, "") + "…";
 }
 
-export async function suggestPageFix(url: string, issues: string[]): Promise<PageFixSuggestion> {
+export async function suggestPageFix(url: string, issues: string[], knowledge = ""): Promise<PageFixSuggestion> {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), 12000);
   let html: string;
@@ -95,7 +96,7 @@ Yalnızca şu JSON nesnesini döndür:
 }`;
 
   try {
-    const r = await runFast(prompt, 0.3);
+    const r = await runFast(prompt + knowledgeBlock(knowledge), 0.3);
     if (r?.text) {
       const j = extractJsonObject(r.text);
       const str = (v: any) => (typeof v === "string" && v.trim() ? v.trim() : null);

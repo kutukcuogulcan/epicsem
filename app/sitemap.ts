@@ -27,6 +27,7 @@ const FEATURE_PAGES = [
   "/features/content-studio",
   "/features/clients",
   "/features/claude-code-prompts",
+  ...["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek"].map((e) => `/ai-tracker/${e}`),
 ];
 
 const OTHER_PAGES = ["/", "/pricing", "/privacy", "/terms"];

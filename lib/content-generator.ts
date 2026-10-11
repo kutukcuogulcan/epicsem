@@ -1,3 +1,4 @@
+import { knowledgeBlock } from "@/lib/knowledge-prompt";
 import type { EngineId, GeneratedArticle } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
@@ -123,7 +124,8 @@ function demoArticle(brief: ContentBrief, brand: BrandRef): GeneratedArticle {
 export async function generateArticleFromBrief(
   brief: ContentBrief,
   brand: BrandRef,
-  format: "article" | "listicle" = "article"
+  format: "article" | "listicle" = "article",
+  knowledge?: string
 ): Promise<GeneratedArticle> {
   // Respect the global DEMO_MODE override the same way lib/geo-engine.ts does — a key
   // being present shouldn't force a real (billable) call if DEMO_MODE=true was set
@@ -131,7 +133,7 @@ export async function generateArticleFromBrief(
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return demoArticle(brief, brand);
 
-  const prompt = buildGenerationPrompt(brief, brand, format);
+  const prompt = buildGenerationPrompt(brief, brand, format) + knowledgeBlock(knowledge);
   const { text, model } = await provider.run(prompt);
   return parseArticleResponse(text, model);
 }
@@ -183,7 +185,8 @@ function summarizeForPrompt(label: string, page: PageSummary): string {
 export async function generateArticleFromUrlInput(
   kind: "news" | "comparison" | "alternatives",
   sourceUrl: string,
-  brand: BrandRef
+  brand: BrandRef,
+  knowledge?: string
 ): Promise<GeneratedArticle> {
   const sourcePage = await fetchPageSummary(sourceUrl);
   const ownPage = kind === "news" ? null : await fetchPageSummary(brand.domain).catch(() => null);
@@ -230,6 +233,6 @@ export async function generateArticleFromUrlInput(
     };
   }
 
-  const { text, model } = await provider.run(lines.join("\n"));
+  const { text, model } = await provider.run(lines.join("\n") + knowledgeBlock(knowledge));
   return parseArticleResponse(text, model);
 }

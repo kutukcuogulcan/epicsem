@@ -6,6 +6,7 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { getCmsConnectionSecret, getContentDraft, markDraftPublished } from "@/lib/db";
 import { publishDraftToWordpress } from "@/lib/wordpress";
 import { publishDraftToShopify } from "@/lib/shopify";
+import { publishDraftToWebhook } from "@/lib/webhook-publish";
 
 const bodySchema = z.object({
   draftId: z.number(),
@@ -41,7 +42,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const result =
-      connection.platform === "shopify"
+      connection.platform === "webhook"
+        ? await publishDraftToWebhook({
+            url: connection.siteUrl,
+            secret: connection.authSecret,
+            title: draft.article.title,
+            bodyMarkdown: draft.article.bodyMarkdown,
+            excerpt: draft.article.metaDescription,
+            sourceUrl: draft.sourceUrl,
+            draftId: draft.id,
+          })
+        : connection.platform === "shopify"
         ? await publishDraftToShopify({
             shopDomain: connection.siteUrl,
             accessToken: connection.authSecret,

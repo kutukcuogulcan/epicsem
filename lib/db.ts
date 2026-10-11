@@ -231,6 +231,13 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_cms_connections_user ON cms_connections(user_id);
 
+    CREATE TABLE IF NOT EXISTS brand_knowledge (
+      user_id INTEGER PRIMARY KEY,
+      content TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
     CREATE TABLE IF NOT EXISTS content_drafts (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -1101,6 +1108,22 @@ export async function getContentDraft(userId: number, id: number): Promise<Conte
   await ensureSchema();
   const row = await one<any>(`SELECT * FROM content_drafts WHERE id = $1 AND user_id = $2`, [id, userId]);
   return row ? rowToContentDraft(row) : null;
+}
+
+/** Marka bilgi bankası — AI yazarken "kesin doğru" kabul edilen marka bilgileri. */
+export async function getBrandKnowledge(userId: number): Promise<{ content: string; updatedAt: string | null }> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT content, updated_at FROM brand_knowledge WHERE user_id = $1`, [userId]);
+  return { content: row?.content ?? "", updatedAt: row ? toIso(row.updated_at) : null };
+}
+
+export async function saveBrandKnowledge(userId: number, content: string): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `INSERT INTO brand_knowledge (user_id, content, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (user_id) DO UPDATE SET content = EXCLUDED.content, updated_at = now()`,
+    [userId, content]
+  );
 }
 
 /** AI SEO Editör'de düzenlenen taslağın makalesini günceller (sahiplik kontrollü). */

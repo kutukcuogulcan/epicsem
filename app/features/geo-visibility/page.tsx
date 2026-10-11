@@ -114,6 +114,12 @@ export default function GeoVisibilityLandingPage() {
 
       <FeatureGrid items={FEATURES} />
 
+      <section className="flex flex-wrap justify-center gap-2">
+        {[["chatgpt", "ChatGPT"], ["claude", "Claude"], ["gemini", "Gemini"], ["perplexity", "Perplexity"], ["grok", "Grok"], ["deepseek", "DeepSeek"]].map(([s, n]) => (
+          <a key={s} href={`/ai-tracker/${s}`} className="rounded-full border border-border bg-panel px-4 py-2 text-sm font-semibold text-ink/70 hover:border-accent hover:text-accent">{n} görünürlük takibi →</a>
+        ))}
+      </section>
+
       <FAQSection items={FAQ_ITEMS} />
 
       <FeatureCTA

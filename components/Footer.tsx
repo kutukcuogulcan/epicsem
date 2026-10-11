@@ -24,6 +24,9 @@ export default function Footer() {
           <Link href="/audit" className="hover:text-accent transition-colors">Audit</Link>
           <Link href="/geo" className="hover:text-accent transition-colors">GEO/AEO</Link>
           <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
+          <Link href="/ai-tracker/chatgpt" className="hover:text-accent transition-colors">ChatGPT takibi</Link>
+          <Link href="/ai-tracker/gemini" className="hover:text-accent transition-colors">Gemini takibi</Link>
+          <Link href="/ai-tracker/perplexity" className="hover:text-accent transition-colors">Perplexity takibi</Link>
           <Link href="/pricing" className="hover:text-accent transition-colors">Fiyatlandırma</Link>
           <Link href="/privacy" className="hover:text-accent transition-colors">Gizlilik</Link>
           <Link href="/terms" className="hover:text-accent transition-colors">Kullanım Şartları</Link>

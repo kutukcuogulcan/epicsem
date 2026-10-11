@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromBrief, generateArticleFromUrlInput } from "@/lib/content-generator";
+import { getBrandKnowledge } from "@/lib/db";
 import { getContentInput, markContentInputDrafted, markContentInputFailed, saveContentDraft } from "@/lib/db";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
@@ -46,14 +47,16 @@ export async function POST(req: NextRequest) {
   const brand = { name: input.brandName, domain: input.brandDomain };
 
   try {
+    const knowledge = (await getBrandKnowledge(user.id)).content;
     const article =
       input.type === "seo-gap" || input.type === "listicle"
         ? await generateArticleFromBrief(
             input.brief ?? { url: input.topic, verdict: "needs-work", reason: "", targetQuestions: [], suggestedHeadings: [], contentGaps: [] },
             brand,
-            input.type === "listicle" ? "listicle" : "article"
+            input.type === "listicle" ? "listicle" : "article",
+            knowledge
           )
-        : await generateArticleFromUrlInput(input.type, input.topic, brand);
+        : await generateArticleFromUrlInput(input.type, input.topic, brand, knowledge);
 
     if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
     const draft = await saveContentDraft(user.id, input.topic, article);

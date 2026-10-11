@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { suggestPageFix } from "@/lib/page-fix-suggest";
+import { getBrandKnowledge } from "@/lib/db";
 
 export const maxDuration = 60;
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: "Geçerli bir sayfa adresi gerekli." }, { status: 400 });
   const issues = Array.isArray(body.issues) ? body.issues.filter((x: unknown) => typeof x === "string").slice(0, 30) : [];
   try {
-    return NextResponse.json(await suggestPageFix(url, issues));
+    return NextResponse.json(await suggestPageFix(url, issues, (await getBrandKnowledge(user.id)).content));
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Öneri üretilemedi" }, { status: 400 });
   }

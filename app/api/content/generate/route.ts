@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromBrief } from "@/lib/content-generator";
-import { saveContentDraft } from "@/lib/db";
+import { saveContentDraft, getBrandKnowledge } from "@/lib/db";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
         suggestedHeadings: parsed.suggestedHeadings,
         contentGaps: parsed.contentGaps,
       },
-      { name: parsed.brandName, domain: parsed.brandDomain }
+      { name: parsed.brandName, domain: parsed.brandDomain },
+      "article",
+      (await getBrandKnowledge(user.id)).content
     );
     if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
     const draft = await saveContentDraft(user.id, parsed.url, article);

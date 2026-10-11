@@ -6,6 +6,7 @@ import UsageMeter from "@/components/UsageMeter";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import KnowledgeBase from "@/components/KnowledgeBase";
 import ContentHub from "@/components/ContentHub";
 
 const SCENARIO_STEPS = [
@@ -216,18 +217,26 @@ export default function ContentStudioPage() {
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
 
+      <details className="group rounded-2xl border border-border bg-panel">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-bold">
+          <span>Marka bilgi bankası <span className="ml-2 text-xs font-normal text-ink/45">AI yazarken uydurmasın diye ürün, fiyat, kargo, ton bilgileri</span></span>
+          <span className="text-ink/30 group-open:rotate-90">▸</span>
+        </summary>
+        <div className="border-t border-border p-5"><KnowledgeBase compact /></div>
+      </details>
+
       <ContentHub />
 
       <div className="card space-y-4">
         <h2 className="font-bold">CMS bağlantıları</h2>
-        <p className="text-xs text-ink/40 -mt-2">WordPress veya Shopify — hangisini kullanıyorsanız.</p>
+        <p className="text-xs text-ink/40 -mt-2">WordPress, Shopify ya da Webhook (Zapier/Make ile Wix, Webflow, Ghost, Framer…).</p>
         {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
         <div className="space-y-2">
           {connections.map((c) => (
             <div key={c.id} className="flex items-center justify-between text-sm rounded-lg bg-muted px-3 py-2">
               <div>
                 <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-accent mr-1.5">
-                  {c.platform === "shopify" ? "Shopify" : "WordPress"}
+                  {c.platform === "shopify" ? "Shopify" : c.platform === "webhook" ? "Webhook" : "WordPress"}
                 </span>
                 <span className="font-medium">{c.label}</span>{" "}
                 <span className="text-ink/40">
@@ -244,16 +253,23 @@ export default function ContentStudioPage() {
 
         <form onSubmit={saveConnection} className="space-y-2 border-t border-border pt-4">
           <div className="flex gap-2 text-xs">
-            {(["wordpress", "shopify"] as CmsPlatform[]).map((p) => (
+            {(["wordpress", "shopify", "webhook"] as CmsPlatform[]).map((p) => (
               <button
                 key={p}
                 type="button"
-                onClick={() => setConnForm((f) => ({ ...f, platform: p, authIdentifier: "" }))}
+                onClick={() =>
+                  setConnForm((f) => ({
+                    ...f,
+                    platform: p,
+                    authIdentifier: "",
+                    authSecret: p === "webhook" ? `whsec_${Array.from(crypto.getRandomValues(new Uint8Array(16))).map((x) => x.toString(16).padStart(2, "0")).join("")}` : "",
+                  }))
+                }
                 className={`rounded-lg px-3 py-1.5 font-medium border ${
                   connForm.platform === p ? "bg-accent text-white border-accent" : "border-border hover:bg-muted"
                 }`}
               >
-                {p === "shopify" ? "Shopify" : "WordPress"}
+                {p === "shopify" ? "Shopify" : p === "webhook" ? "Webhook · Zapier · Make" : "WordPress"}
               </button>
             ))}
           </div>
@@ -261,14 +277,14 @@ export default function ContentStudioPage() {
             <input
               value={connForm.label}
               onChange={(e) => setConnForm((f) => ({ ...f, label: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "Etiket (örn. Müşterinin Shopify mağazası)" : "Etiket (örn. Müşterinin WP sitesi)"}
+              placeholder={connForm.platform === "shopify" ? "Etiket (örn. Müşterinin Shopify mağazası)" : connForm.platform === "webhook" ? "Etiket (örn. Webflow – Zapier)" : "Etiket (örn. Müşterinin WP sitesi)"}
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <input
               value={connForm.siteUrl}
               onChange={(e) => setConnForm((f) => ({ ...f, siteUrl: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "magaza.myshopify.com" : "https://musteri-sitesi.com"}
+              placeholder={connForm.platform === "shopify" ? "magaza.myshopify.com" : connForm.platform === "webhook" ? "https://hooks.zapier.com/hooks/catch/…" : "https://musteri-sitesi.com"}
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
@@ -284,14 +300,16 @@ export default function ContentStudioPage() {
             <input
               value={connForm.authSecret}
               onChange={(e) => setConnForm((f) => ({ ...f, authSecret: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "Admin API erişim token'ı (shpat_…)" : "Uygulama parolası"}
-              type="password"
+              placeholder={connForm.platform === "shopify" ? "Admin API erişim token'ı (shpat_…)" : connForm.platform === "webhook" ? "İmza anahtarı" : "Uygulama parolası"}
+              type={connForm.platform === "webhook" ? "text" : "password"}
               required
               className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <p className="text-xs text-ink/40">
-            {connForm.platform === "shopify"
+            {connForm.platform === "webhook"
+              ? "Wix, Webflow, Ghost, Framer, Squarespace, GoHighLevel, Notion… için: Zapier'de 'Webhooks by Zapier → Catch Hook' (ya da Make/n8n'de Webhook) oluşturup adresini buraya yapıştırın. Taslak title, metaDescription, markdown ve html alanlarıyla JSON olarak gönderilir; istek X-Epicsem-Signature (HMAC-SHA256, yukarıdaki anahtarla) ile imzalanır."
+              : connForm.platform === "shopify"
               ? "Shopify'da: Ayarlar → Uygulamalar ve satış kanalları → Uygulama geliştir → yeni bir özel uygulama oluşturup Admin API erişiminde write_content iznini açın, oluşan token'ı buraya yapıştırın."
               : "WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekleyin. Gerçek giriş parolanız değil."}
           </p>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import KnowledgeBase from "@/components/KnowledgeBase";
 import { blocksToHtml, blocksToMd, mdToBlocks, scoreDoc, uid, type Block, type BlockType, type Check } from "@/lib/editor-score";
 
 interface DraftItem {
@@ -123,7 +124,7 @@ export default function EditorPage() {
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ t: string; bad?: boolean } | null>(null);
-  const [tab, setTab] = useState<"score" | "meta" | "links" | "assistant">("score");
+  const [tab, setTab] = useState<"score" | "meta" | "links" | "assistant" | "kb">("score");
   const [customOpen, setCustomOpen] = useState(false);
   const [customText, setCustomText] = useState("");
 
@@ -363,6 +364,7 @@ export default function EditorPage() {
             <p className="mt-1 text-xs text-ink/50">GEO'ya uygun bir iskeletle sıfırdan yaz.</p>
           </button>
         </div>
+        <KnowledgeBase />
         <div className="rounded-2xl border border-border bg-panel">
           <div className="border-b border-border px-5 py-3.5 text-sm font-bold">Taslaklarım</div>
           {drafts === null ? (
@@ -513,6 +515,7 @@ export default function EditorPage() {
                 ["meta", "Meta"],
                 ["links", "Linkler"],
                 ["assistant", "Asistan"],
+                ["kb", "Bilgi"],
               ] as const).map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setTab(k)} className={`flex-1 py-2.5 ${tab === k ? "border-b-2 border-accent text-accent" : "text-ink/50 hover:text-ink"}`}>{l}</button>
               ))}
@@ -562,6 +565,8 @@ export default function EditorPage() {
               )}
 
               {tab === "links" && <LinksPanel blocks={blocks} sourceUrl={sourceUrl} activeId={active} onApply={commit} />}
+
+              {tab === "kb" && <KnowledgeBase compact />}
 
               {tab === "assistant" && <AssistantPanel busy={busy === "assistant"} onRun={(ins) => ai("assistant", { instruction: ins })} />}
             </div>

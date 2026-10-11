@@ -4,10 +4,11 @@ import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { testWpConnection } from "@/lib/wordpress";
 import { testShopifyConnection } from "@/lib/shopify";
+import { testWebhook } from "@/lib/webhook-publish";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
-  platform: z.enum(["wordpress", "shopify"]).default("wordpress"),
+  platform: z.enum(["wordpress", "shopify", "webhook"]).default("wordpress"),
   siteUrl: z.string().min(1).max(200),
   authIdentifier: z.string().max(200).default(""),
   authSecret: z.string().min(1).max(300),
@@ -34,7 +35,9 @@ export async function POST(req: NextRequest) {
   }
 
   const result =
-    parsed.platform === "shopify"
+    parsed.platform === "webhook"
+      ? await testWebhook(parsed.siteUrl, parsed.authSecret)
+      : parsed.platform === "shopify"
       ? await testShopifyConnection(parsed.siteUrl, parsed.authSecret)
       : await testWpConnection(parsed.siteUrl, parsed.authIdentifier, parsed.authSecret);
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });

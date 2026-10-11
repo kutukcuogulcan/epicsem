@@ -6,13 +6,16 @@ import { readableZodError } from "@/lib/zod-error";
 
 const bodySchema = z
   .object({
-    platform: z.enum(["wordpress", "shopify"]).default("wordpress"),
+    platform: z.enum(["wordpress", "shopify", "webhook"]).default("wordpress"),
     label: z.string().min(1).max(100),
     siteUrl: z.string().min(1).max(200),
     authIdentifier: z.string().max(200).default(""),
     authSecret: z.string().min(1).max(300),
   })
   .superRefine((val, ctx) => {
+    if (val.platform === "webhook" && !/^https:\/\//.test(val.siteUrl)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Webhook adresi https:// ile başlamalı", path: ["siteUrl"] });
+    }
     if (val.platform === "wordpress") {
       if (val.authIdentifier.trim().length === 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "WordPress kullanıcı adı gerekli", path: ["authIdentifier"] });
