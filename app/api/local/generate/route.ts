@@ -6,6 +6,7 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateGbpPost, generateReviewReply } from "@/lib/local-content";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { saveLocalGeneration } from "@/lib/db";
 
 // Reuses the same "contentGenerations" quota as /api/content/generate — a GBP post or a
 // review reply is the same kind of AI content generation, just a different destination.
@@ -60,6 +61,13 @@ export async function POST(req: NextRequest) {
         : await generateReviewReply(brand, parsed.reviewText, parsed.rating);
 
     if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
+    await saveLocalGeneration(user.id, {
+      kind: parsed.kind,
+      business: parsed.brandName,
+      input: parsed.kind === "gbp-post" ? parsed.topic : parsed.reviewText,
+      output: (result as { text?: string }).text ?? "",
+      rating: parsed.kind === "review-reply" ? parsed.rating ?? null : null,
+    }).catch(() => {});
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(

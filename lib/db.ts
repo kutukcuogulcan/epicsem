@@ -231,6 +231,19 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_cms_connections_user ON cms_connections(user_id);
 
+    CREATE TABLE IF NOT EXISTS local_generations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      kind TEXT NOT NULL,
+      business TEXT NOT NULL,
+      input TEXT NOT NULL,
+      output TEXT NOT NULL,
+      rating INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_local_generations_user ON local_generations(user_id);
+
     CREATE TABLE IF NOT EXISTS brand_knowledge (
       user_id INTEGER PRIMARY KEY,
       content TEXT NOT NULL DEFAULT '',
@@ -728,6 +741,126 @@ export async function getLatestCrawls(userId: number, host: string, limit = 2): 
     [userId, host, `${host} %`, limit]
   );
   return rows.map((r) => ({ id: r.id, createdAt: toIso(r.created_at), result: JSON.parse(r.result_json) }));
+}
+
+// ---------------- araç panoları (Monitoring, Kampanyalar, Yerel, Clients) ----------------
+
+export async function monitorOverview(userId: number) {
+  await ensureSchema();
+  const pages = await many<any>(
+    `SELECT p.id, p.url, p.label,
+            (SELECT score FROM monitor_checks c WHERE c.monitored_page_id = p.id ORDER BY id DESC LIMIT 1) AS score,
+            (SELECT ai_crawl_score FROM monitor_checks c WHERE c.monitored_page_id = p.id ORDER BY id DESC LIMIT 1) AS ai,
+            (SELECT score FROM monitor_checks c WHERE c.monitored_page_id = p.id ORDER BY id DESC OFFSET 1 LIMIT 1) AS prev_score,
+            (SELECT created_at FROM monitor_checks c WHERE c.monitored_page_id = p.id ORDER BY id DESC LIMIT 1) AS last_at,
+            (SELECT COUNT(*) FROM alerts a WHERE a.monitored_page_id = p.id AND a.acknowledged = 0) AS open_alerts
+       FROM monitored_pages p WHERE p.user_id = $1 ORDER BY p.id`,
+    [userId]
+  );
+  const series = await many<any>(
+    `SELECT date_trunc('day', c.created_at) AS d, ROUND(AVG(c.score)) AS score, ROUND(AVG(c.ai_crawl_score)) AS ai, COUNT(*) AS n
+       FROM monitor_checks c JOIN monitored_pages p ON p.id = c.monitored_page_id
+      WHERE p.user_id = $1 AND c.created_at >= now() - interval '90 days'
+      GROUP BY 1 ORDER BY 1`,
+    [userId]
+  );
+  const alerts = await many<any>(
+    `SELECT date_trunc('day', a.created_at) AS d, COUNT(*) AS n FROM alerts a JOIN monitored_pages p ON p.id = a.monitored_page_id
+      WHERE p.user_id = $1 AND a.created_at >= now() - interval '90 days' GROUP BY 1 ORDER BY 1`,
+    [userId]
+  );
+  return {
+    pages: pages.map((r) => ({ id: r.id, url: r.url, label: r.label, score: r.score == null ? null : Number(r.score), ai: r.ai == null ? null : Number(r.ai), prevScore: r.prev_score == null ? null : Number(r.prev_score), lastAt: r.last_at ? toIso(r.last_at) : null, openAlerts: Number(r.open_alerts) })),
+    series: series.map((r) => ({ date: toIso(r.d), score: Number(r.score), ai: Number(r.ai), checks: Number(r.n) })),
+    alerts: alerts.map((r) => ({ date: toIso(r.d), count: Number(r.n) })),
+  };
+}
+
+export async function campaignsOverview(userId: number) {
+  await ensureSchema();
+  const weeks = await many<any>(
+    `SELECT date_trunc('week', created_at) AS w, COUNT(*) AS n, SUM(CASE WHEN status = 'published-to-wp' THEN 1 ELSE 0 END) AS pub
+       FROM content_drafts WHERE user_id = $1 AND created_at >= now() - interval '12 weeks' GROUP BY 1 ORDER BY 1`,
+    [userId]
+  );
+  const totals = await one<any>(
+    `SELECT COUNT(*) AS drafts, SUM(CASE WHEN status = 'published-to-wp' THEN 1 ELSE 0 END) AS pub,
+            SUM(CASE WHEN created_at >= now() - interval '30 days' THEN 1 ELSE 0 END) AS last30
+       FROM content_drafts WHERE user_id = $1`,
+    [userId]
+  );
+  return {
+    weeks: weeks.map((r) => ({ week: toIso(r.w), drafts: Number(r.n), published: Number(r.pub ?? 0) })),
+    drafts: Number(totals?.drafts ?? 0),
+    published: Number(totals?.pub ?? 0),
+    last30: Number(totals?.last30 ?? 0),
+  };
+}
+
+export async function saveLocalGeneration(userId: number, g: { kind: string; business: string; input: string; output: string; rating?: number | null }) {
+  await ensureSchema();
+  await exec(`INSERT INTO local_generations (user_id, kind, business, input, output, rating) VALUES ($1, $2, $3, $4, $5, $6)`, [userId, g.kind, g.business, g.input.slice(0, 2000), g.output.slice(0, 4000), g.rating ?? null]);
+}
+
+export async function localOverview(userId: number) {
+  await ensureSchema();
+  const weeks = await many<any>(
+    `SELECT date_trunc('week', created_at) AS w, SUM(CASE WHEN kind = 'gbp-post' THEN 1 ELSE 0 END) AS posts, SUM(CASE WHEN kind = 'review-reply' THEN 1 ELSE 0 END) AS replies
+       FROM local_generations WHERE user_id = $1 AND created_at >= now() - interval '12 weeks' GROUP BY 1 ORDER BY 1`,
+    [userId]
+  );
+  const ratings = await many<any>(`SELECT rating, COUNT(*) AS n FROM local_generations WHERE user_id = $1 AND kind = 'review-reply' AND rating IS NOT NULL GROUP BY rating`, [userId]);
+  const recent = await many<any>(`SELECT id, kind, business, input, output, rating, created_at FROM local_generations WHERE user_id = $1 ORDER BY id DESC LIMIT 8`, [userId]);
+  const totals = await one<any>(
+    `SELECT SUM(CASE WHEN kind = 'gbp-post' THEN 1 ELSE 0 END) AS posts, SUM(CASE WHEN kind = 'review-reply' THEN 1 ELSE 0 END) AS replies, COUNT(DISTINCT business) AS businesses
+       FROM local_generations WHERE user_id = $1`,
+    [userId]
+  );
+  return {
+    weeks: weeks.map((r) => ({ week: toIso(r.w), posts: Number(r.posts ?? 0), replies: Number(r.replies ?? 0) })),
+    ratings: Object.fromEntries(ratings.map((r) => [String(r.rating), Number(r.n)])) as Record<string, number>,
+    recent: recent.map((r) => ({ id: r.id, kind: r.kind, business: r.business, input: r.input, output: r.output, rating: r.rating, createdAt: toIso(r.created_at) })),
+    posts: Number(totals?.posts ?? 0),
+    replies: Number(totals?.replies ?? 0),
+    businesses: Number(totals?.businesses ?? 0),
+  };
+}
+
+/** Ajans portföy panosu: her müşterinin son SEO, site sağlığı ve AI görünürlüğü. */
+export async function clientsOverview(userId: number) {
+  await ensureSchema();
+  const clients = await many<any>(`SELECT id, name, domain FROM clients WHERE user_id = $1 ORDER BY id`, [userId]);
+  const out = [];
+  for (const c of clients) {
+    const host = String(c.domain).replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+    const like = `%${host}%`;
+    const audit = await one<any>(`SELECT score, ai_crawl_score, created_at FROM audit_runs WHERE user_id = $1 AND url LIKE $2 ORDER BY id DESC LIMIT 1`, [userId, like]);
+    const crawl = await one<any>(`SELECT summary_json, row_count, created_at FROM import_runs WHERE user_id = $1 AND (filename = $2 OR filename LIKE $3) ORDER BY id DESC LIMIT 1`, [userId, host, `${host} %`]);
+    const geo = await many<any>(`SELECT summaries_json, created_at FROM geo_runs WHERE user_id = $1 AND brand_domain LIKE $2 ORDER BY id DESC LIMIT 8`, [userId, like]);
+    const vis = geo
+      .map((g) => {
+        const sums: GeoVisibilitySummary[] = JSON.parse(g.summaries_json || "[]");
+        const me = sums.find((s) => String(s.domain).includes(host)) ?? sums[0];
+        return me ? { date: toIso(g.created_at), visibility: Math.round(me.visibility * 100) } : null;
+      })
+      .filter(Boolean)
+      .reverse() as { date: string; visibility: number }[];
+    const cs = crawl ? JSON.parse(crawl.summary_json) : null;
+    out.push({
+      id: c.id,
+      name: c.name,
+      domain: host,
+      seoScore: audit ? Number(audit.score) : null,
+      axoScore: audit ? Number(audit.ai_crawl_score) : null,
+      health: cs?.healthScore ?? null,
+      pages: crawl ? Number(crawl.row_count) : null,
+      errors: cs?.severity?.error ?? null,
+      visibility: vis.length ? vis[vis.length - 1].visibility : null,
+      visibilityTrend: vis,
+      lastActivity: [audit?.created_at, crawl?.created_at, geo[0]?.created_at].filter(Boolean).map((d: any) => toIso(d)).sort().pop() ?? null,
+    });
+  }
+  return { clients: out };
 }
 
 // ---------------- gap runs ----------------

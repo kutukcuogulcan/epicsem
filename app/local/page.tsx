@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UsageMeter from "@/components/UsageMeter";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import { LocalOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
@@ -89,10 +90,15 @@ export default function LocalToolsPage() {
   const [rating, setRating] = useState<number | "">("");
   const reply = useDraftGenerator();
 
+  const [rk, setRk] = useState(0);
+  useEffect(() => {
+    if (gbp.text || reply.text) setRk((k) => k + 1);
+  }, [gbp.text, reply.text]);
+
   const brandReady = brandName.trim().length > 0 && brandDomain.trim().length > 0;
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8">
       <ToolPageHeader
         breadcrumbLabel="Yerel İşletme"
         title="Yerel İşletme Araçları"
@@ -107,6 +113,8 @@ export default function LocalToolsPage() {
       >
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
+
+      <LocalOverview refreshKey={rk} />
 
       <div className="card space-y-3">
         <h2 className="font-bold text-sm">İşletme bilgisi</h2>

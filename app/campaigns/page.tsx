@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import { CampaignsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
@@ -77,7 +78,10 @@ export default function CampaignsPage() {
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
   }
 
+  const [rk, setRk] = useState(0);
+
   async function refresh() {
+    setRk((k) => k + 1);
     const res = await fetch("/api/campaigns");
     if (res.status === 401) {
       redirectToLogin();
@@ -198,6 +202,8 @@ export default function CampaignsPage() {
       >
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
+
+      <CampaignsOverview refreshKey={rk} campaigns={campaigns ?? []} />
 
       <form onSubmit={addCampaign} className="card space-y-3">
         <h2 className="font-bold text-sm">Bir kampanya kur</h2>

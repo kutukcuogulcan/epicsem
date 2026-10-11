@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import { ClientsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 
@@ -71,7 +72,10 @@ export default function ClientsPage() {
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
   }
 
+  const [rk, setRk] = useState(0);
+
   async function refresh() {
+    setRk((k) => k + 1);
     const res = await fetch("/api/clients");
     if (res.status === 401) {
       redirectToLogin();
@@ -157,6 +161,8 @@ export default function ClientsPage() {
           </>
         }
       />
+
+      <ClientsOverview refreshKey={rk} />
 
       <form onSubmit={addClient} className="card space-y-3">
         <h2 className="font-bold text-sm">Bir müşteri ekle</h2>

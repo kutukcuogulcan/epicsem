@@ -5,6 +5,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import { MonitorOverview } from "@/components/tool/ToolOverviews";
 
 const SCENARIO_STEPS = [
   {
@@ -107,7 +108,10 @@ export default function MonitorPage() {
     }
   }
 
+  const [rk, setRk] = useState(0);
+
   async function refresh() {
+    setRk((k) => k + 1);
     const [pagesRes, alertsRes] = await Promise.all([fetch("/api/monitor"), fetch("/api/monitor/alerts")]);
     if (pagesRes.status === 401 || alertsRes.status === 401) {
       redirectToLogin();
@@ -215,6 +219,8 @@ export default function MonitorPage() {
         title="AXO İzleme"
         body="robots.txt ve CDN bot engellemesi sessizce değişebilir — bir WAF güncellemesi, bir CDN varsayılan ayar değişikliği. Kritik sayfalarınızı buraya ekleyin, daha önce izinli olan bir AI crawler (GPTBot, ClaudeBot, PerplexityBot, Google-Extended…) engellendiği anda haber alın — haftalar sonra bir görünürlük düşüşünden fark etmek yerine."
       />
+
+      <MonitorOverview refreshKey={rk} />
 
       {alerts && alerts.length > 0 && (
         <div className="space-y-2">
