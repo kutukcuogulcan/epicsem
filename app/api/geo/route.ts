@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
   try {
     // Save first, then look up history — getPreviousGeoRun/listGeoRunHistory both read
     // from the table this just wrote to, so they must run after the insert.
-    await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution, topicBreakdown });
+    await saveGeoRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, summaries, sourceDistribution, topicBreakdown, runs: allRuns, competitors });
     previousRun = await getPreviousGeoRun(user.id, brand.domain);
     history = await listGeoRunHistory(user.id, brand.domain, 20);
   } catch (dbErr) {

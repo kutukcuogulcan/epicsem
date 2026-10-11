@@ -194,7 +194,18 @@ export default function EditorPage() {
     const qs = new URLSearchParams(window.location.search);
     const id = qs.get("draftId");
     const u = qs.get("url");
-    if (id) loadDraft(Number(id));
+    const nw = qs.get("new");
+    if (nw) {
+      // GEO Fırsatlar / Rakip kartlarından: soruyu cevaplayan GEO uyumlu bir iskeletle başla.
+      const q = nw.trim();
+      openDoc({
+        title: q.length > 60 ? q.slice(0, 57) + "…" : q,
+        metaDescription: "",
+        markdown: `# ${q}\n\nKısa cevap: Soruyu 2–3 cümlede doğrudan cevaplayın (AI motorları bu paragrafı alıntılar).\n\n## Öne çıkanlar\n\n- Birinci önemli nokta\n- İkinci önemli nokta\n- Üçüncü önemli nokta\n\n## Nelere dikkat edilmeli?\n\nBu bölümün sorusunu ilk cümlede cevaplayın, sonra ayrıntı ve somut sayılar verin.\n\n## Karşılaştırma\n\n| Seçenek | Artısı | Eksisi |\n|---|---|---|\n| A | | |\n\n## Sık sorulan sorular\n\n### İlk soru?\n\nKısa, net cevap.`,
+        keyword: q,
+        id: null,
+      });
+    } else if (id) loadDraft(Number(id));
     else if (u) {
       setImportUrl(u);
       importFromUrl(u);

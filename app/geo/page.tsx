@@ -26,6 +26,8 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import GeoOverview from "@/components/tool/GeoOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
+import PersonaPrompts from "@/components/tool/PersonaPrompts";
+import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 
 const SCENARIO_STEPS = [
   {
@@ -197,11 +199,44 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls">("visibility");
+  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities">("visibility");
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  const summariesRef = useRef<GeoVisibilitySummary[] | null>(null);
+  useEffect(() => {
+    summariesRef.current = summaries;
+  }, [summaries]);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [overviewKey, setOverviewKey] = useState(0);
   const [manualOpen, setManualOpen] = useState(false);
   const autoRunRef = useRef(false);
+
+  // Sayfa açılınca son testin sonuçlarını göster (grafikler hemen görünsün; rakip kartları ve fırsatlar dahil).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("clientId")) return;
+    fetch("/api/geo/latest")
+      .then((r) => (r.ok ? r.json() : { run: null }))
+      .then(({ run }) => {
+        if (!run || !run.runs?.length || summariesRef.current) return;
+        setBrand(run.brand);
+        if (run.competitors?.length) setCompetitors(run.competitors);
+        setRuns(run.runs);
+        setSourceDistribution(run.sourceDistribution);
+        setTopicBreakdown(run.topicBreakdown);
+        setDemoMode(run.demoMode);
+        setChatCount(run.runs.length);
+        const seen = new Set<string>();
+        const lines: string[] = [];
+        for (const r of run.runs as GeoRunResult[]) {
+          if (seen.has(r.promptText)) continue;
+          seen.add(r.promptText);
+          lines.push(r.topic && r.topic !== "Genel" ? `${r.topic}: ${r.promptText}` : r.promptText);
+        }
+        setPromptsText(lines.join("\n"));
+        setRestoredAt(run.createdAt);
+        setSummaries(run.summaries);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
@@ -311,6 +346,7 @@ export default function GeoPage() {
     setRunResultsFilter("");
     setRunEngineFilter("all");
     setResultsTab("visibility");
+    setRestoredAt(null);
     try {
       const res = await fetch("/api/geo", {
         method: "POST",
@@ -394,6 +430,11 @@ export default function GeoPage() {
   // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
   // of making you read them out of the comparison table below.
   const ownSummary = summaries?.find((s) => s.domain === brand.domain) ?? summaries?.[0] ?? null;
+  const ownRef = useMemo(() => ({ name: ownSummary?.brand ?? brand.name, domain: ownSummary?.domain ?? brand.domain }), [ownSummary, brand]);
+  const competitorRefs = useMemo(
+    () => (summaries ?? []).filter((s) => s.domain !== ownRef.domain).map((s) => ({ name: s.brand, domain: s.domain })),
+    [summaries, ownRef]
+  );
 
   // Per-AI-engine breakdown (ChatGPT vs Claude vs Gemini vs Perplexity vs …) — the
   // "LLM Breakdown" panel real AI-visibility dashboards (e.g. Arvow) show next to their
@@ -551,6 +592,11 @@ export default function GeoPage() {
             Bir satırı <code>Konu: prompt metni</code> şeklinde yazarsanız (örn. <code>Fiyat: X ne kadar tutar?</code>)
             sonuçlarda konu bazında görünürlük kırılımı çıkar — konu vermezseniz &ldquo;Genel&rdquo; sayılır.
           </p>
+          <PersonaPrompts
+            brand={brand.name}
+            competitors={competitors.map((c) => c.name).filter(Boolean)}
+            onAdd={(lines) => setPromptsText((t) => (t.trim() ? t.trim() + "\n" : "") + lines.join("\n"))}
+          />
           <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-ink/60">
             <span className="font-semibold text-accent">🇹🇷 Türkiye pazarı ipucu:</span> LLM&apos;ler Türkçe bir
             soruyu İngilizce eşdeğerinden farklı bir kaynak karışımıyla yanıtlayabiliyor — hedef kitleniz Türkiye
@@ -666,6 +712,8 @@ export default function GeoPage() {
               { key: "prompts", label: `Promptlar${runs ? ` (${runs.length})` : ""}` },
               { key: "sources", label: "Domain" },
               { key: "urls", label: "URL" },
+              { key: "rivals", label: `Rakipler${competitorRefs.length ? ` (${competitorRefs.length})` : ""}` },
+              { key: "opportunities", label: "Fırsatlar" },
             ] as const
           ).map((t) => (
             <button
@@ -681,6 +729,12 @@ export default function GeoPage() {
           ))}
         </div>
       )}
+
+      {restoredAt && summaries && (
+        <p className="-mt-2 text-xs text-ink/45">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
+      )}
+      {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
+      {resultsTab === "opportunities" && runs && <OpportunitiesTab runs={runs} own={ownRef} competitors={competitorRefs} />}
 
       {resultsTab === "visibility" && engineBreakdown && engineBreakdown.length > 1 && (
         <div className="card">

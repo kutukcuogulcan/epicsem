@@ -6,6 +6,7 @@ import type {
   ContentDraft,
   GapRow,
   GeneratedArticle,
+  GeoRunResult,
   GeoVisibilitySummary,
   SeoAuditResult,
   SourceDomainStat,
@@ -164,6 +165,8 @@ async function initSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_geo_runs_user_domain ON geo_runs(user_id, brand_domain);
+    ALTER TABLE geo_runs ADD COLUMN IF NOT EXISTS runs_json TEXT;
+    ALTER TABLE geo_runs ADD COLUMN IF NOT EXISTS competitors_json TEXT;
 
     CREATE TABLE IF NOT EXISTS gap_runs (
       id SERIAL PRIMARY KEY,
@@ -633,11 +636,17 @@ export async function saveGeoRun(userId: number, params: {
   summaries: GeoVisibilitySummary[];
   sourceDistribution: SourceDomainStat[];
   topicBreakdown: TopicVisibility[];
+  runs?: GeoRunResult[];
+  competitors?: { name: string; domain: string }[];
 }): Promise<void> {
   await ensureSchema();
+  // Ham cevaplar rakip kartları ve fırsatlar için saklanır (metin kırpılır, boyut sınırlı kalsın).
+  const runsJson = params.runs
+    ? JSON.stringify(params.runs.map((r) => ({ ...r, responseText: r.responseText.slice(0, 2500), citations: r.citations.slice(0, 15) })))
+    : null;
   await exec(
-    `INSERT INTO geo_runs (user_id, brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json, topic_breakdown_json)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    `INSERT INTO geo_runs (user_id, brand_name, brand_domain, demo_mode, summaries_json, source_distribution_json, topic_breakdown_json, runs_json, competitors_json)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       userId,
       params.brandName,
@@ -646,8 +655,43 @@ export async function saveGeoRun(userId: number, params: {
       JSON.stringify(params.summaries),
       JSON.stringify(params.sourceDistribution),
       JSON.stringify(params.topicBreakdown),
+      runsJson,
+      params.competitors ? JSON.stringify(params.competitors) : null,
     ]
   );
+}
+
+/** En son (ayrıntıları saklanmış) GEO testi — rakip kartları ve fırsatlar sekmesi için. */
+export async function getLatestGeoRunFull(userId: number, brandDomain?: string): Promise<{
+  createdAt: string;
+  brand: { name: string; domain: string };
+  competitors: { name: string; domain: string }[];
+  demoMode: boolean;
+  summaries: GeoVisibilitySummary[];
+  sourceDistribution: SourceDomainStat[];
+  topicBreakdown: TopicVisibility[];
+  runs: GeoRunResult[];
+} | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT * FROM geo_runs WHERE user_id = $1 AND runs_json IS NOT NULL ${brandDomain ? "AND brand_domain = $2" : ""} ORDER BY id DESC LIMIT 1`,
+    brandDomain ? [userId, brandDomain] : [userId]
+  );
+  if (!row) return null;
+  const summaries: GeoVisibilitySummary[] = JSON.parse(row.summaries_json || "[]");
+  const competitors = row.competitors_json
+    ? JSON.parse(row.competitors_json)
+    : summaries.filter((s) => s.domain !== row.brand_domain).map((s) => ({ name: s.brand, domain: s.domain }));
+  return {
+    createdAt: toIso(row.created_at),
+    brand: { name: row.brand_name, domain: row.brand_domain },
+    competitors,
+    demoMode: !!row.demo_mode,
+    summaries,
+    sourceDistribution: JSON.parse(row.source_distribution_json || "[]"),
+    topicBreakdown: JSON.parse(row.topic_breakdown_json || "[]"),
+    runs: JSON.parse(row.runs_json || "[]"),
+  };
 }
 
 export interface GeoRunRow {
