@@ -273,8 +273,9 @@ export default function SiteAuditReport({
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
+                <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
                   <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-extrabold tabular-nums">{data.indexable}</div></div>
+                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-extrabold tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
                   <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-extrabold tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
                   <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-extrabold tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
                 </div>
@@ -462,6 +463,7 @@ export default function SiteAuditReport({
                   const affected = rows.filter((r) => r.issues.includes(i.code));
                   return (
                     <IssueRow
+                      site={s.site}
                       key={i.code}
                       code={i.code}
                       open={open}
@@ -579,6 +581,7 @@ function IssueRow({
   info,
   affected,
   onShowAll,
+  site,
 }: {
   code: string;
   open: boolean;
@@ -591,6 +594,7 @@ function IssueRow({
   info?: IssueInfo;
   affected: BulkImportRow[];
   onShowAll: () => void;
+  site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[] };
 }) {
   const d = prev == null ? null : n - prev;
   return (
@@ -660,7 +664,7 @@ function IssueRow({
                 </div>
                 <div className="mt-1.5 divide-y divide-border rounded-xl border border-border bg-panel">
                   {affected.slice(0, 10).map((r) => {
-                    const note = pageAdvice(code, r as any);
+                    const note = pageAdvice(code, r as any, site);
                     return (
                       <div key={r.url} className="px-3 py-2">
                         <a href={r.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="block truncate text-xs font-medium text-ink/75 hover:text-accent">

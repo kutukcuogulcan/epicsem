@@ -1,5 +1,15 @@
 /** Site taraması sorun kodlarının Türkçe adları ve Screaming Frog sekmelerine benzer grupları. */
 export const ISSUE_LABEL: Record<string, string> = {
+  "ai-citation-bots-blocked": "AI arama botları engelli (robots.txt)",
+  "ai-training-bots-blocked": "AI eğitim botları engelli",
+  "no-sitemap-in-robots": "robots.txt'de sitemap yok",
+  "snippet-blocked": "Snippet engelli (nosnippet / max-snippet)",
+  "nosnippet-heavy": "Metnin çoğu data-nosnippet",
+  "no-author": "Yazar bilgisi yok",
+  "no-date": "Yayın tarihi yok",
+  "future-date": "Gelecek tarihli içerik",
+  "schema-name-hidden": "Schema başlığı sayfada görünmüyor",
+  "low-citability": "Düşük AI alıntılanabilirlik",
   broken: "Kırık sayfa (4xx/5xx)",
   redirect: "Yönlendirme (3xx)",
   "redirect-chain": "Yönlendirme zinciri",
@@ -62,17 +72,28 @@ export const ISSUE_GROUPS: { label: string; codes: string[] }[] = [
   { label: "İndekslenme", codes: ["non-indexable", "noindex-tag", "missing-canonical", "canonical-to-non200", "noindex-in-sitemap", "near-duplicate", "title-equals-h1"] },
   { label: "Çok dilli (hreflang)", codes: ["hreflang-invalid", "hreflang-no-self", "hreflang-no-return"] },
   { label: "Güvenlik", codes: ["no-https", "no-hsts", "http-not-redirected"] },
-  { label: "Teknik & AI hazırlığı", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content"] },
+  { label: "AI & GEO hazırlığı", codes: ["ai-citation-bots-blocked", "ai-training-bots-blocked", "snippet-blocked", "nosnippet-heavy", "low-citability", "no-author", "no-date", "future-date", "schema-name-hidden", "no-sitemap-in-robots"] },
+  { label: "Teknik", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content"] },
   { label: "Performans", codes: ["slow-response", "large-page"] },
 ];
 
 /** Kritik (kırmızı) sayılan sorunlar. */
-export const CRITICAL_ISSUES = new Set(["broken", "broken-outlinks", "missing-title", "noindex-tag", "redirect-chain", "mixed-content", "redirect-loop", "https-to-http", "broken-images", "canonical-to-non200", "no-https", "http-not-redirected"]);
+export const CRITICAL_ISSUES = new Set(["ai-citation-bots-blocked", "snippet-blocked", "broken", "broken-outlinks", "missing-title", "noindex-tag", "redirect-chain", "mixed-content", "redirect-loop", "https-to-http", "broken-images", "canonical-to-non200", "no-https", "http-not-redirected"]);
 
 export type Severity = "error" | "warning" | "notice";
 
 /** Ahrefs/Semrush Site Audit mantığı: Hata = sıralamayı doğrudan bozar, Uyarı = düzeltilmeli, Bildirim = bilgi. */
 export const ISSUE_SEVERITY: Record<string, Severity> = {
+  "ai-citation-bots-blocked": "error",
+  "ai-training-bots-blocked": "notice",
+  "no-sitemap-in-robots": "notice",
+  "snippet-blocked": "error",
+  "nosnippet-heavy": "warning",
+  "no-author": "notice",
+  "no-date": "notice",
+  "future-date": "warning",
+  "schema-name-hidden": "notice",
+  "low-citability": "warning",
   broken: "error",
   "broken-outlinks": "error",
   "redirect-chain": "error",
@@ -146,6 +167,90 @@ export interface IssueInfo {
 
 /** Her sorun için Ahrefs/Semrush'taki "About this issue / How to fix" karşılığı. */
 export const ISSUE_INFO: Record<string, IssueInfo> = {
+  "ai-citation-bots-blocked": {
+    what: "robots.txt, AI arama ve alıntı botlarından en az birini engelliyor (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, Bingbot…).",
+    why: "Bu botlar ChatGPT, Claude, Perplexity, Google AI Overviews ve Copilot cevaplarında gösterilecek sayfaları toplar. Engellenirse site bu cevaplarda kaynak olarak çıkamaz.",
+    steps: [
+      "robots.txt'yi açın ve bu botlar için 'Disallow: /' kuralını kaldırın.",
+      "Cloudflare / WAF'ta 'AI botlarını engelle' gibi bir ayar açıksa arama botlarına izin verin.",
+      "Eğitim botlarını (GPTBot, ClaudeBot, Google-Extended) engellemeye devam edebilirsiniz — bu alıntıları etkilemez.",
+    ],
+    example: "User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /",
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "ai-training-bots-blocked": {
+    what: "robots.txt, AI eğitim botlarını engelliyor (GPTBot, ClaudeBot, Google-Extended, CCBot…).",
+    why: "Bu bilinçli bir tercih olabilir: içerik model eğitiminde kullanılmaz. AI cevaplarında alıntılanmayı doğrudan etkilemez, ama modellerin markanızı 'tanımasını' azaltabilir.",
+    steps: ["Bilinçli bir kararsa dokunmayın.", "Markanızın AI'lar tarafından daha iyi tanınmasını istiyorsanız bu botlara izin verin."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "no-sitemap-in-robots": {
+    what: "robots.txt'de 'Sitemap:' satırı yok.",
+    why: "Arama ve AI botları sitemap'i robots.txt'den bulur; yoksa yeni sayfaları geç keşfeder.",
+    steps: ["robots.txt'nin sonuna sitemap adresinizi ekleyin."],
+    example: "Sitemap: https://siteniz.com/sitemap.xml",
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "snippet-blocked": {
+    what: "Sayfa 'nosnippet' ya da çok düşük 'max-snippet' değeri kullanıyor.",
+    why: "Google bu sayfadan metin alıntılayamaz; AI Overviews ve AI Mode'da kaynak olarak gösterilemez, normal sonuçlarda da açıklama çıkmaz.",
+    steps: ["Meta robots etiketinden 'nosnippet' kaldırın.", "max-snippet kullanıyorsanız -1 (sınırsız) yapın."],
+    example: '<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">',
+    impact: "yüksek",
+    effort: "kolay",
+  },
+  "nosnippet-heavy": {
+    what: "Sayfa metninin %10'undan fazlası data-nosnippet ile işaretli.",
+    why: "İşaretli bölümler Google ve AI özetlerinde alıntılanamaz.",
+    steps: ["data-nosnippet'i yalnızca gerçekten gizlenmesi gereken kısa alanlarda (fiyat, kişisel bilgi) kullanın."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "no-author": {
+    what: "Yazı sayfasında yazar bilgisi bulunamadı (görünür yazar adı ya da schema 'author').",
+    why: "Google ve AI motorları kimin yazdığını güven (E-E-A-T) sinyali olarak kullanır; yazarsız içerik daha az alıntılanır.",
+    steps: ["Yazının üstüne yazar adını ve yazar sayfasına linki ekleyin.", "Article schema'sına 'author' alanını ekleyin."],
+    example: '"author": { "@type": "Person", "name": "Ad Soyad", "url": "https://siteniz.com/yazar/ad-soyad" }',
+    impact: "orta",
+    effort: "kolay",
+  },
+  "no-date": {
+    what: "Yazı sayfasında yayın/güncelleme tarihi bulunamadı.",
+    why: "AI motorları güncel kaynakları tercih eder; tarih olmayınca içeriğin ne kadar güncel olduğunu anlayamaz.",
+    steps: ["Yazıda görünür bir yayın ve güncelleme tarihi gösterin.", "Article schema'sına datePublished ve dateModified ekleyin."],
+    example: '"datePublished": "2026-10-01", "dateModified": "2026-10-11"',
+    impact: "orta",
+    effort: "kolay",
+  },
+  "future-date": {
+    what: "Sayfadaki yayın/güncelleme tarihi gelecekte.",
+    why: "Google gelecek tarihi güvenilmez sayar; tarih sinyali yok sayılabilir.",
+    steps: ["Schema ve sayfadaki tarihleri gerçek yayın tarihiyle düzeltin.", "Saat dilimi ayarını kontrol edin."],
+    impact: "orta",
+    effort: "kolay",
+  },
+  "schema-name-hidden": {
+    what: "Article schema'sındaki başlık (headline) sayfanın görünen metninde geçmiyor.",
+    why: "Google, yapısal verinin sayfada görünen içerikle eşleşmesini ister; eşleşmezse zengin sonuç ve AI özetlerinde kullanılmayabilir.",
+    steps: ["Schema 'headline' değerini sayfadaki H1 ile aynı yapın."],
+    impact: "düşük",
+    effort: "kolay",
+  },
+  "low-citability": {
+    what: "Sayfanın AI alıntılanabilirlik puanı 45'in altında.",
+    why: "Metin, AI motorlarının kolayca alıntılayacağı biçimde değil: doğrudan cevap, sayısal veri, kaynak ya da kısa bağımsız paragraflar eksik.",
+    steps: [
+      "Her ara başlığın altındaki ilk cümlede soruyu doğrudan cevaplayın.",
+      "Somut sayılar ve güvenilir kaynaklara atıf ekleyin.",
+      "Paragrafları 2–4 cümleye indirin, liste/tablo ve kısa bir SSS bölümü ekleyin.",
+      "'AI SEO Editör'de aç' ile sayfanın puanını canlı görerek düzeltin.",
+    ],
+    impact: "yüksek",
+    effort: "orta",
+  },
   broken: {
     what: "Sayfa açılmıyor: sunucu 4xx (bulunamadı/yasak) ya da 5xx (sunucu hatası) döndürüyor.",
     why: "Ziyaretçi ve Google boş bir sayfaya düşer; bu adrese gelen link değeri kaybolur ve tarama bütçesi boşa harcanır.",
@@ -534,7 +639,7 @@ Object.assign(ISSUE_INFO, {
 } satisfies Record<string, IssueInfo>);
 
 /** Etkilenen URL için o sayfaya özgü kısa not (ör. mevcut title'ın uzunluğu). */
-export function pageAdvice(code: string, row: { title: string | null; metaDescription: string | null; titleLength: number | null; metaDescriptionLength: number | null; h1Count: number; wordCount: number | null; metrics?: { imagesMissingAlt: number; imagesTotal: number; responseMs: number | null; htmlKb: number | null; depth: number | null; brokenOutlinks: string[]; redirectTarget: string | null; mixedContent: number } }): string | null {
+export function pageAdvice(code: string, row: { title: string | null; metaDescription: string | null; titleLength: number | null; metaDescriptionLength: number | null; h1Count: number; wordCount: number | null; metrics?: { imagesMissingAlt: number; imagesTotal: number; responseMs: number | null; htmlKb: number | null; depth: number | null; brokenOutlinks: string[]; redirectTarget: string | null; mixedContent: number; geo?: { citability: number | null; citabilityTop: string[]; maxSnippet: number | null; nosnippetRatio: number } } }, site?: { aiBlockedCitation?: string[]; aiBlockedTraining?: string[] }): string | null {
   const m = row.metrics;
   switch (code) {
     case "title-too-long":
@@ -566,6 +671,16 @@ export function pageAdvice(code: string, row: { title: string | null; metaDescri
       return m?.redirectTarget ? `→ ${m.redirectTarget.replace(/^https?:\/\/(www\.)?/, "")}` : null;
     case "mixed-content":
       return m ? `${m.mixedContent} http kaynak` : null;
+    case "low-citability":
+      return m?.geo?.citability != null ? `${m.geo.citability}/100 — önce: ${m.geo.citabilityTop.join(", ")}` : null;
+    case "snippet-blocked":
+      return m?.geo?.maxSnippet != null ? `max-snippet:${m.geo.maxSnippet}` : "nosnippet";
+    case "nosnippet-heavy":
+      return m?.geo ? `metnin %${Math.round(m.geo.nosnippetRatio * 100)}'i` : null;
+    case "ai-citation-bots-blocked":
+      return site?.aiBlockedCitation?.length ? site.aiBlockedCitation.join(", ") : null;
+    case "ai-training-bots-blocked":
+      return site?.aiBlockedTraining?.length ? site.aiBlockedTraining.join(", ") : null;
     default:
       return null;
   }
@@ -587,5 +702,5 @@ export const THEMES: { key: string; label: string; codes: string[] }[] = [
   { key: "content", label: "İçerik & meta", codes: ["missing-title", "duplicate-title", "title-too-long", "title-too-short", "missing-meta-description", "duplicate-meta-description", "meta-description-too-long", "meta-description-too-short", "missing-h1", "multiple-h1", "thin-content", "missing-h2"] },
   { key: "perf", label: "Performans", codes: ["slow-response", "large-page", "large-images", "images-no-dimensions"] },
   { key: "tech", label: "Mobil & teknik", codes: ["missing-viewport", "missing-lang", "mixed-content", "missing-canonical", "images-missing-alt", "broken-images", "https-to-http", "no-https", "http-not-redirected"] },
-  { key: "ai", label: "Yapısal veri & AI", codes: ["missing-schema", "missing-open-graph"] },
+  { key: "ai", label: "AI & GEO", codes: ["missing-schema", "missing-open-graph", "ai-citation-bots-blocked", "snippet-blocked", "nosnippet-heavy", "low-citability", "no-author", "no-date", "future-date", "schema-name-hidden", "no-sitemap-in-robots"] },
 ];

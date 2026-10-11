@@ -59,6 +59,7 @@ const createSchema = z
         cover: z.enum(["none", "branded", "ai"]).optional(),
         toc: z.boolean().optional(),
         takeaways: z.boolean().optional(),
+        minCitability: z.number().int().min(0).max(90).optional(),
       })
       .default({}),
     postsPerRun: z.number().int().min(1).max(3).default(1),

@@ -300,15 +300,19 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   const aiBotAccess: AiBotAccess[] = AI_BOTS.map((bot) => ({
     bot: bot.userAgent,
     engine: bot.engine,
+    role: bot.role,
     allowed: robotsTxtFound ? isBotAllowed(robotsBlocks, bot.userAgent) : true,
   }));
   const blockedBots = aiBotAccess.filter((b) => !b.allowed);
+  const blockedCitation = blockedBots.filter((b) => b.role !== "training");
   if (blockedBots.length > 0) {
     pushIssue(issues, {
       category: "ai-crawlability",
-      severity: "critical",
-      title: `${blockedBots.length} AI crawler(s) blocked in robots.txt`,
-      detail: blockedBots.map((b) => `${b.bot} (${b.engine})`).join(", "),
+      severity: blockedCitation.length ? "critical" : "warning",
+      title: blockedCitation.length
+        ? `${blockedCitation.length} AI search/citation crawler(s) blocked in robots.txt`
+        : `${blockedBots.length} AI training crawler(s) blocked in robots.txt`,
+      detail: blockedBots.map((b) => `${b.bot} (${b.engine}${b.role === "training" ? ", training" : ""})`).join(", "),
       recommendation: "If you want this content to be eligible for citation in ChatGPT, Claude, Perplexity, or Google AI Overviews, remove the Disallow rule for these user-agents. If the block is intentional (e.g. protecting content from AI training), that's a valid choice — just make sure it's deliberate, not a default from your CMS/CDN.",
     });
   } else {
@@ -391,7 +395,7 @@ function buildEmptyResult(url: string, issues: SeoIssueResult[]): SeoAuditResult
       canonical: null,
       robotsTxtFound: false,
       sitemapFound: false,
-      aiBotAccess: AI_BOTS.map((b) => ({ bot: b.userAgent, engine: b.engine, allowed: true })),
+      aiBotAccess: AI_BOTS.map((b) => ({ bot: b.userAgent, engine: b.engine, role: b.role, allowed: true })),
       htmlLang: null,
       hreflangs: [],
     },

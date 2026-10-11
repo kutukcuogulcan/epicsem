@@ -68,6 +68,17 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
         if (m.h2Count === 0 && (wordCount ?? 0) >= THIN_CONTENT_WORDS) issues.push("missing-h2");
         if (m.depth !== null && m.depth >= DEEP_CLICKS) issues.push("deep-page");
         if (m.inSitemap === false && m.depth !== null && m.depth > 0) issues.push("not-in-sitemap");
+        // GEO / Google AI hazırlığı
+        const g = m.geo;
+        if (g) {
+          if (g.snippetBlocked) issues.push("snippet-blocked");
+          else if (g.nosnippetRatio > 0.1) issues.push("nosnippet-heavy");
+          if (g.isArticle && !g.hasAuthor) issues.push("no-author");
+          if (g.isArticle && !g.hasDate) issues.push("no-date");
+          if (g.futureDate) issues.push("future-date");
+          if (g.schemaNameHidden) issues.push("schema-name-hidden");
+          if (g.citability !== null && g.citability < 45) issues.push("low-citability");
+        }
       }
     }
     if (m && assets) {
@@ -137,6 +148,9 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
       if (!assets.site.hsts) home.issues.push("no-hsts");
       if (assets.site.httpRedirectsToHttps === false) home.issues.push("http-not-redirected");
     }
+    if (assets.site.aiBlockedCitation?.length) home.issues.push("ai-citation-bots-blocked");
+    if (assets.site.aiBlockedTraining?.length) home.issues.push("ai-training-bots-blocked");
+    if (assets.site.robotsFound && assets.site.sitemapInRobots === false) home.issues.push("no-sitemap-in-robots");
   }
 
   const duplicateTitleGroups = [...titleCounts.entries()].filter(([, u]) => u.length > 1).map(([value, urls]) => ({ value, urls }));
@@ -174,6 +188,9 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
   if (withM.length) {
     summary.avgResponseMs = avg(withM.map((r) => r.metrics!.responseMs).filter((x): x is number => x !== null));
     summary.avgHtmlKb = avg(withM.map((r) => r.metrics!.htmlKb).filter((x): x is number => x !== null));
+    const cits = withM.map((r) => r.metrics!.geo?.citability).filter((x): x is number => typeof x === "number");
+    summary.avgCitability = avg(cits);
+    summary.citabilityPages = cits.length;
   }
 
   // --- Ahrefs/Semrush tarzı özet: sağlık skoru, hata/uyarı/bildirim, durum kodu ve derinlik dağılımı ---
@@ -206,5 +223,6 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
     })
   );
 
+  if (assets) summary.site = { aiBlockedCitation: assets.site.aiBlockedCitation ?? [], aiBlockedTraining: assets.site.aiBlockedTraining ?? [] };
   return { filename, importedAt: new Date().toISOString(), columns, summary, rows, duplicateTitleGroups, duplicateMetaGroups };
 }

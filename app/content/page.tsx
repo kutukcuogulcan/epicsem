@@ -1,5 +1,7 @@
 "use client";
 
+import { citabilityOfMarkdown } from "@/lib/citability";
+
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
@@ -401,6 +403,34 @@ export default function ContentStudioPage() {
               </div>
 
               <p className="text-sm text-ink/70 italic">{selectedDraft.article.metaDescription}</p>
+
+              {(() => {
+                const cit = citabilityOfMarkdown(selectedDraft.article.bodyMarkdown);
+                const tone = cit.score >= 65 ? "text-seo bg-seo/10" : cit.score >= 45 ? "text-warn bg-warn/10" : "text-danger bg-danger/10";
+                return (
+                  <details className="rounded-xl border border-border">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2.5">
+                      <span className={`rounded-lg px-2 py-1 text-sm font-extrabold tabular-nums ${tone}`}>{cit.score}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">AI alıntılanabilirlik · {cit.grade}</span>
+                        <span className="block truncate text-[11px] text-ink/50">{cit.top.length ? `Önce: ${cit.top.join(" · ")}` : "Belirgin bir eksik yok"}</span>
+                      </span>
+                      <span className="text-[11px] text-ink/40">detay ▾</span>
+                    </summary>
+                    <ul className="space-y-1.5 border-t border-border px-3 py-3 text-xs">
+                      {cit.checks.map((c) => (
+                        <li key={c.key} className="flex gap-2">
+                          <span className={c.ok ? "text-seo" : "text-warn"}>{c.ok ? "✓" : "!"}</span>
+                          <span>
+                            <span className="font-medium">{c.label}</span>
+                            {!c.ok && <span className="block text-ink/50">{c.hint}</span>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })()}
 
               {selectedDraft.article.openPlaceholders.length > 0 && (
                 <div className="rounded-lg border border-warn/40 bg-warn/5 p-3 text-xs text-warn space-y-1">

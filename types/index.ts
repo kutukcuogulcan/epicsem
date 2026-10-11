@@ -57,7 +57,9 @@ export interface GeneratedFaqItem {
 
 export interface AiBotAccess {
   bot: string;
-  engine: "OpenAI" | "Anthropic" | "Perplexity" | "Google" | "Meta" | "Common Crawl";
+  engine: string;
+  /** citation = AI cevaplarında alıntı için tarar, fetch = kullanıcı isteğiyle açar, training = model eğitimi. */
+  role?: "citation" | "fetch" | "training";
   allowed: boolean;
 }
 
@@ -223,6 +225,20 @@ export interface BulkPageMetrics {
   redirectHops?: { url: string; status: number }[];
   /** Sayfada kaç link olduğu (iç + dış, tekrarlar dahil). */
   totalLinks?: number;
+  /** GEO / Google AI hazırlığı sinyalleri. */
+  geo?: {
+    snippetBlocked: boolean;
+    maxSnippet: number | null;
+    nosnippetRatio: number;
+    isArticle: boolean;
+    hasAuthor: boolean;
+    hasDate: boolean;
+    futureDate: boolean;
+    schemaNameHidden: boolean;
+    /** 0-100 alıntılanabilirlik puanı (250+ kelimelik sayfalarda). */
+    citability: number | null;
+    citabilityTop: string[];
+  };
 }
 
 /** Tarama genelinde toplanan varlıklar — Linkler/Görseller/Yönlendirmeler sekmeleri için. */
@@ -234,7 +250,17 @@ export interface BulkCrawlAssets {
   /** Neredeyse aynı içerikli sayfa grupları. */
   duplicateGroups: string[][];
   /** Site düzeyi güvenlik kontrolleri. */
-  site: { https: boolean; hsts: boolean; httpRedirectsToHttps: boolean | null };
+  site: {
+    https: boolean;
+    hsts: boolean;
+    httpRedirectsToHttps: boolean | null;
+    robotsFound?: boolean;
+    /** robots.txt'de engellenen AI arama/alıntı botları. */
+    aiBlockedCitation?: string[];
+    /** robots.txt'de engellenen AI eğitim botları (bilinçli tercih olabilir). */
+    aiBlockedTraining?: string[];
+    sitemapInRobots?: boolean | null;
+  };
 }
 
 export interface BulkImportSummary {
@@ -255,6 +281,11 @@ export interface BulkImportSummary {
   /** Her sorun kodunun kaç sayfada görüldüğü (yeni taramalarda; tüm kodları kapsar). */
   issueCounts?: Record<string, number>;
   avgResponseMs?: number | null;
+  /** Ortalama AI alıntılanabilirlik puanı (0-100) ve ölçülen sayfa sayısı. */
+  avgCitability?: number | null;
+  citabilityPages?: number;
+  /** Site düzeyi AI bot erişimi (robots.txt). */
+  site?: { aiBlockedCitation: string[]; aiBlockedTraining: string[] };
   avgHtmlKb?: number | null;
   /** Hata içermeyen taranmış URL yüzdesi (Ahrefs Health Score mantığı). */
   healthScore?: number | null;

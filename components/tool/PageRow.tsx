@@ -82,6 +82,15 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                     <Stat label="Dil" value={m.lang ?? "—"} bad={!m.lang && sc === 200} />
                     <Stat label="Sitemap" value={m.inSitemap ? "var" : "yok"} />
                   </div>
+                  {m.geo?.citability != null && (
+                    <div className="rounded-xl border border-border bg-panel px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-ink/70">AI alıntılanabilirlik</span>
+                        <span className={`font-extrabold tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
+                      </div>
+                      {m.geo.citabilityTop.length > 0 && <div className="mt-0.5 text-ink/50">Önce: {m.geo.citabilityTop.join(" · ")}</div>}
+                    </div>
+                  )}
                   <div className="text-xs text-ink/60">
                     <span className="text-ink/40">Schema: </span>
                     {m.schemaTypes.length ? m.schemaTypes.join(", ") : <span className="text-warn">yok</span>}

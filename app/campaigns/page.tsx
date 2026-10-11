@@ -24,7 +24,7 @@ interface Campaign {
   postsPerRun: number;
   format: Format;
   mode: Mode;
-  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean };
+  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean; minCitability?: number };
   nextRunAt: string | null;
   feed: { id: number; name: string; kind: string } | null;
   connection: { id: number; label: string; platform: string } | null;
@@ -32,7 +32,7 @@ interface Campaign {
   lastRunNote: string | null;
   createdAt: string;
   drafts: number;
-  lastDraft: { id: number; title: string; sourceUrl: string; createdAt: string } | null;
+  lastDraft: { id: number; title: string; sourceUrl: string; createdAt: string; citability: number | null } | null;
   queue: { total: number; done: number } | null;
 }
 
@@ -99,6 +99,7 @@ const emptyForm = {
   cover: "branded" as "none" | "branded" | "ai",
   toc: true,
   takeaways: true,
+  minCitability: 50,
 };
 
 function ago(iso: string) {
@@ -191,6 +192,7 @@ export default function CampaignsPage() {
       cover: c.options.cover ?? "none",
       toc: !!c.options.toc,
       takeaways: !!c.options.takeaways,
+      minCitability: c.options.minCitability ?? 0,
     });
     setFeed(null);
     setFeedError(null);
@@ -262,6 +264,7 @@ export default function CampaignsPage() {
           cover: form.cover,
           toc: form.toc,
           takeaways: form.takeaways,
+          minCitability: form.mode === "review" ? 0 : form.minCitability,
         },
         config:
           form.source === "rss"
@@ -452,7 +455,14 @@ export default function CampaignsPage() {
                 {c.lastDraft && (
                   <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
                     <div className="min-w-0">
-                      <div className="text-[10px] text-ink/45">Son taslak · {ago(c.lastDraft.createdAt)}</div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-ink/45">
+                        Son taslak · {ago(c.lastDraft.createdAt)}
+                        {c.lastDraft.citability !== null && (
+                          <span title="AI alıntılanabilirlik puanı" className={`rounded px-1.5 py-px font-bold ${c.lastDraft.citability >= 65 ? "bg-seo/10 text-seo" : c.lastDraft.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>
+                            AI alıntı {c.lastDraft.citability}
+                          </span>
+                        )}
+                      </div>
                       <div className="truncate text-sm font-semibold">{c.lastDraft.title}</div>
                     </div>
                     <Link href={`/editor?draftId=${c.lastDraft.id}`} className="shrink-0 text-xs font-semibold text-accent hover:underline">Editörde aç →</Link>
@@ -538,6 +548,15 @@ export default function CampaignsPage() {
                       </select>
                     )}
                     {form.mode === "publish" && <p className="text-[11px] text-danger/80">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
+                      <span>
+                        <span className="block text-sm font-semibold">Kalite kapısı</span>
+                        <span className="block text-[11px] text-ink/50">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, Content Studio&apos;da beklet (AI&apos;sız, ücretsiz)</span>
+                      </span>
+                      <select value={form.minCitability} onChange={(e) => set("minCitability", Number(e.target.value))} className="rounded-lg border border-border bg-muted px-2 py-1.5 text-sm">
+                        {[0, 40, 50, 60, 70].map((v) => <option key={v} value={v}>{v === 0 ? "Kapalı" : `${v}/100`}</option>)}
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>

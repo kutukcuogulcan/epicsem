@@ -1,4 +1,7 @@
 import * as cheerio from "cheerio";
+import { citInputFromHtml, scoreCitability } from "./citability";
+import { parseRobotsTxt, isBotAllowed } from "./robots";
+import { AI_BOTS } from "./ai-bots";
 import type { BulkCrawlAssets, BulkImportResult, BulkPageMetrics } from "@/types";
 import { buildBulkResult, type RawBulkRow } from "@/lib/bulk-analysis";
 
@@ -171,6 +174,30 @@ function schemaTypesOf($: cheerio.CheerioAPI): string[] {
   return [...types].slice(0, 12);
 }
 
+/** JSON-LD'den yazı sinyalleri: tür, yazar, tarihler, başlık/isim. */
+function jsonLdSignals($: cheerio.CheerioAPI) {
+  const out = { isArticle: false, author: false, datePublished: null as string | null, dateModified: null as string | null, names: [] as string[] };
+  const walk = (n: any) => {
+    if (!n || typeof n !== "object") return;
+    if (Array.isArray(n)) return n.forEach(walk);
+    const t = ([] as string[]).concat(n["@type"] ?? []).join(" ");
+    if (/Article|BlogPosting|NewsArticle|TechArticle|HowTo/i.test(t)) {
+      out.isArticle = true;
+      if (n.author) out.author = true;
+      if (typeof n.datePublished === "string") out.datePublished = n.datePublished;
+      if (typeof n.dateModified === "string") out.dateModified = n.dateModified;
+      if (typeof n.headline === "string") out.names.push(n.headline);
+    }
+    if (n["@graph"]) walk(n["@graph"]);
+  };
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      walk(JSON.parse($(el).contents().text()));
+    } catch {}
+  });
+  return out;
+}
+
 async function crawlOne(url: string, host: string): Promise<PageOutcome> {
   const base: RawBulkRow = {
     url,
@@ -288,6 +315,21 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     });
   }
   const schemaTypes = schemaTypesOf($);
+  // ---- GEO / Google AI hazırlığı sinyalleri (AI'sız) ----
+  const ld = jsonLdSignals($);
+  const robotsAll = (metaRobots ?? "") + ", " + ($('meta[name="googlebot" i]').attr("content") ?? "");
+  const maxSnippetM = robotsAll.match(/max-snippet\s*:\s*(-?\d+)/i);
+  const maxSnippet = maxSnippetM ? Number(maxSnippetM[1]) : null;
+  const snippetBlocked = /(^|[\s,])nosnippet\b/i.test(robotsAll) || (maxSnippet !== null && maxSnippet >= 0 && maxSnippet < 50);
+  const pathIsArticle = /\/(blog|haber|makale|yazi|yazilar|news|articles?|rehber|guide|post)\/[^/]+/i.test(new URL(url).pathname);
+  const isArticle = ld.isArticle || pathIsArticle || $("article").length === 1;
+  const hasAuthor = ld.author || $('[rel="author"], [itemprop="author"], meta[name="author" i], .author, .byline, [class*="author"]').length > 0;
+  const metaDate = $('meta[property="article:published_time"], meta[property="article:modified_time"], time[datetime]').first().attr("content") ?? $("time[datetime]").first().attr("datetime") ?? null;
+  const dates = [ld.datePublished, ld.dateModified, metaDate].filter(Boolean) as string[];
+  const futureDate = dates.some((d) => {
+    const t = new Date(d).getTime();
+    return !isNaN(t) && t > Date.now() + 2 * 864e5;
+  });
   const metricsPartial = {
     responseMs,
     htmlKb,
@@ -315,6 +357,26 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     .replace(/\s+/g, " ")
     .trim();
   const wordCount = text ? text.split(" ").length : 0;
+  const lowerText = text.toLocaleLowerCase("tr");
+  const schemaNameHidden = ld.names.length > 0 && !ld.names.some((n) => lowerText.includes(n.toLocaleLowerCase("tr").slice(0, 40)));
+  let nosnippetChars = 0;
+  $("[data-nosnippet]").each((_, el) => {
+    nosnippetChars += $(el).text().replace(/\s+/g, " ").length;
+  });
+  const nosnippetRatio = text.length ? Math.min(1, nosnippetChars / text.length) : 0;
+  const cit = wordCount >= 250 ? scoreCitability(citInputFromHtml($, host)) : null;
+  const geo = {
+    snippetBlocked,
+    maxSnippet,
+    nosnippetRatio: Math.round(nosnippetRatio * 100) / 100,
+    isArticle,
+    hasAuthor,
+    hasDate: dates.length > 0,
+    futureDate,
+    schemaNameHidden,
+    citability: cit ? cit.score : null,
+    citabilityTop: cit ? cit.top : [],
+  };
   const noindex = !!metaRobots && /noindex/i.test(metaRobots);
   const canonicalElsewhere = !!canonical && canonical !== canon(url);
 
@@ -332,7 +394,7 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
       wordCount,
       canonical,
       metaRobots,
-      metrics: { ...emptyMetrics(), ...metricsPartial },
+      metrics: { ...emptyMetrics(), ...metricsPartial, geo },
     },
     links: [...links],
     sig: minhash(text),
@@ -562,5 +624,30 @@ async function collectAssets(rows: RawBulkRow[], sigs: Map<string, number[]>, or
     }
   }
 
-  return { externalLinks, images, duplicateGroups: groups, site: { https, hsts, httpRedirectsToHttps } };
+  // 6) robots.txt — AI botları ve sitemap bildirimi.
+  let aiBlockedCitation: string[] = [];
+  let aiBlockedTraining: string[] = [];
+  let sitemapInRobots: boolean | null = null;
+  let robotsFound = false;
+  try {
+    const r = await get(`${origin}/robots.txt`, 6000, "follow");
+    if (r.ok) {
+      const txt = await r.text();
+      if (!/<html/i.test(txt.slice(0, 500))) {
+        robotsFound = true;
+        const rules = parseRobotsTxt(txt);
+        const blocked = AI_BOTS.filter((b) => !isBotAllowed(rules, b.userAgent, "/"));
+        aiBlockedCitation = blocked.filter((b) => b.role !== "training").map((b) => b.userAgent);
+        aiBlockedTraining = blocked.filter((b) => b.role === "training").map((b) => b.userAgent);
+        sitemapInRobots = /^\s*sitemap\s*:/im.test(txt);
+      }
+    }
+  } catch {}
+
+  return {
+    externalLinks,
+    images,
+    duplicateGroups: groups,
+    site: { https, hsts, httpRedirectsToHttps, robotsFound, aiBlockedCitation, aiBlockedTraining, sitemapInRobots },
+  };
 }

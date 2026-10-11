@@ -12,6 +12,7 @@ import {
 } from "./db";
 import { feedIsStale, refreshFeed } from "./feeds";
 import { addTableOfContents } from "./article-post";
+import { citabilityOfMarkdown } from "./citability";
 import { aiCover, brandedCover } from "./covers";
 import { publishDraftToConnection } from "./publish-draft";
 import { isDemoMode } from "./geo-providers";
@@ -167,6 +168,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
     const knowledge = (await getBrandKnowledge(campaign.userId).catch(() => ({ content: "" }))).content;
     const made: { id: number; label: string }[] = [];
     const sent: string[] = [];
+    const held: string[] = [];
     const errors: string[] = [];
     let quotaHit: string | null = null;
 
@@ -184,6 +186,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         if (campaign.options.toc) article.bodyMarkdown = addTableOfContents(article.bodyMarkdown, campaign.options.language ?? "tr");
         const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id);
         made.push({ id: draft.id, label: t.label });
+        const cit = citabilityOfMarkdown(article.bodyMarkdown, t.label);
 
         // Kapak görseli — AI seçiliyse dene, olmazsa markalı (ücretsiz) kapağa düş.
         const coverKind = campaign.options.cover ?? "none";
@@ -201,7 +204,11 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         }
 
         // Sitede taslak / tam otomatik modlar — bağlı CMS'e gönder.
-        if (campaign.mode !== "review" && campaign.options.connectionId) {
+        // Kalite kapısı (AI'sız): alıntılanabilirlik puanı eşiğin altındaysa siteye gönderme.
+        const minScore = campaign.options.minCitability ?? 0;
+        if (campaign.mode !== "review" && campaign.options.connectionId && minScore > 0 && cit.score < minScore) {
+          held.push(`"${t.label}" (${cit.score}/100)`);
+        } else if (campaign.mode !== "review" && campaign.options.connectionId) {
           try {
             const r = await publishDraftToConnection(campaign.userId, draft, campaign.options.connectionId, campaign.mode === "publish" ? "publish" : "draft");
             sent.push(r.postUrl || r.editUrl || "gönderildi");
@@ -229,6 +236,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
             : `${sent.length} tanesi sitene taslak olarak gönderildi.`
           : "Siteye gönderilemedi, Content Studio'da duruyor.";
     const parts = [`${made.length} yeni yazı: ${made.map((m) => `"${m.label}"`).join(", ")} — ${where}`];
+    if (held.length) parts.push(`Alıntılanabilirlik puanı eşiğin altında kaldığı için siteye gönderilmeyenler: ${held.join(", ")} — Content Studio'da bekliyor.`);
     if (quotaHit) parts.push(quotaHit);
     if (errors.length) parts.push(`Hata: ${errors.join(" · ")}`);
     const message = parts.join(" ");

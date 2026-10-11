@@ -1,3 +1,4 @@
+import { citabilityOfMarkdown } from "./citability";
 /**
  * AI SEO Editör için canlı puanlama — tamamen kural tabanlı (AI/token harcamaz).
  * SEO puanı: anahtar kelime yerleşimi, uzunluk, başlık yapısı, meta, okunabilirlik.
@@ -227,36 +228,13 @@ export function scoreDoc(blocks: Block[], meta: { title: string; metaDescription
     { key: "img", label: `Görsel var (${images})`, ok: images >= 1, hint: "En az bir açıklayıcı görsel ve alt metni ekleyin.", weight: 1 },
   ];
 
-  // --- GEO / AI alıntılanabilirlik ---
-  const answerFirst = h2s.filter((h) => {
-    const i = blocks.indexOf(h);
-    const next = blocks.slice(i + 1).find((b) => b.type !== "img");
-    if (!next || next.type !== "p") return false;
-    const first = plain(next.text).split(/[.!?]\s/)[0] ?? "";
-    const wl = words(first).length;
-    return wl >= 6 && wl <= 35;
-  }).length;
-  const qH = h2s.concat(blocks.filter((b) => b.type === "h3")).filter((h) => /\?\s*$/.test(h.text) || /^(ne|nasıl|neden|hangi|kim|nerede|ne zaman|kaç|what|how|why|which|when)\b/i.test(h.text.trim())).length;
-  const hasFaq = blocks.some((b) => (b.type === "h2" || b.type === "h3") && /(sss|sık sorulan|faq|soru)/i.test(b.text));
-  const hasList = blocks.some((b) => b.type === "ul" || b.type === "ol");
-  const hasTable = blocks.some((b) => b.type === "table");
-  const numbers = (plain(all).match(/\b\d+([.,]\d+)?\s?(%|tl|₺|\$|€|kg|cm|mm|gün|saat|dakika|yıl|adet|kişi)?/gi) ?? []).length;
-  const hasDef = !!firstP && /\b(nedir|demektir|olarak tanımlanır|is a|is the|refers to)\b|,?\s(bir|birer)\s.+(dır|dir|dur|dür|tır|tir|tur|tür)\b/i.test(plain(firstP));
-  const kwEarly = !!kw && countOcc(plain(firstP).split(/[.!?]\s/)[0] ?? "", kw) > 0;
-
-  const geoChecks: Check[] = [
-    { key: "answer", label: `Cevap-önce bölümler (${answerFirst}/${h2s.length || 0})`, ok: h2s.length > 0 && answerFirst / h2s.length >= 0.7, part: h2s.length ? answerFirst / h2s.length : 0, hint: "Her H2'nin hemen altında ilk cümlede soruyu doğrudan cevaplayın (6–35 kelime). AI motorları bu cümleyi alıntılar.", weight: 3 },
-    { key: "lead", label: "Giriş tek cümlede konuyu tanımlıyor", ok: hasDef || kwEarly, hint: "İlk cümlede '<konu>, … olan bir …dır.' kalıbında net bir tanım verin.", weight: 2 },
-    { key: "qh", label: `Soru biçimli başlıklar (${qH})`, ok: qH >= 2, part: Math.min(1, qH / 2), hint: "Kullanıcıların AI'a sorduğu gibi başlıklar yazın: 'X nasıl seçilir?', 'X ile Y farkı nedir?'.", weight: 2 },
-    { key: "faq", label: "SSS (Sık Sorulan Sorular) bölümü", ok: hasFaq, hint: "Yazının sonuna 4–6 soruluk bir SSS bölümü ekleyin; 'SSS ekle' düğmesi yazabilir.", weight: 2 },
-    { key: "list", label: "Liste veya tablo kullanımı", ok: hasList || hasTable, part: hasList && hasTable ? 1 : hasList || hasTable ? 0.75 : 0, hint: "Adımları numaralı listeyle, karşılaştırmaları tabloyla verin — AI motorları yapılandırılmış veriyi sever.", weight: 2 },
-    { key: "facts", label: `Somut veri ve sayılar (${numbers})`, ok: numbers >= 5, part: Math.min(1, numbers / 5), hint: "Ölçü, fiyat aralığı, süre, yüzde gibi doğrulanabilir sayılar ekleyin (uydurmayın).", weight: 2 },
-    { key: "short", label: "Kısa, alıntılanabilir paragraflar", ok: paras.length > 0 && paras.filter((p) => words(p.text).length <= 80).length / paras.length >= 0.8, hint: "Paragrafları 2–4 cümlede tutun; her paragraf tek bir fikri anlatsın.", weight: 1 },
-  ];
+  // --- GEO / AI alıntılanabilirlik — lib/citability.ts (Princeton GEO yöntemleri, AI'sız) ---
+  const cit = citabilityOfMarkdown(blocksToMd(blocks), kw);
+  const geoChecks: Check[] = cit.checks;
 
   return {
     seo: score(seoChecks),
-    geo: score(geoChecks),
+    geo: cit.score,
     seoChecks,
     geoChecks,
     stats: { words: wc, readingMin: Math.max(1, Math.round(wc / 200)), h2: h2s.length, paragraphs: paras.length, avgSentence, density, links, images },

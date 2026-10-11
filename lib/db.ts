@@ -12,6 +12,7 @@ import type {
   TopicVisibility,
 } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
+import { citabilityOfMarkdown } from "@/lib/citability";
 
 /**
  * Persistence layer — Postgres via `pg` (node-postgres), connected through DATABASE_URL.
@@ -1618,6 +1619,8 @@ export interface CampaignOptions {
   toc?: boolean;
   /** "Öne çıkanlar" maddeleri ekle. */
   takeaways?: boolean;
+  /** Sitede taslak / tam otomasyon modunda: alıntılanabilirlik puanı bunun altındaysa siteye gönderme (0 = kapalı). */
+  minCitability?: number;
 }
 
 export interface Campaign {
@@ -1715,7 +1718,7 @@ export async function listCampaigns(userId: number): Promise<Campaign[]> {
 /** Her kampanyanın ürettiği taslak sayısı ve son taslağı — kampanya kartlarında gösterilir. */
 export async function campaignDraftStats(
   userId: number
-): Promise<Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string } | null }>> {
+): Promise<Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string; citability: number | null } | null }>> {
   await ensureSchema();
   const rows = await many<any>(
     `SELECT DISTINCT ON (campaign_id) campaign_id, id, source_url, article_json, created_at,
@@ -1724,15 +1727,18 @@ export async function campaignDraftStats(
       ORDER BY campaign_id, id DESC`,
     [userId]
   );
-  const out: Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string } | null }> = {};
+  const out: Record<number, { count: number; last: { id: number; title: string; sourceUrl: string; createdAt: string; citability: number | null } | null }> = {};
   for (const r of rows) {
     let title = r.source_url;
+    let citability: number | null = null;
     try {
-      title = JSON.parse(r.article_json).title || title;
+      const a = JSON.parse(r.article_json);
+      title = a.title || title;
+      citability = citabilityOfMarkdown(a.bodyMarkdown ?? "").score;
     } catch {
       /* başlık okunamazsa kaynak adresi göster */
     }
-    out[r.campaign_id] = { count: Number(r.n), last: { id: r.id, title, sourceUrl: r.source_url, createdAt: toIso(r.created_at) } };
+    out[r.campaign_id] = { count: Number(r.n), last: { id: r.id, title, sourceUrl: r.source_url, createdAt: toIso(r.created_at), citability } };
   }
   return out;
 }
