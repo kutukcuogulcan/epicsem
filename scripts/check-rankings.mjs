@@ -17,4 +17,4 @@ if (!res.ok) {
   console.error(`[epicsem-rankings] failed: ${data.error ?? res.statusText}`);
   process.exit(1);
 }
-console.log(`[epicsem-rankings] ${new Date().toISOString()} — ${data.checked} keyword(s) checked`, data.errors?.length ? data.errors : "");
+console.log(`[epicsem-rankings] ${new Date().toISOString()} — ${data.checked} keyword(s) checked, ${data.synced ?? 0} synced from SerpBear`, data.errors?.length ? data.errors : "");

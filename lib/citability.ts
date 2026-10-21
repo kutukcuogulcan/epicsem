@@ -478,3 +478,185 @@ export function scoreCitability(input: CitInput, opts: { keyword?: string; now?:
 export function citabilityOfMarkdown(md: string, keyword?: string): CitabilityResult {
   return scoreCitability(citInputFromMarkdown(md), { keyword });
 }
+
+// ---------------------------------------------------------------------------
+// Bölüm (pasaj) bazlı alıntılanabilirlik
+// AI motorları sayfayı bütün olarak değil, başlık başlık parçalar halinde alır. Her bölüm ayrı
+// puanlanır; en zayıf bölümler "önce bunu düzelt" diye gösterilir. Yöntem, geo-seo-claude
+// projesinin citability_scorer.py betiğinden (zubair-trabzada, MIT lisansı) Türkçe için uyarlanmıştır:
+// cevap bloğu (30) · bağımsızlık (25) · yapı (20) · istatistik (15) · özgünlük (10).
+// ---------------------------------------------------------------------------
+
+export interface PassageInput {
+  heading: string;
+  text: string;
+}
+
+export interface CitPassage {
+  heading: string;
+  words: number;
+  score: number;
+  grade: "A" | "B" | "C" | "D" | "F";
+  breakdown: { answer: number; selfContained: number; structure: number; stats: number; unique: number };
+  preview: string;
+  /** En çok puan kaybettiren boyut için kısa öneri. */
+  tip: string;
+}
+
+export interface PassageReport {
+  count: number;
+  avg: number | null;
+  /** 134–167 kelimelik (AI'ın en çok alıntıladığı uzunluk) bölüm sayısı. */
+  optimal: number;
+  grades: Record<CitPassage["grade"], number>;
+  top: CitPassage[];
+  weak: CitPassage[];
+  all: CitPassage[];
+}
+
+/** Türkçe karakterlerle doğru çalışan kelime sınırı (\b, ğ/ş/ö gibi harfleri tanımaz). */
+const wb = (src: string, flags = "iu") => new RegExp(`(?<![\\p{L}\\p{N}])(?:${src})(?![\\p{L}\\p{N}])`, flags);
+const P_DEF = new RegExp(`${wb("nedir|demektir|olarak tanımlanır|anlamına gelir|kısaca|yani|başka bir deyişle|is an?|is the|refers to|means|defined as|in other words").source}|(dır|dir|dur|dür|tır|tir|tur|tür)[.,]`, "iu");
+const P_FIRST = new RegExp(`${wb("ise|olan|olur|sağlar|gerekir|yapılır|is|are|was|were|means").source}|%\\s?\\d|\\d+\\s?%|[₺$€]\\s?\\d|\\d+\\s?(tl|milyon|milyar|bin|million|billion|thousand)(?![\\p{L}])`, "iu");
+const P_SOURCE = wb("göre|araştırma(sı|sına göre)?|çalışma(sı)?|rapor(u|una göre)?|verilerine göre|istatistik(ler)?|according to|research shows|studies (show|found)|data shows");
+const P_PRON = /^(bu|şu|o|bunlar|şunlar|onlar|bunu|şunu|onu|bunun|şunun|onun|buna|ona|bunda|onda|it|they|them|their|this|that|these|those|he|she|his|her)$/i;
+const P_TRANS = wb("ilk olarak|öncelikle|ikinci olarak|üçüncü|son olarak|ayrıca|ek olarak|bunun yanı sıra|first|second|third|finally|additionally|moreover|furthermore");
+const P_STEP = /(^|\s)(\d+[.)]\s|adım\s?\d|\d+\.\s?adım|step\s?\d|tip\s?\d)/iu;
+const P_UNIT = wb("\\d+([.,]\\d+)?\\s?(kullanıcı|müşteri|kişi|sayfa|kat|gün|saat|dakika|ay|yıl|adet|kg|gr|cm|mm|km|m²|bar|litre|fincan|users|customers|pages|times|x)", "giu");
+const P_ORG = wb("TÜİK|TCMB|BDDK|BTK|Statista|Nielsen|Gartner|Forrester|McKinsey|Deloitte|PwC|Harvard|Stanford|MIT|Google|Microsoft|OpenAI|Anthropic|Meta|Ahrefs|Semrush|Similarweb|Eurostat|OECD|WHO|Dünya Bankası", "u");
+const P_OWN = wb("araştırmamız|anketimiz|verilerimiz|analizimiz|testlerimiz|test ettik|ölçtük|inceledik|analiz ettik|deneyimlerimize göre|our (research|study|data|analysis|survey|findings)|we (found|discovered|analyzed|surveyed|measured)");
+const P_EXAMPLE = wb("örneğin|mesela|örnek olarak|vaka|uygulamada|gerçek hayatta|deneyimle|case study|for example|for instance|in practice|real-world|hands-on");
+
+export function scorePassage(p: PassageInput): CitPassage {
+  const text = plain(p.text).replace(/\s+/g, " ").trim();
+  const ws = wordsOf(text);
+  const wc = ws.length;
+  const sents = sentencesOf(text);
+
+  // A) Cevap bloğu (30)
+  let answer = 0;
+  if (P_DEF.test(text)) answer += 15;
+  if (P_FIRST.test(ws.slice(0, 60).join(" "))) answer += 15;
+  if (/\?\s*$/.test(p.heading.trim()) || QUESTION_HEAD.test(p.heading.trim())) answer += 10;
+  if (sents.length) answer += Math.floor((sents.filter((x) => {
+    const n = wordsOf(x).length;
+    return n >= 5 && n <= 25;
+  }).length / sents.length) * 10);
+  if (P_SOURCE.test(text)) answer += 10;
+  answer = Math.min(30, answer);
+
+  // B) Bağımsızlık (25)
+  let self = wc >= 134 && wc <= 167 ? 10 : wc >= 100 && wc <= 200 ? 7 : wc >= 80 && wc <= 250 ? 4 : wc < 30 || wc > 400 ? 0 : 2;
+  const pron = ws.filter((w) => P_PRON.test(w.toLocaleLowerCase("tr").replace(/[^\p{L}]/gu, ""))).length / Math.max(1, wc);
+  self += pron < 0.02 ? 8 : pron < 0.04 ? 5 : pron < 0.06 ? 3 : 0;
+  // Cümle başı dışındaki büyük harfli kelimeler → özel isim/varlık sinyali
+  const entities = (text.match(/(?<![.!?]\s)(?<!^)(?<![\p{L}])\p{Lu}[\p{Ll}]{2,}/gu) ?? []).length;
+  self += entities >= 3 ? 7 : entities >= 1 ? 4 : 0;
+  self = Math.min(25, self);
+
+  // C) Yapı (20)
+  const avgS = sents.length ? sents.reduce((a, x) => a + wordsOf(x).length, 0) / sents.length : 0;
+  let structure = avgS >= 10 && avgS <= 20 ? 8 : avgS >= 8 && avgS <= 25 ? 5 : 2;
+  if (P_TRANS.test(text)) structure += 4;
+  if (P_STEP.test(p.text)) structure += 4;
+  if (/\n\s*([-*+]|\d+[.)])\s/.test(p.text) || /\|.*\|/.test(p.text)) structure += 4;
+  structure = Math.min(20, structure);
+
+  // D) İstatistik yoğunluğu (15)
+  let stats = Math.min(6, (text.match(/%\s?\d+|\d+([.,]\d+)?\s?%/g) ?? []).length * 3);
+  stats += Math.min(5, (text.match(/[₺$€]\s?\d|\d[\d.,]*\s?(tl|₺|usd|eur)\b/gi) ?? []).length * 3);
+  stats += Math.min(4, (text.match(P_UNIT) ?? []).length * 2);
+  if (/(?<!\d)(19|20)\d{2}(?!\d)/.test(text)) stats += 2;
+  if (P_ORG.test(text)) stats += 2;
+  if (/\(\p{Lu}[\p{L}&. ]+,?\s(19|20)\d{2}\)/u.test(text)) stats += 2;
+  stats = Math.min(15, stats);
+
+  // E) Özgünlük (10)
+  let unique = 0;
+  if (P_OWN.test(text)) unique += 5;
+  if (P_EXAMPLE.test(text)) unique += 3;
+  if (/(?<![\p{L}])(ile|kullanarak|using|with|via)\s+\p{Lu}/u.test(text)) unique += 2;
+  unique = Math.min(10, unique);
+
+  const score = answer + self + structure + stats + unique;
+  const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : score >= 35 ? "D" : "F";
+  const gaps: [number, string][] = [
+    [1 - answer / 30, "İlk cümlede soruyu doğrudan cevaplayın ya da tanımı verin ('X, … olan bir …dır.')."],
+    [1 - self / 25, wc < 100 ? `Bölüm kısa (${wc} kelime); 130–170 kelimeye tamamlayın.` : wc > 250 ? `Bölüm uzun (${wc} kelime); H3 ile ikiye bölün.` : "'Bu', 'o' gibi zamirler yerine konunun adını tekrar yazın; bölüm tek başına anlaşılsın."],
+    [1 - structure / 20, "Adımları numaralı listeyle verin, cümleleri 10–20 kelimede tutun."],
+    [1 - stats / 15, "Doğrulanabilir bir sayı, yüzde ya da kaynaklı bir veri ekleyin."],
+    [1 - unique / 10, "Kendi deneyiminizden bir örnek ya da ölçüm ekleyin ('Örneğin…')."],
+  ];
+  gaps.sort((a, b) => b[0] - a[0]);
+  return {
+    heading: p.heading || "Giriş",
+    words: wc,
+    score,
+    grade,
+    breakdown: { answer, selfContained: self, structure, stats, unique },
+    preview: ws.slice(0, 24).join(" ") + (wc > 24 ? "…" : ""),
+    tip: gaps[0][1],
+  };
+}
+
+export function analyzePassages(list: PassageInput[]): PassageReport {
+  const all = list.filter((p) => wordsOf(p.text).length >= 20).map(scorePassage);
+  const grades = { A: 0, B: 0, C: 0, D: 0, F: 0 } as PassageReport["grades"];
+  for (const p of all) grades[p.grade]++;
+  const sorted = [...all].sort((a, b) => b.score - a.score);
+  return {
+    count: all.length,
+    avg: all.length ? Math.round(all.reduce((a, p) => a + p.score, 0) / all.length) : null,
+    optimal: all.filter((p) => p.words >= 134 && p.words <= 167).length,
+    grades,
+    top: sorted.slice(0, 3),
+    weak: sorted.length > 3 ? sorted.slice(-3).reverse() : sorted.filter((p) => p.score < 50).reverse(),
+    all,
+  };
+}
+
+/** Markdown'ı H2/H3 başlıklarına göre bölümlere ayırır (H1 ve SSS soruları dahil). */
+export function passagesFromMarkdown(md: string): PassageInput[] {
+  const out: PassageInput[] = [];
+  let cur: PassageInput = { heading: "Giriş", text: "" };
+  for (const raw of md.replace(/\r/g, "").split("\n")) {
+    const h = raw.trim().match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      if (h[1].length === 1) continue;
+      if (cur.text.trim()) out.push(cur);
+      cur = { heading: h[2].trim(), text: "" };
+      continue;
+    }
+    if (/^!\[/.test(raw.trim())) continue;
+    cur.text += raw + "\n";
+  }
+  if (cur.text.trim()) out.push(cur);
+  return out;
+}
+
+/** HTML (cheerio) içeriğini başlıklara göre bölümlere ayırır. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function passagesFromHtml($: any): PassageInput[] {
+  const root = $("article").first().length ? $("article").first() : $("main").first().length ? $("main").first() : $("body");
+  const out: PassageInput[] = [];
+  let cur: PassageInput = { heading: "Giriş", text: "" };
+  root.find("h2, h3, h4, p, li, table").each((_: number, el: any) => {
+    const tag = (el.tagName || el.name || "").toLowerCase();
+    if ($(el).closest("nav, header, footer, aside, form").length) return;
+    const t = $(el).text().replace(/\s+/g, " ").trim();
+    if (!t) return;
+    if (/^h\d$/.test(tag)) {
+      if (cur.text.trim()) out.push(cur);
+      cur = { heading: t.slice(0, 140), text: "" };
+    } else if (tag === "li") {
+      if ($(el).parents("li").length) return;
+      cur.text += `\n- ${t}`;
+    } else if (tag === "table") {
+      cur.text += `\n| ${t} |`;
+    } else if (!$(el).closest("li, table").length && wordsOf(t).length >= 5) {
+      cur.text += `\n${t}`;
+    }
+  });
+  if (cur.text.trim()) out.push(cur);
+  return out;
+}

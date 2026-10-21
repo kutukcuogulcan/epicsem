@@ -81,6 +81,20 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
   const [ogTitle, setOgTitle] = useState(row.h1 || row.title || "");
   const [ogBrand, setOgBrand] = useState(host.split(".")[0].replace(/^./, (c) => c.toLocaleUpperCase("tr")));
   const [on, setOn] = useState({ title: false, meta: false, h1: false, schema: false, alts: false, og: needsOg });
+  const [ogProvider, setOgProvider] = useState<"epicsem" | "ogimg">("epicsem");
+  const [ogimgConnected, setOgimgConnected] = useState(false);
+  useEffect(() => {
+    fetch("/api/integrations")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { integrations?: { provider: string }[] } | null) => {
+        if (d?.integrations?.some((i) => i.provider === "ogimg")) {
+          setOgimgConnected(true);
+          setOgProvider("ogimg");
+        }
+      })
+      .catch(() => {});
+  }, []);
+  const ogQs = (t: string) => `title=${encodeURIComponent(t)}&brand=${encodeURIComponent(ogBrand)}&domain=${encodeURIComponent(host)}${ogProvider === "ogimg" ? "&provider=ogimg" : ""}`;
 
   // WordPress
   const [conns, setConns] = useState<Conn[] | null>(null);
@@ -154,7 +168,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
             h1: on.h1 ? h1 : undefined,
             schemaJsonLd: on.schema ? schema : undefined,
             altTexts: on.alts ? alts.filter((a) => a.alt.trim()) : [],
-            ogImage: on.og && ogTitle.trim() ? { title: ogTitle, brand: ogBrand, domain: host } : undefined,
+            ogImage: on.og && ogTitle.trim() ? { title: ogTitle, brand: ogBrand, domain: host, provider: ogProvider } : undefined,
           },
         }),
       });
@@ -241,11 +255,18 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
           <div className="space-y-2">
             <input value={ogTitle} onChange={(e) => { setOgTitle(e.target.value); setOn((o) => ({ ...o, og: true })); }} placeholder="Görseldeki başlık" className="w-full rounded-lg border border-border px-2 py-1.5 text-sm outline-none focus:border-accent" />
             <input value={ogBrand} onChange={(e) => setOgBrand(e.target.value)} placeholder="Marka adı" className="w-full rounded-lg border border-border px-2 py-1.5 text-sm outline-none focus:border-accent" />
-            <a href={`/api/og?download=1&title=${encodeURIComponent(ogTitle)}&brand=${encodeURIComponent(ogBrand)}&domain=${encodeURIComponent(host)}`} className="inline-block text-xs font-semibold text-accent hover:underline">PNG indir</a>
-            <p className="text-[10px] text-ink/45">1200×630 · ücretsiz, AI yok. WordPress'e uygularken öne çıkan görsel yapılır; Epicsem Connector varsa og:image olarak da basılır.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={ogProvider} onChange={(e) => setOgProvider(e.target.value as "epicsem" | "ogimg")} className="rounded-lg border border-border bg-white px-2 py-1 text-xs">
+                <option value="epicsem">Epicsem markalı (ücretsiz)</option>
+                <option value="ogimg" disabled={!ogimgConnected}>ogimg şablonu{ogimgConnected ? "" : " — bağlı değil"}</option>
+              </select>
+              <a href={`/api/og?download=1&${ogQs(ogTitle)}`} className="text-xs font-semibold text-accent hover:underline">PNG indir</a>
+              {!ogimgConnected && <a href="/integrations" className="text-[10px] text-ink/50 hover:underline">ogimg bağla</a>}
+            </div>
+            <p className="text-[10px] text-ink/45">1200×630. WordPress'e uygularken öne çıkan görsel yapılır; Epicsem Connector varsa og:image olarak da basılır.</p>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/api/og?title=${encodeURIComponent(ogTitle || "Başlık")}&brand=${encodeURIComponent(ogBrand)}&domain=${encodeURIComponent(host)}`} alt="Paylaşım görseli önizlemesi" className="aspect-[1200/630] w-full rounded-lg border border-border object-cover" />
+          <img src={`/api/og?${ogQs(ogTitle || "Başlık")}`} alt="Paylaşım görseli önizlemesi" className="aspect-[1200/630] w-full rounded-lg border border-border object-cover" />
         </div>
       </div>
 

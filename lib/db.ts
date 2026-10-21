@@ -373,6 +373,15 @@ async function initSchema(): Promise<void> {
       checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_rank_history_kw ON rank_history(keyword_id, checked_at);
+    ALTER TABLE rank_keywords ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'serpapi';
+    CREATE TABLE IF NOT EXISTS user_integrations (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      config_json TEXT NOT NULL DEFAULT '{}',
+      secrets_json TEXT NOT NULL DEFAULT '{}',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, provider)
+    );
   `);
   // Taslak kapak görselleri (markalı ücretsiz kapak ya da AI görseli).
   await p.query(`
@@ -2422,6 +2431,8 @@ export interface RankKeyword {
   lastUrl: string | null;
   lastCheckedAt: string | null;
   createdAt: string;
+  /** Verinin geldiği yer: serpapi | serpbear */
+  source: string;
 }
 
 function rowToRank(r: any): RankKeyword {
@@ -2435,6 +2446,7 @@ function rowToRank(r: any): RankKeyword {
     lastUrl: r.last_url ?? null,
     lastCheckedAt: r.last_checked_at ? toIso(r.last_checked_at) : null,
     createdAt: toIso(r.created_at),
+    source: r.source ?? "serpapi",
   };
 }
 
@@ -2483,4 +2495,90 @@ export async function rankHistory(userId: number): Promise<Record<number, { posi
   const out: Record<number, { position: number | null; at: string }[]> = {};
   for (const r of rows) (out[r.keyword_id] ??= []).push({ position: r.position, at: toIso(r.checked_at) });
   return out;
+}
+
+
+/** Sıralama geçmişine dış kaynaktan (SerpBear) belirli bir tarihli kayıt ekler; aynı gün varsa atlar. */
+export async function importRankPoint(id: number, position: number | null, url: string | null, at: Date): Promise<boolean> {
+  await ensureSchema();
+  const exists = await one<any>(`SELECT 1 FROM rank_history WHERE keyword_id = $1 AND checked_at::date = $2::date`, [id, at.toISOString()]);
+  if (exists) return false;
+  await exec(`INSERT INTO rank_history (keyword_id, position, url, checked_at) VALUES ($1, $2, $3, $4)`, [id, position, url, at.toISOString()]);
+  return true;
+}
+
+export async function setRankLatest(id: number, position: number | null, url: string | null, at: Date, source: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE rank_keywords SET last_position = $1, last_url = $2, last_checked_at = $3, source = $4 WHERE id = $5`, [position, url, at.toISOString(), source, id]);
+}
+
+export async function rankKeywordId(userId: number, domain: string, keyword: string, gl: string): Promise<number> {
+  await ensureSchema();
+  const row =
+    (await one<any>(`INSERT INTO rank_keywords (user_id, domain, keyword, gl) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`, [userId, domain, keyword, gl])) ??
+    (await one<any>(`SELECT id FROM rank_keywords WHERE user_id = $1 AND domain = $2 AND keyword = $3 AND gl = $4`, [userId, domain, keyword, gl]));
+  return row.id;
+}
+
+// ---------------- kullanıcı entegrasyonları (SerpApi, SerpBear, ogimg, Google Ads) ----------------
+
+export interface IntegrationRow {
+  provider: string;
+  config: Record<string, string>;
+  /** Gizli alanların yalnızca maskeli hâli — istemciye bu gider. */
+  secretsMasked: Record<string, string>;
+  updatedAt: string;
+}
+
+const parseObj = (s: string): Record<string, string> => {
+  try {
+    const o = JSON.parse(s);
+    return o && typeof o === "object" ? o : {};
+  } catch {
+    return {};
+  }
+};
+
+export async function listIntegrations(userId: number): Promise<IntegrationRow[]> {
+  await ensureSchema();
+  const rows = await many<any>(`SELECT * FROM user_integrations WHERE user_id = $1`, [userId]);
+  return rows.map((r) => {
+    const sec = parseObj(r.secrets_json);
+    return {
+      provider: r.provider,
+      config: parseObj(r.config_json),
+      secretsMasked: Object.fromEntries(Object.entries(sec).filter(([, v]) => v).map(([k, v]) => [k, maskSecret(String(v))])),
+      updatedAt: toIso(r.updated_at),
+    };
+  });
+}
+
+/** Sunucu tarafı — ham gizli değerleri içerir. İstemciye ASLA gönderme. */
+export async function getIntegration(userId: number, provider: string): Promise<{ config: Record<string, string>; secrets: Record<string, string> } | null> {
+  await ensureSchema();
+  const r = await one<any>(`SELECT * FROM user_integrations WHERE user_id = $1 AND provider = $2`, [userId, provider]);
+  return r ? { config: parseObj(r.config_json), secrets: parseObj(r.secrets_json) } : null;
+}
+
+/** Boş bırakılan gizli alanlar mevcut değeri korur. */
+export async function saveIntegration(userId: number, provider: string, config: Record<string, string>, secrets: Record<string, string>): Promise<void> {
+  await ensureSchema();
+  const cur = await getIntegration(userId, provider);
+  const merged = { ...(cur?.secrets ?? {}) };
+  for (const [k, v] of Object.entries(secrets)) if (v) merged[k] = v;
+  await exec(
+    `INSERT INTO user_integrations (user_id, provider, config_json, secrets_json, updated_at) VALUES ($1, $2, $3, $4, now())
+     ON CONFLICT (user_id, provider) DO UPDATE SET config_json = EXCLUDED.config_json, secrets_json = EXCLUDED.secrets_json, updated_at = now()`,
+    [userId, provider, JSON.stringify(config), JSON.stringify(merged)]
+  );
+}
+
+export async function deleteIntegration(userId: number, provider: string): Promise<void> {
+  await ensureSchema();
+  await exec(`DELETE FROM user_integrations WHERE user_id = $1 AND provider = $2`, [userId, provider]);
+}
+
+export async function usersWithIntegration(provider: string): Promise<number[]> {
+  await ensureSchema();
+  return (await many<any>(`SELECT user_id FROM user_integrations WHERE provider = $1`, [provider])).map((r) => r.user_id);
 }

@@ -253,6 +253,10 @@ export interface BulkPageMetrics {
     /** 0-100 alıntılanabilirlik puanı (250+ kelimelik sayfalarda). */
     citability: number | null;
     citabilityTop: string[];
+    /** Bölüm bazlı alıntılanabilirlik ortalaması ve en zayıf bölümler. */
+    passageAvg?: number | null;
+    passageCount?: number;
+    weakPassages?: { heading: string; score: number; words: number; tip: string }[];
   };
 }
 

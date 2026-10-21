@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { getCmsConnectionSecret } from "@/lib/db";
 import { applyFixesToWordpress, wpPluginInstalled } from "@/lib/wp-apply";
+import { ogimgAvailable, ogimgImage } from "@/lib/integrations";
 
 export const maxDuration = 60;
 
@@ -37,6 +38,10 @@ export async function POST(req: NextRequest) {
     ogImage:
       fx.ogImage && typeof fx.ogImage.title === "string" && fx.ogImage.title.trim()
         ? { title: fx.ogImage.title.trim().slice(0, 140), brand: String(fx.ogImage.brand ?? "").slice(0, 60), domain: String(fx.ogImage.domain ?? "").slice(0, 100) }
+        : undefined,
+    renderOg:
+      fx.ogImage?.provider === "ogimg" && (await ogimgAvailable(user.id))
+        ? (title: string, brand: string) => ogimgImage(user.id, { title, siteName: brand })
         : undefined,
   };
   try {

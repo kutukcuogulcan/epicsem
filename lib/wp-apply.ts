@@ -13,6 +13,8 @@ export interface WpFixes {
   altTexts?: { src: string; alt: string }[];
   /** Paylaşım görseli: başlık + marka ile üretilen 1200×630 PNG (ücretsiz). */
   ogImage?: { title: string; brand: string; domain: string };
+  /** Görseli üreten fonksiyon (ör. ogimg). Verilmezse ücretsiz markalı kapak kullanılır. */
+  renderOg?: (title: string, brand: string, domain: string) => Promise<Buffer>;
 }
 export interface ApplyResult {
   field: string;
@@ -117,7 +119,7 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
 
   if (item && f.ogImage) {
     try {
-      const png = await brandedCover(f.ogImage.title, f.ogImage.brand, f.ogImage.domain);
+      const png = await (f.renderOg ?? brandedCover)(f.ogImage.title, f.ogImage.brand, f.ogImage.domain);
       const up = await fetch(`${base}/wp-json/wp/v2/media`, {
         method: "POST",
         headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="paylasim-${item.id}.png"`, Authorization: a },
@@ -162,4 +164,17 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
   }
 
   return { results, pluginInstalled: plugin, editUrl: item ? `${base}/wp-admin/post.php?post=${item.id}&action=edit` : null };
+}
+
+/** Epicsem Connector 1.2+ IndexNow anahtarını döndürür (eski sürümde ya da eklenti yoksa null). */
+export async function wpIndexNowKey(siteUrl: string, username: string, appPassword: string): Promise<string | null> {
+  try {
+    const base = siteUrl.trim().replace(/\/+$/, "");
+    const r = await fetch(`${base}/wp-json/epicsem/v1/indexnow`, { headers: { Authorization: auth(username, appPassword) }, signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    return typeof j?.key === "string" && /^[a-zA-Z0-9-]{8,128}$/.test(j.key) ? j.key : null;
+  } catch {
+    return null;
+  }
 }

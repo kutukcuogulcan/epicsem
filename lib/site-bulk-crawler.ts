@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { citInputFromHtml, scoreCitability } from "./citability";
+import { analyzePassages, citInputFromHtml, passagesFromHtml, scoreCitability } from "./citability";
 import { parseRobotsTxt, isBotAllowed } from "./robots";
 import { AI_BOTS } from "./ai-bots";
 import type { BulkCrawlAssets, BulkImportResult, BulkPageMetrics } from "@/types";
@@ -391,6 +391,7 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
   });
   const nosnippetRatio = text.length ? Math.min(1, nosnippetChars / text.length) : 0;
   const cit = wordCount >= 250 ? scoreCitability(citInputFromHtml($, host)) : null;
+  const pas = wordCount >= 250 ? analyzePassages(passagesFromHtml($)) : null;
   const geo = {
     snippetBlocked,
     maxSnippet,
@@ -402,6 +403,9 @@ async function crawlOne(url: string, host: string): Promise<PageOutcome> {
     schemaNameHidden,
     citability: cit ? cit.score : null,
     citabilityTop: cit ? cit.top : [],
+    passageAvg: pas?.avg ?? null,
+    passageCount: pas?.count ?? 0,
+    weakPassages: (pas?.weak ?? []).slice(0, 3).map((p) => ({ heading: p.heading.slice(0, 100), score: p.score, words: p.words, tip: p.tip })),
   };
   const noindex = !!metaRobots && /noindex/i.test(metaRobots);
   const canonicalElsewhere = !!canonical && canonical !== canon(url);

@@ -11,6 +11,7 @@ export const NAV_GROUPS = [
       { href: "/geo", label: "GEO/AEO Visibility", icon: "geo" },
       { href: "/gap", label: "Gap Analysis", icon: "gap" },
       { href: "/keywords", label: "Anahtar Kelime", icon: "keywords" },
+      { href: "/bing", label: "Bing Webmaster", icon: "bing" },
       { href: "/article-writer", label: "Article Writer", icon: "article" },
       { href: "/editor", label: "AI SEO Editör", icon: "editor" },
       { href: "/assistant", label: "SEO Asistanı", icon: "assistant" },
@@ -32,6 +33,7 @@ export const NAV_GROUPS = [
     title: "Yönetim",
     items: [
       { href: "/clients", label: "Clients", icon: "clients" },
+      { href: "/integrations", label: "Entegrasyonlar", icon: "integrations" },
       { href: "/prompts", label: "Claude Code Prompts", icon: "prompts" },
     ],
   },

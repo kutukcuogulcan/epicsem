@@ -1,6 +1,7 @@
 "use client";
 
-import { citabilityOfMarkdown } from "@/lib/citability";
+import { analyzePassages, citabilityOfMarkdown, passagesFromMarkdown } from "@/lib/citability";
+import PassageList from "@/components/tool/PassageList";
 
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
@@ -428,6 +429,10 @@ export default function ContentStudioPage() {
                         </li>
                       ))}
                     </ul>
+                    <div className="border-t border-border px-3 py-3">
+                      <div className="mb-1.5 text-xs font-bold text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
+                      <PassageList report={analyzePassages(passagesFromMarkdown(selectedDraft.article.bodyMarkdown))} />
+                    </div>
                   </details>
                 );
               })()}

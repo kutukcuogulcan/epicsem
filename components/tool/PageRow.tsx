@@ -89,6 +89,22 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                         <span className={`font-extrabold tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
                       </div>
                       {m.geo.citabilityTop.length > 0 && <div className="mt-0.5 text-ink/50">Önce: {m.geo.citabilityTop.join(" · ")}</div>}
+                      {!!m.geo.weakPassages?.length && (
+                        <div className="mt-2 border-t border-border pt-2">
+                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/40">
+                            En zayıf bölümler · {m.geo.passageCount} bölüm, ort. {m.geo.passageAvg}
+                          </div>
+                          <ul className="space-y-1">
+                            {m.geo.weakPassages.map((p) => (
+                              <li key={p.heading}>
+                                <span className={`mr-1.5 rounded px-1 py-px text-[10px] font-bold tabular-nums ${p.score >= 65 ? "bg-seo/10 text-seo" : p.score >= 50 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>{p.score}</span>
+                                <span className="font-medium text-ink/75">{p.heading}</span>
+                                <span className="block pl-7 text-[11px] text-ink/50">{p.tip}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="text-xs text-ink/60">

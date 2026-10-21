@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
-import { addRankKeywords, deleteRankKeyword, listRankKeywords, rankHistory } from "@/lib/db";
-import { serpAvailable } from "@/lib/serp";
+import { addRankKeywords, deleteRankKeyword, getIntegration, listRankKeywords, rankHistory } from "@/lib/db";
+import { serpKeyFor } from "@/lib/integrations";
 
 export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  const [keywords, history] = await Promise.all([listRankKeywords(user.id), rankHistory(user.id)]);
-  return NextResponse.json({ keywords, history, serpAvailable: serpAvailable() });
+  const [keywords, history, serpKey, sb] = await Promise.all([listRankKeywords(user.id), rankHistory(user.id), serpKeyFor(user.id), getIntegration(user.id, "serpbear")]);
+  return NextResponse.json({ keywords, history, serpAvailable: !!serpKey, serpbearAvailable: !!(sb?.config.baseUrl && sb.secrets.apiKey) });
 }
 
 const addSchema = z.object({

@@ -1,4 +1,4 @@
-import { citabilityOfMarkdown } from "./citability";
+import { analyzePassages, citabilityOfMarkdown, passagesFromMarkdown, type PassageReport } from "./citability";
 /**
  * AI SEO Editör için canlı puanlama — tamamen kural tabanlı (AI/token harcamaz).
  * SEO puanı: anahtar kelime yerleşimi, uzunluk, başlık yapısı, meta, okunabilirlik.
@@ -183,6 +183,8 @@ export interface ScoreResult {
   geo: number;
   seoChecks: Check[];
   geoChecks: Check[];
+  /** Bölüm (H2/H3) bazlı alıntılanabilirlik. */
+  passages: PassageReport;
   stats: { words: number; readingMin: number; h2: number; paragraphs: number; avgSentence: number; density: number; links: number; images: number };
 }
 
@@ -229,14 +231,17 @@ export function scoreDoc(blocks: Block[], meta: { title: string; metaDescription
   ];
 
   // --- GEO / AI alıntılanabilirlik — lib/citability.ts (Princeton GEO yöntemleri, AI'sız) ---
-  const cit = citabilityOfMarkdown(blocksToMd(blocks), kw);
+  const md = blocksToMd(blocks);
+  const cit = citabilityOfMarkdown(md, kw);
   const geoChecks: Check[] = cit.checks;
+  const passages = analyzePassages(passagesFromMarkdown(md));
 
   return {
     seo: score(seoChecks),
     geo: cit.score,
     seoChecks,
     geoChecks,
+    passages,
     stats: { words: wc, readingMin: Math.max(1, Math.round(wc / 200)), h2: h2s.length, paragraphs: paras.length, avgSentence, density, links, images },
   };
 }

@@ -44,6 +44,12 @@ export interface KeywordIdea {
   words: number;
   /** Kelimenin ait olduğu küme (ortak ilk anlamlı kelime). */
   cluster: string;
+  /** Google Keyword Planner bağlıysa: aylık ortalama arama hacmi ve rekabet. */
+  volume?: number | null;
+  competition?: "LOW" | "MEDIUM" | "HIGH" | null;
+  cpcHigh?: number | null;
+  /** Fikir nereden geldi: öneri (autocomplete) ya da Keyword Planner. */
+  source?: "suggest" | "planner";
 }
 
 const PATTERNS: Record<string, { questions: string[]; commercial: string[]; comparison: string[]; local: string[]; alphabet: string }> = {
@@ -86,6 +92,11 @@ function clusterOf(k: string, seed: string): string {
     .split(/\s+/)
     .find((x) => x.length > 2 && !seedWords.has(x) && !STOP.has(x));
   return w ?? "genel";
+}
+
+/** Dış kaynaktan gelen bir kelimeyi aynı niyet/küme kurallarıyla sınıflandırır. */
+export function classifyKeyword(keyword: string, seed: string): Pick<KeywordIdea, "intent" | "cluster" | "words"> {
+  return { intent: intentOf(keyword), cluster: clusterOf(keyword, seed), words: keyword.split(/\s+/).length };
 }
 
 export interface KeywordResearch {

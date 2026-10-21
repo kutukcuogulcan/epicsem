@@ -120,6 +120,18 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <path d="M13 12V3.5" />
     </ToolIcon>
   ),
+  integrations: (
+    <ToolIcon>
+      <path d="M6.5 3v3.5M11.5 3v3.5" />
+      <path d="M4.5 6.5h9v2.5a4.5 4.5 0 0 1-9 0z" />
+      <path d="M9 13.5V16" />
+    </ToolIcon>
+  ),
+  bing: (
+    <ToolIcon>
+      <path d="M5 2.5l3 1v9.5l4-2.3-2-1-1-2.7 5 1.8v3.3L8 16l-3-1.8z" />
+    </ToolIcon>
+  ),
   feeds: (
     <ToolIcon>
       <path d="M4 3.5a10.5 10.5 0 0 1 10.5 10.5" />

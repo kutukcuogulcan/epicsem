@@ -3,6 +3,7 @@ import { publishDraftToWordpress } from "./wordpress";
 import { publishDraftToShopify } from "./shopify";
 import { publishDraftToWebhook } from "./webhook-publish";
 import type { ContentDraft } from "@/types";
+import { pingIndexNow } from "./indexnow-keys";
 
 export function appBaseUrl(): string {
   return (process.env.APP_URL || "https://epicsem-web.onrender.com").replace(/\/+$/, "");
@@ -58,5 +59,7 @@ export async function publishDraftToConnection(
             cover: coverBin,
           });
   await markDraftPublished(userId, draft.id, { connectionId: connection.id, postUrl: result.postUrl, editUrl: result.editUrl });
+  // Yayınlandıysa arama motorlarına bildir. WordPress'te Epicsem Connector 1.2 bunu kendisi yapar.
+  if (status === "publish" && connection.platform !== "wordpress" && result.postUrl) await pingIndexNow(userId, result.postUrl);
   return { postUrl: result.postUrl, editUrl: result.editUrl };
 }

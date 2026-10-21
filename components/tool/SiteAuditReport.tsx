@@ -7,6 +7,8 @@ import { ISSUE_INFO, ISSUE_LABEL, ISSUE_SEVERITY, SEVERITY_LABEL, THEMES, pageAd
 import type { BulkImportRow } from "@/types";
 import PageRow, { short } from "./PageRow";
 import { CompareTab, DuplicateGroups, ImagesTab, LinksTab, RedirectsTab } from "./AuditDetailTabs";
+import SiteSignals from "./SiteSignals";
+import ProposalButton from "./ProposalButton";
 
 export interface RunSummary {
   id: number;
@@ -195,6 +197,8 @@ export default function SiteAuditReport({
             )}
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <ProposalButton runId={currentId} domain={site(result.filename)} />
         <div className="flex flex-wrap rounded-xl border border-border bg-panel p-1 text-xs font-semibold">
           {([
             ["overview", "Genel bakış"],
@@ -209,6 +213,7 @@ export default function SiteAuditReport({
               {l}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -425,6 +430,9 @@ export default function SiteAuditReport({
               </div>
             </Card>
           </div>
+
+          {/* 3. satır: dış veriler — gerçek kullanıcı hızı + arama motorlarına bildirim */}
+          <SiteSignals rows={rows} host={site(result.filename)} />
         </>
       )}
 

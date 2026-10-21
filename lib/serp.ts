@@ -9,8 +9,8 @@ import { citInputFromHtml, scoreCitability } from "./citability";
  * Her arama SerpApi kotasından 1 arama harcar.
  */
 
-export function serpAvailable(): boolean {
-  return Boolean(process.env.SERPAPI_API_KEY);
+export function serpAvailable(apiKey?: string | null): boolean {
+  return Boolean(apiKey || process.env.SERPAPI_API_KEY);
 }
 
 export interface SerpResult {
@@ -36,9 +36,9 @@ const host = (u: string) => {
   }
 };
 
-export async function googleSerp(q: string, opts: { gl?: string; hl?: string; num?: number } = {}): Promise<SerpResponse> {
-  const key = process.env.SERPAPI_API_KEY;
-  if (!key) throw new Error("SerpApi anahtarı tanımlı değil (SERPAPI_API_KEY).");
+export async function googleSerp(q: string, opts: { gl?: string; hl?: string; num?: number; apiKey?: string | null } = {}): Promise<SerpResponse> {
+  const key = opts.apiKey || process.env.SERPAPI_API_KEY;
+  if (!key) throw new Error("SerpApi anahtarı tanımlı değil — Entegrasyonlar sayfasından ekle.");
   const params = new URLSearchParams({
     engine: "google",
     q,
@@ -117,7 +117,7 @@ async function analyzePage(r: SerpResult): Promise<CompetitorPage> {
   }
 }
 
-export async function analyzeSerp(keyword: string, opts: { gl?: string; hl?: string } = {}): Promise<SerpAnalysis> {
+export async function analyzeSerp(keyword: string, opts: { gl?: string; hl?: string; apiKey?: string | null } = {}): Promise<SerpAnalysis> {
   const serp = await googleSerp(keyword, { ...opts, num: 10 });
   const top = serp.results.slice(0, 8);
   const pages = await Promise.all(top.map(analyzePage));
@@ -163,7 +163,7 @@ export async function analyzeSerp(keyword: string, opts: { gl?: string; hl?: str
 }
 
 /** Bir domainin bir kelimedeki pozisyonu (ilk 100 içinde; yoksa null). */
-export async function rankOf(keyword: string, domain: string, opts: { gl?: string; hl?: string } = {}): Promise<{ position: number | null; url: string | null; top: SerpResult[]; aiOverview: boolean }> {
+export async function rankOf(keyword: string, domain: string, opts: { gl?: string; hl?: string; apiKey?: string | null } = {}): Promise<{ position: number | null; url: string | null; top: SerpResult[]; aiOverview: boolean }> {
   const serp = await googleSerp(keyword, { ...opts, num: 100 });
   const d = domain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
   const hit = serp.results.find((r) => r.domain === d || r.domain.endsWith(`.${d}`));

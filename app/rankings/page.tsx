@@ -13,6 +13,7 @@ interface Kw {
   lastPosition: number | null;
   lastUrl: string | null;
   lastCheckedAt: string | null;
+  source?: string;
 }
 type Hist = Record<number, { position: number | null; at: string }[]>;
 
@@ -28,6 +29,7 @@ export default function RankingsPage() {
   const [kws, setKws] = useState<Kw[] | null>(null);
   const [hist, setHist] = useState<Hist>({});
   const [serpAvailable, setSerpAvailable] = useState(true);
+  const [serpbear, setSerpbear] = useState(false);
   const [domainFilter, setDomainFilter] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [domain, setDomain] = useState("");
@@ -42,6 +44,25 @@ export default function RankingsPage() {
     setKws(d.keywords ?? []);
     setHist(d.history ?? {});
     setSerpAvailable(!!d.serpAvailable);
+    setSerpbear(!!d.serpbearAvailable);
+  }
+
+  async function serpbearAction(action: "import" | "refresh") {
+    setBusy(`sb-${action}`);
+    setMsg(null);
+    try {
+      const dom = domainFilter !== "all" ? domainFilter : undefined;
+      if (action === "refresh" && !dom) throw new Error("Yenilemek için önce üstten bir site seç.");
+      const r = await fetch("/api/rankings/serpbear", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, domain: dom }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "SerpBear hatası");
+      setMsg({ ok: true, text: action === "import" ? `SerpBear'dan ${d.keywords} kelime ve ${d.points} günlük kayıt aktarıldı.` : `SerpBear ${d.refreshing} kelimeyi yeniden tarıyor; birkaç dakika sonra 'SerpBear'dan aktar'a bas.` });
+      await refresh();
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : "SerpBear hatası" });
+    } finally {
+      setBusy(null);
+    }
   }
   useEffect(() => {
     refresh();
@@ -123,12 +144,22 @@ export default function RankingsPage() {
           <button type="button" onClick={checkNow} disabled={!serpAvailable || !list.length || busy === "check"} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
             {busy === "check" ? "Kontrol ediliyor…" : "Şimdi kontrol et"}
           </button>
+          {serpbear && (
+            <>
+              <button type="button" onClick={() => serpbearAction("import")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+                {busy === "sb-import" ? "Aktarılıyor…" : "SerpBear'dan aktar"}
+              </button>
+              <button type="button" onClick={() => serpbearAction("refresh")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+                {busy === "sb-refresh" ? "İsteniyor…" : "SerpBear'da yenile"}
+              </button>
+            </>
+          )}
         </div>
       </ToolPageHeader>
 
-      {!serpAvailable && (
+      {!serpAvailable && !serpbear && (
         <div className="rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm leading-6 text-ink/70">
-          <strong>Sıralama verisi için SerpApi anahtarı gerekiyor.</strong> Google sonuçları SerpApi üzerinden okunur (her kelime kontrolü 1 arama). Yönetici Render ortam değişkenlerine <code>SERPAPI_API_KEY</code> ekleyince kontroller günlük otomatik çalışır. Kelimeleri şimdiden ekleyebilirsin.
+          <strong>Sıralama verisi için bir kaynak bağla.</strong> İki seçenek var: ücretsiz planı olan <strong>SerpApi</strong> (her kelime kontrolü 1 arama) ya da kendi sunucundaki açık kaynak <strong>SerpBear</strong>. <Link href="/integrations" className="font-semibold text-accent">Entegrasyonlar</Link>&apos;dan bağlayınca kontroller günlük otomatik çalışır. Kelimeleri şimdiden ekleyebilirsin.
         </div>
       )}
       {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>{msg.text}</div>}
@@ -187,7 +218,7 @@ export default function RankingsPage() {
                   <tr key={k.id}>
                     <td className="px-5 py-2.5">
                       <div className="font-medium">{k.keyword}</div>
-                      <div className="text-[10px] text-ink/45">{k.domain} · {k.gl.toUpperCase()}{k.lastCheckedAt ? ` · ${new Date(k.lastCheckedAt).toLocaleDateString("tr-TR")}` : " · henüz kontrol edilmedi"}</div>
+                      <div className="text-[10px] text-ink/45">{k.domain} · {k.gl.toUpperCase()}{k.source === "serpbear" ? " · SerpBear" : ""}{k.lastCheckedAt ? ` · ${new Date(k.lastCheckedAt).toLocaleDateString("tr-TR")}` : " · henüz kontrol edilmedi"}</div>
                     </td>
                     <td className="py-2.5 pr-3">
                       <span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${posTone(k.lastPosition)}`}>{k.lastCheckedAt ? (k.lastPosition ?? "100+") : "—"}</span>

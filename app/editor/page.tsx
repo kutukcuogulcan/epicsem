@@ -5,6 +5,7 @@ import Link from "next/link";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { blocksToHtml, blocksToMd, mdToBlocks, scoreDoc, uid, type Block, type BlockType, type Check } from "@/lib/editor-score";
+import PassageList from "@/components/tool/PassageList";
 
 interface DraftItem {
   id: number;
@@ -570,6 +571,10 @@ export default function EditorPage() {
                       <span>GEO / AI alıntılanabilirlik</span>
                     </div>
                     <Checklist checks={sc.geoChecks} />
+                    <div className="mt-3 rounded-xl border border-border p-2.5">
+                      <div className="mb-1.5 text-xs font-bold text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
+                      <PassageList report={sc.passages} compact />
+                    </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <button type="button" disabled={!!busy} onClick={() => ai("faq")} className="rounded-lg border border-accent/40 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/5 disabled:opacity-40">{busy === "faq" ? "Yazılıyor…" : "✦ SSS ekle"}</button>
                       <button type="button" disabled={!!busy} onClick={() => setTab("meta")} className="rounded-lg border border-border py-1.5 text-[11px] font-bold text-ink/60 hover:border-ink/30">Meta'yı düzenle</button>

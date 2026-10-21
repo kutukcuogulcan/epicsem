@@ -32,7 +32,11 @@ interface Research {
   queries: number;
   clusters: { name: string; count: number }[];
   serpAvailable: boolean;
+  adsAvailable?: boolean;
+  adsError?: string | null;
 }
+
+const COMP_LABEL: Record<string, string> = { LOW: "Düşük", MEDIUM: "Orta", HIGH: "Yüksek" };
 
 interface SerpAnalysis {
   keyword: string;
@@ -116,6 +120,7 @@ export default function KeywordsPage() {
   );
   const counts = (k: KeywordIntent) => ideas.filter((i) => i.intent === k).length;
   const maxHits = Math.max(1, ...ideas.map((i) => i.hits));
+  const hasVolume = ideas.some((i) => i.volume != null);
   const selected = [...sel];
 
   function toggle(k: string) {
@@ -145,7 +150,7 @@ export default function KeywordsPage() {
   }
 
   function copyCsv() {
-    const rows = (selected.length ? ideas.filter((i) => sel.has(i.keyword)) : shown).map((i) => `"${i.keyword}",${INTENT_LABEL[i.intent]},${i.hits},${i.cluster}`);
+    const rows = (selected.length ? ideas.filter((i) => sel.has(i.keyword)) : shown).map((i) => `"${i.keyword}",${INTENT_LABEL[i.intent]},${i.hits},${i.volume ?? ""},${i.competition ?? ""},${i.cluster}`);
     navigator.clipboard?.writeText(["anahtar kelime,niyet,öneri sıklığı,küme", ...rows].join("\n"));
     setMsg({ ok: true, text: `${rows.length} satır panoya kopyalandı (Excel'e yapıştırabilirsin).` });
   }
@@ -271,6 +276,8 @@ export default function KeywordsPage() {
                   </th>
                   <th className="py-2 pr-3 font-semibold">Anahtar kelime ({shown.length})</th>
                   <th className="hidden py-2 pr-3 font-semibold md:table-cell">Niyet</th>
+                  {hasVolume && <th className="py-2 pr-3 text-right font-semibold" title="Google Keyword Planner — aylık ortalama arama">Aylık arama</th>}
+                  {hasVolume && <th className="hidden py-2 pr-3 font-semibold lg:table-cell">Rekabet</th>}
                   <th className="hidden py-2 pr-3 font-semibold sm:table-cell" title="Kaç farklı sorguda önerildi — popülerlik için kaba sinyal (arama hacmi değil)">Öneri sıklığı</th>
                   <th className="py-2 pr-4 text-right font-semibold" />
                 </tr>
@@ -283,11 +290,20 @@ export default function KeywordsPage() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className="font-medium">{i.keyword}</span>
-                      <span className="ml-2 text-[10px] text-ink/35">{i.words} kelime</span>
+                      <span className="ml-2 text-[10px] text-ink/35">{i.words} kelime{i.source === "planner" ? " · Planner" : ""}</span>
                     </td>
                     <td className="hidden py-2 pr-3 md:table-cell">
                       <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${INTENT_TONE[i.intent]}`}>{INTENT_LABEL[i.intent]}</span>
                     </td>
+                    {hasVolume && (
+                      <td className="py-2 pr-3 text-right text-sm font-semibold tabular-nums">{i.volume != null ? i.volume.toLocaleString("tr-TR") : <span className="text-ink/30">—</span>}</td>
+                    )}
+                    {hasVolume && (
+                      <td className="hidden py-2 pr-3 text-[11px] text-ink/55 lg:table-cell">
+                        {i.competition ? COMP_LABEL[i.competition] : "—"}
+                        {i.cpcHigh ? <span className="ml-1 text-ink/35">· TBM ≤ {i.cpcHigh.toLocaleString("tr-TR")}</span> : null}
+                      </td>
+                    )}
                     <td className="hidden py-2 pr-3 sm:table-cell">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
@@ -306,7 +322,12 @@ export default function KeywordsPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-ink/45">Arama hacmi gösterilmez (Google Keyword Planner onayı gerekir). &quot;Öneri sıklığı&quot;, kelimenin kaç farklı sorguda Google tarafından önerildiğidir — popülerlik için yön gösterir.</p>
+          {data?.adsError && <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">Keyword Planner: {data.adsError}</p>}
+          <p className="text-[11px] text-ink/45">
+            {hasVolume
+              ? "Aylık arama ve rekabet Google Keyword Planner'dan gelir. \"Planner\" işaretli kelimeler doğrudan Keyword Planner önerisidir."
+              : <>Arama hacmi için <Link href="/integrations" className="font-semibold text-accent">Google Keyword Planner&apos;ı bağla</Link>. &quot;Öneri sıklığı&quot;, kelimenin kaç farklı sorguda Google tarafından önerildiğidir — popülerlik için yön gösterir.</>}
+          </p>
         </>
       )}
 
@@ -326,7 +347,7 @@ export default function KeywordsPage() {
               {serp.error && (
                 <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-ink/70">
                   {serp.error}
-                  {!serpAvailable && <p className="mt-2 text-xs text-ink/55">Bu özellik Google sonuçlarını okumak için SerpApi kullanır (her analiz 1 arama). Anahtar eklenene kadar kelimeyi doğrudan Editörde yazabilirsin.</p>}
+                  {!serpAvailable && <p className="mt-2 text-xs text-ink/55">Bu özellik Google sonuçlarını okumak için SerpApi kullanır (her analiz 1 arama). <Link href="/integrations" className="font-semibold text-accent">Entegrasyonlar</Link>&apos;dan ücretsiz SerpApi anahtarını bağlayabilir ya da kelimeyi doğrudan Editörde yazabilirsin.</p>}
                   <Link href={editorLink(serp.keyword)} className="mt-3 inline-block font-semibold text-accent">Editörde yaz →</Link>
                 </div>
               )}

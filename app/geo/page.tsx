@@ -28,6 +28,7 @@ import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
+import EntityPresence from "@/components/tool/EntityPresence";
 
 const SCENARIO_STEPS = [
   {
@@ -648,6 +649,8 @@ export default function GeoPage() {
         competitors={competitors.filter((c) => c.name && c.domain)}
         engines={engines}
       />
+
+      {brand.name && <EntityPresence brand={brand} competitors={competitors.filter((c) => c.name)} />}
 
       {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
 

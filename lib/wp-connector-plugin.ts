@@ -7,13 +7,16 @@
  *   epicsem_schema    → <script type="application/ld+json"> wp_head'e
  *   epicsem_ogimage   → og:image / twitter:image (Yoast / Rank Math filtresiyle, yoksa doğrudan)
  * Görsel alt metni için eklenti gerekmez (çekirdek REST'te alt_text yazılabilir).
+ *
+ * 1.2.0: IndexNow — eklenti kendi anahtarını üretir, /<anahtar>.txt dosyasını sunar ve
+ * yayınlanan/güncellenen her içeriği Bing, Yandex vb. arama motorlarına otomatik bildirir.
  */
-export const WP_PLUGIN_VERSION = "1.1.0";
+export const WP_PLUGIN_VERSION = "1.2.0";
 
 export const WP_PLUGIN_PHP = `<?php
 /**
  * Plugin Name: Epicsem Connector
- * Description: Epicsem Site Taraması'ndan gelen SEO title, meta açıklama ve schema düzeltmelerini uygular.
+ * Description: Epicsem Site Taraması'ndan gelen SEO title, meta açıklama, schema ve paylaşım görseli düzeltmelerini uygular; yeni içerikleri IndexNow ile arama motorlarına bildirir.
  * Version: ${WP_PLUGIN_VERSION}
  * Author: Epicsem
  * License: GPL2
@@ -38,9 +41,47 @@ add_action('rest_api_init', function () {
   register_rest_route('epicsem/v1', '/ping', [
     'methods' => 'GET',
     'permission_callback' => '__return_true',
-    'callback' => function () { return ['ok' => true, 'version' => '${WP_PLUGIN_VERSION}']; },
+    'callback' => function () { return ['ok' => true, 'version' => '${WP_PLUGIN_VERSION}', 'indexnow' => true]; },
+  ]);
+  register_rest_route('epicsem/v1', '/indexnow', [
+    'methods' => 'GET',
+    'permission_callback' => function () { return current_user_can('edit_posts'); },
+    'callback' => function () { return ['key' => epicsem_indexnow_key(), 'keyLocation' => home_url('/' . epicsem_indexnow_key() . '.txt')]; },
   ]);
 });
+
+/* ---- IndexNow ---- */
+function epicsem_indexnow_key() {
+  $k = get_option('epicsem_indexnow_key');
+  if (!$k) {
+    $k = strtolower(wp_generate_password(32, false, false));
+    update_option('epicsem_indexnow_key', $k, false);
+  }
+  return $k;
+}
+add_action('init', function () {
+  $path = trim((string) parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH), '/');
+  $home = trim((string) parse_url(home_url('/'), PHP_URL_PATH), '/');
+  if ($home !== '' && strpos($path, $home . '/') === 0) $path = substr($path, strlen($home) + 1);
+  if ($path === epicsem_indexnow_key() . '.txt') {
+    header('Content-Type: text/plain; charset=utf-8');
+    echo epicsem_indexnow_key();
+    exit;
+  }
+}, 0);
+add_action('transition_post_status', function ($new, $old, $post) {
+  if ($new !== 'publish' || wp_is_post_revision($post) || wp_is_post_autosave($post)) return;
+  if (!is_post_type_viewable($post->post_type)) return;
+  $url = get_permalink($post);
+  if (!$url) return;
+  $host = parse_url(home_url('/'), PHP_URL_HOST);
+  wp_remote_post('https://api.indexnow.org/indexnow', [
+    'blocking' => false,
+    'timeout' => 5,
+    'headers' => ['Content-Type' => 'application/json; charset=utf-8'],
+    'body' => wp_json_encode(['host' => $host, 'key' => epicsem_indexnow_key(), 'keyLocation' => home_url('/' . epicsem_indexnow_key() . '.txt'), 'urlList' => [$url]]),
+  ]);
+}, 10, 3);
 
 function epicsem_meta($key) {
   if (!is_singular()) return '';
