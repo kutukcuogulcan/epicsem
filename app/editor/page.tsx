@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { blocksToHtml, blocksToMd, mdToBlocks, scoreDoc, uid, type Block, type BlockType, type Check } from "@/lib/editor-score";
 import PassageList from "@/components/tool/PassageList";
+import EditorHome from "@/components/tool/EditorHome";
 
 interface DraftItem {
   id: number;
   sourceUrl: string;
   article: { title: string; metaDescription: string; bodyMarkdown: string };
+  status?: string;
+  publishedPostUrl?: string | null;
   createdAt: string;
 }
 interface Pending {
@@ -357,55 +359,16 @@ export default function EditorPage() {
   /* ================================================================== */
   if (!blocks) {
     return (
-      <div className="space-y-8">
-        <ToolPageHeader breadcrumbLabel="AI SEO Editör" title="AI SEO Editör" body="Var olan bir yazıyı aç; SEO ve GEO (AI'da alıntılanma) puanını canlı gör, paragrafları tek tıkla yeniden yazdır, iç link ve SSS ekle." />
-        {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{msg.t}</div>}
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-panel p-5 lg:col-span-2">
-            <div className="text-sm font-bold">Sitedeki bir sayfayı aç</div>
-            <p className="mt-1 text-xs text-ink/50">Blog yazısı, kategori ya da ürün sayfası — metni çekilir, editörde düzenlersin.</p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                importFromUrl(importUrl);
-              }}
-              className="mt-3 flex gap-2"
-            >
-              <input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://siteniz.com/blog/yazi" className="flex-1 rounded-xl border border-border bg-panel px-4 py-2.5 text-sm outline-none focus:border-accent" />
-              <button disabled={loading || !importUrl.trim()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{loading ? "Açılıyor…" : "Aç →"}</button>
-            </form>
-          </div>
-          <button
-            type="button"
-            onClick={() => openDoc({ title: "", metaDescription: "", markdown: "# Yazının başlığı\n\nGiriş paragrafı: konuyu tek cümlede tanımlayın.\n\n## İlk bölüm başlığı?\n\nBu bölümün sorusunu ilk cümlede doğrudan cevaplayın.", keyword: "" })}
-            className="rounded-2xl border border-dashed border-border bg-panel p-5 text-left hover:border-accent/50"
-          >
-            <div className="text-sm font-bold">+ Boş başla</div>
-            <p className="mt-1 text-xs text-ink/50">GEO'ya uygun bir iskeletle sıfırdan yaz.</p>
-          </button>
-        </div>
-        <KnowledgeBase />
-        <div className="rounded-2xl border border-border bg-panel">
-          <div className="border-b border-border px-5 py-3.5 text-sm font-bold">Taslaklarım</div>
-          {drafts === null ? (
-            <div className="h-24 animate-pulse" />
-          ) : drafts.length === 0 ? (
-            <div className="px-5 py-6 text-sm text-ink/45">Henüz taslak yok — Article Writer ya da Gap Analysis ile oluşturabilir veya yukarıdan bir sayfa açabilirsin.</div>
-          ) : (
-            <div className="divide-y divide-border">
-              {drafts.map((d) => (
-                <button key={d.id} type="button" onClick={() => loadDraft(d.id)} className="flex w-full items-center justify-between gap-3 px-5 py-3 text-left hover:bg-muted/50">
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{d.article.title || "Başlıksız"}</span>
-                    <span className="block truncate text-xs text-ink/45">{d.sourceUrl.replace(/^keyword:/, "Anahtar kelime: ")}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-ink/40">{new Date(d.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <EditorHome
+        msg={msg}
+        drafts={drafts}
+        importUrl={importUrl}
+        setImportUrl={setImportUrl}
+        loading={loading}
+        onImport={() => importFromUrl(importUrl)}
+        onBlank={() => openDoc({ title: "", metaDescription: "", markdown: "# Yazının başlığı\n\nGiriş paragrafı: konuyu tek cümlede tanımlayın.\n\n## İlk bölüm başlığı?\n\nBu bölümün sorusunu ilk cümlede doğrudan cevaplayın.", keyword: "" })}
+        onOpen={loadDraft}
+      />
     );
   }
 
