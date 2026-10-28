@@ -8,7 +8,6 @@ import PromptBlock from "@/components/PromptBlock";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import GaugeStatCard from "@/components/GaugeStatCard";
-import PassageList from "@/components/tool/PassageList";
 
 const SCENARIO_STEPS = [
   {
@@ -328,37 +327,6 @@ export default function ArticleWriterPage() {
               tone={result.citabilityScore >= 70 ? "seo" : result.citabilityScore >= 40 ? "warn" : "danger"}
             />
 
-            {!!result.citabilityChecks?.length && (
-              <details className="card space-y-2" open>
-                <summary className="cursor-pointer list-none text-sm font-semibold">
-                  Puan neye göre hesaplandı?{" "}
-                  <span className="font-normal text-ink/50">
-                    — sayfanın metni {result.citabilityChecks.length} kurala göre puanlanır (AI kullanılmaz, her seferinde aynı sonuç). Editör ve Site Taraması ile aynı ölçü.
-                  </span>
-                </summary>
-                <ul className="grid gap-1.5 pt-2 sm:grid-cols-2">
-                  {[...result.citabilityChecks].sort((x, y) => Number(x.ok) - Number(y.ok) || y.weight - x.weight).map((c) => (
-                    <li key={c.label} className="flex gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">
-                      <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${c.ok ? "bg-seo/15 text-seo" : "bg-danger/10 text-danger"}`}>{c.ok ? "✓" : "!"}</span>
-                      <span>
-                        <span className={c.ok ? "text-ink/55" : "font-medium"}>{c.label}</span>
-                        <span className="ml-1 text-ink/35">· {c.weight} puan</span>
-                        {!c.ok && <span className="block text-ink/50">{c.hint}</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                {result.passages && result.passages.count > 0 && (
-                  <div className="border-t border-border pt-3">
-                    <div className="mb-1.5 text-xs font-bold text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
-                    <PassageList report={result.passages} />
-                  </div>
-                )}
-              </details>
-            )}
-            {!result.citabilityChecks?.length && (
-              <p className="text-xs text-ink/50">Sayfada puanlanacak kadar metin bulunamadı (80 kelimeden az) — puan modelin tahminidir.</p>
-            )}
 
             {result.citabilityWeaknesses.length > 0 && (
               <div className="card space-y-2">
