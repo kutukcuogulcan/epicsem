@@ -1,6 +1,6 @@
 import type { EngineId } from "@/types";
 import { PROVIDERS, isDemoMode, runFast } from "@/lib/geo-providers";
-import { extractJsonObject } from "@/lib/llm-json";
+import { runForJsonArray, runForJsonObject } from "@/lib/llm-json";
 import { PERSONA_LABEL, type Form, type Intent, type PersonaKey, type SectorPack } from "@/lib/sector-packs";
 import type { SlotSpec } from "@/lib/slot-planner";
 import { cropToLimit, dedupAcrossTopics, fallbackPromptText, hardFilterReasons, qualityScore, selectPromptsForTopic, type FilterContext } from "@/lib/prompt-filter";
@@ -58,28 +58,6 @@ function buildSuggestionPrompt(brand: BrandRef, competitors: BrandRef[]): string
   return lines.join("\n");
 }
 
-function extractJsonArray(text: string): any[] {
-  let cleaned = text.trim();
-  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence) cleaned = fence[1].trim();
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed;
-    throw new Error("not an array");
-  } catch {
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-    if (start !== -1 && end !== -1 && end > start) {
-      try {
-        const parsed = JSON.parse(cleaned.slice(start, end + 1));
-        if (Array.isArray(parsed)) return parsed;
-      } catch {
-        // fall through to the throw below
-      }
-    }
-    throw new Error("Model response wasn't a valid JSON array — try again.");
-  }
-}
 
 function demoSuggestions(brand: BrandRef, competitors: BrandRef[]): PromptSuggestion[] {
   const competitor = competitors[0]?.name;
@@ -229,11 +207,11 @@ async function generateCandidatesForTopic(
     return { candidatesBySlot: demoCandidatesForSlots(topicName, slots), demoMode: true, model: "demo (no API key configured)" };
   }
   const prompt = buildSlotFillPrompt(brand, competitors, topicName, topicDescription, slots, pack, language, country);
-  const result = await runFast(prompt, 0.7);
-  if (!result) {
+  const first = await runFast(prompt, 0.7);
+  if (!first) {
     return { candidatesBySlot: demoCandidatesForSlots(topicName, slots), demoMode: true, model: "demo (no API key configured)" };
   }
-  const parsed = extractJsonObject(result.text);
+  const { parsed } = await runForJsonObject(async (extra) => (extra ? ((await runFast(prompt + extra, 0.3)) ?? first) : first));
   const rawPrompts: any[] = Array.isArray(parsed.prompts) ? parsed.prompts : [];
   const candidatesBySlot: string[][] = slots.map(() => []);
   rawPrompts.forEach((entry, idx) => {
@@ -243,7 +221,7 @@ async function generateCandidatesForTopic(
     const candidates = Array.isArray(entry?.candidates) ? entry.candidates : [];
     candidatesBySlot[targetIdx] = candidates.filter((c: unknown) => typeof c === "string" && c.trim()).map((c: string) => sanitizeCandidate(c));
   });
-  return { candidatesBySlot, demoMode: false, model: result.model };
+  return { candidatesBySlot, demoMode: false, model: first.model };
 }
 
 export interface FillSlotsOptions {
@@ -396,8 +374,7 @@ export async function generatePromptSuggestions(
   }
 
   const prompt = buildSuggestionPrompt(brand, competitors);
-  const { text, model } = await provider.run(prompt);
-  const parsed = extractJsonArray(text);
+  const { parsed, model } = await runForJsonArray((extra) => provider.run(prompt + extra, { maxTokens: 8000 }));
 
   const suggestions = parsed
     .filter((item) => item && typeof item.text === "string" && item.text.trim().length >= 3)

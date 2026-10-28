@@ -1,55 +1,81 @@
+import { jsonrepair } from "jsonrepair";
+
 /**
  * Shared "pull the JSON object/array out of a raw LLM response" helpers — strips markdown
  * code fences first, falls back to slicing between the first/last bracket when the model
- * added stray commentary around the JSON. Used by the onboarding auto-setup chain
- * (lib/brand-discovery.ts, lib/topic-generator.ts, lib/prompt-suggestions.ts's topic-grounded
- * generator) so all three LLM calls parse responses the same, forgiving way.
+ * added stray commentary, and finally runs jsonrepair (fixes truncated output, unescaped
+ * quotes/newlines, trailing commas). Used by the onboarding auto-setup chain and others.
  */
 
 function stripFence(text: string): string {
   const cleaned = text.trim();
-  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)(```|$)/i);
   return fence ? fence[1].trim() : cleaned;
 }
 
-export function extractJsonArray(text: string): any[] {
+function parseLoose(text: string, open: "{" | "["): unknown {
   const cleaned = stripFence(text);
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed;
-    throw new Error("not an array");
-  } catch {
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-    if (start !== -1 && end !== -1 && end > start) {
-      try {
-        const parsed = JSON.parse(cleaned.slice(start, end + 1));
-        if (Array.isArray(parsed)) return parsed;
-      } catch {
-        // fall through to the throw below
-      }
+  const close = open === "{" ? "}" : "]";
+  const start = cleaned.indexOf(open);
+  const body = start > 0 ? cleaned.slice(start) : cleaned;
+  const end = body.lastIndexOf(close);
+  const candidates = [cleaned, body, ...(end > 0 ? [body.slice(0, end + 1)] : [])];
+  for (const c of candidates) {
+    try {
+      return JSON.parse(c);
+    } catch {
+      /* sıradaki */
     }
-    throw new Error("Model response wasn't a valid JSON array — try again.");
   }
+  for (const c of [body, ...(end > 0 ? [body.slice(0, end + 1)] : [])]) {
+    try {
+      return JSON.parse(jsonrepair(c));
+    } catch {
+      /* sıradaki */
+    }
+  }
+  return undefined;
+}
+
+export function extractJsonArray(text: string): any[] {
+  const v = parseLoose(text, "[");
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === "object") {
+    const firstArr = Object.values(v as Record<string, unknown>).find(Array.isArray);
+    if (firstArr) return firstArr as any[];
+  }
+  throw new Error("Yapay zekâ yanıtı okunamadı (geçersiz JSON) — tekrar dene.");
 }
 
 export function extractJsonObject(text: string): Record<string, any> {
-  const cleaned = stripFence(text);
+  const v = parseLoose(text, "{");
+  if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, any>;
+  throw new Error("Yapay zekâ yanıtı okunamadı (geçersiz JSON) — tekrar dene.");
+}
+
+const RETRY_NOTE =
+  "\n\nIMPORTANT: Reply with ONE valid JSON value only — no markdown fences, no commentary. Escape every double quote inside strings and keep the output compact.";
+
+/**
+ * Modeli çağırır, JSON'u çıkarır; okunamazsa bir kez daha (daha sıkı talimatla) dener.
+ * `call` ek talimatı prompt'un sonuna eklemelidir.
+ */
+export async function runForJsonObject(call: (extra: string) => Promise<{ text: string; model: string }>): Promise<{ parsed: Record<string, any>; model: string }> {
+  const first = await call("");
   try {
-    const parsed = JSON.parse(cleaned);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
-    throw new Error("not an object");
+    return { parsed: extractJsonObject(first.text), model: first.model };
   } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start !== -1 && end !== -1 && end > start) {
-      try {
-        const parsed = JSON.parse(cleaned.slice(start, end + 1));
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
-      } catch {
-        // fall through to the throw below
-      }
-    }
-    throw new Error("Model response wasn't a valid JSON object — try again.");
+    const second = await call(RETRY_NOTE);
+    return { parsed: extractJsonObject(second.text), model: second.model };
+  }
+}
+
+export async function runForJsonArray(call: (extra: string) => Promise<{ text: string; model: string }>): Promise<{ parsed: any[]; model: string }> {
+  const first = await call("");
+  try {
+    return { parsed: extractJsonArray(first.text), model: first.model };
+  } catch {
+    const second = await call(RETRY_NOTE);
+    return { parsed: extractJsonArray(second.text), model: second.model };
   }
 }

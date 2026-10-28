@@ -1,7 +1,7 @@
 import { fetchPageSummary, normalizeUrl } from "@/lib/content-fetch";
 import { crawlSite, combinedCrawlText, type SiteCrawlResult } from "@/lib/site-crawler";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
-import { extractJsonObject } from "@/lib/llm-json";
+import { runForJsonObject } from "@/lib/llm-json";
 import { PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
 import { discoverCompetitors, buildHomeSummary } from "@/lib/competitor-discovery";
 
@@ -275,8 +275,8 @@ export async function runProfileStep(
   if (!provider) return demoProfileResult(domain);
 
   const multiPageText = siteCrawl ? combinedCrawlText(siteCrawl) : undefined;
-  const { text, model } = await provider.run(buildProfilePrompt(page, language, multiPageText));
-  const parsed = extractJsonObject(text);
+  const profilePrompt = buildProfilePrompt(page, language, multiPageText);
+  const { parsed, model } = await runForJsonObject((extra) => provider.run(profilePrompt + extra, { maxTokens: 8000 }));
 
   const identityAdjectives: string[] = Array.isArray(parsed.identityAdjectives)
     ? parsed.identityAdjectives.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 5).map((a: string) => a.trim())
@@ -345,8 +345,7 @@ export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en"
   }
 
   const prompt = buildPrompt(page, language);
-  const { text, model } = await provider.run(prompt);
-  const parsed = extractJsonObject(text);
+  const { parsed, model } = await runForJsonObject((extra) => provider.run(prompt + extra, { maxTokens: 8000 }));
 
   const competitors: DiscoveredCompetitor[] = Array.isArray(parsed.competitors)
     ? parsed.competitors

@@ -1,5 +1,5 @@
 import { PROVIDERS, isDemoMode, runFast } from "@/lib/geo-providers";
-import { extractJsonObject } from "@/lib/llm-json";
+import { runForJsonObject } from "@/lib/llm-json";
 import { cosineSimilarity, getEmbeddings, isEmbeddingAvailable } from "@/lib/embeddings";
 
 /**
@@ -226,9 +226,10 @@ export async function generateTopicsForBrand(
   const prompt = buildPrompt(brand, country, language, sectorSeeds);
   // Kart: Topic üretimi (≤15 sn) — kullanıcı Adım 2'deyken bitmesi gerekiyor, o yüzden
   // hızlı model (Haiku / Gemini Flash / GPT-mini) ile; hızlı katman yoksa normal sağlayıcı.
-  const fast = await runFast(prompt, 0.4).catch(() => null);
-  const { text, model } = fast ?? (await provider.run(prompt));
-  const parsed = extractJsonObject(text);
+  const { parsed, model } = await runForJsonObject(async (extra) => {
+    const fast = await runFast(prompt + extra, 0.4).catch(() => null);
+    return fast ?? (await provider.run(prompt + extra, { maxTokens: 8000 }));
+  });
 
   const rawTopics: any[] = Array.isArray(parsed.topics) ? parsed.topics : [];
   const scored: TopicCandidate[] = rawTopics

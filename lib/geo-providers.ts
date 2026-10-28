@@ -328,7 +328,7 @@ export function pickFastProvider(): LlmProvider | null {
 export async function runFast(prompt: string, temperature = 0.7): Promise<ProviderResponse | null> {
   const provider = pickFastProvider();
   if (!provider) return null;
-  return provider.run(prompt, { model: FAST_MODEL[provider.engine], temperature });
+  return provider.run(prompt, { model: FAST_MODEL[provider.engine], temperature, maxTokens: 8000 });
 }
 
 export function isDemoMode(): boolean {
