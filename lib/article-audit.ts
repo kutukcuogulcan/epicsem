@@ -1,5 +1,6 @@
 import { jsonrepair } from "jsonrepair";
 import * as cheerio from "cheerio";
+import { analyzePassages, citInputFromHtml, passagesFromHtml, scoreCitability, type CitabilityResult, type PassageReport } from "./citability";
 import type { ArticleAuditResult } from "@/types";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 
@@ -68,6 +69,9 @@ interface ExtractedPage {
   existingSchemaRaw: string;
   bodyText: string;
   bodyHtmlExcerpt: string;
+  /** Kural tabanlı alıntılanabilirlik (lib/citability.ts) — Editör ve Site Taraması ile aynı ölçü. */
+  cit: CitabilityResult | null;
+  passages: PassageReport | null;
 }
 
 async function extractPage(rawUrl: string): Promise<ExtractedPage> {
@@ -141,6 +145,14 @@ async function extractPage(rawUrl: string): Promise<ExtractedPage> {
     }
   });
 
+  // Alıntılanabilirlik: menü/altbilgi/script çıkarılmış ayrı bir kopya üzerinde, kurallarla.
+  const $c = cheerio.load(html);
+  $c("script, style, noscript, svg, nav, footer, header, form, iframe").remove();
+  const cleanText = $c("body").text().replace(/\s+/g, " ").trim();
+  const enough = cleanText.split(" ").length >= 80;
+  const cit = enough ? scoreCitability(citInputFromHtml($c, parsed.hostname.replace(/^www\./, ""))) : null;
+  const passages = enough ? analyzePassages(passagesFromHtml($c)) : null;
+
   const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 8000);
   // A light structural excerpt (headings + first paragraphs) gives the model the actual
   // surrounding wording it needs to quote ~10 words of context for missing-link suggestions.
@@ -166,6 +178,25 @@ async function extractPage(rawUrl: string): Promise<ExtractedPage> {
     existingSchemaRaw: schemaRawBlocks.join("\n---\n").slice(0, 3000),
     bodyText,
     bodyHtmlExcerpt,
+    cit,
+    passages,
+  };
+}
+
+/** Kural tabanlı puanın kaçırılan kontrolleri — model eksik listesi vermezse bunlar gösterilir. */
+function ruleWeaknesses(page: ExtractedPage) {
+  return (page.cit?.checks ?? [])
+    .filter((c) => !c.ok)
+    .sort((a, b) => b.weight * (1 - (b.part ?? 0)) - a.weight * (1 - (a.part ?? 0)))
+    .slice(0, 5)
+    .map((c) => ({ issue: c.label, why: c.hint }));
+}
+
+function citabilityExtras(page: ExtractedPage) {
+  return {
+    citabilityChecks: (page.cit?.checks ?? []).map((c) => ({ label: c.label, ok: c.ok, hint: c.hint, weight: c.weight })),
+    citabilityGrade: page.cit?.grade ?? null,
+    passages: page.passages,
   };
 }
 
@@ -371,8 +402,9 @@ function demoResult(page: ExtractedPage, failureNote?: string): ArticleAuditResu
     priorityActions: failureNote
       ? [`[DEMO DATA] Canlı model çağrısı başarısız oldu, sonuçlar simüle edildi: ${failureNote}`]
       : ["[DEMO DATA] Gerçek öneriler için .env'e ANTHROPIC_API_KEY veya OPENAI_API_KEY ekleyin."],
-    citabilityScore: 0,
-    citabilityWeaknesses: [{ issue: "[DEMO DATA]", why }],
+    citabilityScore: page.cit?.score ?? 0,
+    citabilityWeaknesses: page.cit ? ruleWeaknesses(page) : [{ issue: "[DEMO DATA]", why }],
+    ...citabilityExtras(page),
     geoRewrite: `[DEMO DATA — gerçek bir GEO yeniden yazımı için bir model API anahtarı bağlanmalı.]\n\n[NEEDS: gerçek model çağrısı olmadan bu bölüm doldurulamaz]`,
     citationSuggestions: ["[DEMO DATA]"],
     demoMode: true,
@@ -449,8 +481,12 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
     },
     articleRecommendations: Array.isArray(parsed.articleRecommendations) ? parsed.articleRecommendations.slice(0, 4) : [],
     priorityActions: Array.isArray(parsed.priorityActions) ? parsed.priorityActions.slice(0, 5) : [],
-    citabilityScore: Math.max(0, Math.min(100, Math.round(Number(parsed.citabilityScore ?? 0)))),
-    citabilityWeaknesses: Array.isArray(parsed.citabilityWeaknesses) ? parsed.citabilityWeaknesses.slice(0, 5) : [],
+    // Puan kurallarla hesaplanır (her çalıştırmada aynı, Editör/Site Taraması ile tutarlı);
+    // sayfa çok kısaysa modelin tahminine düşülür.
+    citabilityScore: page.cit?.score ?? Math.max(0, Math.min(100, Math.round(Number(parsed.citabilityScore ?? 0)))),
+    citabilityWeaknesses:
+      Array.isArray(parsed.citabilityWeaknesses) && parsed.citabilityWeaknesses.length ? parsed.citabilityWeaknesses.slice(0, 5) : ruleWeaknesses(page),
+    ...citabilityExtras(page),
     geoRewrite: String(parsed.geoRewrite ?? ""),
     citationSuggestions: Array.isArray(parsed.citationSuggestions) ? parsed.citationSuggestions.slice(0, 5) : [],
     demoMode: false,

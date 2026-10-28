@@ -459,6 +459,11 @@ export interface ArticleAuditResult {
    * concrete numbers already on the page) — never a subjective "quality" score. */
   citabilityScore: number;
   citabilityWeaknesses: CitabilityWeakness[];
+  /** Puanın dayandığı kural kontrolleri (lib/citability.ts). */
+  citabilityChecks?: { label: string; ok: boolean; hint: string; weight: number }[];
+  citabilityGrade?: string | null;
+  /** Bölüm bazlı alıntılanabilirlik raporu. */
+  passages?: import("@/lib/citability").PassageReport | null;
   /** The page's OWN real content (bodyText/bodyHtmlExcerpt), restructured for AI
    * parsing — answer-first sentences, clear H2/H3, tables/bullets where the source
    * material supports one. Never adds a fact that wasn't already on the page; a
