@@ -1,3 +1,4 @@
+import { jsonrepair } from "jsonrepair";
 import * as cheerio from "cheerio";
 import type { ArticleAuditResult } from "@/types";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
@@ -266,8 +267,8 @@ function buildPrompt(page: ExtractedPage): string {
   "imageAlts": [ { "src": "string", "currentAlt": "string (empty if missing)", "suggestedAlt": "string", "why": "string" } ],
   "linkIssues": [ { "anchorText": "string", "targetUrl": "string", "issue": "string", "suggestedAnchor": "string" } ],
   "missingLinks": [ { "suggestedAnchor": "string", "context": "~10 words of surrounding text quoted from the body", "suggestedTargetUrlPattern": "string", "why": "string" } ],
-  "faqSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": "full JSON-LD as a string, or null" },
-  "articleSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": "full JSON-LD as a string, or null" },
+  "faqSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": { "@context": "https://schema.org", "@type": "FAQPage", "...": "full JSON-LD as a JSON OBJECT (not a string), or null" } },
+  "articleSchema": { "status": "present-valid | present-mismatch | missing | not-applicable", "note": "string", "jsonLd": { "@context": "https://schema.org", "@type": "Article", "...": "full JSON-LD as a JSON OBJECT (not a string), or null" } },
   "articleRecommendations": [ { "title": "string", "targetKeyword": "string", "angle": "string", "outline": ["string", "string"] } ],
   "priorityActions": ["string", "string", "string", "string", "string"],
   "citabilityScore": 0,
@@ -275,30 +276,56 @@ function buildPrompt(page: ExtractedPage): string {
   "geoRewrite": "string (markdown, 300-600 words, [NEEDS: ...] placeholders for anything not grounded in the real content)",
   "citationSuggestions": ["string", "string"]
 }
-Only include real problems — if imageAlts, linkIssues, or missingLinks have nothing to flag, return an empty array rather than inventing one.`
+Only include real problems — if imageAlts, linkIssues, or missingLinks have nothing to flag, return an empty array rather than inventing one.
+Keep it compact: at most 12 imageAlts, 8 linkIssues, 7 missingLinks. The output must be strictly valid JSON: escape double quotes inside strings as \\" and line breaks inside strings as \\n.`
   );
 
   return lines.join("\n");
 }
 
-function extractJson(text: string): any {
+/**
+ * Model çıktısından JSON nesnesini çıkarır. Modeller uzun, iç içe yanıtlarda sık sık
+ * kaçışsız tırnak, satır sonu ya da yarıda kesilmiş bir nesne döndürür; önce düz parse,
+ * sonra jsonrepair ile onarım denenir (eksik kapanışları tamamlar, kaçışları düzeltir).
+ */
+export function extractJson(text: string): any {
   let cleaned = text.trim();
-  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)(```|$)/i);
   if (fence) cleaned = fence[1].trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start !== -1 && end !== -1 && end > start) {
-      try {
-        return JSON.parse(cleaned.slice(start, end + 1));
-      } catch {
-        // fall through
-      }
+  const start = cleaned.indexOf("{");
+  if (start > 0) cleaned = cleaned.slice(start);
+  const candidates = [cleaned];
+  const end = cleaned.lastIndexOf("}");
+  if (end > 0 && end < cleaned.length - 1) candidates.push(cleaned.slice(0, end + 1));
+  for (const c of candidates) {
+    try {
+      return JSON.parse(c);
+    } catch {
+      /* sıradaki */
     }
-    throw new Error("Model yanıtı geçerli JSON değildi — tekrar deneyin.");
   }
+  for (const c of candidates) {
+    try {
+      const v = JSON.parse(jsonrepair(c));
+      if (v && typeof v === "object") return v;
+    } catch {
+      /* sıradaki */
+    }
+  }
+  throw new Error("Model yanıtı geçerli JSON değildi — tekrar deneyin.");
+}
+
+/** jsonLd alanı nesne ya da string gelebilir; her durumda okunaklı JSON string'e çevir. */
+function jsonLdString(v: unknown): string | null {
+  if (v == null || v === "") return null;
+  if (typeof v === "string") {
+    try {
+      return JSON.stringify(JSON.parse(v), null, 2);
+    } catch {
+      return v;
+    }
+  }
+  return JSON.stringify(v, null, 2);
 }
 
 function demoResult(page: ExtractedPage, failureNote?: string): ArticleAuditResult {
@@ -363,7 +390,7 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
   let text: string;
   let model: string;
   try {
-    const response = await provider.run(prompt);
+    const response = await provider.run(prompt, { json: true, maxTokens: 8000, temperature: 0.2 });
     text = response.text;
     model = response.model;
   } catch (err) {
@@ -372,7 +399,15 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
     // surfacing a raw provider error to the user.
     return demoResult(page, err instanceof Error ? err.message : "bilinmeyen hata");
   }
-  const parsed = extractJson(text);
+  let parsed: any;
+  try {
+    parsed = extractJson(text);
+  } catch {
+    // Bir kez daha, daha sıkı talimatla dene (çoğu zaman ikinci yanıt temiz gelir).
+    const retry = await provider.run(prompt + "\n\nIMPORTANT: Your previous reply was not valid JSON. Reply with ONE valid JSON object only — no markdown, no comments, all quotes inside strings escaped.", { json: true, maxTokens: 8000, temperature: 0 });
+    model = retry.model;
+    parsed = extractJson(retry.text);
+  }
 
   return {
     url: page.url,
@@ -405,12 +440,12 @@ export async function runArticleAudit(rawUrl: string): Promise<ArticleAuditResul
     faqSchema: {
       status: parsed.faqSchema?.status ?? "not-applicable",
       note: String(parsed.faqSchema?.note ?? ""),
-      jsonLd: parsed.faqSchema?.jsonLd ?? null,
+      jsonLd: jsonLdString(parsed.faqSchema?.jsonLd),
     },
     articleSchema: {
       status: parsed.articleSchema?.status ?? "not-applicable",
       note: String(parsed.articleSchema?.note ?? ""),
-      jsonLd: parsed.articleSchema?.jsonLd ?? null,
+      jsonLd: jsonLdString(parsed.articleSchema?.jsonLd),
     },
     articleRecommendations: Array.isArray(parsed.articleRecommendations) ? parsed.articleRecommendations.slice(0, 4) : [],
     priorityActions: Array.isArray(parsed.priorityActions) ? parsed.priorityActions.slice(0, 5) : [],

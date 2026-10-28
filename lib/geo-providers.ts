@@ -13,6 +13,10 @@ export interface ProviderResponse {
 export interface RunOptions {
   model?: string;
   temperature?: number;
+  /** Yalnızca JSON döndürmesini iste (destekleyen sağlayıcılarda yerel JSON modu). */
+  json?: boolean;
+  /** Uzun yapılandırılmış çıktılar için çıktı token sınırı. */
+  maxTokens?: number;
 }
 
 export interface LlmProvider {
@@ -52,6 +56,8 @@ class OpenAiProvider implements LlmProvider {
         model,
         messages: [{ role: "user", content: prompt }],
         temperature: options?.temperature ?? 0.4,
+        ...(options?.json ? { response_format: { type: "json_object" } } : {}),
+        ...(options?.maxTokens ? { max_tokens: Math.min(16000, options.maxTokens) } : {}),
       }),
     });
     if (!res.ok) throw new Error(`OpenAI API error: ${res.status} ${await res.text()}`);
@@ -119,7 +125,7 @@ class AnthropicProvider implements LlmProvider {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4096,
+        max_tokens: options?.maxTokens ?? 4096,
         temperature: options?.temperature,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -147,7 +153,11 @@ class GoogleProvider implements LlmProvider {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          ...(options?.temperature != null ? { generationConfig: { temperature: options.temperature } } : {}),
+          generationConfig: {
+            ...(options?.temperature != null ? { temperature: options.temperature } : {}),
+            ...(options?.json ? { responseMimeType: "application/json" } : {}),
+            ...(options?.maxTokens ? { maxOutputTokens: options.maxTokens } : {}),
+          },
         }),
       }
     );
