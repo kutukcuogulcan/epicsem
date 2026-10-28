@@ -102,6 +102,8 @@ export async function resolveAnthropicModel(tier: "flagship" | "fast" = "flagshi
   return tier === "fast" ? "claude-3-5-haiku-latest" : "claude-sonnet-4-5";
 }
 
+const noTemperatureModels = new Set<string>();
+
 /** Anthropic — powers Claude's answers. */
 class AnthropicProvider implements LlmProvider {
   engine: EngineId = "anthropic";
@@ -116,20 +118,31 @@ class AnthropicProvider implements LlmProvider {
         : options.model === FAST_MODEL.anthropic
           ? await resolveAnthropicModel("fast")
           : options.model;
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: options?.maxTokens ?? 4096,
-        temperature: options?.temperature,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    // Yeni Claude modelleri `temperature` parametresini kabul etmiyor (400 "deprecated").
+    // Bir kez reddeden model için parametre bir daha gönderilmez.
+    const send = (withTemp: boolean) =>
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: options?.maxTokens ?? 4096,
+          ...(withTemp && options?.temperature != null ? { temperature: options.temperature } : {}),
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+    let res = await send(!noTemperatureModels.has(model));
+    if (res.status === 400) {
+      const body = await res.text();
+      if (/temperature/i.test(body)) {
+        noTemperatureModels.add(model);
+        res = await send(false);
+      } else throw new Error(`Anthropic API error: ${res.status} ${body}`);
+    }
     if (!res.ok) throw new Error(`Anthropic API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
     const text = Array.isArray(data.content) ? data.content.map((c: { text?: string }) => c.text ?? "").join("") : "";
