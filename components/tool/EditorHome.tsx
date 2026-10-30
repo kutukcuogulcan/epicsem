@@ -158,7 +158,7 @@ export default function EditorHome({
 
       <div className="flex w-fit rounded-xl border border-border bg-panel p-1 text-sm font-semibold">
         {([
-          ["write", "✦ Konudan yaz"],
+          ["write", "Konudan yaz"],
           ["open", "Sitedeki yazıyı aç"],
         ] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => setEntry(k)} className={`rounded-lg px-4 py-1.5 ${entry === k ? "bg-accent text-white" : "text-ink/55 hover:text-ink"}`}>
@@ -176,7 +176,9 @@ export default function EditorHome({
             }}
             className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
           >
-            <span className="shrink-0 text-accent">✦</span>
+            <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12.5 4.5l3 3L8 15H5v-3l7.5-7.5zM11 6l3 3" />
+            </svg>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} disabled={writing} placeholder="Konu ya da anahtar kelime — ör. abiye elbise nasıl seçilir" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
             <button disabled={writing || topic.trim().length < 3} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
               {writing ? "Yazılıyor…" : "Yazıyı yaz →"}
