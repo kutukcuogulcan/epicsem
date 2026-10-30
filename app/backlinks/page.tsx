@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
@@ -70,7 +71,11 @@ export default function BacklinksPage() {
   const [tab, setTab] = useState<"domains" | "mentions" | "pages" | "gap">("domains");
   const [mf, setMf] = useState<"all" | "unlinked" | "linked">("all");
   const [imp, setImp] = useState<{ busy: boolean; msg: string | null; err: boolean }>({ busy: false, msg: null, err: false });
-  const [mode, setMode] = useState<"analysis" | "citations">("analysis");
+  const modeParam = useSearchParams().get("mode");
+  const [mode, setMode] = useState<"analysis" | "citations">(modeParam === "citations" ? "citations" : "analysis");
+  useEffect(() => {
+    setMode(modeParam === "citations" ? "citations" : "analysis");
+  }, [modeParam]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
   const [open, setOpen] = useState<string | null>(null);

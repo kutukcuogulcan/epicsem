@@ -2691,3 +2691,47 @@ export async function setCitationStatus(userId: number, site: string, dirId: str
     [userId, site, dirId, patch.status ?? null, patch.listingUrl ?? null, patch.linkFound ?? null, !!patch.checked, patch.listingUrl !== undefined, patch.linkFound !== undefined]
   );
 }
+
+// ---------------- LLM Marka Monitörleri (Arvow tarzı liste) ----------------
+
+export interface BrandMonitorRow {
+  brandName: string;
+  brandDomain: string;
+  lastRunAt: string;
+  runs: number;
+  prompts: number;
+  engines: number;
+  visibility: number | null; // 0-1
+  sentiment: number | null; // 0-100
+  demoMode: boolean;
+}
+
+/** Her marka (alan adı) için en son GEO koşusu: prompt sayısı, görünürlük, duygu. */
+export async function listBrandMonitors(userId: number): Promise<BrandMonitorRow[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT DISTINCT ON (brand_domain) brand_domain, brand_name, created_at, demo_mode, summaries_json, runs_json,
+            COUNT(*) OVER (PARTITION BY brand_domain) AS runs
+       FROM geo_runs WHERE user_id = $1
+      ORDER BY brand_domain, id DESC`,
+    [userId]
+  );
+  return rows
+    .map((r) => {
+      const summaries: GeoVisibilitySummary[] = JSON.parse(r.summaries_json || "[]");
+      const runs: GeoRunResult[] = r.runs_json ? JSON.parse(r.runs_json) : [];
+      const own = summaries.find((s) => s.domain === r.brand_domain) ?? summaries[0];
+      return {
+        brandName: r.brand_name,
+        brandDomain: r.brand_domain,
+        lastRunAt: toIso(r.created_at),
+        runs: Number(r.runs),
+        prompts: new Set(runs.map((x) => x.promptText)).size,
+        engines: new Set(runs.map((x) => x.engine)).size,
+        visibility: own ? own.visibility : null,
+        sentiment: own?.avgSentiment ?? null,
+        demoMode: !!r.demo_mode,
+      };
+    })
+    .sort((a, b) => b.lastRunAt.localeCompare(a.lastRunAt));
+}

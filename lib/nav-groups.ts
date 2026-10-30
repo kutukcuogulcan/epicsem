@@ -1,39 +1,63 @@
 // Single source of truth for "which tools exist and how are they grouped" — shared by
-// Nav.tsx (marketing site's mega-menu), the homepage's own grid, and Sidebar.tsx (the
-// app-shell's left rail), so adding a tool only means editing this one list instead of
-// three places quietly drifting apart. Mirrors the "Tek panel, üç iş" story: Analiz &
-// Test (run a test) / Otomasyon (set-and-forget) / Yönetim (accounts, not tools).
-export const NAV_GROUPS = [
+// Nav.tsx (marketing site's mega-menu), the homepage's own grid, and SidebarClient.tsx (the
+// app-shell's left rail). Gruplar Arvow'un sol menüsüyle aynı mantıkta: İçerik / Yerel /
+// Otorite / Analiz / Yönetim.
+export interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  badge?: string;
+}
+export interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+export const NAV_GROUPS: NavGroup[] = [
   {
-    title: "Analiz & Test",
+    title: "İçerik",
     items: [
-      { href: "/audit", label: "SEO + AXO Audit", icon: "audit" },
-      { href: "/geo", label: "GEO/AEO Visibility", icon: "geo" },
-      { href: "/gap", label: "Gap Analysis", icon: "gap" },
-      { href: "/keywords", label: "Anahtar Kelime", icon: "keywords" },
-      { href: "/bing", label: "Bing Webmaster", icon: "bing" },
-      { href: "/backlinks", label: "Backlink", icon: "backlinks" },
-      { href: "/article-writer", label: "Article Writer", icon: "article" },
-      { href: "/editor", label: "AI SEO Editör", icon: "editor" },
-      { href: "/assistant", label: "SEO Asistanı", icon: "assistant" },
+      { href: "/editor", label: "Tüm Yazılar", icon: "editor" },
+      { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
+      { href: "/knowledge", label: "Bilgi Bankası", icon: "knowledge" },
+      { href: "/content", label: "Yayın Hedefleri", icon: "content" },
+      { href: "/keywords", label: "Anahtar Kelime Planlayıcı", icon: "keywords" },
+      { href: "/feeds", label: "Beslemeler", icon: "feeds" },
+      { href: "/article-writer", label: "Sayfa Analizi", icon: "article" },
     ],
   },
   {
-    title: "Otomasyon",
+    title: "Yerel",
     items: [
-      { href: "/monitor", label: "AXO Monitoring", icon: "monitor" },
+      { href: "/local?tab=reviews", label: "Yorum Yanıtları", icon: "reviews" },
+      { href: "/local", label: "GBP Gönderileri", icon: "local" },
+      { href: "/backlinks?mode=citations", label: "İşletme Kayıtları", icon: "listing" },
+    ],
+  },
+  {
+    title: "Otorite",
+    items: [
+      { href: "/backlinks", label: "Backlinkler", icon: "backlinks" },
+      { href: "/audit", label: "Site Optimizasyonu", icon: "audit" },
+      { href: "/indexing", label: "URL İndeksleme", icon: "indexing", badge: "YENİ" },
+      { href: "/bing", label: "Bing Webmaster", icon: "bing" },
+    ],
+  },
+  {
+    title: "Analiz",
+    items: [
+      { href: "/brand-monitors", label: "Marka Monitörleri", icon: "brandmon", badge: "YENİ" },
+      { href: "/geo", label: "GEO Görünürlük", icon: "geo" },
+      { href: "/gap", label: "Rakip Boşluğu", icon: "gap" },
       { href: "/rankings", label: "Sıralama Takibi", icon: "rankings" },
-      { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
-      { href: "/feeds", label: "Beslemeler", icon: "feeds" },
-      { href: "/import", label: "Site Taraması", icon: "import" },
-      { href: "/content", label: "Content Studio", icon: "content" },
-      { href: "/local", label: "Yerel İşletme (GBP)", icon: "local" },
+      { href: "/import", label: "Site Gezgini", icon: "import" },
+      { href: "/monitor", label: "Sayfa İzleme", icon: "monitor" },
     ],
   },
   {
     title: "Yönetim",
     items: [
-      { href: "/clients", label: "Clients", icon: "clients" },
+      { href: "/clients", label: "Müşteriler", icon: "clients" },
       { href: "/integrations", label: "Entegrasyonlar", icon: "integrations" },
       { href: "/prompts", label: "Claude Code Prompts", icon: "prompts" },
     ],

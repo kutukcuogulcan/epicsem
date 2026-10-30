@@ -9,7 +9,7 @@ import { SESSION_COOKIE } from "@/lib/auth-cookie-name";
  * deliberately dumb (no DB access, no node:sqlite import) so it can run in the Edge
  * middleware runtime without pulling in Node-only APIs.
  */
-const PROTECTED_PREFIXES = ["/billing", "/audit", "/geo", "/gap", "/monitor", "/clients", "/import", "/content", "/editor", "/assistant", "/feeds", "/keywords", "/rankings", "/integrations", "/bing", "/backlinks"];
+const PROTECTED_PREFIXES = ["/billing", "/audit", "/geo", "/gap", "/monitor", "/clients", "/import", "/content", "/editor", "/assistant", "/feeds", "/keywords", "/rankings", "/integrations", "/bing", "/backlinks", "/brand-monitors", "/knowledge", "/indexing"];
 
 // Tool pages get the sidebar app-shell instead of the marketing top-nav — see
 // app/layout.tsx. Broader than PROTECTED_PREFIXES (e.g. /dashboard, /campaigns aren't
@@ -34,6 +34,9 @@ const APP_SHELL_PREFIXES = [
   "/clients",
   "/prompts",
   "/billing",
+  "/brand-monitors",
+  "/knowledge",
+  "/indexing",
 ];
 
 export function middleware(req: NextRequest) {
@@ -72,5 +75,6 @@ export const config = {
   // Runs on every page request (not just the previously-protected ones) so the
   // x-pathname/x-shell headers are always set for app/layout.tsx — excludes static
   // assets, API routes, and files with an extension (images, robots.txt, etc.).
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)"],
+  // Uzantılı statik dosyalar hariç; /brand-monitors/ornek.com gibi alan adı içeren yollar dahil.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:png|jpe?g|gif|svg|ico|webp|avif|css|js|txt|xml|woff2?|ttf|otf|map|json|pdf|zip)$).*)"],
 };

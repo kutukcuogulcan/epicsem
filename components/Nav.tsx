@@ -34,8 +34,8 @@ export default async function Nav() {
               </svg>
             </button>
             <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-0 top-full pt-3 z-30">
-              <div className="w-[620px] bg-panel border border-border rounded-xl shadow-lg shadow-ink/[0.08] overflow-hidden">
-                <div className="grid grid-cols-3 gap-6 p-5">
+              <div className="w-[860px] bg-panel border border-border rounded-xl shadow-lg shadow-ink/[0.08] overflow-hidden">
+                <div className="grid grid-cols-5 gap-5 p-5">
                   {NAV_GROUPS.map((group) => (
                     <div key={group.title}>
                       <div className="text-sm font-semibold text-ink/70 mb-1">{group.title}</div>

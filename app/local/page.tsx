@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import UsageMeter from "@/components/UsageMeter";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { LocalOverview } from "@/components/tool/ToolOverviews";
@@ -80,6 +81,10 @@ function useDraftGenerator() {
 }
 
 export default function LocalToolsPage() {
+  const tabParam = useSearchParams().get("tab");
+  useEffect(() => {
+    if (tabParam === "reviews") document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [tabParam]);
   const [brandName, setBrandName] = useState("");
   const [brandDomain, setBrandDomain] = useState("");
 
@@ -165,7 +170,7 @@ export default function LocalToolsPage() {
         )}
       </div>
 
-      <div className="card space-y-3">
+      <div id="reviews" className={`card space-y-3 scroll-mt-6 ${tabParam === "reviews" ? "ring-2 ring-accent/40" : ""}`}>
         <h2 className="font-bold">Yorum yanıtı</h2>
         <textarea
           value={reviewText}

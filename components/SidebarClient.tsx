@@ -2,34 +2,63 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAV_GROUPS } from "@/lib/nav-groups";
 import { TOOL_ICONS } from "./ToolIcons";
 import LogoutButton from "./LogoutButton";
 
-const OverviewIcon = (
-  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="2" y="2" width="6" height="6" rx="1.2" />
-    <rect x="10" y="2" width="6" height="6" rx="1.2" />
-    <rect x="2" y="10" width="6" height="6" rx="1.2" />
-    <rect x="10" y="10" width="6" height="6" rx="1.2" />
+const Chevron = ({ open }: { open: boolean }) => (
+  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className={`transition-transform ${open ? "" : "-rotate-90"}`}>
+    <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 export default function SidebarClient({ email, isDemoFallback }: { email: string | null; isDemoFallback: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [closed, setClosed] = useState<Record<string, boolean>>({});
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  useEffect(() => {
+    setSearch(window.location.search);
+  }, [pathname]);
+  useEffect(() => {
+    try {
+      setClosed(JSON.parse(localStorage.getItem("epicsem.nav.closed") ?? "{}"));
+    } catch {
+      /* yoksay */
+    }
+  }, []);
+  const toggle = (t: string) =>
+    setClosed((c) => {
+      const n = { ...c, [t]: !c[t] };
+      try {
+        localStorage.setItem("epicsem.nav.closed", JSON.stringify(n));
+      } catch {
+        /* yoksay */
+      }
+      return n;
+    });
+
+  // Sorgu parametreli bağlantılar (ör. /local?tab=reviews) yalnızca o parametre varken aktif.
+  const allHrefs = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
+  const isActive = (href: string) => {
+    const [p, q] = href.split("?");
+    if (!(pathname === p || pathname.startsWith(`${p}/`))) return false;
+    if (q) return search.includes(q);
+    // Aynı yolun sorgulu bir kardeşi aktifse bu aktif değil.
+    return !allHrefs.some((h) => h !== href && h.startsWith(`${p}?`) && search.includes(h.split("?")[1]));
+  };
+  const chatActive = pathname === "/assistant" || pathname.startsWith("/assistant/");
 
   const linkClass = (active: boolean) =>
-    `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
-      active ? "bg-accent/10 text-accent" : "text-ink/70 hover:bg-muted"
+    `flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] transition-colors ${
+      active ? "bg-muted font-semibold text-ink" : "text-ink/70 hover:bg-muted/70 hover:text-ink"
     }`;
 
   const content = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-border shrink-0">
+      <div className="flex items-center gap-2 px-4 py-4 shrink-0">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-extrabold">
             E
@@ -38,25 +67,52 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        <Link href="/dashboard" onClick={() => setOpen(false)} className={`${linkClass(isActive("/dashboard"))} font-semibold`}>
-          <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">{OverviewIcon}</span>
-          Panel
+      {/* Gezin / Sohbet sekmeleri */}
+      <div className="mx-3 mb-2 grid grid-cols-2 border-b border-border text-[13px]">
+        <Link href="/dashboard" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${!chatActive ? "border-ink font-semibold text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+          {TOOL_ICONS.overview}
+          Gezin
+        </Link>
+        <Link href="/assistant" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${chatActive ? "border-ink font-semibold text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+          {TOOL_ICONS.chat}
+          Sohbet
+        </Link>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+        <Link href="/dashboard" onClick={() => setOpen(false)} className={linkClass(pathname === "/dashboard")}>
+          <span className="text-ink/60">{TOOL_ICONS.overview}</span>
+          Genel Bakış
         </Link>
 
         {NAV_GROUPS.map((group) => (
           <div key={group.title}>
-            <div className="px-2.5 text-xs font-semibold uppercase tracking-wide text-ink/35 mb-1.5">{group.title}</div>
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={linkClass(isActive(item.href))}>
-                  <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    {TOOL_ICONS[item.icon]}
-                  </span>
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              ))}
-            </div>
+            <button type="button" onClick={() => toggle(group.title)} className="flex w-full items-center gap-1 px-2 pb-1 text-[12px] font-medium text-ink/45 hover:text-ink/70">
+              {group.title}
+              <Chevron open={!closed[group.title]} />
+            </button>
+            {!closed[group.title] && (
+              <div className="space-y-px">
+                {group.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => {
+                        setOpen(false);
+                        setSearch(item.href.includes("?") ? `?${item.href.split("?")[1]}` : "");
+                      }}
+                      className={linkClass(active)}
+                    >
+                      <span className={active ? "text-ink" : "text-ink/55"}>{TOOL_ICONS[item.icon]}</span>
+                      <span className="truncate">{item.label}</span>
+                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[9px] font-bold tracking-wide text-accent">{item.badge}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </nav>
@@ -111,7 +167,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
         </button>
       </div>
 
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-panel md:h-screen md:sticky md:top-0">
+      <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-panel md:h-screen md:sticky md:top-0">
         {content}
       </aside>
 

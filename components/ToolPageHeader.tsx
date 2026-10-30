@@ -24,7 +24,7 @@ export default function ToolPageHeader({
     <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0 space-y-1.5">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: breadcrumbLabel }]} />
-        <h1 className="text-2xl sm:text-[1.75rem] font-extrabold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <div className="max-w-2xl text-sm text-ink/55">{body}</div>
         {children && <div className="pt-1">{children}</div>}
       </div>

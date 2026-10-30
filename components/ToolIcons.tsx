@@ -146,4 +146,46 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="4.75" cy="13.25" r="1.25" fill="currentColor" />
     </ToolIcon>
   ),
+  knowledge: (
+    <ToolIcon>
+      <path d="M3 3.5h4.5A1.5 1.5 0 0 1 9 5v10a1.5 1.5 0 0 0-1.5-1.5H3z" />
+      <path d="M15 3.5h-4.5A1.5 1.5 0 0 0 9 5v10a1.5 1.5 0 0 1 1.5-1.5H15z" />
+    </ToolIcon>
+  ),
+  indexing: (
+    <ToolIcon>
+      <circle cx="8" cy="8" r="4.5" />
+      <path d="M11.5 11.5L15 15" />
+      <path d="M6 8h4M8 6v4" />
+    </ToolIcon>
+  ),
+  brandmon: (
+    <ToolIcon>
+      <circle cx="9" cy="9" r="1.5" />
+      <path d="M5.5 5.5a5 5 0 0 0 0 7M12.5 5.5a5 5 0 0 1 0 7" />
+      <path d="M3.3 3.3a8 8 0 0 0 0 11.4M14.7 3.3a8 8 0 0 1 0 11.4" />
+    </ToolIcon>
+  ),
+  reviews: (
+    <ToolIcon>
+      <path d="M9 2.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L9 12.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" />
+    </ToolIcon>
+  ),
+  listing: (
+    <ToolIcon>
+      <rect x="3" y="3" width="12" height="12" rx="2" />
+      <path d="M6 7h6M6 10h6M6 13h3" />
+    </ToolIcon>
+  ),
+  overview: (
+    <ToolIcon>
+      <path d="M3 8.5L9 3.5l6 5V15H3z" />
+      <path d="M7.5 15v-4h3v4" />
+    </ToolIcon>
+  ),
+  chat: (
+    <ToolIcon>
+      <path d="M3.5 4h11v7.5h-6l-3 2.5v-2.5h-2z" />
+    </ToolIcon>
+  ),
 };
