@@ -127,6 +127,13 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <path d="M9 13.5V16" />
     </ToolIcon>
   ),
+  backlinks: (
+    <ToolIcon>
+      <path d="M7.5 10.5l3-3" />
+      <path d="M6 8.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L9.5 12" />
+      <path d="M12 9.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L8.5 6" />
+    </ToolIcon>
+  ),
   bing: (
     <ToolIcon>
       <path d="M5 2.5l3 1v9.5l4-2.3-2-1-1-2.7 5 1.8v3.3L8 16l-3-1.8z" />

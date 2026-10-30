@@ -2,6 +2,7 @@ import { getIntegration } from "./db";
 import type { ProviderId } from "./integration-providers";
 import { bingSites } from "./bing";
 import { verifyKeyFile } from "./indexnow";
+import { ahrefsFreeDR } from "./backlinks";
 
 /**
  * Dış servis istemcileri (sunucu tarafı). Anahtarlar kullanıcının /integrations sayfasında
@@ -197,6 +198,12 @@ export async function testIntegration(provider: ProviderId, config: Record<strin
       if (!secrets.apiKey) throw new Error("API anahtarı boş.");
       const sites = await bingSites(secrets.apiKey);
       return `Bağlandı · ${sites.length} site (${sites.filter((x) => x.verified).length} doğrulanmış)`;
+    }
+    case "ahrefs": {
+      if (!secrets.apiKey) throw new Error("API anahtarı boş.");
+      const dr = await ahrefsFreeDR(secrets.apiKey, ["ahrefs.com"]);
+      if (dr["ahrefs.com"] == null) throw new Error("Ahrefs yanıt vermedi.");
+      return "Bağlandı · Domain Rating çalışıyor (backlink listesi için ücretli plan gerekir)";
     }
     case "indexnow": {
       if (!config.siteUrl) throw new Error("Site adresi gerekli.");

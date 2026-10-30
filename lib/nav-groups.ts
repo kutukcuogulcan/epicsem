@@ -12,6 +12,7 @@ export const NAV_GROUPS = [
       { href: "/gap", label: "Gap Analysis", icon: "gap" },
       { href: "/keywords", label: "Anahtar Kelime", icon: "keywords" },
       { href: "/bing", label: "Bing Webmaster", icon: "bing" },
+      { href: "/backlinks", label: "Backlink", icon: "backlinks" },
       { href: "/article-writer", label: "Article Writer", icon: "article" },
       { href: "/editor", label: "AI SEO Editör", icon: "editor" },
       { href: "/assistant", label: "SEO Asistanı", icon: "assistant" },

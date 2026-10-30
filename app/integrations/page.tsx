@@ -13,7 +13,7 @@ interface Row {
 
 const GROUPS: { title: string; ids: ProviderId[] }[] = [
   { title: "Arama verisi", ids: ["serpapi", "google_ads", "serpbear"] },
-  { title: "İndeksleme", ids: ["indexnow", "bing"] },
+  { title: "İndeksleme ve backlink", ids: ["indexnow", "bing", "ahrefs"] },
   { title: "Performans ve görsel", ids: ["google_psi", "ogimg"] },
 ];
 
@@ -25,6 +25,7 @@ const LOGO: Record<ProviderId, { bg: string; t: string }> = {
   bing: { bg: "bg-[#008373]", t: "B" },
   google_psi: { bg: "bg-[#f4b400]", t: "PS" },
   ogimg: { bg: "bg-[#ec4899]", t: "OG" },
+  ahrefs: { bg: "bg-[#ff8800]", t: "A" },
 };
 
 export default function IntegrationsPage() {

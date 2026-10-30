@@ -374,6 +374,13 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_rank_history_kw ON rank_history(keyword_id, checked_at);
     ALTER TABLE rank_keywords ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'serpapi';
+    CREATE TABLE IF NOT EXISTS backlink_cache (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      cache_key TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, cache_key)
+    );
     CREATE TABLE IF NOT EXISTS user_integrations (
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       provider TEXT NOT NULL,
@@ -2581,4 +2588,26 @@ export async function deleteIntegration(userId: number, provider: string): Promi
 export async function usersWithIntegration(provider: string): Promise<number[]> {
   await ensureSchema();
   return (await many<any>(`SELECT user_id FROM user_integrations WHERE provider = $1`, [provider])).map((r) => r.user_id);
+}
+
+
+/** Backlink sonuçları önbelleği (Ahrefs API birimi ve Bing kotası harcamamak için). */
+export async function getBacklinkCache<T>(userId: number, key: string, maxAgeHours = 24): Promise<{ data: T; createdAt: string } | null> {
+  await ensureSchema();
+  const r = await one<any>(`SELECT data_json, created_at FROM backlink_cache WHERE user_id = $1 AND cache_key = $2 AND created_at > now() - ($3 || ' hours')::interval`, [userId, key, String(maxAgeHours)]);
+  if (!r) return null;
+  try {
+    return { data: JSON.parse(r.data_json) as T, createdAt: toIso(r.created_at) };
+  } catch {
+    return null;
+  }
+}
+
+export async function setBacklinkCache(userId: number, key: string, data: unknown): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `INSERT INTO backlink_cache (user_id, cache_key, data_json, created_at) VALUES ($1, $2, $3, now())
+     ON CONFLICT (user_id, cache_key) DO UPDATE SET data_json = EXCLUDED.data_json, created_at = now()`,
+    [userId, key, JSON.stringify(data)]
+  );
 }

@@ -4,7 +4,7 @@
  * Hiçbiri zorunlu değil: bağlı değilse araçlar Epicsem'in ücretsiz yerleşik yöntemini kullanır.
  */
 
-export type ProviderId = "serpapi" | "serpbear" | "ogimg" | "google_ads" | "google_psi" | "bing" | "indexnow";
+export type ProviderId = "serpapi" | "serpbear" | "ogimg" | "google_ads" | "google_psi" | "bing" | "indexnow" | "ahrefs";
 
 export interface ProviderField {
   key: string;
@@ -134,6 +134,21 @@ export const PROVIDERS: ProviderDef[] = [
       "Site adresini gir; anahtar otomatik üretilir.",
       "Sitenin kök dizinine <anahtar>.txt adlı, içinde sadece anahtarın yazdığı bir dosya koy (örn. https://siten.com/<anahtar>.txt).",
       "'Kaydet ve test et' dosyayı doğrular.",
+    ],
+  },
+  {
+    id: "ahrefs",
+    name: "Ahrefs",
+    tagline: "Backlink verisi: sitene link veren alan adları, Domain Rating (DR), yeni/kaybedilen linkler ve rakiplerin link aldığı ama senin almadığın siteler.",
+    price: "DR ücretsiz · backlink listesi ücretli plan",
+    usedIn: ["Backlink sayfası"],
+    docsUrl: "https://docs.ahrefs.com/docs/api/reference/introduction",
+    signupUrl: "https://app.ahrefs.com/account/api-keys",
+    fields: [{ key: "apiKey", label: "API anahtarı", secret: true, placeholder: "Ahrefs → Account settings → API keys" }],
+    steps: [
+      "Ahrefs hesabına gir (ücretsiz hesap da olur) → Account settings → API keys → yeni anahtar oluştur.",
+      "Ücretsiz anahtarla alan adlarının Domain Rating (DR) puanı gelir.",
+      "Backlink listesi ve rakip karşılaştırması için Ahrefs Lite veya üstü plan gerekir (API birimi harcar; sonuçlar 24 saat önbelleğe alınır).",
     ],
   },
 ];
