@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScoreRing, SentimentBar } from "@/components/tool/MonitorBits";
+import { PageHeader } from "@/components/ui";
 
 interface Row {
   brandName: string;
@@ -44,24 +45,19 @@ export default function BrandMonitorsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            LLM Marka Monitörleri
-            <span title="Her marka için en son GEO testinin sonucu" className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/25 text-[10px] text-ink/40">
-              ?
-            </span>
-          </h1>
-          <p className="mt-1 text-sm text-ink/55">Markanın ChatGPT, Claude, Gemini, Perplexity ve diğer AI cevaplarında nasıl göründüğünü izle.</p>
-        </div>
-        <Link href="/geo" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
-          <span className="text-base leading-none">+</span> Yeni monitör
-        </Link>
-      </div>
+      <PageHeader
+        title="LLM Marka Monitörleri"
+        description="Markanın ChatGPT, Claude, Gemini, Perplexity ve diğer AI cevaplarında nasıl göründüğünü izle."
+        actions={
+          <Link href="/geo" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+            <span className="text-base leading-none">+</span> Yeni monitör
+          </Link>
+        }
+      />
 
       {err && <div className="rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{err}</div>}
 
-      <div className="overflow-hidden rounded-xl border border-border bg-panel">
+      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <svg viewBox="0 0 20 20" className="h-4 w-4 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <circle cx="9" cy="9" r="5.5" />
@@ -71,7 +67,7 @@ export default function BrandMonitorsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-xs text-ink/55">
+            <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
               <th className="px-4 py-2.5 font-medium">Monitör</th>
               <th className="py-2.5 pr-4 font-medium">Durum</th>
               <th className="py-2.5 pr-4 text-center font-medium">Promptlar</th>

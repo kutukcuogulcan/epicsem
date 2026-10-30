@@ -17,10 +17,10 @@ const config: Config = {
         border: "#e2e8f0",
         ink: "#0f172a",
         accent: "#5d16ff",
-        seo: "#16a34a",
+        seo: "#10b981",
         geo: "#a78bfa",
-        warn: "#d97706",
-        danger: "#dc2626",
+        warn: "#f59e0b",
+        danger: "#ef4444",
       },
       fontFamily: {
         // Eudoxus Sans (arvow.com's actual font, self-hosted via next/font/local — see

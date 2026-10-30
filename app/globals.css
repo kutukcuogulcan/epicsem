@@ -12,7 +12,7 @@ body {
 }
 
 .card {
-  @apply bg-panel border border-border rounded-2xl p-5;
+  @apply bg-panel border border-border rounded-xl p-6 shadow-sm;
 }
 
 .badge {

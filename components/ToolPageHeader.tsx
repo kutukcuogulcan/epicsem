@@ -25,7 +25,7 @@ export default function ToolPageHeader({
       <div className="min-w-0 space-y-1.5">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: breadcrumbLabel }]} />
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <div className="max-w-2xl text-sm text-ink/55">{body}</div>
+        <div className="max-w-2xl text-sm text-slate-500">{body}</div>
         {children && <div className="pt-1">{children}</div>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
