@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import PageGuide from "@/components/PageGuide";
+import WriteWizard from "@/components/tool/WriteWizard";
 
 interface DraftItem {
   id: number;
@@ -54,36 +55,6 @@ export default function EditorHome({
   const [filter, setFilter] = useState<"all" | "weak" | "published">("all");
   const [limit, setLimit] = useState(12);
   const [entry, setEntry] = useState<"write" | "open">("write");
-  const [topic, setTopic] = useState("");
-  const [wSite, setWSite] = useState("");
-  const [wFormat, setWFormat] = useState<"article" | "listicle">("article");
-  const [wLang, setWLang] = useState("tr");
-  const [writing, setWriting] = useState(false);
-  const [wErr, setWErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => d.sites?.[0] && setWSite((v) => v || d.sites[0]))
-      .catch(() => {});
-  }, []);
-
-  async function write() {
-    if (topic.trim().length < 3) return;
-    setWriting(true);
-    setWErr(null);
-    try {
-      const r = await fetch("/api/editor/write", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, site: wSite, format: wFormat, language: wLang }) });
-      if (r.status === 401) return void (window.location.href = "/login?next=/editor");
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error ?? "Yazı yazılamadı");
-      onOpen(d.id);
-    } catch (e) {
-      setWErr(e instanceof Error ? e.message : "Yazı yazılamadı");
-    } finally {
-      setWriting(false);
-    }
-  }
 
   const rows = useMemo(
     () =>
@@ -139,7 +110,7 @@ export default function EditorHome({
       <ToolPageHeader
         breadcrumbLabel="AI SEO Editör"
         title="AI SEO Editör"
-        body="Konuyu yaz, yapay zekâ SEO ve GEO'ya uygun tam makaleyi yazsın; ya da sitendeki bir yazıyı aç. Puanı canlı gör, paragrafları tek tıkla yeniden yazdır, iç link ve SSS ekle."
+        body="Anahtar kelimeyi yaz, konu ve plan seç; SEO ve GEO'ya uygun makale yazılsın. Ya da sitendeki bir yazıyı aç. Puanı canlı gör, paragrafları tek tıkla yeniden yazdır."
       >
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onBlank} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
@@ -168,41 +139,7 @@ export default function EditorHome({
       </div>
 
       {entry === "write" ? (
-        <div className="space-y-2">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              write();
-            }}
-            className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
-          >
-            <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12.5 4.5l3 3L8 15H5v-3l7.5-7.5zM11 6l3 3" />
-            </svg>
-            <input value={topic} onChange={(e) => setTopic(e.target.value)} disabled={writing} placeholder="Konu ya da anahtar kelime — ör. abiye elbise nasıl seçilir" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
-            <button disabled={writing || topic.trim().length < 3} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-              {writing ? "Yazılıyor…" : "Yazıyı yaz →"}
-            </button>
-          </form>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-ink/55">
-            <input value={wSite} onChange={(e) => setWSite(e.target.value)} disabled={writing} placeholder="markan.com" className="w-40 rounded-lg border border-border bg-panel px-2.5 py-1.5 outline-none focus:border-accent" />
-            <select value={wFormat} onChange={(e) => setWFormat(e.target.value as "article" | "listicle")} disabled={writing} className="rounded-lg border border-border bg-panel px-2 py-1.5 outline-none">
-              <option value="article">Makale</option>
-              <option value="listicle">Liste yazısı</option>
-            </select>
-            <select value={wLang} onChange={(e) => setWLang(e.target.value)} disabled={writing} className="rounded-lg border border-border bg-panel px-2 py-1.5 outline-none">
-              <option value="tr">Türkçe</option>
-              <option value="en">English</option>
-              <option value="de">Deutsch</option>
-            </select>
-            <span>
-              {writing
-                ? "Makale yazılıyor, 30–60 saniye sürebilir. Bitince editörde açılacak."
-                : "Marka bilgi bankasındaki bilgiler kullanılır; bilinmeyen rakam uydurulmaz, [NEEDS: …] olarak işaretlenir. 1 içerik kotası."}
-            </span>
-          </div>
-          {wErr && <div className="rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{wErr}</div>}
-        </div>
+        <WriteWizard onDone={onOpen} />
       ) : (
         <form
           onSubmit={(e) => {

@@ -266,10 +266,43 @@ export async function generateArticleFromUrlInput(
 export async function generateArticleFromTopic(
   topic: string,
   brand: BrandRef,
-  opts: { format?: "article" | "listicle"; context?: string | null; sourceUrl?: string | null; knowledge?: string; language?: string; takeaways?: boolean } = {}
+  opts: {
+    format?: "article" | "listicle";
+    context?: string | null;
+    sourceUrl?: string | null;
+    knowledge?: string;
+    language?: string;
+    takeaways?: boolean;
+    /** Editör sihirbazı: kullanıcının seçtiği başlık ve onayladığı plan. */
+    title?: string;
+    outline?: { h2: string; h3?: string[]; note?: string }[];
+    faqQuestions?: string[];
+    /** Uzunluk, ton, iç link gibi ek talimatlar (en sona eklenir, öncekileri geçersiz kılar). */
+    brief?: string;
+  } = {}
 ): Promise<GeneratedArticle> {
   const format = opts.format ?? "article";
   const provider = isDemoMode() ? null : pickProvider();
+  if (!provider && opts.outline?.length) {
+    const parts: string[] = [`[DEMO DATA — gerçek bir API anahtarı tanımlı olmadığı için bu taslak simüle edildi.] ${brand.name}, "${topic}" sorusunu ilk cümlede doğrudan cevaplar. [NEEDS: ${brand.domain} için gerçek bir örnek ya da veri]`];
+    for (const sec of opts.outline) {
+      parts.push(`## ${sec.h2}`, `${sec.note || "Bu bölümün sorusunu ilk cümlede doğrudan cevapla."} [NEEDS: gerçek içerik]`);
+      for (const h of sec.h3 ?? []) parts.push(`### ${h}`, "[NEEDS: alt bölüm içeriği]");
+    }
+    if (opts.faqQuestions?.length) {
+      parts.push("## Sık sorulan sorular");
+      for (const q of opts.faqQuestions) parts.push(`### ${q}`, "[NEEDS: kısa cevap]");
+    }
+    const body = parts.join("\n\n");
+    return {
+      title: (opts.title || topic).slice(0, 70),
+      metaDescription: `[DEMO DATA] ${brand.name}: ${opts.title || topic}`.slice(0, 160),
+      bodyMarkdown: body,
+      openPlaceholders: body.match(/\[NEEDS:[^\]]*\]/g) ?? [],
+      demoMode: true,
+      model: "demo (no API key configured)",
+    };
+  }
   if (!provider) {
     const body = [
       `## ${topic}`,
@@ -298,6 +331,22 @@ export async function generateArticleFromTopic(
   lines.push(
     (opts.language ? "" : "Write in the same language as the topic (default: Turkish). ") + "Open with a 2-3 sentence direct answer to the topic (answer-first, quotable by AI answer engines). Use ## / ### headings phrased the way people actually ask, short paragraphs, bullet lists or a table where useful, and end with a '## Sık sorulan sorular' section of 3-5 real questions with concise answers. Mention the brand naturally where it is genuinely relevant — never as an advert in every paragraph."
   );
+  if (opts.title) {
+    lines.push("");
+    lines.push(`Use exactly this article title (you may lightly polish grammar, keep the meaning): "${opts.title}"`);
+  }
+  if (opts.outline?.length) {
+    lines.push("");
+    lines.push("Follow this approved outline in this order. Use the ## and ### headings as given (same wording); the note under each tells you what to cover:");
+    for (const sec of opts.outline) {
+      lines.push(`## ${sec.h2}${sec.note ? `  — note: ${sec.note}` : ""}`);
+      for (const h of sec.h3 ?? []) lines.push(`### ${h}`);
+    }
+  }
+  if (opts.faqQuestions?.length) {
+    lines.push("");
+    lines.push(`In the FAQ section answer these questions (concise, 1-3 sentences each): ${opts.faqQuestions.map((q) => `"${q}"`).join(", ")}`);
+  }
   if (opts.context) {
     lines.push("");
     lines.push(`Source material${opts.sourceUrl ? ` (${opts.sourceUrl})` : ""} — use it as the factual basis, rewrite in your own words, never copy sentences:`);
@@ -312,7 +361,7 @@ export async function generateArticleFromTopic(
   lines.push("");
   lines.push(RESPONSE_SHAPE_INSTRUCTIONS);
 
-  const prompt = lines.join("\n") + styleInstructions(opts) + knowledgeBlock(opts.knowledge);
+  const prompt = lines.join("\n") + styleInstructions(opts) + knowledgeBlock(opts.knowledge) + (opts.brief ? `\n\nADDITIONAL REQUIREMENTS (these override any earlier length or style instruction):\n${opts.brief}` : "");
   const first = await provider.run(prompt, { json: true, maxTokens: 8000 });
   try {
     return parseArticleResponse(first.text, first.model);
