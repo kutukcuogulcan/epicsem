@@ -28,7 +28,9 @@ export interface RefDomain {
   anchors: string[];
   sampleUrl: string | null;
   targets: string[];
-  source: "bing" | "ahrefs";
+  source: "bing" | "ahrefs" | "wikipedia" | "hn" | "reddit" | "news" | "csv";
+  /** Link veren sayfalar (ücretsiz kaynaklar ve CSV). */
+  from?: { url: string; title: string; date?: string | null; score?: number }[];
 }
 
 // ---------------- Bing Webmaster ----------------

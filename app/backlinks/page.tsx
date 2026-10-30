@@ -19,11 +19,23 @@ interface RefDomain {
   anchors: string[];
   sampleUrl: string | null;
   targets: string[];
-  source: "bing" | "ahrefs";
+  source: Src;
+  from?: { url: string; title: string; date?: string | null; score?: number }[];
+}
+type Src = "bing" | "ahrefs" | "wikipedia" | "hn" | "reddit" | "news" | "csv";
+interface Mention {
+  url: string;
+  title: string;
+  domain: string;
+  date: string | null;
+  lang: string | null;
+  linked: boolean | null;
 }
 interface Data {
   site?: string;
-  sources: { bing: boolean; ahrefs: boolean };
+  sources: { bing: boolean; ahrefs: boolean; free?: boolean; imported?: number };
+  mentions?: Mention[];
+  notes?: string[];
   domains?: RefDomain[];
   pages?: { url: string; count: number }[];
   errors?: string[];
@@ -39,6 +51,15 @@ interface Gap {
 
 const drTone = (d: number | null) => (d === null ? "bg-muted text-ink/45" : d >= 60 ? "bg-seo/10 text-seo" : d >= 30 ? "bg-accent/10 text-accent" : d >= 10 ? "bg-warn/10 text-warn" : "bg-muted text-ink/55");
 const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "2-digit" }) : "—");
+const SRC: Record<Src, { l: string; c: string }> = {
+  bing: { l: "Bing", c: "#008373" },
+  ahrefs: { l: "Ahrefs", c: "#ff8800" },
+  wikipedia: { l: "Wikipedia", c: "#64748b" },
+  hn: { l: "Hacker News", c: "#f97316" },
+  reddit: { l: "Reddit", c: "#ef4444" },
+  news: { l: "Haber", c: "#5d16ff" },
+  csv: { l: "CSV", c: "#16a34a" },
+};
 const path = (u: string) => u.replace(/^https?:\/\/(www\.)?[^/]+/, "") || "/";
 
 export default function BacklinksPage() {
@@ -46,7 +67,9 @@ export default function BacklinksPage() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<"domains" | "pages" | "gap">("domains");
+  const [tab, setTab] = useState<"domains" | "mentions" | "pages" | "gap">("domains");
+  const [mf, setMf] = useState<"all" | "unlinked" | "linked">("all");
+  const [imp, setImp] = useState<{ busy: boolean; msg: string | null; err: boolean }>({ busy: false, msg: null, err: false });
   const [mode, setMode] = useState<"analysis" | "citations">("analysis");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
@@ -140,14 +163,36 @@ export default function BacklinksPage() {
     }
   }
 
-  const noSource = data && !data.sources.bing && !data.sources.ahrefs;
+  const mentions = data?.mentions ?? [];
+  const srcDist = useMemo(() => {
+    const m = new Map<Src, number>();
+    for (const d of domains) m.set(d.source, (m.get(d.source) ?? 0) + 1);
+    return [...m.entries()].map(([k, n]) => ({ k: SRC[k].l, n, c: SRC[k].c }));
+  }, [domains]);
+  const shownMentions = mentions.filter((m) => (mf === "linked" ? m.linked === true : mf === "unlinked" ? m.linked === false : true));
+
+  async function importCsv(file: File) {
+    if (!site.trim()) return setImp({ busy: false, msg: "Önce siteni yaz.", err: true });
+    if (file.size > 5_000_000) return setImp({ busy: false, msg: "Dosya çok büyük (en fazla 5 MB).", err: true });
+    setImp({ busy: true, msg: null, err: false });
+    try {
+      const csv = await file.text();
+      const r = await fetch("/api/backlinks/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site, csv, fileName: file.name }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "CSV okunamadı");
+      setImp({ busy: false, msg: `${d.tool}: ${d.domains} alan adı içe aktarıldı.`, err: false });
+      await load(site, true);
+    } catch (e) {
+      setImp({ busy: false, msg: e instanceof Error ? e.message : "CSV okunamadı", err: true });
+    }
+  }
 
   return (
     <div className="space-y-6">
       <ToolPageHeader
         breadcrumbLabel="Backlink"
         title="Backlink"
-        body="Sitene link veren alan adları, otoriteleri (Domain Rating) ve kaybedilen linkler. Rakiplerin link aldığı sitelerden fırsatları çıkar; markanı önemli katalog ve haritalara kaydet."
+        body="Sitene link veren siteler ve markanın geçtiği haberler. Bağlantı gerekmez: Wikipedia, Hacker News, Reddit ve haber siteleri ücretsiz taranır; Search Console CSV'si yükleyebilir, istersen Bing ya da Ahrefs da bağlayabilirsin."
       >
         {data?.cachedAt && (
           <span className="text-xs text-ink/45">
@@ -168,7 +213,7 @@ export default function BacklinksPage() {
         </svg>
         <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="siten.com" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
         {mode === "analysis" && (
-          <button disabled={loading || !site.trim() || !!noSource} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+          <button disabled={loading || !site.trim()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
             {loading ? "Yükleniyor…" : "Backlinkleri getir →"}
           </button>
         )}
@@ -187,21 +232,51 @@ export default function BacklinksPage() {
 
       {mode === "citations" && <CitationTab site={site.trim()} />}
 
-      {mode === "analysis" && noSource && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {[
-            { t: "Bing Webmaster (ücretsiz)", d: "Bing'in bildiği gelen linkler ve anchor metinleri. Kendi doğrulanmış siten için ücretsiz.", c: "bg-[#008373]" },
-            { t: "Ahrefs", d: "Ücretsiz anahtarla Domain Rating; Lite+ planla tam referring domain listesi, yeni/kaybedilen linkler ve rakip boşluğu.", c: "bg-[#ff8800]" },
-          ].map((x) => (
-            <Link key={x.t} href="/integrations" className="rounded-2xl border border-border bg-panel p-5 transition hover:border-accent/40">
-              <div className="flex items-center gap-3">
-                <div className={`h-9 w-9 rounded-xl ${x.c}`} />
-                <div className="font-bold">{x.t} →</div>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-ink/60">{x.d}</p>
-            </Link>
-          ))}
-          <p className="text-xs text-ink/50 md:col-span-2">Backlink verisi için en az bir kaynak bağla. İkisi birden bağlıysa veriler birleştirilir.</p>
+      {mode === "analysis" && (
+        <div className="rounded-2xl border border-border bg-panel p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-ink/50">Kaynaklar</span>
+            {(["wikipedia", "hn", "reddit", "news"] as const).map((k) => (
+              <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-ink/65">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC[k].c }} />
+                {SRC[k].l} · ücretsiz
+              </span>
+            ))}
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${data?.sources.imported ? "bg-seo/10 text-seo" : "bg-muted text-ink/45"}`}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC.csv.c }} />
+              CSV {data?.sources.imported ? `· ${data.sources.imported} alan adı` : "· yüklenmedi"}
+            </span>
+            {(["bing", "ahrefs"] as const).map((k) =>
+              data?.sources[k] ? (
+                <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-seo/10 px-2.5 py-1 text-[11px] font-semibold text-seo">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC[k].c }} />
+                  {SRC[k].l} · bağlı
+                </span>
+              ) : (
+                <Link key={k} href="/integrations" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[11px] font-semibold text-ink/45 hover:border-accent/40 hover:text-accent">
+                  + {SRC[k].l} (isteğe bağlı)
+                </Link>
+              )
+            )}
+            <label className={`ml-auto cursor-pointer rounded-xl border border-border px-3 py-1.5 text-xs font-bold hover:border-accent/40 ${imp.busy ? "opacity-50" : ""}`}>
+              {imp.busy ? "Yükleniyor…" : "CSV yükle"}
+              <input
+                type="file"
+                accept=".csv,.tsv,.txt,text/csv"
+                className="hidden"
+                disabled={imp.busy}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) importCsv(f);
+                }}
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-[11px] leading-5 text-ink/45">
+            En eksiksiz ücretsiz liste Google&apos;da: Search Console → Bağlantılar → Dışa aktar → &quot;En çok bağlantı veren siteler&quot; CSV&apos;sini buraya yükle. Bing Webmaster ve Ahrefs Webmaster Tools dışa aktarmaları da okunur.
+          </p>
+          {imp.msg && <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${imp.err ? "bg-danger/5 text-danger" : "bg-seo/10 text-seo"}`}>{imp.msg}</p>}
         </div>
       )}
 
@@ -212,7 +287,13 @@ export default function BacklinksPage() {
         </div>
       ))}
 
-      {mode === "analysis" && data?.site && !noSource && (
+      {mode === "analysis" && data?.notes?.map((e) => (
+        <div key={e} className="rounded-xl bg-muted px-4 py-2 text-xs text-ink/55">
+          {e}
+        </div>
+      ))}
+
+      {mode === "analysis" && data?.site && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {[
@@ -220,7 +301,7 @@ export default function BacklinksPage() {
               ["Backlink", kpi.links.toLocaleString("tr-TR"), "toplam link"],
               ["Ortalama DR", kpi.avgDr !== null ? String(kpi.avgDr) : "—", "link verenlerin otoritesi"],
               ["Güçlü kaynak", String(kpi.high), "DR 50 ve üstü"],
-              ["Kaybedilen", String(kpi.lost), data.sources.ahrefs ? "son 90 gün" : "Ahrefs ile görünür"],
+              ["Linksiz bahsetme", String(mentions.filter((m) => m.linked === false).length), "link isteme fırsatı"],
             ].map(([l, v, sub]) => (
               <div key={l} className="rounded-2xl border border-border bg-panel p-4">
                 <div className="text-[11px] text-ink/50">{l}</div>
@@ -233,18 +314,18 @@ export default function BacklinksPage() {
           <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-2xl border border-border bg-panel">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <div className="text-sm font-bold">Domain Rating dağılımı</div>
-                <span className="text-xs text-ink/40">{withDr.length ? "referring domain sayısı" : "DR için Ahrefs bağla"}</span>
+                <div className="text-sm font-bold">{withDr.length ? "Domain Rating dağılımı" : "Kaynağa göre link veren siteler"}</div>
+                <span className="text-xs text-ink/40">{withDr.length ? "referring domain sayısı" : "DR için Ahrefs ya da Ahrefs CSV'si"}</span>
               </div>
               <div className="h-48 px-2 pt-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dist}>
+                  <BarChart data={withDr.length ? dist : srcDist}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                     <XAxis dataKey="k" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                     <YAxis allowDecimals={false} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={28} />
                     <Tooltip cursor={{ fill: "rgba(93,22,255,0.04)" }} contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 12 }} />
                     <Bar dataKey="n" name="Alan adı" radius={[6, 6, 0, 0]}>
-                      {dist.map((d) => (
+                      {(withDr.length ? dist : srcDist).map((d) => (
                         <Cell key={d.k} fill={d.c} />
                       ))}
                     </Bar>
@@ -255,7 +336,7 @@ export default function BacklinksPage() {
             <div className="rounded-2xl border border-border bg-panel">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <div className="text-sm font-bold">En sık anchor metinleri</div>
-                <span className="text-xs text-ink/40">{anchors.length ? "alan adı sayısı" : "Bing ile görünür"}</span>
+                <span className="text-xs text-ink/40">{anchors.length ? "alan adı sayısı" : "Bing ya da CSV ile görünür"}</span>
               </div>
               <ul className="space-y-2 p-5">
                 {anchors.length ? (
@@ -278,6 +359,7 @@ export default function BacklinksPage() {
           <div className="flex flex-wrap rounded-xl border border-border bg-panel p-1 text-xs font-semibold w-fit">
             {([
               ["domains", `Referring domains · ${domains.length}`],
+              ["mentions", `Bahsetmeler · ${mentions.length}`],
               ["pages", `En çok link alan sayfalar · ${data.pages?.length ?? 0}`],
               ["gap", "Link fırsatları"],
             ] as const).map(([k, l]) => (
@@ -325,6 +407,9 @@ export default function BacklinksPage() {
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={`https://www.google.com/s2/favicons?domain=${d.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                               <span className="font-medium">{d.domain}</span>
+                              <span className="rounded px-1.5 text-[10px] font-bold text-white" style={{ background: SRC[d.source]?.c ?? "#94a3b8" }}>
+                                {SRC[d.source]?.l ?? d.source}
+                              </span>
                               {d.spam && <span className="rounded bg-danger/10 px-1.5 text-[10px] font-bold text-danger">spam</span>}
                             </div>
                             {d.anchors[0] && <div className="truncate pl-6 text-[11px] text-ink/45">“{d.anchors[0]}”</div>}
@@ -348,8 +433,16 @@ export default function BacklinksPage() {
                             <td colSpan={6} className="bg-muted/30 px-5 py-3 text-xs">
                               <div className="grid gap-3 md:grid-cols-3">
                                 <div>
-                                  <div className="mb-1 font-bold text-ink/50">Anchor metinleri</div>
-                                  {d.anchors.length ? d.anchors.map((a) => <div key={a}>“{a}”</div>) : <div className="text-ink/40">—</div>}
+                                  <div className="mb-1 font-bold text-ink/50">{d.from?.length ? "Link veren sayfalar" : "Anchor metinleri"}</div>
+                                  {d.from?.length
+                                    ? d.from.slice(0, 8).map((f) => (
+                                        <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="block truncate hover:text-accent">
+                                          {f.title}
+                                        </a>
+                                      ))
+                                    : d.anchors.length
+                                      ? d.anchors.map((a) => <div key={a}>“{a}”</div>)
+                                      : <div className="text-ink/40">—</div>}
                                 </div>
                                 <div>
                                   <div className="mb-1 font-bold text-ink/50">Link verilen sayfaların</div>
@@ -357,7 +450,7 @@ export default function BacklinksPage() {
                                 </div>
                                 <div>
                                   <div className="mb-1 font-bold text-ink/50">Kaynak</div>
-                                  <div>{d.source === "ahrefs" ? "Ahrefs" : "Bing Webmaster"}</div>
+                                  <div>{SRC[d.source]?.l ?? d.source}{d.dofollow === 0 ? " · nofollow" : ""}</div>
                                   {d.sampleUrl && (
                                     <a href={d.sampleUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate font-semibold text-accent hover:underline">
                                       Link veren sayfayı aç ↗
@@ -372,6 +465,53 @@ export default function BacklinksPage() {
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+          )}
+
+          {tab === "mentions" && (
+            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+              <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
+                <div className="mr-2 text-sm font-bold">Markanın geçtiği haberler · son 3 ay</div>
+                {([
+                  ["all", "Tümü"],
+                  ["unlinked", "Linksiz (fırsat)"],
+                  ["linked", "Linkli"],
+                ] as const).map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setMf(k)} className={`rounded-full px-3 py-1 text-xs font-semibold ${mf === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <p className="border-b border-border px-5 py-2 text-[11px] text-ink/45">
+                Linksiz bahsetme: haber markanı anıyor ama sitene link vermiyor. Yazara ya da editöre kısa bir e-postayla linki eklemesini rica etmek, en kolay kazanılan backlinklerdendir. Link kontrolü ilk 20 haberde yapılır.
+              </p>
+              {shownMentions.length === 0 ? (
+                <div className="px-5 py-10 text-center text-sm text-ink/45">{loading ? "Yükleniyor…" : "Bu filtrede haber yok. Marka adı çok kısa ya da yeni olabilir."}</div>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {shownMentions.slice(0, 100).map((m) => (
+                    <li key={m.url} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://www.google.com/s2/favicons?domain=${m.domain}&sz=32`} alt="" className="h-4 w-4 shrink-0 rounded" />
+                      <div className="min-w-0 flex-1">
+                        <a href={m.url} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-accent">
+                          {m.title}
+                        </a>
+                        <div className="text-[11px] text-ink/45">
+                          {m.domain} · {fmtDate(m.date)}
+                        </div>
+                      </div>
+                      {m.linked === true ? (
+                        <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-semibold text-seo">Linkli</span>
+                      ) : m.linked === false ? (
+                        <span className="shrink-0 rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-semibold text-warn">Link yok · iste</span>
+                      ) : (
+                        <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-ink/45">Kontrol edilmedi</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           )}

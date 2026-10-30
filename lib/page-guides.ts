@@ -59,14 +59,15 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
   backlinks: {
     heading: "Rakiplerin link aldığı sitelerden link fırsatı listesi çıkarmak",
     steps: [
-      { title: "Kaynağı bağla", body: "Bing Webmaster (ücretsiz) ve/veya Ahrefs'i Entegrasyonlar'dan bağlarsın." },
+      { title: "Siteni yaz", body: "Wikipedia, Hacker News, Reddit ve haber siteleri hiçbir bağlantı olmadan ücretsiz taranır. Daha eksiksiz liste için Search Console CSV'sini yükle; istersen Bing ya da Ahrefs da bağlayabilirsin." },
       { title: "Linklerini gör", body: "Sitene link veren alan adları, otorite puanları (DR), link metinleri ve kaybedilen linkler listelenir." },
       { title: "Rakipleri gir", body: "\"Link fırsatları\" sekmesine 2–4 rakip yazarsın." },
       { title: "Hedef listesi hazır", body: "Rakiplerine link verip sana vermeyen siteler, birden çok rakibe link verenler en üstte olacak şekilde sıralanır." },
     ],
     faq: [
       { q: "Backlink neden önemli?", a: "Başka sitelerin sana link vermesi Google'a güven sinyali verir. AI asistanları da sık bahsedilen, çok kaynakta geçen markaları daha çok önerir." },
-      { q: "Ahrefs'e para vermem gerekiyor mu?", a: "Ücretsiz Ahrefs anahtarıyla link veren sitelerin otorite puanı (DR) gelir. Tam backlink listesi, kaybedilen linkler ve rakip karşılaştırması için Ahrefs Lite veya üstü plan gerekir. Sadece Bing'i bağlarsan da gelen linkleri ücretsiz görürsün." },
+      { q: "Bing ya da Ahrefs bağlamadan çalışır mı?", a: "Evet. Wikipedia maddeleri, Hacker News ve Reddit paylaşımları ile markanın geçtiği haberler ücretsiz taranır; haberlerin sitene link verip vermediği de kontrol edilir. Google'ın bildiği tüm linkler için Search Console → Bağlantılar → Dışa aktar ile indirdiğin CSV'yi yükle." },
+      { q: "Ahrefs'e para vermem gerekiyor mu?", a: "Hayır, zorunlu değil. Ücretsiz Ahrefs anahtarıyla link veren sitelerin otorite puanı (DR) gelir. Tam backlink listesi, kaybedilen linkler ve rakip karşılaştırması için Ahrefs Lite veya üstü plan gerekir. Sadece Bing'i bağlarsan da gelen linkleri ücretsiz görürsün." },
       { q: "DR (Domain Rating) nedir?", a: "Ahrefs'in bir sitenin backlink gücünü 0–100 arası puanladığı ölçü. 50 üstü güçlü kaynak sayılır." },
       { q: "Veriler ne sıklıkla yenileniyor?", a: "Sonuçlar 24 saat saklanır, böylece sayfayı her açışta Ahrefs kotası harcanmaz. \"Backlinkleri getir\" ile istediğinde yenileyebilirsin." },
       { q: "Kayıt listesi ne işe yarıyor?", a: "Markanın kaydolması gereken önemli harita, sosyal profil, yorum ve bilgi grafı sitelerini işletme türüne göre listeler. AI kayıt metinlerini (slogan, kısa ve uzun açıklama) hazırlar, sen kopyalayıp kaydolursun. Profil adresini girince sistem sitene link verilip verilmediğini kontrol eder. Formlar otomatik doldurulmaz; bu hem bot korumalarına takılmamak hem de spam sayılmamak için." },
