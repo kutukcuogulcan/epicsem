@@ -5,6 +5,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
+import CitationTab from "@/components/tool/CitationTab";
 
 interface RefDomain {
   domain: string;
@@ -46,6 +47,7 @@ export default function BacklinksPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<"domains" | "pages" | "gap">("domains");
+  const [mode, setMode] = useState<"analysis" | "citations">("analysis");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
   const [open, setOpen] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export default function BacklinksPage() {
       <ToolPageHeader
         breadcrumbLabel="Backlink"
         title="Backlink"
-        body="Sitene link veren alan adları, otoriteleri (Domain Rating) ve kaybedilen linkler. Rakiplerin link aldığı ama senin almadığın sitelerden link fırsatları çıkar."
+        body="Sitene link veren alan adları, otoriteleri (Domain Rating) ve kaybedilen linkler. Rakiplerin link aldığı sitelerden fırsatları çıkar; markanı önemli katalog ve haritalara kaydet."
       >
         {data?.cachedAt && (
           <span className="text-xs text-ink/45">
@@ -165,12 +167,27 @@ export default function BacklinksPage() {
           <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
         </svg>
         <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="siten.com" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
-        <button disabled={loading || !site.trim() || !!noSource} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-          {loading ? "Yükleniyor…" : "Backlinkleri getir →"}
-        </button>
+        {mode === "analysis" && (
+          <button disabled={loading || !site.trim() || !!noSource} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+            {loading ? "Yükleniyor…" : "Backlinkleri getir →"}
+          </button>
+        )}
       </form>
 
-      {noSource && (
+      <div className="flex w-fit rounded-xl border border-border bg-panel p-1 text-sm font-semibold">
+        {([
+          ["analysis", "Backlink analizi"],
+          ["citations", "Kayıt listesi"],
+        ] as const).map(([k, l]) => (
+          <button key={k} type="button" onClick={() => setMode(k)} className={`rounded-lg px-4 py-1.5 ${mode === k ? "bg-accent text-white" : "text-ink/55 hover:text-ink"}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {mode === "citations" && <CitationTab site={site.trim()} />}
+
+      {mode === "analysis" && noSource && (
         <div className="grid gap-3 md:grid-cols-2">
           {[
             { t: "Bing Webmaster (ücretsiz)", d: "Bing'in bildiği gelen linkler ve anchor metinleri. Kendi doğrulanmış siten için ücretsiz.", c: "bg-[#008373]" },
@@ -188,14 +205,14 @@ export default function BacklinksPage() {
         </div>
       )}
 
-      {err && <div className="rounded-xl bg-danger/5 px-4 py-2.5 text-sm text-danger">{err}</div>}
-      {data?.errors?.map((e) => (
+      {mode === "analysis" && err && <div className="rounded-xl bg-danger/5 px-4 py-2.5 text-sm text-danger">{err}</div>}
+      {mode === "analysis" && data?.errors?.map((e) => (
         <div key={e} className="rounded-xl border border-warn/30 bg-warn/5 px-4 py-2.5 text-sm text-ink/70">
           {e}
         </div>
       ))}
 
-      {data?.site && !noSource && (
+      {mode === "analysis" && data?.site && !noSource && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {[

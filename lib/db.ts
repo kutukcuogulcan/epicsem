@@ -374,6 +374,24 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_rank_history_kw ON rank_history(keyword_id, checked_at);
     ALTER TABLE rank_keywords ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'serpapi';
+    CREATE TABLE IF NOT EXISTS citation_profiles (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      site TEXT NOT NULL,
+      data_json TEXT NOT NULL DEFAULT '{}',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, site)
+    );
+    CREATE TABLE IF NOT EXISTS citation_status (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      site TEXT NOT NULL,
+      dir_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'todo',
+      listing_url TEXT,
+      link_found BOOLEAN,
+      checked_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, site, dir_id)
+    );
     CREATE TABLE IF NOT EXISTS backlink_cache (
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       cache_key TEXT NOT NULL,
@@ -2609,5 +2627,67 @@ export async function setBacklinkCache(userId: number, key: string, data: unknow
     `INSERT INTO backlink_cache (user_id, cache_key, data_json, created_at) VALUES ($1, $2, $3, now())
      ON CONFLICT (user_id, cache_key) DO UPDATE SET data_json = EXCLUDED.data_json, created_at = now()`,
     [userId, key, JSON.stringify(data)]
+  );
+}
+
+
+// ---------------- Kayıt listesi (citation) ----------------
+
+export interface CitationProfile {
+  bizType?: string;
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  category?: string;
+  description?: string;
+  texts?: Record<string, unknown> | null;
+}
+
+export async function getCitationProfile(userId: number, site: string): Promise<CitationProfile> {
+  await ensureSchema();
+  const r = await one<any>(`SELECT data_json FROM citation_profiles WHERE user_id = $1 AND site = $2`, [userId, site]);
+  try {
+    return r ? JSON.parse(r.data_json) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function saveCitationProfile(userId: number, site: string, data: CitationProfile): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `INSERT INTO citation_profiles (user_id, site, data_json, updated_at) VALUES ($1, $2, $3, now())
+     ON CONFLICT (user_id, site) DO UPDATE SET data_json = EXCLUDED.data_json, updated_at = now()`,
+    [userId, site, JSON.stringify(data)]
+  );
+}
+
+export interface CitationStatusRow {
+  dirId: string;
+  status: string;
+  listingUrl: string | null;
+  linkFound: boolean | null;
+  checkedAt: string | null;
+}
+
+export async function listCitationStatus(userId: number, site: string): Promise<CitationStatusRow[]> {
+  await ensureSchema();
+  const rows = await many<any>(`SELECT * FROM citation_status WHERE user_id = $1 AND site = $2`, [userId, site]);
+  return rows.map((r) => ({ dirId: r.dir_id, status: r.status, listingUrl: r.listing_url ?? null, linkFound: r.link_found ?? null, checkedAt: r.checked_at ? toIso(r.checked_at) : null }));
+}
+
+export async function setCitationStatus(userId: number, site: string, dirId: string, patch: { status?: string; listingUrl?: string | null; linkFound?: boolean | null; checked?: boolean }): Promise<void> {
+  await ensureSchema();
+  await exec(
+    `INSERT INTO citation_status (user_id, site, dir_id, status, listing_url, link_found, checked_at, updated_at)
+     VALUES ($1, $2, $3, COALESCE($4, 'todo'), $5, $6, CASE WHEN $7 THEN now() ELSE NULL END, now())
+     ON CONFLICT (user_id, site, dir_id) DO UPDATE SET
+       status = COALESCE($4, citation_status.status),
+       listing_url = CASE WHEN $8 THEN $5 ELSE citation_status.listing_url END,
+       link_found = CASE WHEN $9 THEN $6 ELSE citation_status.link_found END,
+       checked_at = CASE WHEN $7 THEN now() ELSE citation_status.checked_at END,
+       updated_at = now()`,
+    [userId, site, dirId, patch.status ?? null, patch.listingUrl ?? null, patch.linkFound ?? null, !!patch.checked, patch.listingUrl !== undefined, patch.linkFound !== undefined]
   );
 }

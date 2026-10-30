@@ -69,6 +69,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       { q: "Ahrefs'e para vermem gerekiyor mu?", a: "Ücretsiz Ahrefs anahtarıyla link veren sitelerin otorite puanı (DR) gelir. Tam backlink listesi, kaybedilen linkler ve rakip karşılaştırması için Ahrefs Lite veya üstü plan gerekir. Sadece Bing'i bağlarsan da gelen linkleri ücretsiz görürsün." },
       { q: "DR (Domain Rating) nedir?", a: "Ahrefs'in bir sitenin backlink gücünü 0–100 arası puanladığı ölçü. 50 üstü güçlü kaynak sayılır." },
       { q: "Veriler ne sıklıkla yenileniyor?", a: "Sonuçlar 24 saat saklanır, böylece sayfayı her açışta Ahrefs kotası harcanmaz. \"Backlinkleri getir\" ile istediğinde yenileyebilirsin." },
+      { q: "Kayıt listesi ne işe yarıyor?", a: "Markanın kaydolması gereken önemli harita, sosyal profil, yorum ve bilgi grafı sitelerini işletme türüne göre listeler. AI kayıt metinlerini (slogan, kısa ve uzun açıklama) hazırlar, sen kopyalayıp kaydolursun. Profil adresini girince sistem sitene link verilip verilmediğini kontrol eder. Formlar otomatik doldurulmaz; bu hem bot korumalarına takılmamak hem de spam sayılmamak için." },
     ],
   },
   editor: {
