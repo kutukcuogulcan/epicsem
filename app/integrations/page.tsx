@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { PROVIDERS, type ProviderDef, type ProviderId } from "@/lib/integration-providers";
 import PageGuide from "@/components/PageGuide";
+import { Drawer } from "@/components/ui";
 
 interface Row {
   provider: string;
@@ -174,18 +175,12 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" aria-label="Kapat" onClick={onClose} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-      <form onSubmit={save} className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <Drawer isOpen onClose={onClose} panelClassName="flex h-full w-screen max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Entegrasyon</div>
             <div className="font-bold">{p.name}</div>
           </div>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">
-            ✕
-          </button>
-        </div>
+</div>}>
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <p className="text-sm leading-6 text-ink/65">{p.tagline}</p>
           <ol className="space-y-2 rounded-xl bg-muted/60 p-4 text-[13px] leading-5 text-ink/70">
@@ -258,7 +253,6 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
             {busy ? "Test ediliyor…" : "Kaydet ve test et"}
           </button>
         </div>
-      </form>
-    </div>
+      </Drawer>
   );
 }

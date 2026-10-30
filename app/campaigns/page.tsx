@@ -7,6 +7,7 @@ import { CampaignsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
+import { Drawer } from "@/components/ui";
 
 type Source = "gap" | "rss" | "keywords" | "feed";
 type Mode = "review" | "cms-draft" | "publish";
@@ -488,16 +489,12 @@ export default function CampaignsPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
               <div>
                 <div className="font-bold">{form.id ? "Autoblog'u düzenle" : "Yeni autoblog"}</div>
                 <div className="text-xs text-ink/50">Kaynak, takvim ve yazı ayarları.</div>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
-            </div>
+</div>}>
 
             <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
               <div className="space-y-2">
@@ -745,8 +742,7 @@ export default function CampaignsPage() {
                 {busy === "save" ? "Kaydediliyor…" : form.id ? "Kaydet" : "Autoblog'u başlat"}
               </button>
             </div>
-          </form>
-        </div>
+          </Drawer>
       )}
 
       <ExampleScenario heading="Autoblog nasıl çalışır" steps={SCENARIO_STEPS} />

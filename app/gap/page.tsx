@@ -12,6 +12,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
 import GapOverview from "@/components/tool/GapOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
+import { Drawer } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -280,16 +281,12 @@ export default function GapPage() {
       />
 
       {manualOpen && (
-      <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" aria-label="Kapat" onClick={() => setManualOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-      <div className="relative h-full w-full max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-panel/95 px-6 py-4 backdrop-blur">
+      <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
         <div>
           <div className="font-bold">Ayarlar</div>
           <div className="text-xs text-ink/50">Marka, rakipler, promptlar, sayfalar ve motorlar.</div>
         </div>
-        <button type="button" onClick={() => setManualOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted text-ink/50">✕</button>
-      </div>
+</div>}>
       <form onSubmit={(e) => { setManualOpen(false); runAnalysis(e); }} className="manual-form">
         <div className="card space-y-3">
           <h2 className="font-bold text-sm">Markanız</h2>
@@ -403,8 +400,7 @@ export default function GapPage() {
           </button>
         </div>
       </form>
-      </div>
-      </div>
+      </Drawer>
       )}
 
       {loading && !gapMatrix && (

@@ -78,6 +78,7 @@ export default function IndexingPage() {
       <ToolPageHeader
         breadcrumbLabel="URL İndeksleme"
         title="URL İndeksleme"
+        badge="YENİ"
         body="Yeni ya da güncellenen sayfalarını arama motorlarına anında bildir. IndexNow ile Bing, Yandex, Seznam ve Naver'a gider; Bing verisi ChatGPT aramasını da besler."
       />
 

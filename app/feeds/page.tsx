@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
+import { Drawer } from "@/components/ui";
 
 type Kind = "keyword" | "news" | "rss" | "youtube";
 
@@ -263,10 +264,7 @@ export default function FeedsPage() {
       )}
 
       {form && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setForm(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setForm(null)} panelClassName="flex h-full w-screen max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
               <div className="flex items-center gap-3">
                 <span className={`flex h-9 w-9 items-center justify-center rounded-lg font-bold ${KIND[form.kind].color}`}>{KIND[form.kind].icon}</span>
                 <div>
@@ -274,8 +272,7 @@ export default function FeedsPage() {
                   <div className="text-xs text-ink/50">{KIND[form.kind].body}</div>
                 </div>
               </div>
-              <button type="button" onClick={() => setForm(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
-            </div>
+</div>}>
             <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
               {form.kind === "keyword" && (
                 <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">
@@ -346,15 +343,11 @@ export default function FeedsPage() {
                 {saving ? "Besleme okunuyor…" : form.id ? "Kaydet ve yenile" : "Oluştur"}
               </button>
             </div>
-          </form>
-        </div>
+          </Drawer>
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setDetail(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <div className="relative flex h-full w-full max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setDetail(null)} panelClassName="flex h-full w-screen max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${KIND[detail.kind].color}`}>{KIND[detail.kind].icon}</span>
@@ -363,7 +356,7 @@ export default function FeedsPage() {
                     <div className="text-xs text-ink/50">{KIND[detail.kind].title} · son yenileme {ago(detail.refreshedAt)}</div>
                   </div>
                 </div>
-                <button type="button" onClick={() => setDetail(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
+                
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <button onClick={() => refreshNow(detail.id)} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 font-bold text-white disabled:opacity-50">{busy ? "Yenileniyor…" : "Şimdi yenile"}</button>
@@ -375,7 +368,7 @@ export default function FeedsPage() {
               {detail.kind === "keyword" && (
                 <p className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-[11px] text-ink/55">Haftada bir kendiliğinden yenilenir, yeni kelimeler eklenir. Arama hacmi ve zorluk için ücretli veri kaynağı gerekir; şimdilik kaynağı gösteriyoruz.</p>
               )}
-            </div>
+</div>}>
             <div className="flex-1 overflow-y-auto">
               {detail.items.length === 0 ? (
                 <p className="p-6 text-sm text-ink/50">Henüz öğe yok.</p>
@@ -407,8 +400,7 @@ export default function FeedsPage() {
                 </table>
               )}
             </div>
-          </div>
-        </div>
+          </Drawer>
       )}
 
       <PageGuide id="feeds" />

@@ -151,24 +151,47 @@ export function UnderlineTabs({ tabs, value, onChange, className = "" }: { tabs:
 }
 
 // ---------------- Drawer ----------------
-const DRAWER_W = { md: "max-w-md", lg: "max-w-xl", xl: "max-w-2xl" } as const;
+const DRAWER_W = { md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl", "2xl": "max-w-2xl" } as const;
 
-/** Sağdan açılan çekmece. Esc ve arka plana tıklama kapatır; açıkken sayfa kaydırması kilitlenir. */
+/**
+ * Sağdan açılan çekmece. Esc ve arka plana tıklama kapatır; açıkken sayfa kaydırması kilitlenir.
+ * as="form" + onSubmit ile panelin kendisi form olur (footer'daki submit düğmesi çalışır).
+ */
 export function Drawer({
   isOpen,
   onClose,
   title,
   subtitle,
+  eyebrow,
+  icon,
   size = "md",
   footer,
+  as = "div",
+  onSubmit,
+  bodyClassName = "p-6",
+  header,
+  panelClassName,
+  raw = false,
   children,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  title: ReactNode;
+  title?: ReactNode;
+  /** Başlık alanının içeriğini tamamen özelleştir (kapat düğmesi yine eklenir). */
+  header?: ReactNode;
+  /** Panel sınıflarını değiştir (varsayılan: flex sütun, sabit genişlik). */
+  panelClassName?: string;
+  /** true: children gövde sarmalayıcısı olmadan doğrudan panele konur (kendi gövde/footer düzeni olan çekmeceler için). */
+  raw?: boolean;
   subtitle?: ReactNode;
+  /** Başlığın üstündeki küçük etiket (ör. "Entegrasyon"). */
+  eyebrow?: ReactNode;
+  icon?: ReactNode;
   size?: keyof typeof DRAWER_W;
   footer?: ReactNode;
+  as?: "div" | "form";
+  onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
+  bodyClassName?: string;
   children: ReactNode;
 }) {
   useEffect(() => {
@@ -184,36 +207,63 @@ export function Drawer({
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/20 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="absolute inset-y-0 right-0 flex max-w-full pl-10">
-        <div className={`flex w-screen ${DRAWER_W[size]} flex-col border-l border-border bg-panel shadow-2xl`} onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-4">
+  const panelCls = panelClassName ?? `flex h-full w-screen ${DRAWER_W[size]} flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]`;
+  const inner = (
+    <>
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border bg-panel px-6 py-4">
+        {header ?? (
+          <div className="flex min-w-0 items-center gap-3">
+            {icon}
             <div className="min-w-0">
+              {eyebrow && <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{eyebrow}</div>}
               <h3 className="text-lg font-semibold text-ink">{title}</h3>
               {subtitle && <div className="mt-0.5 text-xs text-slate-500">{subtitle}</div>}
             </div>
-            <button type="button" onClick={onClose} aria-label="Kapat" className="text-xl leading-none text-slate-400 hover:text-ink">
-              &times;
-            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        )}
+        <button type="button" onClick={onClose} aria-label="Kapat" className="text-xl leading-none text-slate-400 hover:text-ink">
+          &times;
+        </button>
+      </div>
+      {raw ? (
+        children
+      ) : (
+        <>
+          <div className={`flex-1 overflow-y-auto ${bodyClassName}`}>{children}</div>
           {footer && <div className="border-t border-border px-6 py-4">{footer}</div>}
-        </div>
+        </>
+      )}
+    </>
+  );
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/20 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="absolute inset-y-0 right-0 flex max-w-full pl-10">
+        {as === "form" ? (
+          <form className={panelCls} onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
+            {inner}
+          </form>
+        ) : (
+          <div className={panelCls} onClick={(e) => e.stopPropagation()}>
+            {inner}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 // ---------------- Page header ----------------
-/** Sayfa başlığı: başlık + açıklama solda, eylemler sağda. */
-export function PageHeader({ title, description, actions, back }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: ReactNode }) {
+/** Sayfa başlığı (ToolPageHeader ile aynı görünüm) + isteğe bağlı geri bağlantısı. */
+export function PageHeader({ title, description, actions, back, badge }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: ReactNode; badge?: string }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-center">
       <div className="min-w-0">
         {back && <div className="mb-1 text-xs text-slate-500">{back}</div>}
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-slate-500">{description}</p>}
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
+          {badge && <span className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">{badge}</span>}
+        </div>
+        {description && <div className="mt-1 max-w-3xl text-sm text-slate-500">{description}</div>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>

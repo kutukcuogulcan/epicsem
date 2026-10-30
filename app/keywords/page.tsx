@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
 import PageGuide from "@/components/PageGuide";
+import { Drawer } from "@/components/ui";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
   question: "Soru",
@@ -333,16 +334,12 @@ export default function KeywordsPage() {
       )}
 
       {serp && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setSerp(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <div className="relative flex h-full w-full max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-start justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setSerp(null)} panelClassName="flex h-full w-screen max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Google ilk sayfa analizi</div>
                 <div className="text-lg font-semibold">{serp.keyword}</div>
               </div>
-              <button type="button" onClick={() => setSerp(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
-            </div>
+</div>}>
             <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
               {serp.loading && <p className="text-sm text-ink/55">İlk 10 sonuç ve sayfaları okunuyor (15–30 sn)…</p>}
               {serp.error && (
@@ -409,8 +406,7 @@ export default function KeywordsPage() {
                 </>
               )}
             </div>
-          </div>
-        </div>
+          </Drawer>
       )}
 
       <PageGuide id="keywords" />

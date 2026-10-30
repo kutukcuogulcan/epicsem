@@ -8,7 +8,7 @@ import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import PageGuide from "@/components/PageGuide";
 import WriteWizard from "@/components/tool/WriteWizard";
-import { UnderlineTabs } from "@/components/ui";
+import { UnderlineTabs, Drawer } from "@/components/ui";
 
 interface DraftItem {
   id: number;
@@ -300,23 +300,16 @@ export default function EditorHome({
       </div>
 
       {kbOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setKbOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <div className="relative flex h-full w-full max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setKbOpen(false)} panelClassName="flex h-full w-screen max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Ayarlar</div>
                 <div className="font-bold">Marka bilgi bankası</div>
               </div>
-              <button type="button" onClick={() => setKbOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">
-                ✕
-              </button>
-            </div>
+</div>}>
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <KnowledgeBase />
             </div>
-          </div>
-        </div>
+          </Drawer>
       )}
 
       <PageGuide id="editor" />

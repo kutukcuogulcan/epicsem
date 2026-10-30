@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
+import { Drawer } from "@/components/ui";
 
 interface Kw {
   id: number;
@@ -257,13 +258,9 @@ export default function RankingsPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <form onSubmit={add} className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={add} header={<div className="min-w-0">
               <div className="font-bold">Takibe kelime ekle</div>
-              <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
-            </div>
+</div>}>
             <div className="flex-1 space-y-4 px-6 py-5">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Site</label>
@@ -279,8 +276,7 @@ export default function RankingsPage() {
               <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/60 hover:bg-muted">Vazgeç</button>
               <button disabled={busy === "add"} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white disabled:opacity-50">{busy === "add" ? "Ekleniyor…" : "Ekle"}</button>
             </div>
-          </form>
-        </div>
+          </Drawer>
       )}
 
       <PageGuide id="rankings" />

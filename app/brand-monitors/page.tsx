@@ -46,6 +46,7 @@ export default function BrandMonitorsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        badge="YENİ"
         title="LLM Marka Monitörleri"
         description="Markanın ChatGPT, Claude, Gemini, Perplexity ve diğer AI cevaplarında nasıl göründüğünü izle."
         actions={

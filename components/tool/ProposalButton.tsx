@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAgencyName } from "@/lib/use-agency-name";
+import { Drawer } from "@/components/ui";
 
 const DEFAULTS = [
   { name: "Başlangıç", price: "", items: "Kritik teknik SEO hatalarının düzeltilmesi\nAI arama botlarına erişim ve robots.txt düzenlemesi\nAna sayfa ve hizmet sayfalarına schema\nAylık sağlık taraması ve rapor" },
@@ -60,18 +61,12 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
         Teklif PDF
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
-          <div className="relative flex h-full w-full max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Müşteri teklifi</div>
                 <div className="font-bold">{domain}</div>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">
-                ✕
-              </button>
-            </div>
+</div>}>
             <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
               <p className="text-xs leading-5 text-ink/55">Bu taramanın bulgularıyla (sağlık skoru, öncelikli sorunlar, AI erişimi) müşteriye gönderilecek hazır bir teklif PDF&apos;i oluşturur. Fiyat yazmazsan &quot;Görüşmede belirlenir&quot; yazar.</p>
               <div className="grid grid-cols-2 gap-3">
@@ -115,8 +110,7 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
                 {busy ? "Hazırlanıyor…" : "PDF indir"}
               </button>
             </div>
-          </div>
-        </div>
+          </Drawer>
       )}
     </>
   );

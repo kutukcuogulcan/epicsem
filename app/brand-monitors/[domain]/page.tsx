@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Drawer, UnderlineTabs } from "@/components/ui";
+import { Drawer, PageHeader, UnderlineTabs } from "@/components/ui";
 import { ENGINE_META, EngineDot, ScoreRing, SentimentBar, netSentiment, sentimentLabel } from "@/components/tool/MonitorBits";
 
 interface Resp {
@@ -91,21 +91,25 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link href="/brand-monitors" className="text-xs text-ink/45 hover:text-ink">
+      <PageHeader
+        back={
+          <Link href="/brand-monitors" className="hover:text-ink">
             ← LLM Marka Monitörleri
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{d.brand.name} monitörü</h1>
-          <p className="text-sm text-ink/50">
+        }
+        title={`${d.brand.name} monitörü`}
+        description={
+          <>
             Son çalışma {fmt(d.lastRunAt)} · {d.brand.domain}
             {d.demoMode && <span className="ml-2 rounded bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn">demo verisi</span>}
-          </p>
-        </div>
-        <Link href="/geo" className="rounded-lg border border-border bg-panel px-3.5 py-2 text-sm font-semibold hover:bg-muted">
-          ↻ Yeniden çalıştır
-        </Link>
-      </div>
+          </>
+        }
+        actions={
+          <Link href="/geo" className="rounded-lg border border-border bg-panel px-3.5 py-2 text-sm font-semibold hover:bg-muted">
+            ↻ Yeniden çalıştır
+          </Link>
+        }
+      />
 
       {stale && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warn/30 bg-warn/5 px-4 py-3">
@@ -391,7 +395,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
 
       {/* Prompt çekmecesi */}
       {open && (
-        <Drawer isOpen onClose={() => setOpen(null)} size="xl" title="Prompt detayı" subtitle={`Son çalışma ${fmt(d.lastRunAt)}`}>
+        <Drawer isOpen onClose={() => setOpen(null)} size="2xl" title="Prompt detayı" subtitle={`Son çalışma ${fmt(d.lastRunAt)}`}>
             <div className="space-y-5">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full border border-border px-3 py-1 text-xs">

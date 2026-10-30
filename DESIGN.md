@@ -17,15 +17,15 @@ Tüm araç sayfaları aynı dili kullanır. Yeni sayfa yazarken önce `component
 İkincil metin için `text-slate-500`. Sayfa zemini `#f8fafc`.
 
 ## Şablonlar (`components/ui`)
-- `PageHeader` — başlık (text-2xl semibold) + açıklama + sağda eylemler. Araç sayfalarında `ToolPageHeader` da aynı ölçüleri kullanır.
+- `ToolPageHeader` (components/ToolPageHeader.tsx) — `title`, `description`, `badge` (ör. "YENİ", "BETA"), `actionButton`. Başlık `text-2xl font-bold`, açıklama `text-slate-500`, altında `border-b` ve `pb-6 mb-8`. `PageHeader` (components/ui) aynı görünümde, ek olarak `back` bağlantısı alır.
 - `Card`, `CardHeader`, `StatCard` — `rounded-xl border bg-panel p-6 shadow-sm`. Global `.card` sınıfı da aynı.
 - `StandardTable` — ince çizgili tablo; başlık `bg-muted text-xs uppercase text-slate-500`, satır `px-6 py-4`, hover `bg-muted/50`.
 - `UnderlineTabs` — aktif sekme mor yazı + altında 2px mor çizgi; sayı rozeti destekli.
-- `Drawer` — sağdan açılan panel; Esc ve arka plan tıklaması kapatır (md / lg / xl genişlik).
+- `Drawer` — sağdan açılan panel; Esc ve arka plan tıklaması kapatır, sayfa kaydırmasını kilitler. Genişlik: md / lg / xl / 2xl. Form çekmecesi için `as="form" onSubmit`. Kendi gövde/footer düzeni olan çekmeceler `raw` + `header` + `panelClassName` ile kullanır. Uygulamadaki tüm sağ çekmeceler bu bileşeni kullanır.
 - Puan halkası ve duygu çubuğu: `components/tool/MonitorBits.tsx`.
 
 ## Kurallar
-- Başlıklar `font-semibold`, `font-extrabold` kullanma.
+- Sayfa başlığı `font-bold`; kart ve bölüm başlıkları `font-semibold`; `font-extrabold` kullanma.
 - Gölge yalnızca `shadow-sm` (çekmece hariç).
 - Ayar ve detaylar sayfayı uzatmak yerine `Drawer` içinde açılır.
 - Mor yalnızca vurgu içindir; büyük alanları mora boyama.
