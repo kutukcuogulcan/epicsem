@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
+import PageGuide from "@/components/PageGuide";
 
 interface DraftItem {
   id: number;
@@ -303,6 +304,8 @@ export default function EditorHome({
           </div>
         </div>
       )}
+
+      <PageGuide id="editor" />
     </div>
   );
 }

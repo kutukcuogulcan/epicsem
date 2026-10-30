@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Block } from "@/lib/seo-assistant";
+import PageGuide from "@/components/PageGuide";
 
 interface Msg {
   role: "user" | "bot";
@@ -109,6 +110,7 @@ export default function AssistantPage() {
   }
 
   return (
+    <div>
     <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div>
@@ -182,6 +184,10 @@ export default function AssistantPage() {
         <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={site ? `${site} hakkında sor… (ör. "alt metni eksik sayfalar")` : "Önce bir site seç"} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
         <button disabled={busy || !input.trim() || !site} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">Sor</button>
       </form>
+    </div>
+    <div className="mt-14">
+      <PageGuide id="assistant" />
+    </div>
     </div>
   );
 }

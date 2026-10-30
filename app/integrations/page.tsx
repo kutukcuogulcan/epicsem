@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { PROVIDERS, type ProviderDef, type ProviderId } from "@/lib/integration-providers";
+import PageGuide from "@/components/PageGuide";
 
 interface Row {
   provider: string;
@@ -134,6 +135,8 @@ export default function IntegrationsPage() {
       </p>
 
       {open && <ProviderDrawer p={open} row={rowOf(open.id)} onClose={() => setOpen(null)} onSaved={refresh} />}
+
+      <PageGuide id="integrations" />
     </div>
   );
 }

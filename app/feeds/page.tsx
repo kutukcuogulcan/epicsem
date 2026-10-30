@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import PageGuide from "@/components/PageGuide";
 
 type Kind = "keyword" | "news" | "rss" | "youtube";
 
@@ -409,6 +410,8 @@ export default function FeedsPage() {
           </div>
         </div>
       )}
+
+      <PageGuide id="feeds" />
     </div>
   );
 }

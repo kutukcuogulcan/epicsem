@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import PageGuide from "@/components/PageGuide";
 
 interface RefDomain {
   domain: string;
@@ -475,6 +476,8 @@ export default function BacklinksPage() {
           )}
         </>
       )}
+
+      <PageGuide id="backlinks" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
+import PageGuide from "@/components/PageGuide";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
   question: "Soru",
@@ -411,6 +412,8 @@ export default function KeywordsPage() {
           </div>
         </div>
       )}
+
+      <PageGuide id="keywords" />
     </div>
   );
 }
