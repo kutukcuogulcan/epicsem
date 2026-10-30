@@ -3,6 +3,7 @@ import type { EngineId, GeneratedArticle } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
 import { fetchPageSummary, type PageSummary } from "@/lib/content-fetch";
+import { extractJsonObject } from "@/lib/llm-json";
 
 /**
  * AI content generation grounded in a real ContentBrief — a page's actual gap-analysis
@@ -153,7 +154,13 @@ export async function generateArticleFromBrief(
 }
 
 function parseArticleResponse(text: string, model: string): GeneratedArticle {
-  const parsed = extractJson(text);
+  let parsed: any;
+  try {
+    parsed = extractJson(text);
+  } catch {
+    // Uzun makalelerde kesik/bozuk JSON: jsonrepair ile onar.
+    parsed = extractJsonObject(text);
+  }
   if (!parsed.title || !parsed.bodyMarkdown) {
     throw new Error("Model response was missing required fields (title/bodyMarkdown).");
   }
@@ -305,6 +312,13 @@ export async function generateArticleFromTopic(
   lines.push("");
   lines.push(RESPONSE_SHAPE_INSTRUCTIONS);
 
-  const { text, model } = await provider.run(lines.join("\n") + styleInstructions(opts) + knowledgeBlock(opts.knowledge));
-  return parseArticleResponse(text, model);
+  const prompt = lines.join("\n") + styleInstructions(opts) + knowledgeBlock(opts.knowledge);
+  const first = await provider.run(prompt, { json: true, maxTokens: 8000 });
+  try {
+    return parseArticleResponse(first.text, first.model);
+  } catch {
+    // Bir kez daha dene: model bazen JSON dışına taşar.
+    const again = await provider.run(prompt + "\n\nReturn ONLY the JSON object. Keep bodyMarkdown under 1200 words so the JSON is complete.", { json: true, maxTokens: 8000 });
+    return parseArticleResponse(again.text, again.model);
+  }
 }

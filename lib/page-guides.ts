@@ -74,16 +74,17 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
     ],
   },
   editor: {
-    heading: "Eski bir blog yazısını AI'da alıntılanacak hale getirmek",
+    heading: "Konudan yayına hazır, AI'da alıntılanacak yazı",
     steps: [
-      { title: "Sayfayı aç", body: "Yazının adresini yapıştırırsın; metin, başlıklar ve görseller editöre gelir." },
+      { title: "Konuyu yaz ya da sayfayı aç", body: "\"Konudan yaz\" ile yapay zekâ tam makaleyi yazar; ya da sitendeki bir yazının adresini yapıştırıp düzenlemeye açarsın." },
       { title: "Puanları gör", body: "SEO ve GEO puanı canlı hesaplanır; zayıf bölümler ve eksik kontroller sağ panelde listelenir." },
       { title: "Tek tıkla düzelt", body: "Zayıf paragrafı seçip \"Cevap-önce\", \"Sadeleştir\" ya da \"SSS ekle\" ile yeniden yazdırırsın." },
       { title: "Yayına gönder", body: "Kaydedip Content Studio'dan WordPress, Shopify ya da webhook ile yayınlarsın." },
     ],
     faq: [
       { q: "GEO puanı neye göre hesaplanıyor?", a: "Metnin AI asistanlarınca ne kadar kolay alıntılanabileceğini ölçen kurallarla: ilk cümlenin doğrudan cevap vermesi, somut veriler, kaynak gösterme, liste/tablo, soru biçimli başlıklar, SSS gibi. AI kullanılmaz, ücretsizdir." },
-      { q: "AI düzenlemeleri kredi harcıyor mu?", a: "Puanlama ücretsiz. Paragrafı yeniden yazdırma, SSS ve meta önerisi gibi ✦ işaretli düğmeler AI çağrısı yapar ve aylık kotadan düşer." },
+      { q: "Article Writer'dan farkı ne?", a: "Article Writer var olan bir sayfayı denetleyip öneri listesi verir; yazıyı değiştirmez. AI SEO Editör ise yazıyı yazar ya da açar ve metnin üzerinde düzenleme yaparsın." },
+      { q: "AI düzenlemeleri kredi harcıyor mu?", a: "Puanlama ücretsiz. Konudan makale yazdırma, paragrafı yeniden yazdırma, SSS ve meta önerisi gibi ✦ işaretli düğmeler AI çağrısı yapar ve aylık kotadan düşer." },
       { q: "Marka bilgi bankası ne işe yarıyor?", a: "Markan hakkındaki doğru bilgileri (kargo, iade, fiyat aralığı, ton) bir kez yazarsın; AI yazarken bunları esas alır ve olmayan bilgi uydurmaz." },
       { q: "Yazıyı sitemde doğrudan güncelleyebilir miyim?", a: "Evet. Kaydettikten sonra \"Yayınla\" ile Content Studio'ya geçer, bağlı WordPress/Shopify sitene taslak ya da yayın olarak gönderirsin." },
     ],

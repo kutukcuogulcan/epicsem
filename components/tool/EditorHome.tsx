@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
@@ -53,6 +53,37 @@ export default function EditorHome({
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "weak" | "published">("all");
   const [limit, setLimit] = useState(12);
+  const [entry, setEntry] = useState<"write" | "open">("write");
+  const [topic, setTopic] = useState("");
+  const [wSite, setWSite] = useState("");
+  const [wFormat, setWFormat] = useState<"article" | "listicle">("article");
+  const [wLang, setWLang] = useState("tr");
+  const [writing, setWriting] = useState(false);
+  const [wErr, setWErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/assistant")
+      .then((r) => (r.ok ? r.json() : { sites: [] }))
+      .then((d) => d.sites?.[0] && setWSite((v) => v || d.sites[0]))
+      .catch(() => {});
+  }, []);
+
+  async function write() {
+    if (topic.trim().length < 3) return;
+    setWriting(true);
+    setWErr(null);
+    try {
+      const r = await fetch("/api/editor/write", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, site: wSite, format: wFormat, language: wLang }) });
+      if (r.status === 401) return void (window.location.href = "/login?next=/editor");
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Yazı yazılamadı");
+      onOpen(d.id);
+    } catch (e) {
+      setWErr(e instanceof Error ? e.message : "Yazı yazılamadı");
+    } finally {
+      setWriting(false);
+    }
+  }
 
   const rows = useMemo(
     () =>
@@ -108,7 +139,7 @@ export default function EditorHome({
       <ToolPageHeader
         breadcrumbLabel="AI SEO Editör"
         title="AI SEO Editör"
-        body="Var olan bir yazıyı aç ya da sıfırdan yaz; SEO ve GEO (AI'da alıntılanma) puanını canlı gör, paragrafları tek tıkla yeniden yazdır, iç link ve SSS ekle."
+        body="Konuyu yaz, yapay zekâ SEO ve GEO'ya uygun tam makaleyi yazsın; ya da sitendeki bir yazıyı aç. Puanı canlı gör, paragrafları tek tıkla yeniden yazdır, iç link ve SSS ekle."
       >
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onBlank} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
@@ -125,22 +156,68 @@ export default function EditorHome({
 
       {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{msg.t}</div>}
 
-      {/* Arama çubuğu — Site Taraması / Anahtar Kelime ile aynı */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onImport();
-        }}
-        className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
-      >
-        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
-        </svg>
-        <input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="Sitedeki bir yazının adresi — https://siteniz.com/blog/yazi" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
-        <button disabled={loading || !importUrl.trim()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-          {loading ? "Açılıyor…" : "Sayfayı aç →"}
-        </button>
-      </form>
+      <div className="flex w-fit rounded-xl border border-border bg-panel p-1 text-sm font-semibold">
+        {([
+          ["write", "✦ Konudan yaz"],
+          ["open", "Sitedeki yazıyı aç"],
+        ] as const).map(([k, l]) => (
+          <button key={k} type="button" onClick={() => setEntry(k)} className={`rounded-lg px-4 py-1.5 ${entry === k ? "bg-accent text-white" : "text-ink/55 hover:text-ink"}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {entry === "write" ? (
+        <div className="space-y-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              write();
+            }}
+            className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+          >
+            <span className="shrink-0 text-accent">✦</span>
+            <input value={topic} onChange={(e) => setTopic(e.target.value)} disabled={writing} placeholder="Konu ya da anahtar kelime — ör. abiye elbise nasıl seçilir" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
+            <button disabled={writing || topic.trim().length < 3} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+              {writing ? "Yazılıyor…" : "Yazıyı yaz →"}
+            </button>
+          </form>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-ink/55">
+            <input value={wSite} onChange={(e) => setWSite(e.target.value)} disabled={writing} placeholder="markan.com" className="w-40 rounded-lg border border-border bg-panel px-2.5 py-1.5 outline-none focus:border-accent" />
+            <select value={wFormat} onChange={(e) => setWFormat(e.target.value as "article" | "listicle")} disabled={writing} className="rounded-lg border border-border bg-panel px-2 py-1.5 outline-none">
+              <option value="article">Makale</option>
+              <option value="listicle">Liste yazısı</option>
+            </select>
+            <select value={wLang} onChange={(e) => setWLang(e.target.value)} disabled={writing} className="rounded-lg border border-border bg-panel px-2 py-1.5 outline-none">
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+            <span>
+              {writing
+                ? "Makale yazılıyor, 30–60 saniye sürebilir. Bitince editörde açılacak."
+                : "Marka bilgi bankasındaki bilgiler kullanılır; bilinmeyen rakam uydurulmaz, [NEEDS: …] olarak işaretlenir. 1 içerik kotası."}
+            </span>
+          </div>
+          {wErr && <div className="rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{wErr}</div>}
+        </div>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onImport();
+          }}
+          className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+        >
+          <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
+          </svg>
+          <input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="Sitedeki bir yazının adresi — https://siteniz.com/blog/yazi" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
+          <button disabled={loading || !importUrl.trim()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+            {loading ? "Açılıyor…" : "Sayfayı aç →"}
+          </button>
+        </form>
+      )}
 
       {/* KPI kartları */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -204,7 +281,7 @@ export default function EditorHome({
       {/* Hızlı başlangıç */}
       <div className="grid gap-3 md:grid-cols-3">
         {[
-          { t: "Boş yazı", d: "GEO'ya uygun iskeletle sıfırdan yaz: kısa cevap, soru başlıklar, SSS.", a: onBlank, href: null },
+          { t: "Boş yazı", d: "Kendin yazmak istersen GEO'ya uygun iskelet: kısa cevap, soru başlıklar, SSS.", a: onBlank, href: null },
           { t: "Anahtar kelimeden", d: "Anahtar Kelime Bulucu'da konu seç, 'Yazı yaz' ile hazır iskelet gelsin.", a: null, href: "/keywords" },
           { t: "Rakip boşluğundan", d: "Gap Analysis'te AI'da kaybettiğin sorulardan içerik özeti çıkar.", a: null, href: "/gap" },
         ].map((c) =>
