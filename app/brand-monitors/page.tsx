@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScoreRing, SentimentBar } from "@/components/tool/MonitorBits";
 import { PageHeader } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 interface Row {
   brandName: string;
@@ -41,7 +42,10 @@ export default function BrandMonitorsPage() {
       .catch((e) => setErr(e.message));
   }, []);
 
-  const shown = (rows ?? []).filter((r) => !q || `${r.brandName} ${r.brandDomain}`.toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")));
+  const { project } = useProject();
+  const shown = (rows ?? [])
+    .filter((r) => !q || `${r.brandName} ${r.brandDomain}`.toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")))
+    .sort((a, b) => Number(b.brandDomain === project?.domain) - Number(a.brandDomain === project?.domain));
 
   return (
     <div className="space-y-6">
@@ -104,6 +108,7 @@ export default function BrandMonitorsPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${r.brandDomain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="font-semibold">{r.brandName} monitörü</span>
+                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">aktif proje</span>}
                         <span className="hidden text-xs text-ink/40 sm:inline">{r.brandDomain}</span>
                       </div>
                     </td>

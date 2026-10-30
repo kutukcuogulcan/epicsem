@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UnderlineTabs, Drawer } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 import {
   Bar,
   BarChart,
@@ -213,14 +214,38 @@ export default function GeoPage() {
   const autoRunRef = useRef(false);
 
   // Sayfa açılınca son testin sonuçlarını göster (grafikler hemen görünsün; rakip kartları ve fırsatlar dahil).
+  // Aktif proje değişince o projenin markası, rakipleri ve son testi yüklenir.
+  const { project, ready: projectReady } = useProject();
+  const loadedFor = useRef<string | null>(null);
   useEffect(() => {
+    if (!projectReady) return;
     if (new URLSearchParams(window.location.search).get("clientId")) return;
-    fetch("/api/geo/latest")
+    const key = project?.domain ?? "";
+    const switched = loadedFor.current !== null && loadedFor.current !== key;
+    loadedFor.current = key;
+    if (project) {
+      setClientId(project.id);
+      setBrand({ name: project.name, domain: project.domain });
+      setCompetitors(project.competitors.length ? project.competitors : [{ name: "", domain: "" }]);
+    }
+    if (switched) {
+      // Önceki projenin sonuçları yeni projede görünmesin.
+      summariesRef.current = null;
+      setSummaries(null);
+      setRuns(null);
+      setSourceDistribution(null);
+      setTopicBreakdown(null);
+      setRestoredAt(null);
+    }
+    fetch(`/api/geo/latest${project ? `?domain=${encodeURIComponent(project.domain)}` : ""}`)
       .then((r) => (r.ok ? r.json() : { run: null }))
       .then(({ run }) => {
         if (!run || !run.runs?.length || summariesRef.current) return;
-        setBrand(run.brand);
-        if (run.competitors?.length) setCompetitors(run.competitors);
+        if (project && run.brand?.domain !== project.domain) return;
+        if (!project) {
+          setBrand(run.brand);
+          if (run.competitors?.length) setCompetitors(run.competitors);
+        } else if (!project.competitors.length && run.competitors?.length) setCompetitors(run.competitors);
         setRuns(run.runs);
         setSourceDistribution(run.sourceDistribution);
         setTopicBreakdown(run.topicBreakdown);
@@ -238,7 +263,8 @@ export default function GeoPage() {
         setSummaries(run.summaries);
       })
       .catch(() => {});
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectReady, project?.domain]);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");

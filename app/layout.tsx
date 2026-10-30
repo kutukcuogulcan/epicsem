@@ -17,6 +17,7 @@ import "./globals.css";
 import { headers } from "next/headers";
 import Nav from "@/components/Nav";
 import Sidebar from "@/components/Sidebar";
+import { ProjectProvider } from "@/components/ProjectProvider";
 import Footer from "@/components/Footer";
 import AppTopBar from "@/components/AppTopBar";
 import QuotaWatcher from "@/components/QuotaWatcher";
@@ -77,14 +78,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }}
         />
         {isAppShell ? (
-          <div className="min-h-screen flex flex-col md:flex-row">
-            <Sidebar />
-            <main className="app-main flex-1 min-w-0">
-              <AppTopBar />
-              <div className="mx-auto max-w-6xl px-4 md:px-8 py-8">{children}</div>
-            </main>
-            <QuotaWatcher />
-          </div>
+          <ProjectProvider>
+            <div className="min-h-screen flex flex-col md:flex-row">
+              <Sidebar />
+              <main className="app-main flex-1 min-w-0">
+                <AppTopBar />
+                <div className="mx-auto max-w-6xl px-4 md:px-8 py-8">{children}</div>
+              </main>
+              <QuotaWatcher />
+            </div>
+          </ProjectProvider>
         ) : (
           <div className="min-h-screen flex flex-col">
             <Nav />

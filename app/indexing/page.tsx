@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
+import { useProject } from "@/components/ProjectProvider";
 
 interface Result {
   host: string;
@@ -14,6 +15,11 @@ interface Result {
 
 /** URL İndeksleme — site haritasından ya da elle URL'leri IndexNow ile Bing, Yandex, Seznam ve Naver'a bildirir. */
 export default function IndexingPage() {
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setSite(project.domain);
+  }, [project?.domain]);
+
   const [site, setSite] = useState("");
   const [ready, setReady] = useState<boolean | null>(null);
   const [text, setText] = useState("");
@@ -22,13 +28,6 @@ export default function IndexingPage() {
   const [results, setResults] = useState<Result[] | null>(null);
 
   const urls = [...new Set(text.split(/\s+/).map((s) => s.trim()).filter((s) => /^https?:\/\//.test(s)))];
-
-  useEffect(() => {
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => d.sites?.[0] && setSite((v) => v || d.sites[0]))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!site.trim()) return setReady(null);

@@ -12,6 +12,7 @@ import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import AuditOverview from "@/components/tool/AuditOverview";
 import { useAgencyName } from "@/lib/use-agency-name";
+import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
   {
@@ -86,6 +87,10 @@ function TrendChip({ label, delta, lowerIsBetter = false }: { label: string; del
 
 export default function AuditPage() {
   const [url, setUrl] = useState("");
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setUrl(`https://${project.domain}`);
+  }, [project?.domain]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SeoAuditResult | null>(null);

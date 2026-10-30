@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Block } from "@/lib/seo-assistant";
 import PageGuide from "@/components/PageGuide";
+import { useProject } from "@/components/ProjectProvider";
 
 interface Msg {
   role: "user" | "bot";
@@ -75,6 +76,15 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const { project } = useProject();
+  const projectRef = useRef<string | null>(null);
+  projectRef.current = project?.domain ?? null;
+  useEffect(() => {
+    if (!project) return;
+    setSites((l) => (l && !l.includes(project.domain) ? [project.domain, ...l] : l));
+    setSite(project.domain);
+    setMsgs([]);
+  }, [project?.domain]);
 
   useEffect(() => {
     fetch("/api/assistant")
@@ -83,7 +93,10 @@ export default function AssistantPage() {
         setSites(d.sites ?? []);
         setSuggestions(d.suggestions ?? []);
         const q = new URLSearchParams(window.location.search).get("site");
-        setSite(q || d.sites?.[0] || "");
+        const p = projectRef.current;
+        const list: string[] = d.sites ?? [];
+        if (p && !list.includes(p)) setSites([p, ...list]);
+        setSite(q || p || list[0] || "");
       })
       .catch(() => setSites([]));
   }, []);

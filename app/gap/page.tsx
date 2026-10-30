@@ -13,6 +13,7 @@ import { useAgencyName } from "@/lib/use-agency-name";
 import GapOverview from "@/components/tool/GapOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import { Drawer } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
   {
@@ -96,6 +97,12 @@ interface BrandRow {
 export default function GapPage() {
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
+  const { project } = useProject();
+  useEffect(() => {
+    if (!project || new URLSearchParams(window.location.search).get("clientId")) return;
+    setBrand({ name: project.name, domain: project.domain });
+    if (project.competitors.length) setCompetitors(project.competitors);
+  }, [project]);
   const [promptsText, setPromptsText] = useState("");
   const [pageUrlsText, setPageUrlsText] = useState("");
   const [engines, setEngines] = useState<EngineId[]>(DEFAULT_ENGINES);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useProject } from "@/components/ProjectProvider";
 
 /**
  * AI SEO Editör — "Konudan yaz" sihirbazı (Arvow tarzı):
@@ -31,6 +32,11 @@ const INTENT_TONE: Record<string, string> = {
 };
 
 export default function WriteWizard({ onDone }: { onDone: (id: number) => void }) {
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setSite(project.domain);
+  }, [project?.domain]);
+
   const [step, setStep] = useState(0);
   const [keyword, setKeyword] = useState("");
   const [site, setSite] = useState("");
@@ -47,13 +53,6 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
   const [busy, setBusy] = useState<null | "topics" | "outline" | "write">(null);
   const [err, setErr] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => d.sites?.[0] && setSite((v) => v || d.sites[0]))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (busy !== "write") return;

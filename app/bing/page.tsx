@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
+import { useProject } from "@/components/ProjectProvider";
 
 interface Site {
   url: string;
@@ -26,6 +27,15 @@ export default function BingPage() {
   const [connected, setConnected] = useState<boolean | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
   const [site, setSite] = useState("");
+  const { project } = useProject();
+  const projectDomainRef = useRef<string | null>(null);
+  projectDomainRef.current = project?.domain ?? null;
+  useEffect(() => {
+    if (!project || !sites.length) return;
+    const host = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+    const m = sites.find((x) => host(x.url) === project.domain);
+    if (m) setSite(m.url);
+  }, [project?.domain, sites]);
   const [traffic, setTraffic] = useState<Day[]>([]);
   const [queries, setQueries] = useState<Q[]>([]);
   const [quota, setQuota] = useState<{ daily: number; monthly: number } | null>(null);
@@ -44,7 +54,9 @@ export default function BingPage() {
         if (d.error) setErr(d.error);
         const list: Site[] = d.sites ?? [];
         setSites(list);
-        setSite(list.find((s) => s.verified)?.url ?? list[0]?.url ?? "");
+        const want = projectDomainRef.current;
+        const host = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+        setSite((want && list.find((x) => host(x.url) === want)?.url) || list.find((s) => s.verified)?.url || list[0]?.url || "");
       })
       .catch(() => setConnected(false));
   }, []);

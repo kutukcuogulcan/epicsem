@@ -9,6 +9,7 @@ import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import SiteAuditReport, { type RunSummary } from "@/components/tool/SiteAuditReport";
 import GhostChart from "@/components/tool/GhostChart";
+import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
   {
@@ -92,12 +93,22 @@ export default function ImportPage() {
   }
 
   // Sayfa açılınca son taramanın raporu hemen görünsün (Ahrefs'teki proje panosu gibi).
+  // Aktif projenin son taraması gösterilir; proje yoksa en son tarama.
+  const { project, ready: projectReady } = useProject();
   useEffect(() => {
+    if (!projectReady) return;
+    if (project) setUrl(project.domain);
     loadRuns().then((list) => {
-      if (list.length) loadRun(list[0].id);
+      const host = (x: RunSummary) => x.filename.split(" ")[0].replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+      const pick = project ? list.find((x) => host(x) === project.domain) : list[0];
+      if (pick) loadRun(pick.id);
+      else {
+        setResult(null);
+        setCurrentId(null);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [projectReady, project?.domain]);
 
   useEffect(() => {
     if (!loading) return;

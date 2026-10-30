@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardSummary, listGeoBrands, listGeoRunsForOverview } from "@/lib/db";
+import { cookies } from "next/headers";
+import { getClient, getDashboardSummary, listClients, listGeoBrands, listGeoRunsForOverview } from "@/lib/db";
 import OverviewPanel from "@/components/OverviewPanel";
 import StatCard from "@/components/StatCard";
 import UsageMeter from "@/components/UsageMeter";
@@ -42,7 +43,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const { brand } = await searchParams;
   const [summary, geoBrands] = await Promise.all([getDashboardSummary(user.id), listGeoBrands(user.id)]);
-  const selectedBrand = geoBrands.find((b) => b.brandDomain === brand) ?? geoBrands[0];
+  // Aktif proje (sol menüdeki seçici) varsa panel o projenin verisini gösterir; başka markanın verisine düşmez.
+  const pid = Number((await cookies()).get("epicsem_project")?.value);
+  const proj = (pid ? await getClient(user.id, pid) : null) ?? (await listClients(user.id))[0] ?? null;
+  const projDomain = proj ? proj.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "") : null;
+  const selectedBrand = brand
+    ? geoBrands.find((b) => b.brandDomain === brand)
+    : projDomain
+      ? geoBrands.find((b) => b.brandDomain === projDomain)
+      : geoBrands[0];
   const overviewRuns = selectedBrand ? await listGeoRunsForOverview(user.id, selectedBrand.brandDomain, 90) : [];
   const testsThisMonth = summary.thisMonth.auditRuns + summary.thisMonth.geoRuns;
 
@@ -52,9 +61,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <OverviewPanel brands={geoBrands} selectedDomain={selectedBrand.brandDomain} runs={overviewRuns} />
       ) : (
         <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center space-y-3">
-          <h2 className="text-lg font-bold">Genel bakış</h2>
+          <h2 className="text-lg font-bold">Genel bakış{proj ? ` · ${proj.name}` : ""}</h2>
           <p className="text-sm text-ink/50 max-w-md mx-auto">
-            Markanın ChatGPT, Gemini, Perplexity ve Claude cevaplarında ne sıklıkla geçtiğini, rakiplerle karşılaştırmasını ve
+            {proj ? `${proj.name} için henüz GEO testi yok. ` : ""}Markanın ChatGPT, Gemini, Perplexity ve Claude cevaplarında ne sıklıkla geçtiğini, rakiplerle karşılaştırmasını ve
             hangi kaynakların alıntılandığını burada göreceksin. Başlamak için ilk GEO testini çalıştır.
           </p>
           <Link href="/geo" className="inline-block rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90">

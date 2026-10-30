@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { NAV_GROUPS } from "@/lib/nav-groups";
 import { TOOL_ICONS } from "./ToolIcons";
 import LogoutButton from "./LogoutButton";
+import ProjectSwitcher from "./ProjectSwitcher";
 
 const Chevron = ({ open }: { open: boolean }) => (
   <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className={`transition-transform ${open ? "" : "-rotate-90"}`}>
@@ -117,7 +118,10 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
         ))}
       </nav>
 
-      <div className="border-t border-border px-4 py-3 space-y-2 shrink-0">
+      <div className="border-t border-border px-3 pt-3 shrink-0">
+        <ProjectSwitcher />
+      </div>
+      <div className="px-4 py-3 space-y-2 shrink-0">
         <Link
           href="/billing"
           onClick={() => setOpen(false)}

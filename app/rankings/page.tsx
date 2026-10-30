@@ -6,6 +6,7 @@ import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
 import { Drawer } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 interface Kw {
   id: number;
@@ -28,6 +29,11 @@ function posTone(p: number | null) {
 }
 
 export default function RankingsPage() {
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setDomain(project.domain);
+  }, [project?.domain]);
+
   const [kws, setKws] = useState<Kw[] | null>(null);
   const [hist, setHist] = useState<Hist>({});
   const [serpAvailable, setSerpAvailable] = useState(true);
@@ -68,10 +74,6 @@ export default function RankingsPage() {
   }
   useEffect(() => {
     refresh();
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => setDomain((c) => c || d.sites?.[0] || ""))
-      .catch(() => {});
   }, []);
 
   const domains = useMemo(() => Array.from(new Set((kws ?? []).map((k) => k.domain))), [kws]);

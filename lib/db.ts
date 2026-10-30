@@ -2735,3 +2735,15 @@ export async function listBrandMonitors(userId: number): Promise<BrandMonitorRow
     })
     .sort((a, b) => b.lastRunAt.localeCompare(a.lastRunAt));
 }
+
+/** Proje (müşteri) bilgilerini güncelle — sahiplik kontrollü. */
+export async function updateClient(userId: number, id: number, params: { name?: string; domain?: string; competitors?: { name: string; domain: string }[] }): Promise<Client | null> {
+  await ensureSchema();
+  const cur = await getClient(userId, id);
+  if (!cur) return null;
+  const row = await one<any>(
+    `UPDATE clients SET name = $1, domain = $2, competitors_json = $3 WHERE id = $4 AND user_id = $5 RETURNING *`,
+    [params.name ?? cur.name, params.domain ?? cur.domain, JSON.stringify(params.competitors ?? cur.competitors), id, userId]
+  );
+  return row ? rowToClient(row) : null;
+}

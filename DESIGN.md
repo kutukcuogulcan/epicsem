@@ -29,3 +29,9 @@ Tüm araç sayfaları aynı dili kullanır. Yeni sayfa yazarken önce `component
 - Gölge yalnızca `shadow-sm` (çekmece hariç).
 - Ayar ve detaylar sayfayı uzatmak yerine `Drawer` içinde açılır.
 - Mor yalnızca vurgu içindir; büyük alanları mora boyama.
+
+## Veri akışı: aktif proje
+- Sol menünün altındaki **Proje** seçicisi (`components/ProjectSwitcher.tsx`) hangi site/marka için çalışıldığını belirler. Proje = Müşteriler tablosundaki kayıt (ad, site, rakipler); seçim tarayıcı çerezinde (`epicsem_project`) tutulur. API: `/api/project` (GET/PUT/POST/PATCH).
+- Sayfalar siteyi kendileri tahmin etmez: `const { project } = useProject()` (`components/ProjectProvider.tsx`) ve `project.domain` değişince veriyi yeniden yükler.
+- Sunucu bileşenleri (Genel Bakış) çerezi okur; proje değişince `router.refresh()` ile yeniden çizilir.
+- Projeye ait veri yoksa başka markanın verisine düşülmez; boş durum gösterilir.

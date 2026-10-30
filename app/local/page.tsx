@@ -7,6 +7,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import { LocalOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
   {
@@ -87,6 +88,12 @@ export default function LocalToolsPage() {
   }, [tabParam]);
   const [brandName, setBrandName] = useState("");
   const [brandDomain, setBrandDomain] = useState("");
+  const { project } = useProject();
+  useEffect(() => {
+    if (!project) return;
+    setBrandName(project.name);
+    setBrandDomain(project.domain);
+  }, [project]);
 
   const [topic, setTopic] = useState("");
   const gbp = useDraftGenerator();

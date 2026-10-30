@@ -8,6 +8,7 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
 import { Drawer } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 type Source = "gap" | "rss" | "keywords" | "feed";
 type Mode = "review" | "cms-draft" | "publish";
@@ -119,6 +120,8 @@ function nextRun(c: Campaign) {
 }
 
 export default function CampaignsPage() {
+  const { project } = useProject();
+
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [sites, setSites] = useState<string[]>([]);
   const [feedList, setFeedList] = useState<{ id: number; name: string; kind: string; items: number }[]>([]);
@@ -156,16 +159,13 @@ export default function CampaignsPage() {
       const fid = Number(new URLSearchParams(window.location.search).get("feed"));
       if (fid && data?.feeds?.some((f: { id: number }) => f.id === fid)) openNew("feed", fid);
     });
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => setSites(d.sites ?? []))
-      .catch(() => {});
   }, []);
 
   const set = <K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   function openNew(source: Source = "keywords", feedId = 0) {
-    setForm({ ...emptyForm, source, feedId, brandDomain: sites[0] ?? "", brandName: sites[0] ? sites[0].split(".")[0].replace(/^./, (c) => c.toUpperCase()) : "" });
+    const d = project?.domain ?? sites[0] ?? "";
+    setForm({ ...emptyForm, source, feedId, brandDomain: d, brandName: project?.name ?? (d ? d.split(".")[0].replace(/^./, (c) => c.toUpperCase()) : "") });
     setFeed(null);
     setFeedError(null);
     setIdeas(null);

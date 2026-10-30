@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ArticleAuditResult, ArticleSchemaStatus } from "@/types";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import UsageMeter from "@/components/UsageMeter";
@@ -8,6 +8,7 @@ import PromptBlock from "@/components/PromptBlock";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import GaugeStatCard from "@/components/GaugeStatCard";
+import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
   {
@@ -72,6 +73,10 @@ function SchemaStatusBadge({ status }: { status: ArticleSchemaStatus }) {
 
 export default function ArticleWriterPage() {
   const [url, setUrl] = useState("");
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setUrl(`https://${project.domain}`);
+  }, [project?.domain]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ArticleAuditResult | null>(null);

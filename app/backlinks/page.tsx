@@ -8,6 +8,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
 import CitationTab from "@/components/tool/CitationTab";
 import { UnderlineTabs } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 interface RefDomain {
   domain: string;
@@ -65,6 +66,14 @@ const SRC: Record<Src, { l: string; c: string }> = {
 const path = (u: string) => u.replace(/^https?:\/\/(www\.)?[^/]+/, "") || "/";
 
 export default function BacklinksPage() {
+  const { project } = useProject();
+  useEffect(() => {
+    if (!project) return;
+    setSite(project.domain);
+    load(project.domain);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.domain]);
+
   const [site, setSite] = useState("");
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,16 +118,6 @@ export default function BacklinksPage() {
     fetch("/api/backlinks")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => d && setData(d))
-      .catch(() => {});
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => {
-        const first = d.sites?.[0];
-        if (first) {
-          setSite(first);
-          load(first);
-        }
-      })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

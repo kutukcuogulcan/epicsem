@@ -6,6 +6,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
 import PageGuide from "@/components/PageGuide";
 import { Drawer } from "@/components/ui";
+import { useProject } from "@/components/ProjectProvider";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
   question: "Soru",
@@ -53,6 +54,11 @@ interface SerpAnalysis {
 }
 
 export default function KeywordsPage() {
+  const { project } = useProject();
+  useEffect(() => {
+    if (project) setDomain(project.domain);
+  }, [project?.domain]);
+
   const [seed, setSeed] = useState("");
   const [market, setMarket] = useState("TR|tr");
   const [data, setData] = useState<Research | null>(null);
@@ -71,10 +77,6 @@ export default function KeywordsPage() {
     fetch("/api/keywords/research")
       .then((r) => (r.ok ? r.json() : { serpAvailable: false }))
       .then((d: { serpAvailable?: boolean }) => setSerpAvailable(!!d.serpAvailable))
-      .catch(() => {});
-    fetch("/api/assistant")
-      .then((r) => (r.ok ? r.json() : { sites: [] }))
-      .then((d) => setDomain((cur) => cur || d.sites?.[0] || ""))
       .catch(() => {});
     const s = new URLSearchParams(window.location.search).get("q");
     if (s) {
