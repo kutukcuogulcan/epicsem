@@ -183,7 +183,7 @@ export default function FeedsPage() {
       {feeds && feeds.length === 0 && (
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {KINDS.map((k) => (
-            <button key={k.id} type="button" onClick={() => startNew(k.id)} className="group rounded-2xl border border-border bg-panel p-5 text-left transition hover:border-accent hover:shadow-md">
+            <button key={k.id} type="button" onClick={() => startNew(k.id)} className="group rounded-xl border border-border bg-panel shadow-sm p-5 text-left transition hover:border-accent hover:shadow-md">
               <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-lg font-bold ${k.color}`}>{k.icon}</div>
               <div className="font-bold group-hover:text-accent">{k.title}</div>
               <p className="mt-1 text-sm text-ink/55">{k.body}</p>
@@ -193,10 +193,10 @@ export default function FeedsPage() {
       )}
 
       {feeds && feeds.length > 0 && (
-        <section className="overflow-hidden rounded-2xl border border-border bg-panel shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-3 font-semibold">Besleme</th>
                 <th className="px-3 py-3 font-semibold">Tür</th>
                 <th className="px-3 py-3 font-semibold">Konular</th>
@@ -238,7 +238,7 @@ export default function FeedsPage() {
 
       {picker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button type="button" aria-label="Kapat" onClick={() => setPicker(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+          <button type="button" aria-label="Kapat" onClick={() => setPicker(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
           <div className="relative w-full max-w-lg rounded-2xl bg-panel p-5 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
@@ -264,8 +264,8 @@ export default function FeedsPage() {
 
       {form && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setForm(null)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setForm(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
                 <span className={`flex h-9 w-9 items-center justify-center rounded-lg font-bold ${KIND[form.kind].color}`}>{KIND[form.kind].icon}</span>
@@ -352,8 +352,8 @@ export default function FeedsPage() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setDetail(null)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <div className="relative flex h-full w-full max-w-2xl flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setDetail(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <div className="relative flex h-full w-full max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="border-b border-border px-6 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -382,7 +382,7 @@ export default function FeedsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-panel">
-                    <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                       <th className="px-6 py-2 font-semibold">{detail.kind === "keyword" ? "Anahtar kelime" : "Başlık"}</th>
                       <th className="px-3 py-2 font-semibold">Kaynak</th>
                       <th className="px-3 py-2 font-semibold">Durum</th>

@@ -12,7 +12,7 @@ export default function KnowledgePage() {
         title="Bilgi Bankası"
         body="Markan hakkındaki doğru bilgileri bir kez yaz: ürünler, fiyat aralığı, kargo ve iade, adres, ton. Yapay zekâ yazarken bunları esas alır, olmayan bilgiyi uydurmaz."
       />
-      <div className="rounded-2xl border border-border bg-panel p-5">
+      <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
         <KnowledgeBase />
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { UnderlineTabs } from "@/components/ui";
 import {
   Bar,
   BarChart,
@@ -502,8 +503,8 @@ export default function GeoPage() {
 
       {manualOpen && (
       <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" aria-label="Kapat" onClick={() => setManualOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-      <div className="relative h-full w-full max-w-xl overflow-y-auto bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+      <button type="button" aria-label="Kapat" onClick={() => setManualOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+      <div className="relative h-full w-full max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-panel/95 px-6 py-4 backdrop-blur">
         <div>
           <div className="font-bold">Ayarlar</div>
@@ -707,30 +708,18 @@ export default function GeoPage() {
       )}
 
       {summaries && (
-        <div className="flex gap-1 text-sm border-b border-border overflow-x-auto">
-          {(
-            [
-              { key: "visibility", label: "Görünürlük" },
-              { key: "sentiment", label: "Duygu" },
-              { key: "prompts", label: `Promptlar${runs ? ` (${runs.length})` : ""}` },
-              { key: "sources", label: "Domain" },
-              { key: "urls", label: "URL" },
-              { key: "rivals", label: `Rakipler${competitorRefs.length ? ` (${competitorRefs.length})` : ""}` },
-              { key: "opportunities", label: "Fırsatlar" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setResultsTab(t.key)}
-              className={`px-3 pb-2 -mb-px border-b-2 whitespace-nowrap ${
-                resultsTab === t.key ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50 hover:text-ink/80"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        (() => {
+          const T = [
+            { key: "visibility", label: "Görünürlük" },
+            { key: "sentiment", label: "Duygu" },
+            { key: "prompts", label: "Promptlar", count: runs ? runs.length : null },
+            { key: "sources", label: "Domain" },
+            { key: "urls", label: "URL" },
+            { key: "rivals", label: "Rakipler", count: competitorRefs.length || null },
+            { key: "opportunities", label: "Fırsatlar" },
+          ] as const;
+          return <UnderlineTabs value={T.findIndex((t) => t.key === resultsTab)} onChange={(i) => setResultsTab(T[i].key)} tabs={T.map((t) => ({ label: t.label, count: "count" in t ? t.count : null }))} />;
+        })()
       )}
 
       {restoredAt && summaries && (

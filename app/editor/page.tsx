@@ -102,7 +102,7 @@ function AutoText({ value, onChange, onFocus, className, placeholder }: { value:
 }
 
 const TYPE_CLASS: Record<BlockType, string> = {
-  h1: "text-3xl font-extrabold tracking-tight leading-tight",
+  h1: "text-3xl font-semibold tracking-tight leading-tight",
   h2: "text-xl font-bold mt-2",
   h3: "text-lg font-semibold",
   p: "text-[15px] leading-7 text-ink/85",
@@ -396,7 +396,7 @@ export default function EditorPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* ---------------- yazı alanı ---------------- */}
-        <div className="min-w-0 rounded-2xl border border-border bg-panel px-6 py-8 md:px-12">
+        <div className="min-w-0 rounded-xl border border-border bg-panel shadow-sm px-6 py-8 md:px-12">
           {pending?.blockId === "__doc__" && (
             <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-4">
               <div className="text-sm font-bold">Asistan tüm yazıyı güncelledi</div>
@@ -491,7 +491,7 @@ export default function EditorPage() {
 
         {/* ---------------- sağ panel ---------------- */}
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+          <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
             <div className="flex border-b border-border text-xs font-semibold">
               {([
                 ["score", "Puan"],

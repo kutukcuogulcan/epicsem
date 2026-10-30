@@ -109,7 +109,7 @@ export default function BingPage() {
       </ToolPageHeader>
 
       {connected === false && (
-        <div className="rounded-2xl border border-border bg-panel p-8 text-center">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center">
           <div className="font-bold">Bing Webmaster bağlı değil</div>
           <p className="mx-auto mt-1 max-w-md text-sm text-ink/55">Ücretsiz Bing Webmaster hesabından bir API anahtarı alıp bağla; tıklama, gösterim ve sorgular burada görünür.</p>
           <Link href="/integrations" className="mt-4 inline-block rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white">
@@ -117,7 +117,7 @@ export default function BingPage() {
           </Link>
         </div>
       )}
-      {connected && !sites.length && !err && <div className="rounded-2xl border border-border bg-panel p-6 text-sm text-ink/60">Bing Webmaster hesabında site yok. bing.com/webmasters'tan siteni ekleyip doğrula.</div>}
+      {connected && !sites.length && !err && <div className="rounded-xl border border-border bg-panel shadow-sm p-6 text-sm text-ink/60">Bing Webmaster hesabında site yok. bing.com/webmasters'tan siteni ekleyip doğrula.</div>}
       {err && <div className="rounded-xl bg-danger/5 px-4 py-2.5 text-sm text-danger">{err}</div>}
 
       {connected && site && (
@@ -129,15 +129,15 @@ export default function BingPage() {
               ["Tıklama oranı", `%${totals.ctr.toFixed(1)}`, ""],
               ["URL gönderme kotası", quota ? `${quota.daily} / gün` : "—", quota ? `${quota.monthly} / ay` : ""],
             ].map(([l, v, sub]) => (
-              <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+              <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
                 <div className="text-[11px] text-ink/50">{l}</div>
-                <div className="text-2xl font-extrabold tabular-nums">{loading ? "…" : v}</div>
+                <div className="text-2xl font-semibold tabular-nums">{loading ? "…" : v}</div>
                 {sub && <div className="text-[11px] text-ink/45">{sub}</div>}
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-border bg-panel p-5">
+          <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
             <div className="mb-3 text-sm font-bold">Günlük tıklama ve gösterim</div>
             {traffic.length ? (
               <div className="h-64">
@@ -183,14 +183,14 @@ export default function BingPage() {
           )}
 
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
               <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
                 <div className="text-sm font-bold">Sorgular ({queries.length})</div>
                 <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Sorgularda ara…" className="w-48 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs outline-none focus:border-accent" />
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                  <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                     <th className="px-5 py-2 font-semibold">Sorgu</th>
                     <th className="py-2 pr-3 text-right font-semibold">Tıklama</th>
                     <th className="py-2 pr-3 text-right font-semibold">Gösterim</th>
@@ -216,7 +216,7 @@ export default function BingPage() {
                 </tbody>
               </table>
             </div>
-            <div className="h-fit space-y-3 rounded-2xl border border-border bg-panel p-5">
+            <div className="h-fit space-y-3 rounded-xl border border-border bg-panel shadow-sm p-5">
               <div className="text-sm font-bold">Bing'e URL gönder</div>
               <p className="text-xs text-ink/55">Yeni ya da güncellenen sayfaları Bing'in hemen taramasını iste. Her satıra bir adres.</p>
               <textarea value={submitText} onChange={(e) => setSubmitText(e.target.value)} rows={6} placeholder={`${site.replace(/\/$/, "")}/yeni-yazi`} className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-xs outline-none focus:border-accent" />

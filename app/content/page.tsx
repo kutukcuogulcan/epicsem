@@ -220,7 +220,7 @@ export default function ContentStudioPage() {
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
 
-      <details className="group rounded-2xl border border-border bg-panel">
+      <details className="group rounded-xl border border-border bg-panel shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-bold">
           <span>Marka bilgi bankası <span className="ml-2 text-xs font-normal text-ink/45">AI yazarken uydurmasın diye ürün, fiyat, kargo, ton bilgileri</span></span>
           <span className="text-ink/30 group-open:rotate-90">▸</span>
@@ -411,7 +411,7 @@ export default function ContentStudioPage() {
                 return (
                   <details className="rounded-xl border border-border">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2.5">
-                      <span className={`rounded-lg px-2 py-1 text-sm font-extrabold tabular-nums ${tone}`}>{cit.score}</span>
+                      <span className={`rounded-lg px-2 py-1 text-sm font-semibold tabular-nums ${tone}`}>{cit.score}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-semibold">AI alıntılanabilirlik · {cit.grade}</span>
                         <span className="block truncate text-[11px] text-ink/50">{cit.top.length ? `Önce: ${cit.top.join(" · ")}` : "Belirgin bir eksik yok"}</span>

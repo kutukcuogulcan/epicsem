@@ -24,13 +24,13 @@ export default function KpiCard({
   const data = (spark ?? []).map((v, i) => ({ i, v }));
   const id = `g-${label.replace(/\W/g, "")}`;
   return (
-    <div className="rounded-2xl border border-border bg-panel p-4 flex flex-col">
+    <div className="rounded-xl border border-border bg-panel shadow-sm p-4 flex flex-col">
       <div className="flex items-center justify-between text-xs font-medium text-ink/50">
         <span>{label}</span>
         {hint && <span className="text-ink/30">{hint}</span>}
       </div>
       <div className="mt-1.5 flex items-baseline gap-2">
-        <span className="text-2xl font-extrabold tracking-tight tabular-nums">{value}</span>
+        <span className="text-2xl font-semibold tracking-tight tabular-nums">{value}</span>
         {delta != null && delta !== 0 && (
           <span className={`text-xs font-semibold tabular-nums ${good ? "text-seo" : "text-danger"}`}>
             {delta > 0 ? "+" : ""}

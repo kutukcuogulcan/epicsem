@@ -75,9 +75,9 @@ export default function IntegrationsPage() {
           ["Hata veren", String((rows ?? []).filter((r) => r.config._status === "error").length)],
           ["Son güncelleme", rows?.length ? new Date(rows.map((r) => r.updatedAt).sort().pop()!).toLocaleDateString("tr-TR") : "—"],
         ].map(([l, v]) => (
-          <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-extrabold tabular-nums">{v}</div>
+            <div className="text-2xl font-semibold tabular-nums">{v}</div>
           </div>
         ))}
       </div>
@@ -96,11 +96,11 @@ export default function IntegrationsPage() {
                   key={id}
                   type="button"
                   onClick={() => setOpen(p)}
-                  className="group flex flex-col gap-3 rounded-2xl border border-border bg-panel p-5 text-left transition hover:border-accent/40 hover:shadow-[0_8px_30px_-12px_rgba(93,22,255,0.25)]"
+                  className="group flex flex-col gap-3 rounded-xl border border-border bg-panel shadow-sm p-5 text-left transition hover:border-accent/40 hover:shadow-[0_8px_30px_-12px_rgba(93,22,255,0.25)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-extrabold text-white ${LOGO[id].bg}`}>{LOGO[id].t}</div>
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-semibold text-white ${LOGO[id].bg}`}>{LOGO[id].t}</div>
                       <div>
                         <div className="font-bold">{p.name}</div>
                         <div className="text-[11px] text-ink/50">{p.price}</div>
@@ -175,8 +175,8 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" aria-label="Kapat" onClick={onClose} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-      <form onSubmit={save} className="relative flex h-full w-full max-w-md flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+      <button type="button" aria-label="Kapat" onClick={onClose} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+      <form onSubmit={save} className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Entegrasyon</div>

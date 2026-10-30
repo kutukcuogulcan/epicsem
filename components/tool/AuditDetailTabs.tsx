@@ -60,7 +60,7 @@ export function LinksTab({ result }: { result: BulkImportResult }) {
   if (!all.length) return <Empty text="Bu taramada link listesi yok — siteyi yeniden tarayınca dolacak." />;
   const brokenN = all.filter((l) => l.code !== undefined && l.code !== null && (l.code >= 400 || l.code === 0)).length;
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <Toolbar count={list.length}>
         <Chip on={f === "all"} onClick={() => setF("all")}>Tümü</Chip>
         <Chip on={f === "internal"} onClick={() => setF("internal")}>İç</Chip>
@@ -73,7 +73,7 @@ export function LinksTab({ result }: { result: BulkImportResult }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-ink/45">
+            <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
               <th className="px-5 py-2.5 font-medium">Kaynak sayfa</th>
               <th className="py-2.5 pr-3 font-medium">Hedef</th>
               <th className="py-2.5 pr-3 font-medium">Link metni</th>
@@ -125,7 +125,7 @@ export function ImagesTab({ result }: { result: BulkImportResult }) {
   );
   if (!rows.length) return <Empty text="Bu taramada görsel listesi yok — siteyi yeniden tarayınca dolacak." />;
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <Toolbar count={list.length}>
         <Chip on={f === "all"} onClick={() => setF("all")}>Tümü · {rows.length}</Chip>
         <Chip on={f === "broken"} onClick={() => setF("broken")}>Kırık</Chip>
@@ -136,7 +136,7 @@ export function ImagesTab({ result }: { result: BulkImportResult }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-ink/45">
+            <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
               <th className="px-5 py-2.5 font-medium">Görsel</th>
               <th className="py-2.5 pr-3 font-medium">Durum</th>
               <th className="py-2.5 pr-3 font-medium">Boyut</th>
@@ -172,7 +172,7 @@ export function RedirectsTab({ result }: { result: BulkImportResult }) {
   const list = result.rows.filter((r) => r.statusCode !== null && r.statusCode >= 300 && r.statusCode < 400);
   if (!list.length) return <Empty text="Bu taramada yönlendirme bulunmadı." />;
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <Toolbar count={list.length}>
         <span className="text-sm font-bold">Yönlendirme zincirleri</span>
       </Toolbar>
@@ -245,10 +245,10 @@ export function CompareTab({ result, prevId, prevLabel }: { result: BulkImportRe
   if (!diff) return <div className="h-40 animate-pulse rounded-2xl bg-muted" />;
 
   const Col = ({ title, tone, items, n }: { title: string; tone: "danger" | "seo"; items: [string, string[]][]; n: number }) => (
-    <div className="rounded-2xl border border-border bg-panel">
+    <div className="rounded-xl border border-border bg-panel shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <span className="text-sm font-bold">{title}</span>
-        <span className={`text-lg font-extrabold tabular-nums ${tone === "danger" ? "text-danger" : "text-seo"}`}>{n}</span>
+        <span className={`text-lg font-semibold tabular-nums ${tone === "danger" ? "text-danger" : "text-seo"}`}>{n}</span>
       </div>
       {items.length === 0 ? (
         <div className="px-5 py-6 text-sm text-ink/45">Yok.</div>
@@ -286,9 +286,9 @@ export function CompareTab({ result, prevId, prevLabel }: { result: BulkImportRe
           { l: "Yeni sorun", v: diff.addedN, c: "text-danger" },
           { l: "Yeni / kaybolan sayfa", v: `+${diff.newPages} / −${diff.gonePages}` },
         ].map((x) => (
-          <div key={x.l} className="rounded-2xl border border-border bg-panel p-4">
+          <div key={x.l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-xs text-ink/50">{x.l}</div>
-            <div className={`mt-1 text-xl font-extrabold tabular-nums ${x.c ?? ""}`}>{x.v}</div>
+            <div className={`mt-1 text-xl font-semibold tabular-nums ${x.c ?? ""}`}>{x.v}</div>
           </div>
         ))}
       </div>
@@ -306,7 +306,7 @@ export function DuplicateGroups({ result }: { result: BulkImportResult }) {
   const groups = result.assets?.duplicateGroups ?? [];
   if (!groups.length) return null;
   return (
-    <div className="rounded-2xl border border-border bg-panel">
+    <div className="rounded-xl border border-border bg-panel shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <span className="text-sm font-bold">Neredeyse aynı içerikli sayfalar</span>
         <span className="text-xs text-ink/40">{groups.length} grup · metin benzerliği %85+</span>

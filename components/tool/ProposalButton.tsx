@@ -61,8 +61,8 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <div className="relative flex h-full w-full max-w-lg flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <div className="relative flex h-full w-full max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Müşteri teklifi</div>

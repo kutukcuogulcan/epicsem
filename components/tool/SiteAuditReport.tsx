@@ -9,6 +9,7 @@ import PageRow, { short } from "./PageRow";
 import { CompareTab, DuplicateGroups, ImagesTab, LinksTab, RedirectsTab } from "./AuditDetailTabs";
 import SiteSignals from "./SiteSignals";
 import ProposalButton from "./ProposalButton";
+import { UnderlineTabs } from "@/components/ui";
 
 export interface RunSummary {
   id: number;
@@ -35,7 +36,7 @@ function scoreColor(n: number) {
 
 function Card({ title, right, children, className = "" }: { title: string; right?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-border bg-panel ${className}`}>
+    <div className={`rounded-xl border border-border bg-panel shadow-sm ${className}`}>
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <span className="text-sm font-bold">{title}</span>
         {right}
@@ -174,7 +175,7 @@ export default function SiteAuditReport({
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(site(result.filename))}&sz=64`} alt="" className="h-6 w-6 rounded" />
-            <h2 className="truncate text-xl font-extrabold">{site(result.filename)}</h2>
+            <h2 className="truncate text-xl font-semibold">{site(result.filename)}</h2>
             {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[10px] font-bold text-warn">kısmi</span>}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/50">
@@ -199,8 +200,8 @@ export default function SiteAuditReport({
         </div>
         <div className="flex flex-wrap items-center gap-2">
         <ProposalButton runId={currentId} domain={site(result.filename)} />
-        <div className="flex flex-wrap rounded-xl border border-border bg-panel p-1 text-xs font-semibold">
-          {([
+        {(() => {
+          const T = [
             ["overview", "Genel bakış"],
             ["issues", `Sorunlar · ${data.issues.length}`],
             ["pages", `Sayfalar · ${rows.length}`],
@@ -208,12 +209,9 @@ export default function SiteAuditReport({
             ["images", "Görseller"],
             ["redirects", "Yönlendirmeler"],
             ["compare", "Karşılaştırma"],
-          ] as const).map(([k, l]) => (
-            <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 ${tab === k ? "bg-ink text-white" : "text-ink/55 hover:text-ink"}`}>
-              {l}
-            </button>
-          ))}
-        </div>
+          ] as const;
+          return <UnderlineTabs value={T.findIndex(([k]) => k === tab)} onChange={(i) => setTab(T[i][0])} tabs={T.map(([, l]) => ({ label: l }))} />;
+        })()}
         </div>
       </div>
 
@@ -233,7 +231,7 @@ export default function SiteAuditReport({
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-extrabold tabular-nums" style={{ color: scoreColor(data.health) }}>{data.health}</span>
+                    <span className="text-3xl font-semibold tabular-nums" style={{ color: scoreColor(data.health) }}>{data.health}</span>
                     <Delta now={data.health} prev={data.prevHealth} goodWhen="up" />
                   </div>
                 </div>
@@ -279,10 +277,10 @@ export default function SiteAuditReport({
                   ))}
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
-                  <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-extrabold tabular-nums">{data.indexable}</div></div>
-                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-extrabold tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-extrabold tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-extrabold tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-semibold tabular-nums">{data.indexable}</div></div>
+                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-semibold tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-semibold tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-semibold tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
                 </div>
               </div>
             </Card>
@@ -305,7 +303,7 @@ export default function SiteAuditReport({
                       <span className="text-xs text-ink/40">{data.sevTypes[k]} tür</span>
                     </span>
                     <span className="flex items-baseline gap-2">
-                      <span className="text-xl font-extrabold tabular-nums" style={{ color: data.sev[k] ? SEV_STYLE[k].color : undefined }}>{data.sev[k]}</span>
+                      <span className="text-xl font-semibold tabular-nums" style={{ color: data.sev[k] ? SEV_STYLE[k].color : undefined }}>{data.sev[k]}</span>
                       <Delta now={data.sev[k]} prev={data.prevSev?.[k]} />
                     </span>
                   </button>
@@ -317,9 +315,9 @@ export default function SiteAuditReport({
           {/* 2. satır: tematik raporlar */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             {data.themes.map((t) => (
-              <div key={t.key} className="rounded-2xl border border-border bg-panel p-4">
+              <div key={t.key} className="rounded-xl border border-border bg-panel shadow-sm p-4">
                 <div className="text-xs font-semibold text-ink/50">{t.label}</div>
-                <div className="mt-1 text-2xl font-extrabold tabular-nums" style={{ color: scoreColor(t.score) }}>%{t.score}</div>
+                <div className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: scoreColor(t.score) }}>%{t.score}</div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${t.score}%`, background: scoreColor(t.score) }} />
                 </div>
@@ -437,7 +435,7 @@ export default function SiteAuditReport({
       )}
 
       {tab === "issues" && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
             {(["all", ...SEV_ORDER] as const).map((k) => (
               <button
@@ -453,7 +451,7 @@ export default function SiteAuditReport({
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-2.5 font-medium">Sorun</th>
                 <th className="py-2.5 pr-3 font-medium">Önem</th>
                 <th className="py-2.5 pr-3 font-medium max-md:hidden">Etki</th>
@@ -505,7 +503,7 @@ export default function SiteAuditReport({
       )}
 
       {tab === "pages" && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
             <input
               value={q}
@@ -530,7 +528,7 @@ export default function SiteAuditReport({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-ink/45">
+                <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                   <th className="px-5 py-2.5 font-medium">Sayfa</th>
                   <th className="py-2.5 pr-3 font-medium">Durum</th>
                   <th className="py-2.5 pr-3 font-medium">Yanıt</th>

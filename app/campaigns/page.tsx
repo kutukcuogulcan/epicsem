@@ -379,7 +379,7 @@ export default function CampaignsPage() {
       {campaigns && campaigns.length === 0 && (
         <section className="card space-y-4">
           <div>
-            <h2 className="text-lg font-extrabold">İlk autoblog&apos;unu kur</h2>
+            <h2 className="text-lg font-semibold">İlk autoblog&apos;unu kur</h2>
             <p className="text-sm text-ink/50">Konuların nereden gelsin?</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -402,7 +402,7 @@ export default function CampaignsPage() {
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             {campaigns.map((c) => (
-              <article key={c.id} className="flex flex-col rounded-2xl border border-border bg-panel p-5 shadow-sm">
+              <article key={c.id} className="flex flex-col rounded-xl border border-border bg-panel shadow-sm p-5 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -489,8 +489,8 @@ export default function CampaignsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <form onSubmit={save} className="relative flex h-full w-full max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
                 <div className="font-bold">{form.id ? "Autoblog'u düzenle" : "Yeni autoblog"}</div>

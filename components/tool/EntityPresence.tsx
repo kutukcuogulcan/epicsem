@@ -42,7 +42,7 @@ export default function EntityPresence({ brand, competitors }: { brand: { name: 
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-4 py-2 font-semibold">Marka</th>
                 <th className="py-2 pr-3 font-semibold">Wikidata</th>
                 <th className="py-2 pr-3 font-semibold">Wikipedia</th>

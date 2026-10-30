@@ -44,7 +44,7 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
 
   const dirty = text !== saved;
   return (
-    <div className={compact ? "space-y-3" : "rounded-2xl border border-border bg-panel p-5 space-y-3"}>
+    <div className={compact ? "space-y-3" : "rounded-xl border border-border bg-panel shadow-sm p-5 space-y-3"}>
       {!compact && (
         <div>
           <div className="text-sm font-bold">Marka bilgi bankası</div>

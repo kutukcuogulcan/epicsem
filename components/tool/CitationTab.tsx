@@ -149,8 +149,8 @@ export default function CitationTab({ site }: { site: string }) {
   const t = profile.texts;
   const inp = "w-full rounded-xl border border-border bg-muted px-3 py-2 text-sm outline-none focus:border-accent";
 
-  if (!site) return <div className="rounded-2xl border border-border bg-panel p-8 text-center text-sm text-ink/50">Önce yukarıya siteni yaz.</div>;
-  if (loading) return <div className="h-40 animate-pulse rounded-2xl border border-border bg-panel" />;
+  if (!site) return <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center text-sm text-ink/50">Önce yukarıya siteni yaz.</div>;
+  if (loading) return <div className="h-40 animate-pulse rounded-xl border border-border bg-panel shadow-sm" />;
 
   return (
     <div className="space-y-5">
@@ -161,9 +161,9 @@ export default function CitationTab({ site }: { site: string }) {
           ["Başvuruldu", String(sent), "onay bekleyen"],
           ["Link doğrulandı", String(linked), "profilde site linki var"],
         ].map(([l, v, s]) => (
-          <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-extrabold tabular-nums">{v}</div>
+            <div className="text-2xl font-semibold tabular-nums">{v}</div>
             <div className="text-[11px] text-ink/40">{s}</div>
           </div>
         ))}
@@ -173,7 +173,7 @@ export default function CitationTab({ site }: { site: string }) {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
         {/* İşletme bilgileri */}
-        <div className="rounded-2xl border border-border bg-panel">
+        <div className="rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div>
               <div className="text-sm font-bold">İşletme bilgileri</div>
@@ -220,7 +220,7 @@ export default function CitationTab({ site }: { site: string }) {
         </div>
 
         {/* Hazır metinler */}
-        <div className="rounded-2xl border border-border bg-panel">
+        <div className="rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
             <div>
               <div className="text-sm font-bold">Kayıt metinleri</div>
@@ -257,7 +257,7 @@ export default function CitationTab({ site }: { site: string }) {
       </div>
 
       {/* Kayıt listesi */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
           <div className="mr-auto">
             <div className="text-sm font-bold">Kayıt listesi</div>

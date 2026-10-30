@@ -95,7 +95,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-      <div className="rounded-2xl border border-border bg-panel">
+      <div className="rounded-xl border border-border bg-panel shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
           <div>
             <div className="text-sm font-bold">Gerçek kullanıcı hızı</div>
@@ -143,7 +143,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
                 {psi.metrics.map((m) => (
                   <div key={m.key} className="rounded-xl border border-border p-3">
                     <div className="text-[10px] leading-3 text-ink/50">{m.label}</div>
-                    <div className="mt-1 text-lg font-extrabold tabular-nums">{fmt(m.key, m.p75)}</div>
+                    <div className="mt-1 text-lg font-semibold tabular-nums">{fmt(m.key, m.p75)}</div>
                     {m.category ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[10px] text-ink/35">hedef {m.good}</span>}
                   </div>
                 ))}
@@ -167,7 +167,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-panel">
+      <div className="rounded-xl border border-border bg-panel shadow-sm">
         <div className="border-b border-border px-5 py-3">
           <div className="text-sm font-bold">Arama motorlarına bildir</div>
           <div className="text-[11px] text-ink/45">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>

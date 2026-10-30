@@ -192,7 +192,7 @@ export default function KeywordsPage() {
           e.preventDefault();
           run();
         }}
-        className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm"
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm"
       >
         <input value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="ör. abiye elbise" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base outline-none" />
         <select value={market} onChange={(e) => setMarket(e.target.value)} className="rounded-xl border border-border bg-muted px-3 py-2 text-sm">
@@ -214,7 +214,7 @@ export default function KeywordsPage() {
             ["Ticari kelimeler", "'fiyat, en iyi, ucuz, yorum' gibi satın almaya yakın aramalar."],
             ["Kümeler", "Benzer kelimeler gruplanır; her küme bir yazı ya da sayfa olabilir."],
           ].map(([t, b]) => (
-            <div key={t} className="rounded-2xl border border-border bg-panel p-5">
+            <div key={t} className="rounded-xl border border-border bg-panel shadow-sm p-5">
               <div className="font-bold">{t}</div>
               <p className="mt-1 text-sm text-ink/55">{b}</p>
             </div>
@@ -227,13 +227,13 @@ export default function KeywordsPage() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <button type="button" onClick={() => setIntent("all")} className={`rounded-2xl border p-4 text-left ${intent === "all" ? "border-accent ring-1 ring-accent" : "border-border bg-panel"}`}>
               <div className="text-[11px] text-ink/50">Toplam fikir</div>
-              <div className="text-2xl font-extrabold tabular-nums">{ideas.length}</div>
+              <div className="text-2xl font-semibold tabular-nums">{ideas.length}</div>
               <div className="text-[10px] text-ink/45">{data.queries} sorgudan</div>
             </button>
             {(["question", "commercial", "comparison", "local"] as KeywordIntent[]).map((k) => (
               <button key={k} type="button" onClick={() => setIntent(k)} className={`rounded-2xl border p-4 text-left ${intent === k ? "border-accent ring-1 ring-accent" : "border-border bg-panel"}`}>
                 <div className="text-[11px] text-ink/50">{INTENT_LABEL[k]}</div>
-                <div className="text-2xl font-extrabold tabular-nums">{counts(k)}</div>
+                <div className="text-2xl font-semibold tabular-nums">{counts(k)}</div>
               </button>
             ))}
           </div>
@@ -249,7 +249,7 @@ export default function KeywordsPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-panel p-3">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-panel shadow-sm p-3">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Listede ara…" className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-1.5 text-sm outline-none" />
             <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siten.com (takip / autoblog için)" className="w-52 rounded-lg bg-muted px-3 py-1.5 text-sm outline-none" />
             <span className="text-xs text-ink/50">{sel.size} seçili</span>
@@ -263,10 +263,10 @@ export default function KeywordsPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+          <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                   <th className="w-10 px-4 py-2">
                     <input
                       type="checkbox"
@@ -334,12 +334,12 @@ export default function KeywordsPage() {
 
       {serp && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setSerp(null)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <div className="relative flex h-full w-full max-w-2xl flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setSerp(null)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <div className="relative flex h-full w-full max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-start justify-between border-b border-border px-6 py-4">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Google ilk sayfa analizi</div>
-                <div className="text-lg font-extrabold">{serp.keyword}</div>
+                <div className="text-lg font-semibold">{serp.keyword}</div>
               </div>
               <button type="button" onClick={() => setSerp(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
             </div>
@@ -355,10 +355,10 @@ export default function KeywordsPage() {
               {serp.data && (
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Ort. kelime</div><div className="text-xl font-extrabold tabular-nums">{serp.data.avgWords ?? "—"}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">SSS olan</div><div className="text-xl font-extrabold tabular-nums">%{Math.round(serp.data.faqShare * 100)}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Tablo olan</div><div className="text-xl font-extrabold tabular-nums">%{Math.round(serp.data.tableShare * 100)}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">AI Overview</div><div className="text-xl font-extrabold">{serp.data.aiOverview ? "Var" : "Yok"}</div></div>
+                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Ort. kelime</div><div className="text-xl font-semibold tabular-nums">{serp.data.avgWords ?? "—"}</div></div>
+                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">SSS olan</div><div className="text-xl font-semibold tabular-nums">%{Math.round(serp.data.faqShare * 100)}</div></div>
+                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Tablo olan</div><div className="text-xl font-semibold tabular-nums">%{Math.round(serp.data.tableShare * 100)}</div></div>
+                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">AI Overview</div><div className="text-xl font-semibold">{serp.data.aiOverview ? "Var" : "Yok"}</div></div>
                   </div>
                   <Link href={editorLink(serp.keyword, serp.data)} className="block rounded-xl bg-accent px-4 py-3 text-center text-sm font-bold text-white hover:opacity-90">
                     Bu yapıyla Editörde yaz → (ortak başlıklar + &quot;Kullanıcılar şunu da soruyor&quot; SSS olarak)

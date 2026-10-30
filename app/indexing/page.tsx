@@ -82,7 +82,7 @@ export default function IndexingPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-3 rounded-2xl border border-border bg-panel p-5">
+        <div className="space-y-3 rounded-xl border border-border bg-panel shadow-sm p-5">
           <div className="flex flex-wrap items-center gap-2">
             <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="siten.com ya da site haritası adresi" className="min-w-0 flex-1 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm outline-none focus:border-accent" />
             <button type="button" onClick={fromSitemap} disabled={!site.trim() || !!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50">
@@ -111,7 +111,7 @@ export default function IndexingPage() {
         </div>
 
         <div className="space-y-3">
-          <div className="rounded-2xl border border-border bg-panel p-4">
+          <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-sm font-semibold">IndexNow durumu</div>
             {ready === null ? (
               <p className="mt-1 text-xs text-ink/50">Siteni yaz.</p>
@@ -123,7 +123,7 @@ export default function IndexingPage() {
               </p>
             )}
           </div>
-          <div className="rounded-2xl border border-border bg-panel p-4 text-xs leading-5 text-ink/60">
+          <div className="rounded-xl border border-border bg-panel shadow-sm p-4 text-xs leading-5 text-ink/60">
             <div className="mb-1 text-sm font-semibold text-ink">Google?</div>
             Google IndexNow&apos;u desteklemiyor. Google için Search Console&apos;da URL Denetimi → &quot;Dizine eklenmesini iste&quot; kullan ya da site haritanı Search Console&apos;a gönder.
           </div>

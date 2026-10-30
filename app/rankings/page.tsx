@@ -173,9 +173,9 @@ export default function RankingsPage() {
           ["Ort. sıra", avg !== null ? String(avg) : "—"],
           ["Yükselen / düşen", `${up} / ${down}`],
         ].map(([l, v]) => (
-          <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-extrabold tabular-nums">{v}</div>
+            <div className="text-2xl font-semibold tabular-nums">{v}</div>
           </div>
         ))}
       </div>
@@ -191,17 +191,17 @@ export default function RankingsPage() {
       )}
 
       {kws && list.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-panel p-8 text-center">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center">
           <div className="font-bold">Henüz takip edilen kelime yok</div>
           <p className="mt-1 text-sm text-ink/55">
             Kelimeleri buradan ekle ya da <Link href="/keywords" className="font-semibold text-accent">Anahtar Kelime Bulucu</Link>&apos;dan seçip &quot;Sıralama takibine ekle&quot;.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-2 font-semibold">Kelime</th>
                 <th className="py-2 pr-3 font-semibold">Sıra</th>
                 <th className="py-2 pr-3 font-semibold">Değişim</th>
@@ -258,8 +258,8 @@ export default function RankingsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <form onSubmit={add} className="relative flex h-full w-full max-w-md flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <form onSubmit={add} className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="font-bold">Takibe kelime ekle</div>
               <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>

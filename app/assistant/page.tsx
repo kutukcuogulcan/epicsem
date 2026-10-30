@@ -42,7 +42,7 @@ function BotBlocks({ blocks, onAsk }: { blocks: Block[]; onAsk: (q: string) => v
               {b.items.map((x, j) => (
                 <div key={j} className="rounded-xl border border-border bg-paper px-3 py-2">
                   <div className="text-[10px] text-ink/45">{x.label}</div>
-                  <div className={`text-base font-extrabold tabular-nums ${x.tone === "good" ? "text-seo" : x.tone === "bad" ? "text-danger" : x.tone === "warn" ? "text-warn" : ""}`}>{x.value}</div>
+                  <div className={`text-base font-semibold tabular-nums ${x.tone === "good" ? "text-seo" : x.tone === "bad" ? "text-danger" : x.tone === "warn" ? "text-warn" : ""}`}>{x.value}</div>
                 </div>
               ))}
             </div>
@@ -114,7 +114,7 @@ export default function AssistantPage() {
     <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">SEO Asistanı</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">SEO Asistanı</h1>
           <p className="text-sm text-ink/50">Sitenin taramalarına ve AI görünürlük testlerine bakarak cevap verir. Ücretsiz — AI kredisi harcamaz.</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-panel px-3 py-1.5">
@@ -129,7 +129,7 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto rounded-2xl border border-border bg-panel p-5">
+      <div className="flex-1 space-y-5 overflow-y-auto rounded-xl border border-border bg-panel shadow-sm p-5">
         {msgs.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-2xl text-accent">✦</div>
@@ -179,7 +179,7 @@ export default function AssistantPage() {
           e.preventDefault();
           ask(input);
         }}
-        className="mt-3 flex gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm focus-within:border-accent/50"
+        className="mt-3 flex gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm focus-within:border-accent/50"
       >
         <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={site ? `${site} hakkında sor… (ör. "alt metni eksik sayfalar")` : "Önce bir site seç"} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
         <button disabled={busy || !input.trim() || !site} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">Sor</button>

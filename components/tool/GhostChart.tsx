@@ -2,7 +2,7 @@
  * görüneceğini hissettirir (gerçek veri gibi sunulmaz, üstü örtülü ve açıkça boş). */
 export default function GhostChart({ title, body, cta }: { title: string; body: string; cta?: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <svg viewBox="0 0 600 180" className="h-48 w-full opacity-40" preserveAspectRatio="none" aria-hidden>
         <defs>
           <linearGradient id="ghost" x1="0" y1="0" x2="0" y2="1">

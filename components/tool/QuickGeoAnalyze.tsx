@@ -149,7 +149,7 @@ export default function QuickGeoAnalyze({
     <div className="space-y-4">
       <form
         onSubmit={start}
-        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
+        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>
@@ -181,7 +181,7 @@ export default function QuickGeoAnalyze({
       </form>
 
       {(sessionId != null || error) && (
-        <div className="rounded-2xl border border-border bg-panel p-4">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
           <ol className="grid grid-cols-1 sm:grid-cols-5 gap-2">
             {STEPS.map((st0) => {
               const st = st0.key === "run" && runLabel ? { ...st0, label: runLabel } : st0;

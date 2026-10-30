@@ -109,7 +109,7 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
-        <div className="rounded-2xl border border-border bg-panel">
+        <div className="rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <span className="text-sm font-bold">Skor trendi</span>
             <span className="flex items-center gap-3 text-xs text-ink/50">
@@ -141,11 +141,11 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-panel overflow-hidden">
+        <div className="rounded-xl border border-border bg-panel shadow-sm overflow-hidden">
           <div className="border-b border-border px-5 py-3.5 text-sm font-bold">Son denetimler</div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-2 text-left font-medium">Site</th>
                 <th className="py-2 text-left font-medium">SEO</th>
                 <th className="py-2 text-left font-medium">AXO</th>

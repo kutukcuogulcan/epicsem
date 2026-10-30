@@ -33,7 +33,7 @@ function Skeleton() {
 
 function Panel({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <span className="text-sm font-bold">{title}</span>
         {right}
@@ -94,7 +94,7 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
         </Panel>
         <Panel title="Sayfalar">
           <table className="w-full text-sm">
-            <thead><tr className="text-xs text-ink/45"><th className="px-5 py-2 text-left font-medium">Sayfa</th><th className="py-2 text-left font-medium">SEO</th><th className="py-2 text-left font-medium">AI</th><th className="py-2 pr-5 text-right font-medium">Uyarı</th></tr></thead>
+            <thead><tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500"><th className="px-5 py-2 text-left font-medium">Sayfa</th><th className="py-2 text-left font-medium">SEO</th><th className="py-2 text-left font-medium">AI</th><th className="py-2 pr-5 text-right font-medium">Uyarı</th></tr></thead>
             <tbody>
               {d.pages.slice(0, 8).map((p) => {
                 const delta = p.score != null && p.prevScore != null ? p.score - p.prevScore : 0;
@@ -339,7 +339,7 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-2.5 font-medium">Müşteri</th>
                 <th className="py-2.5 pr-3 font-medium">SEO</th>
                 <th className="py-2.5 pr-3 font-medium">AXO</th>

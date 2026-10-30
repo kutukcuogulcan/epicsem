@@ -138,7 +138,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
   const progress = ["Plan okunuyor…", "Giriş ve kısa cevap yazılıyor…", "Bölümler yazılıyor…", "SSS ve özet ekleniyor…", "Son kontroller…"];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       {/* Adımlar */}
       <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-4 py-3">
         {STEPS.map((s, i) => {
@@ -289,7 +289,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
             </div>
             <div className="rounded-xl bg-muted/50 px-4 py-3">
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink/40">H1 · Başlık</div>
-              <input value={title} onChange={(e) => setCustom(e.target.value)} className="mt-0.5 w-full bg-transparent text-base font-extrabold outline-none" />
+              <input value={title} onChange={(e) => setCustom(e.target.value)} className="mt-0.5 w-full bg-transparent text-base font-semibold outline-none" />
             </div>
             <ol className="space-y-2">
               {outline.map((s, i) => (
@@ -408,7 +408,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
 
             <div className="flex flex-col rounded-xl bg-muted/50 p-4">
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink/40">Özet</div>
-              <div className="mt-1 text-base font-extrabold leading-6">{title}</div>
+              <div className="mt-1 text-base font-semibold leading-6">{title}</div>
               <dl className="mt-3 space-y-1.5 text-xs">
                 {[
                   ["Anahtar kelime", keyword],

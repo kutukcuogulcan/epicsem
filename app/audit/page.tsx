@@ -181,7 +181,7 @@ export default function AuditPage() {
 
       <form
         onSubmit={runAudit}
-        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
+        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>

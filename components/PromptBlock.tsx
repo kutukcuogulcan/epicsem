@@ -61,7 +61,7 @@ export default function PromptBlock({
 
   if (variant === "card")
     return (
-      <div className="overflow-hidden rounded-2xl border border-border bg-panel transition hover:border-accent/30">
+      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm transition hover:border-accent/30">
         <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 font-mono text-xs font-bold text-accent">&gt;_</span>
@@ -84,7 +84,7 @@ export default function PromptBlock({
     );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
       <div className="flex flex-col gap-4 bg-gradient-to-r from-ink to-[#2a1b55] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-start gap-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 font-mono text-sm font-bold ring-1 ring-white/15">&gt;_</span>

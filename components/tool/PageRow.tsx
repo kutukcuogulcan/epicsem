@@ -86,7 +86,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                     <div className="rounded-xl border border-border bg-panel px-3 py-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-ink/70">AI alıntılanabilirlik</span>
-                        <span className={`font-extrabold tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
+                        <span className={`font-semibold tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
                       </div>
                       {m.geo.citabilityTop.length > 0 && <div className="mt-0.5 text-ink/50">Önce: {m.geo.citabilityTop.join(" · ")}</div>}
                       {!!m.geo.weakPassages?.length && (

@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
 import CitationTab from "@/components/tool/CitationTab";
+import { UnderlineTabs } from "@/components/ui";
 
 interface RefDomain {
   domain: string;
@@ -211,7 +212,7 @@ export default function BacklinksPage() {
           e.preventDefault();
           load(site, true);
         }}
-        className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4"
+        className="flex items-center gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 pl-4"
       >
         <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6">
           <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
@@ -224,21 +225,18 @@ export default function BacklinksPage() {
         )}
       </form>
 
-      <div className="flex w-fit rounded-xl border border-border bg-panel p-1 text-sm font-semibold">
-        {([
+      {(() => {
+        const T = [
           ["analysis", "Backlink analizi"],
           ["citations", "Kayıt listesi"],
-        ] as const).map(([k, l]) => (
-          <button key={k} type="button" onClick={() => setMode(k)} className={`rounded-lg px-4 py-1.5 ${mode === k ? "bg-accent text-white" : "text-ink/55 hover:text-ink"}`}>
-            {l}
-          </button>
-        ))}
-      </div>
+        ] as const;
+        return <UnderlineTabs value={T.findIndex(([k]) => k === mode)} onChange={(i) => setMode(T[i][0])} tabs={T.map(([, l]) => ({ label: l }))} />;
+      })()}
 
       {mode === "citations" && <CitationTab site={site.trim()} />}
 
       {mode === "analysis" && (
-        <div className="rounded-2xl border border-border bg-panel p-4">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-ink/50">Kaynaklar</span>
             {(["wikipedia", "hn", "reddit", "news"] as const).map((k) => (
@@ -308,16 +306,16 @@ export default function BacklinksPage() {
               ["Güçlü kaynak", String(kpi.high), "DR 50 ve üstü"],
               ["Linksiz bahsetme", String(mentions.filter((m) => m.linked === false).length), "link isteme fırsatı"],
             ].map(([l, v, sub]) => (
-              <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+              <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
                 <div className="text-[11px] text-ink/50">{l}</div>
-                <div className="text-2xl font-extrabold tabular-nums">{loading ? "…" : v}</div>
+                <div className="text-2xl font-semibold tabular-nums">{loading ? "…" : v}</div>
                 <div className="text-[11px] text-ink/40">{sub}</div>
               </div>
             ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl border border-border bg-panel">
+            <div className="rounded-xl border border-border bg-panel shadow-sm">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <div className="text-sm font-bold">{withDr.length ? "Domain Rating dağılımı" : "Kaynağa göre link veren siteler"}</div>
                 <span className="text-xs text-ink/40">{withDr.length ? "referring domain sayısı" : "DR için Ahrefs ya da Ahrefs CSV'si"}</span>
@@ -338,7 +336,7 @@ export default function BacklinksPage() {
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="rounded-2xl border border-border bg-panel">
+            <div className="rounded-xl border border-border bg-panel shadow-sm">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <div className="text-sm font-bold">En sık anchor metinleri</div>
                 <span className="text-xs text-ink/40">{anchors.length ? "alan adı sayısı" : "Bing ya da CSV ile görünür"}</span>
@@ -361,21 +359,18 @@ export default function BacklinksPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap rounded-xl border border-border bg-panel p-1 text-xs font-semibold w-fit">
-            {([
+          {(() => {
+            const T = [
               ["domains", `Referring domains · ${domains.length}`],
               ["mentions", `Bahsetmeler · ${mentions.length}`],
               ["pages", `En çok link alan sayfalar · ${data.pages?.length ?? 0}`],
               ["gap", "Link fırsatları"],
-            ] as const).map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-lg px-3 py-1.5 ${tab === k ? "bg-ink text-white" : "text-ink/55 hover:text-ink"}`}>
-                {l}
-              </button>
-            ))}
-          </div>
+            ] as const;
+            return <UnderlineTabs value={T.findIndex(([k]) => k === tab)} onChange={(i) => setTab(T[i][0])} tabs={T.map(([, l]) => ({ label: l }))} />;
+          })()}
 
           {tab === "domains" && (
-            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
                 {([
                   ["all", "Tümü"],
@@ -394,7 +389,7 @@ export default function BacklinksPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                       <th className="px-5 py-2 font-semibold">Alan adı</th>
                       <th className="py-2 pr-3 font-semibold">DR</th>
                       <th className="py-2 pr-3 text-right font-semibold">Link</th>
@@ -475,7 +470,7 @@ export default function BacklinksPage() {
           )}
 
           {tab === "mentions" && (
-            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
                 <div className="mr-2 text-sm font-bold">Markanın geçtiği haberler · son 3 ay</div>
                 {([
@@ -522,11 +517,11 @@ export default function BacklinksPage() {
           )}
 
           {tab === "pages" && (
-            <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
               {data.pages?.length ? (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                       <th className="px-5 py-2 font-semibold">Sayfa</th>
                       <th className="py-2 pr-5 text-right font-semibold">Gelen link</th>
                     </tr>
@@ -552,7 +547,7 @@ export default function BacklinksPage() {
 
           {tab === "gap" && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-panel p-5">
+              <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
                 <div className="text-sm font-bold">Rakiplerin link aldığı ama senin almadığın siteler</div>
                 <p className="mt-1 text-xs text-ink/55">En fazla 4 rakip gir. Birden çok rakibe link veren siteler en üstte — bunlar sana da link vermeye en yatkın olanlar. Ahrefs (Lite+) gerekir; sonuç 24 saat saklanır.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -582,13 +577,13 @@ export default function BacklinksPage() {
                 {gapErr && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{gapErr}</p>}
               </div>
               {gap && (
-                <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+                <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
                   <div className="border-b border-border px-5 py-3 text-sm font-bold">
                     {gap.gaps.length} fırsat · {gap.checked.join(", ")}
                   </div>
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+                      <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                         <th className="px-5 py-2 font-semibold">Alan adı</th>
                         <th className="py-2 pr-3 font-semibold">DR</th>
                         <th className="hidden py-2 pr-3 text-right font-semibold md:table-cell">Trafik</th>

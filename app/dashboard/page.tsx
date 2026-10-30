@@ -51,7 +51,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {selectedBrand ? (
         <OverviewPanel brands={geoBrands} selectedDomain={selectedBrand.brandDomain} runs={overviewRuns} />
       ) : (
-        <div className="rounded-2xl border border-border bg-panel p-8 text-center space-y-3">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center space-y-3">
           <h2 className="text-lg font-bold">Genel bakış</h2>
           <p className="text-sm text-ink/50 max-w-md mx-auto">
             Markanın ChatGPT, Gemini, Perplexity ve Claude cevaplarında ne sıklıkla geçtiğini, rakiplerle karşılaştırmasını ve

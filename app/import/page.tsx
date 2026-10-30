@@ -144,7 +144,7 @@ export default function ImportPage() {
 
       <form
         onSubmit={crawl}
-        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
+        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>
@@ -179,7 +179,7 @@ export default function ImportPage() {
       </form>
 
       {loading && (
-        <div className="rounded-2xl border border-border bg-panel p-5">
+        <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
           <div className="flex items-center gap-3 text-sm text-ink/70">
             <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             Sitemap okunuyor, sayfalar ve linkler taranıyor… <span className="tabular-nums text-ink/40">{elapsed} sn</span>

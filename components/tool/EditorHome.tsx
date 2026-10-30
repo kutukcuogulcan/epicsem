@@ -8,6 +8,7 @@ import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import PageGuide from "@/components/PageGuide";
 import WriteWizard from "@/components/tool/WriteWizard";
+import { UnderlineTabs } from "@/components/ui";
 
 interface DraftItem {
   id: number;
@@ -127,16 +128,13 @@ export default function EditorHome({
 
       {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{msg.t}</div>}
 
-      <div className="flex w-fit rounded-xl border border-border bg-panel p-1 text-sm font-semibold">
-        {([
+      {(() => {
+        const T = [
           ["write", "Konudan yaz"],
           ["open", "Sitedeki yazıyı aç"],
-        ] as const).map(([k, l]) => (
-          <button key={k} type="button" onClick={() => setEntry(k)} className={`rounded-lg px-4 py-1.5 ${entry === k ? "bg-accent text-white" : "text-ink/55 hover:text-ink"}`}>
-            {l}
-          </button>
-        ))}
-      </div>
+        ] as const;
+        return <UnderlineTabs value={T.findIndex(([k]) => k === entry)} onChange={(i) => setEntry(T[i][0])} tabs={T.map(([, l]) => ({ label: l }))} />;
+      })()}
 
       {entry === "write" ? (
         <WriteWizard onDone={onOpen} />
@@ -146,7 +144,7 @@ export default function EditorHome({
             e.preventDefault();
             onImport();
           }}
-          className="flex items-center gap-2 rounded-2xl border border-border bg-panel p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+          className="flex items-center gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 pl-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
         >
           <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6">
             <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
@@ -167,9 +165,9 @@ export default function EditorHome({
           ["Son 30 gün", String(kpi.month), "yeni yazı"],
           ["Toplam kelime", kpi.words.toLocaleString("tr-TR"), ""],
         ].map(([l, v, sub], i) => (
-          <div key={l} className="rounded-2xl border border-border bg-panel p-4">
+          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className={`text-2xl font-extrabold tabular-nums ${i === 1 && kpi.avg !== null ? (kpi.avg >= 65 ? "text-seo" : kpi.avg >= 45 ? "text-warn" : "text-danger") : ""}`}>{drafts === null ? "…" : v}</div>
+            <div className={`text-2xl font-semibold tabular-nums ${i === 1 && kpi.avg !== null ? (kpi.avg >= 65 ? "text-seo" : kpi.avg >= 45 ? "text-warn" : "text-danger") : ""}`}>{drafts === null ? "…" : v}</div>
             {sub && <div className="text-[11px] text-ink/40">{sub}</div>}
           </div>
         ))}
@@ -177,7 +175,7 @@ export default function EditorHome({
 
       {/* Grafikler */}
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <div className="rounded-2xl border border-border bg-panel">
+        <div className="rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div className="text-sm font-bold">Haftalık üretim</div>
             <span className="text-xs text-ink/40">son 8 hafta</span>
@@ -194,7 +192,7 @@ export default function EditorHome({
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-panel">
+        <div className="rounded-xl border border-border bg-panel shadow-sm">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div className="text-sm font-bold">GEO puan dağılımı</div>
             <span className="text-xs text-ink/40">yazı sayısı</span>
@@ -225,12 +223,12 @@ export default function EditorHome({
           { t: "Rakip boşluğundan", d: "Gap Analysis'te AI'da kaybettiğin sorulardan içerik özeti çıkar.", a: null, href: "/gap" },
         ].map((c) =>
           c.href ? (
-            <Link key={c.t} href={c.href} className="rounded-2xl border border-border bg-panel p-4 transition hover:border-accent/40">
+            <Link key={c.t} href={c.href} className="rounded-xl border border-border bg-panel shadow-sm p-4 transition hover:border-accent/40">
               <div className="text-sm font-bold">{c.t} →</div>
               <p className="mt-1 text-xs leading-5 text-ink/55">{c.d}</p>
             </Link>
           ) : (
-            <button key={c.t} type="button" onClick={c.a!} className="rounded-2xl border border-border bg-panel p-4 text-left transition hover:border-accent/40">
+            <button key={c.t} type="button" onClick={c.a!} className="rounded-xl border border-border bg-panel shadow-sm p-4 text-left transition hover:border-accent/40">
               <div className="text-sm font-bold">{c.t} →</div>
               <p className="mt-1 text-xs leading-5 text-ink/55">{c.d}</p>
             </button>
@@ -239,7 +237,7 @@ export default function EditorHome({
       </div>
 
       {/* Taslak tablosu */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
         <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
           <div className="mr-auto text-sm font-bold">Yazılarım ({shown.length})</div>
           {([
@@ -263,7 +261,7 @@ export default function EditorHome({
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-ink/45">
+              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
                 <th className="px-5 py-2 font-semibold">Başlık</th>
                 <th className="py-2 pr-3 font-semibold">GEO</th>
                 <th className="hidden py-2 pr-3 font-semibold md:table-cell">Kelime</th>
@@ -303,8 +301,8 @@ export default function EditorHome({
 
       {kbOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <button type="button" aria-label="Kapat" onClick={() => setKbOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <div className="relative flex h-full w-full max-w-lg flex-col bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
+          <button type="button" aria-label="Kapat" onClick={() => setKbOpen(false)} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+          <div className="relative flex h-full w-full max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Ayarlar</div>

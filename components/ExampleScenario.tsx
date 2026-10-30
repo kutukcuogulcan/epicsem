@@ -27,7 +27,7 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           Nasıl çalışır
         </span>
-        <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{heading}</h2>
+        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{heading}</h2>
         <p className="text-sm text-ink/50">Adım adım bir örnek — aracın baştan sona ne yaptığını görürsün.</p>
       </Reveal>
 
@@ -37,8 +37,8 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
             {i < steps.length - 1 && (
               <span className="absolute left-[calc(50%+1.75rem)] right-[calc(-50%+1.75rem)] top-[1.4rem] hidden h-px border-t border-dashed border-accent/30 lg:block" aria-hidden />
             )}
-            <div className="flex h-full flex-col items-center rounded-2xl border border-border bg-panel p-5 text-center transition group-hover:-translate-y-0.5 group-hover:border-accent/30 group-hover:shadow-[0_12px_30px_-18px_rgba(93,22,255,0.45)]">
-              <span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-sm font-extrabold text-white shadow-md shadow-accent/30">{i + 1}</span>
+            <div className="flex h-full flex-col items-center rounded-xl border border-border bg-panel shadow-sm p-5 text-center transition group-hover:-translate-y-0.5 group-hover:border-accent/30 group-hover:shadow-[0_12px_30px_-18px_rgba(93,22,255,0.45)]">
+              <span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white shadow-md shadow-accent/30">{i + 1}</span>
               <div className="mt-4 text-sm font-bold leading-snug">{s.title}</div>
               <p className="mt-1.5 text-[13px] leading-relaxed text-ink/55">{s.body}</p>
             </div>
