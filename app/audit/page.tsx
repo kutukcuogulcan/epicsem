@@ -223,7 +223,7 @@ export default function AuditPage() {
             </button>
           </div>
 
-          <PromptBlock
+          <PromptBlock variant="hero"
             title="Fix with Claude Code"
             description="Bu denetimin bulgularıyla önceden doldurulmuş bir prompt — sitenizin reposunda çalışan Claude Code'a yapıştırın, güvenle otomatik düzeltilebilecekleri düzeltsin."
             prompt={buildAuditFixPrompt(result)}

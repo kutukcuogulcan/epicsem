@@ -212,7 +212,7 @@ export default function ImportPage() {
       {result && (
         <>
           <SiteAuditReport result={result} runs={runs ?? []} currentId={currentId} onSelectRun={loadRun} />
-          <PromptBlock
+          <PromptBlock variant="hero"
             title="Fix with Claude Code"
             description="Bu taramanın bulduğu her sorunu kategoriye göre gruplayıp örnek URL'lerle özetleyen bir prompt — sitenizin repo/CMS'inde çalışan Claude Code'a yapıştırın."
             prompt={buildBulkImportFixPrompt(result)}
