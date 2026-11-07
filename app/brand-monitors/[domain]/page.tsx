@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Drawer, PageHeader, UnderlineTabs } from "@/components/ui";
+import { PageHeader, UnderlineTabs } from "@/components/ui";
+import PromptResults from "@/components/tool/PromptResults";
 import { ENGINE_META, EngineDot, ScoreRing, SentimentBar, netSentiment, sentimentLabel } from "@/components/tool/MonitorBits";
 
 interface Resp {
@@ -50,10 +51,6 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
   const [d, setD] = useState<Detail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("prompts");
-  const [q, setQ] = useState("");
-  const [type, setType] = useState<"all" | "branded" | "discovery">("all");
-  const [open, setOpen] = useState<Prompt | null>(null);
-  const [openResp, setOpenResp] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/brand-monitors/${domain}`)
@@ -65,14 +62,6 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       })
       .catch((e) => setErr(e.message));
   }, [domain]);
-
-  const prompts = useMemo(
-    () =>
-      (d?.prompts ?? [])
-        .filter((p) => (type === "branded" ? p.branded : type === "discovery" ? !p.branded : true))
-        .filter((p) => !q || p.text.toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr"))),
-    [d, q, type]
-  );
 
   if (err)
     return (
@@ -179,71 +168,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
         ]}
       />
 
-      {tab === "prompts" && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Prompt ara…" className="w-64 rounded-lg border border-border bg-panel px-3 py-1.5 text-sm outline-none focus:border-accent" />
-            <select value={type} onChange={(e) => setType(e.target.value as typeof type)} className="rounded-lg border border-border bg-panel px-2.5 py-1.5 text-sm outline-none">
-              <option value="all">Tüm türler</option>
-              <option value="discovery">Keşif (marka adı geçmeyen)</option>
-              <option value="branded">Markalı</option>
-            </select>
-          </div>
-          <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
-                  <th className="px-4 py-2.5 font-medium">Prompt</th>
-                  <th className="hidden py-2.5 pr-4 font-medium md:table-cell">Konu</th>
-                  <th className="py-2.5 pr-4 text-center font-medium">Görünürlük</th>
-                  <th className="py-2.5 pr-4 font-medium">Duygu</th>
-                  <th className="hidden py-2.5 pr-4 font-medium lg:table-cell">Motorlar</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {prompts.map((p) => (
-                  <tr
-                    key={p.text}
-                    onClick={() => {
-                      setOpen(p);
-                      setOpenResp(null);
-                    }}
-                    className="cursor-pointer hover:bg-muted/40"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{p.text}</div>
-                      {p.branded && <span className="mt-0.5 inline-block rounded bg-muted px-1.5 text-[10px] font-medium text-ink/50">markalı</span>}
-                    </td>
-                    <td className="hidden py-3 pr-4 text-xs text-ink/55 md:table-cell">{p.topic}</td>
-                    <td className="py-3 pr-4 text-center">
-                      <ScoreRing value={p.visibility * 100} />
-                    </td>
-                    <td className="py-3 pr-4">
-                      <SentimentBar value={p.sentiment} />
-                    </td>
-                    <td className="hidden py-3 pr-4 lg:table-cell">
-                      <div className="flex -space-x-1">
-                        {p.responses.map((r, i) => (
-                          <span key={i} className={r.mentioned ? "" : "opacity-30"}>
-                            <EngineDot engine={r.engine} size={18} />
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {!prompts.length && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-ink/45">
-                      Bu filtrede prompt yok.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {tab === "prompts" && <PromptResults prompts={d.prompts} brandName={d.brand.name} runAt={d.lastRunAt} />}
 
       {tab === "visibility" && (
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
@@ -393,84 +318,6 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
         </div>
       )}
 
-      {/* Prompt çekmecesi */}
-      {open && (
-        <Drawer isOpen onClose={() => setOpen(null)} size="2xl" title="Prompt detayı" subtitle={`Son çalışma ${fmt(d.lastRunAt)}`}>
-            <div className="space-y-5">
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-border px-3 py-1 text-xs">
-                  Görünürlük <b>{pct(open.visibility)}</b>
-                </span>
-                <span className="rounded-full border border-border px-3 py-1 text-xs">
-                  Duygu <b>{sentimentLabel(open.sentiment)}</b>
-                  {open.sentiment != null && ` (${netSentiment(open.sentiment)! > 0 ? "+" : ""}${netSentiment(open.sentiment)})`}
-                </span>
-                <span className="rounded-full border border-border px-3 py-1 text-xs">{open.topic}</span>
-              </div>
-              <div>
-                <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Kullanıcı sorusu
-                </div>
-                <div className="rounded-lg bg-muted/60 px-3.5 py-2.5 text-sm">{open.text}</div>
-              </div>
-              {open.mentions.length > 0 && (
-                <div>
-                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/45">Cevaplarda geçen markalar</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {open.mentions.map((m) => (
-                      <span key={m} className={`rounded-md px-2 py-0.5 text-xs font-medium ${m === d.brand.name ? "bg-accent text-white" : "bg-accent/10 text-accent"}`}>
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div>
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-seo" /> Cevaplar <span className="font-normal text-ink/45">({open.responses.length})</span>
-                </div>
-                <ul className="divide-y divide-border rounded-xl border border-border">
-                  {open.responses.map((r, i) => {
-                    const exp = openResp === i;
-                    return (
-                      <li key={i} className="cursor-pointer px-3.5 py-3 hover:bg-muted/30" onClick={() => setOpenResp(exp ? null : i)}>
-                        <div className="flex items-start gap-3">
-                          <EngineDot engine={r.engine} size={20} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 text-xs text-ink/50">
-                              <span className="font-medium text-ink/70">{ENGINE_META[r.engine]?.name ?? r.engine}</span>
-                              {r.mentioned ? (
-                                <span className="rounded bg-seo/10 px-1.5 text-[10px] font-medium text-seo">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
-                              ) : (
-                                <span className="rounded bg-danger/10 px-1.5 text-[10px] font-medium text-danger">geçmiyor</span>
-                              )}
-                            </div>
-                            <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{r.text}</p>
-                            {r.mentions.length > 0 && <div className="mt-1 text-[11px] text-ink/45">Geçen markalar: {r.mentions.join(", ")}</div>}
-                            {exp && r.citations.length > 0 && (
-                              <div className="mt-2 space-y-0.5">
-                                <div className="text-[11px] font-medium text-ink/50">Kaynaklar</div>
-                                {r.citations.map((c) => (
-                                  <a key={c.url} href={c.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className={`block truncate text-xs hover:underline ${c.isOwnDomain ? "font-medium text-seo" : "text-accent"}`}>
-                                    {c.url}
-                                  </a>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1.5">
-                            <ScoreRing value={r.mentioned ? (r.sentiment ?? 50) : 0} size={30} />
-                            <SentimentBar value={r.sentiment} width={48} />
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </div>
-        </Drawer>
-      )}
     </div>
   );
 }

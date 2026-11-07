@@ -31,6 +31,7 @@ import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 import EntityPresence from "@/components/tool/EntityPresence";
+import PromptResults, { RunProgress, groupRuns } from "@/components/tool/PromptResults";
 
 const SCENARIO_STEPS = [
   {
@@ -202,7 +203,7 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities">("visibility");
+  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities">("prompts");
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const summariesRef = useRef<GeoVisibilitySummary[] | null>(null);
   useEffect(() => {
@@ -373,7 +374,7 @@ export default function GeoPage() {
     setHistory(null);
     setRunResultsFilter("");
     setRunEngineFilter("all");
-    setResultsTab("visibility");
+    setResultsTab("prompts");
     setRestoredAt(null);
     try {
       const res = await fetch("/api/geo", {
@@ -728,12 +729,14 @@ export default function GeoPage() {
         </div>
       )}
 
+      {loading && <RunProgress prompts={prompts.map((p) => p.text)} engines={engines} />}
+
       {summaries && (
         (() => {
           const T = [
+            { key: "prompts", label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null },
             { key: "visibility", label: "Görünürlük" },
             { key: "sentiment", label: "Duygu" },
-            { key: "prompts", label: "Promptlar", count: runs ? runs.length : null },
             { key: "sources", label: "Domain" },
             { key: "urls", label: "URL" },
             { key: "rivals", label: "Rakipler", count: competitorRefs.length || null },
@@ -1095,83 +1098,11 @@ export default function GeoPage() {
       )}
 
       {resultsTab === "prompts" && runs && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-medium">
-              Tek tek koşular <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              <input
-                value={runResultsFilter}
-                onChange={(e) => {
-                  setRunResultsFilter(e.target.value);
-                  setExpanded(null);
-                }}
-                placeholder="Promptlarda ara…"
-                className="rounded-lg bg-muted border border-border px-3 py-1.5 text-xs outline-none focus:border-accent w-48"
-              />
-              <select
-                value={runEngineFilter}
-                onChange={(e) => {
-                  setRunEngineFilter(e.target.value as EngineId | "all");
-                  setExpanded(null);
-                }}
-                className="rounded-lg bg-muted border border-border px-2 py-1.5 text-xs outline-none focus:border-accent"
-              >
-                <option value="all">Tüm motorlar</option>
-                {Array.from(new Set(runs.map((r) => r.engine))).map((eng) => (
-                  <option key={eng} value={eng}>
-                    {ENGINE_LABEL[eng]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {filteredRuns?.length === 0 && (
-            <div className="card text-sm text-ink/40 text-center py-6">Bu filtreye uyan koşu yok.</div>
-          )}
-          {filteredRuns?.map((r, i) => (
-            <div key={i} className="card">
-              <button
-                type="button"
-                onClick={() => setExpanded(expanded === i ? null : i)}
-                className="w-full flex items-center justify-between text-left gap-4"
-              >
-                <div className="text-sm min-w-0">
-                  <span className="font-medium">{ENGINE_LABEL[r.engine]}</span>
-                  <span className="text-ink/40"> · {r.model}</span>
-                  {r.topic && r.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/50 ml-2">{r.topic}</span>}
-                  <span className="text-ink/40"> · &ldquo;{r.promptText}&rdquo;</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs shrink-0">
-                  {r.sentiment != null && <ScoreBadge score={r.sentiment} kind="sentiment" />}
-                  <span
-                    className={`badge ${r.mentioned ? "badge-pass" : "bg-ink/5 text-ink/40"}`}
-                  >
-                    {r.mentioned ? `#${r.position}. sırada anıldı` : "Anılmadı"}
-                  </span>
-                </div>
-              </button>
-              {expanded === i && (
-                <div className="mt-4 space-y-3 text-sm">
-                  <pre className="whitespace-pre-wrap text-ink/70 bg-muted rounded-lg p-3">{r.responseText}</pre>
-                  {r.citations.length > 0 && (
-                    <div>
-                      <div className="text-ink/40 text-xs mb-1">Atıflar</div>
-                      <ul className="space-y-1">
-                        {r.citations.map((c, ci) => (
-                          <li key={ci} className={c.isOwnDomain ? "text-seo" : "text-ink/60"}>
-                            {c.domain} {c.isOwnDomain && "(kendi domaininiz)"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <PromptResults
+          prompts={groupRuns(runs, [brand.name, ...competitors.map((c) => c.name), ...(summaries ?? []).map((x) => x.brand)])}
+          brandName={brand.name}
+          runAt={restoredAt}
+        />
       )}
 
       <ExampleScenario heading="Bir mobilya markası GEO testiyle görünmezliğini keşfediyor" steps={SCENARIO_STEPS} />
