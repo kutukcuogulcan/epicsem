@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
-import PageGuide from "@/components/PageGuide";
 import { useProject } from "@/components/ProjectProvider";
 import { ErrorBlock, TableSkeleton, EmptyBlock } from "@/components/ui";
 
@@ -242,7 +241,6 @@ export default function BingPage() {
         </>
       )}
 
-      <PageGuide id="bing" />
     </div>
   );
 }

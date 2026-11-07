@@ -4,55 +4,11 @@ import { useEffect, useState } from "react";
 import type { BulkImportResult } from "@/types";
 import PromptBlock from "@/components/PromptBlock";
 import { buildBulkImportFixPrompt } from "@/lib/claude-code-prompt";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import SiteAuditReport, { type RunSummary } from "@/components/tool/SiteAuditReport";
 import GhostChart from "@/components/tool/GhostChart";
 import { useProject } from "@/components/ProjectProvider";
 import { ErrorBlock } from "@/components/ui";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Sadece site adresi yazılır",
-    body: "Kurulum, eklenti ya da masaüstü programı yok — alan adını yazıp \"Siteyi tara\"ya basmak yeterli.",
-  },
-  {
-    title: "Epicsem tüm siteyi kendisi tarar",
-    body: "robots.txt ve sitemap'ler okunur, iç linkler takip edilir; her sayfanın durum kodu, title'ı, meta açıklaması, H1'leri, kelime sayısı, canonical ve noindex bilgisi toplanır.",
-  },
-  {
-    title: "Site genelinde sorunlar tek seferde çıkar",
-    body: "12 sayfada eksik meta açıklaması, 3 sayfada kırık link, 5 sayfada thin content tespit edilir — hepsi grafikli tek bir panoda.",
-  },
-  {
-    title: "Fix prompt'u kategoriye göre gruplanır",
-    body: "\"Fix with Claude Code\" ile her sorun kategorisi için örnek URL'li bir prompt üretilir.",
-  },
-  {
-    title: "Düzelt, tekrar tara, farkı gör",
-    body: "Düzeltmelerden sonra aynı siteyi yeniden tara — pano, sorun sayısının taramadan taramaya nasıl düştüğünü gösterir.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Ek bir program ya da dosya gerekiyor mu?",
-    a: "Hayır. Epicsem siteyi kendi tarayıcısıyla tarar: robots.txt ve sitemap'leri okur, iç linkleri takip eder.",
-  },
-  {
-    q: "Kaç sayfa taranıyor?",
-    a: "Tarama başına 50, 150 ya da 300 sayfa seçebilirsin. Büyük sitelerde sitemap'teki sayfalar önceliklidir; süre sınırına takılan taramalar \"kısmi\" olarak işaretlenir.",
-  },
-  {
-    q: "Bunun Audit'ten farkı ne?",
-    a: "Audit tek bir URL'yi derinlemesine (SEO + AI erişimi) inceler. Site Taraması ise tüm siteyi gezip eksik/tekrarlayan title ve meta açıklaması, thin content, kırık link, eksik H1 ve noindex sayfaları site genelinde tek panoda gösterir.",
-  },
-  {
-    q: "Bulunan sorunları nasıl düzeltirim?",
-    a: "\"Fix with Claude Code\" ile her sorun kategorisine göre gruplanmış, örnek URL'li bir prompt üretilir — bunu kendi site kodun/deposu üzerinde çalışan Claude Code'a yapıştırıp toplu düzeltebilirsin.",
-  },
-];
 
 const ROWS_SHOWN = 300;
 
@@ -232,9 +188,7 @@ export default function ImportPage() {
         </>
       )}
 
-      <ExampleScenario heading="50 sayfalık bir site, tek adresle baştan sona taranıyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

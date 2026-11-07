@@ -22,8 +22,6 @@ import GaugeStatCard from "@/components/GaugeStatCard";
 import GradientBar from "@/components/GradientBar";
 import SavedPromptsPanel from "@/components/SavedPromptsPanel";
 import ScoreBadge from "@/components/ScoreBadge";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import GeoOverview from "@/components/tool/GeoOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
@@ -32,52 +30,6 @@ import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 import EntityPresence from "@/components/tool/EntityPresence";
 import PromptResults, { RunProgress, groupRuns } from "@/components/tool/PromptResults";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Marka ve rakipler girilir",
-    body: "Marka adı, domain ve iki rakip eklenir.",
-  },
-  {
-    title: "Prompt önerisi istenir",
-    body: "\"✨ Prompt öner\" ile hem markayı adıyla soran hem de kategoriyi genel soran promptlar otomatik oluşturulur; \"Fiyat: X ne kadar tutar?\" gibi konu etiketleriyle işaretlenir.",
-  },
-  {
-    title: "Test dört motora gönderilir",
-    body: "ChatGPT, Claude, Gemini ve Perplexity'e aynı promptlar gönderilir.",
-  },
-  {
-    title: "Sonuç: marka-bilinende görünür, keşifte görünmez",
-    body: "Marka adıyla sorulan promptlarda %90 görünürlük çıkar, ama \"bu kategoride en iyi markalar hangileri?\" gibi keşif promptlarında %10'un altında kalır — markayı henüz bilmeyen biri AI'dan onu hiç duymuyor.",
-  },
-  {
-    title: "Konu kırılımı zayıf noktayı gösterir",
-    body: "\"Fiyat\" konulu promptlarda görünürlük en düşük çıkar — bu bulgu hangi içeriğin öncelikli üretilmesi gerektiğini gösterir.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Hangi AI motorlarını gerçekten test ediyor?",
-    a: "ChatGPT (OpenAI), Claude (Anthropic), Gemini (Google) ve Perplexity gerçek API entegrasyonuyla çalışır; DeepSeek ve Grok da gerçek entegre. Meta AI ve Microsoft Copilot'un genel API'si olmadığı için bu ikisi her zaman simüle çalışır — ekranda \"demo only\" olarak işaretli.",
-  },
-  {
-    q: "Sonuçlar gerçek mi, simülasyon mu?",
-    a: "İlgili motorun API anahtarı tanımlıysa gerçek bir sorgu gönderilir. Tanımlı değilse sistem demo modda çalışır ve sonuçlar gerçekçi ama simüle edilmiştir — bu durum ekranda açıkça \"demo mode\" olarak belirtilir.",
-  },
-  {
-    q: "\"Konu: prompt metni\" etiketlemesi ne işe yarar?",
-    a: "Bir satırı Konu: prompt metni şeklinde yazarsan (örn. Fiyat: X ne kadar tutar?) sonuçlarda hangi konularda görünür, hangi konularda görünmez olduğunu ayrı ayrı gösteren bir kırılım çıkar. Konu vermezsen \"Genel\" sayılır.",
-  },
-  {
-    q: "Marka-bilinen (branded) ve keşif (discovery) prompt farkı ne?",
-    a: "Marka-bilinen bir prompt markanı adıyla soruyor (\"X güvenilir mi?\"); keşif promptu ise markanı hiç duymamış birinin sorabileceği genel bir kategori sorusu (\"bu alanda en iyi araçlar hangileri?\"). İkisi ayrı ölçülür çünkü ikisi farklı bir şey söyler: biri seni zaten bilenler, diğeri seni henüz keşfetmemiş olanlar için görünürlüğünü gösterir.",
-  },
-  {
-    q: "Aylık kaç sorgu hakkım var?",
-    a: "Ücretsiz planda GEO/AEO ve Gap Analysis birlikte, ayda toplam 300 AI motor sorgusu (prompt sayısı × motor sayısı) içeriyor. Demo modda hiçbir sorgu bu kotadan düşmez.",
-  },
-];
 
 interface GeoHistoryRun {
   id: number;
@@ -1120,9 +1072,7 @@ export default function GeoPage() {
         />
       )}
 
-      <ExampleScenario heading="Bir mobilya markası GEO testiyle görünmezliğini keşfediyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

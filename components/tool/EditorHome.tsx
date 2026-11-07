@@ -6,7 +6,6 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
-import PageGuide from "@/components/PageGuide";
 import WriteWizard from "@/components/tool/WriteWizard";
 import { Drawer, UnderlineTabs, EmptyBlock, TableSkeleton } from "@/components/ui";
 import { publishLabel } from "@/lib/publish-state";
@@ -316,7 +315,6 @@ export default function EditorHome({
           </Drawer>
       )}
 
-      <PageGuide id="editor" />
     </div>
   );
 }

@@ -5,53 +5,9 @@ import type { ArticleAuditResult, ArticleSchemaStatus } from "@/types";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import UsageMeter from "@/components/UsageMeter";
 import PromptBlock from "@/components/PromptBlock";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import GaugeStatCard from "@/components/GaugeStatCard";
 import { useProject } from "@/components/ProjectProvider";
 import { ErrorBlock } from "@/components/ui";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Bir sayfa URL'i girilir",
-    body: "Denetlenecek tek bir sayfa — örneğin yeni yayınlanan bir blog yazısı veya ürün sayfası.",
-  },
-  {
-    title: "Sayfa gerçekten taranır",
-    body: "Title, meta açıklama, canonical, görsellerin alt metni, internal linkler ve varsa mevcut schema — hepsi sayfanın kendi HTML'inden çekilir.",
-  },
-  {
-    title: "Model, sadece taranan veriyle çalışır",
-    body: "Karakter sayısı kurallarına göre title/meta önerisi, eksik alt metinler, kaçırılmış internal link fırsatları ve FAQ/Article schema — hiçbiri sayfada olmayan bir şeyi uydurmaz.",
-  },
-  {
-    title: "Somut makale önerileri çıkar",
-    body: "Bulunan boşluklara (kaçırılmış link fırsatları, eksik içerik) dayanarak 2-4 yeni makale fikri — başlık, hedef anahtar kelime, açı ve taslak başlıklarıyla.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Bu araç /audit'ten farkı ne?",
-    a: "/audit teknik/deterministik bir tarama — kod tabanlı kurallarla title/meta/schema var mı yok mu kontrol eder, ücretsizdir. Article Writer bir yapay zeka modeline sayfanın gerçek içeriğini gönderip metin kalitesini değerlendirir (karakter sayısı, alt metin kalitesi, kaçırılan link fırsatları) ve üstüne somut makale önerileri üretir — bu yüzden aylık kullanım kotanıza dahildir.",
-  },
-  {
-    q: "Öneriler uyduruluyor mu?",
-    a: "Hayır. Model yalnızca sayfadan gerçekten çekilen veriyle çalışır — sayfayı kendisi taramaz, taramayı araç yapar ve sonucu modele verir. Makale önerileri de yalnızca bu taramada bulunan gerçek boşluklara dayanır.",
-  },
-  {
-    q: "FAQ/Article schema JSON-LD'sini nereye yapıştırıyorum?",
-    a: "Üretilen JSON-LD bloğunu kopyalayıp sayfanızın <head> kısmına bir <script type=\"application/ld+json\"> etiketi içinde ekleyin. Sayfada zaten bir schema varsa araç bunu doğrulayıp uyumsuzlukları işaretler, üstüne yenisini eklemenizi önermez.",
-  },
-  {
-    q: "Neden bazen 'demo modu' görüyorum?",
-    a: "Bu özellik gerçek bir yapay zeka modeli çağırır — ANTHROPIC_API_KEY veya OPENAI_API_KEY bağlı değilse araç bunu açıkça 'demo modu' olarak işaretler ve hiçbir öneriyi gerçekmiş gibi göstermez.",
-  },
-  {
-    q: "AI Citability Score nasıl hesaplanıyor, GEO Rewrite'ta veri uyduruluyor mu?",
-    a: "Skor, sayfanın gerçek yapısal sinyallerine bakıyor — cevap-öncelikli bir açılış cümlesi var mı, taranabilir H2/H3 var mı, somut sayı/tanım var mı, karşılaştırmalı içerik bir tablo/liste olarak sunulmuş mu. Yeniden yazım da yalnızca sayfanın kendi gerçek metnini yeniden düzenliyor — modelin sayfada olmayan bir gerçeği/istatistiği ekleyemeyeceği yerlerde açık bir [NEEDS: ...] placeholder'ı bırakılıyor. Alıntı kaynağı önerileri de aynı şekilde 'buraya şu türden bir veri eklemelisin' formatında — hiçbir zaman uydurma bir sayı veya kaynak değil.",
-  },
-];
 
 const SCHEMA_STATUS_LABEL: Record<ArticleSchemaStatus, string> = {
   "present-valid": "Mevcut ve doğru",
@@ -373,9 +329,7 @@ export default function ArticleWriterPage() {
         </div>
       )}
 
-      <ExampleScenario heading="Yeni yayınlanan bir blog yazısı Article Writer'dan geçiyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

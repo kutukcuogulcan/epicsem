@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { CampaignsOverview } from "@/components/tool/ToolOverviews";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
 import { Drawer, ErrorBlock, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
@@ -65,22 +63,6 @@ const RANDOM_OPTS: [number, string][] = [[0, "Rastgele değil"], [60, "1 saate k
 const FREQ_LABEL: Record<Frequency, string> = { daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" };
 const FREQ_DAYS: Record<Frequency, number> = { daily: 1, weekly: 7, monthly: 30 };
 const FORMAT_LABEL: Record<Format, string> = { article: "Makale", listicle: "Liste yazısı" };
-
-const SCENARIO_STEPS = [
-  { title: "Kaynak seçilir", body: "Anahtar kelime listesi, bir RSS beslemesi ya da domainin son Gap Analysis sonucu." },
-  { title: "Takvim ayarlanır", body: "Günlük, haftalık ya da aylık; her çalışmada 1–3 yazı." },
-  { title: "Arka planda çalışır", body: "Zamanı gelen autoblog sıradaki kullanılmamış konuyu alır ve marka bilgi bankanı kullanarak makale yazar." },
-  { title: "Seçtiğin moda göre yayınlanır", body: "Onaylı: Content Studio'da bekler. Sitede taslak: WordPress, Shopify ya da webhook'a taslak gider. Tam otomasyon: doğrudan yayınlanır." },
-];
-
-const FAQ_ITEMS = [
-  { q: "Autoblog API kredisi harcar mı?", a: "Yalnızca makale yazarken. Her makale 1 içerik üretim kredisi kullanır. Besleme okuma, konu seçimi, önizleme ve zamanlama AI kullanmaz." },
-  { q: "Otomatik yayınlıyor mu?", a: "Sen seçersin. Onaylı modda yazılar Content Studio'da bekler; Sitede taslak modunda sitene taslak olarak gider; Tam otomasyon modunda doğrudan yayınlanır. Varsayılan Onaylı moddur." },
-  { q: "Beslemeler nedir?", a: "Autoblog'un konu kaynaklarıdır: kendini haftalık yenileyen anahtar kelime listesi, Google Haberler, RSS ya da YouTube kanalı. Bir besleme birden fazla autoblog'da kullanılabilir ve AI kullanmaz." },
-  { q: "Aynı konu iki kez yazılır mı?", a: "Hayır. Daha önce taslağı üretilmiş anahtar kelime, besleme öğesi ya da Gap konusu atlanır." },
-  { q: "RSS'teki yazıyı kopyalıyor mu?", a: "Hayır. Kaynak yazı yalnızca bilgi kaynağı olarak okunur; makale kendi cümleleriyle, markanın bakış açısıyla yazılır ve kaynak adresi taslakta saklanır." },
-  { q: "Ne sıklıkla kontrol ediliyor?", a: "Arka plandaki zamanlayıcı her 6 saatte bir zamanı gelen autoblog'ları çalıştırır. Beklemek istemezsen \"Şimdi çalıştır\"a bas." },
-];
 
 const emptyForm = {
   id: null as number | null,
@@ -746,8 +728,6 @@ export default function CampaignsPage() {
           </Drawer>
       )}
 
-      <ExampleScenario heading="Autoblog nasıl çalışır" steps={SCENARIO_STEPS} />
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

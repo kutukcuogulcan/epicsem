@@ -7,55 +7,11 @@ import IssueCard from "@/components/IssueCard";
 import FixCard from "@/components/FixCard";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import AuditOverview from "@/components/tool/AuditOverview";
 import { useAgencyName } from "@/lib/use-agency-name";
 import { useProject } from "@/components/ProjectProvider";
 import { ErrorBlock } from "@/components/ui";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Domain girilir",
-    body: "Site sahibi kendi domainini /audit'e girer ve taramayı başlatır.",
-  },
-  {
-    title: "İki farklı skor çıkar",
-    body: "Teknik SEO skoru 82/100 — title, meta, schema düzgün. Ama AXO skoru 35/100: robots.txt dosyası GPTBot'u ve ClaudeBot'u engelliyor.",
-  },
-  {
-    title: "Fix prompt'u üretilir",
-    body: "\"Fix with Claude Code\" ile robots.txt'teki engeli kaldıracak somut bir prompt oluşturulur — hiçbir şey uydurulmaz, sadece taranan sayfanın kendi verisine dayanır.",
-  },
-  {
-    title: "Geliştirici düzeltmeyi uygular",
-    body: "Prompt, sitenin kendi reposunda çalışan Claude Code'a yapıştırılır, robots.txt güncellenir ve yayına alınır.",
-  },
-  {
-    title: "Sonraki koşuda ilerleme görülür",
-    body: "Bir hafta sonra tekrar audit çalıştırıldığında AXO skoru 35'ten 88'e çıkar, engellenen bot sayısı 0'a iner — bu ilerleme indirilebilir bir PDF rapor olarak müşteriyle paylaşılır.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Bu denetim tam olarak neyi kontrol ediyor?",
-    a: "Title/meta açıklaması, başlık (H1) yapısı, structured data (schema), robots.txt & sitemap varlığı — ve ayrıca GPTBot, ClaudeBot, PerplexityBot, Google-Extended gibi AI crawler'ların sayfaya gerçekten erişip erişemediği.",
-  },
-  {
-    q: "SEO skoru ile AXO skoru arasındaki fark ne?",
-    a: "SEO skoru klasik teknik sağlamlığı ölçer (başlıklar, meta, schema). AXO skoru özellikle AI motorlarının crawler'larının sayfaya erişip erişemediğini ölçer — bir site teknik olarak sağlam olup SEO'da yüksek puan alırken, robots.txt'i GPTBot'u engellediği için AXO'da düşük çıkabilir.",
-  },
-  {
-    q: "Önerilen düzeltmeler nereden geliyor, uyduruluyor mu?",
-    a: "Hayır — fix önerileri (meta açıklaması, Organization/FAQ şeması) sadece taranan sayfanın kendi içeriğinden üretiliyor. Model bir şeye dayanak bulamazsa onu üretmiyor.",
-  },
-  {
-    q: "Sonucu müşterime nasıl gönderebilirim?",
-    a: "Denetim tamamlandıktan sonra \"Download PDF report\" ile indirilebilir bir PDF alabilirsin. \"Ajans adınız\" kutusuna kendi ajans/marka adını yazarsan PDF'in üst kısmında Epicsem yerine o isim görünür — bu isim tarayıcında hatırlanır, tekrar yazmana gerek kalmaz. Birden fazla müşterin varsa Clients'a kaydedip her koşuyu o müşteriyle ilişkilendirebilirsin.",
-  },
-];
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
   meta: "Meta & title",
@@ -300,9 +256,7 @@ export default function AuditPage() {
         </div>
       )}
 
-      <ExampleScenario heading="Bir mobilya e-ticaret sitesi audit'ten geçiyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

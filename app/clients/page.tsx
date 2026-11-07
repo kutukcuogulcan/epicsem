@@ -4,47 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { ClientsOverview } from "@/components/tool/ToolOverviews";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import { ErrorBlock, TableSkeleton } from "@/components/ui";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Müşteri bir kere kaydedilir",
-    body: "Marka adı, domain ve iki rakip /clients'a kaydedilir.",
-  },
-  {
-    title: "Audit tek tıkla önceden dolu açılır",
-    body: "Müşteri kartındaki \"Audit\" linkine tıklanınca, denetim formu domain otomatik dolu şekilde açılır.",
-  },
-  {
-    title: "Aynı marka GEO ve Gap'te de kullanılır",
-    body: "Aynı kayıt, GEO testi ve Gap Analysis linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
-  },
-  {
-    title: "Rapor kendi ajans adınızla indirilir",
-    body: "Audit veya Gap'te \"Ajans adınız\" kutusuna kendi ajans adınızı yazdıysanız, indirilen PDF'te Epicsem yerine sizin adınız görünür.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Müşteri bilgim nerede saklanıyor?",
-    a: "Kendi hesabına bağlı Postgres veritabanında, sadece senin hesabınla ilişkilendirilmiş olarak — başka Epicsem kullanıcıları göremez.",
-  },
-  {
-    q: "Bir müşteriyi sildiğimde o müşteri için yapılmış audit/GEO sonuçları da silinir mi?",
-    a: "Hayır. Kayıtlı müşteri sadece bir marka/rakip/not kısayolu — audit, GEO testi ve gap analizi sonuçları alan adına (domain) bağlı olarak ayrı saklanır ve müşteri kaydını silmek onları etkilemez.",
-  },
-  {
-    q: "Aynı müşteriyi birden fazla araçta nasıl kullanırım?",
-    a: "Bir müşteriyi kaydettikten sonra kart üzerindeki Audit, GEO test ve Gap analysis linklerine tıkladığında o aracın formu marka/domain/rakip bilgisiyle otomatik dolu açılır — yeniden yazmana gerek kalmaz.",
-  },
-  {
-    q: "PDF raporda kendi ajans adım görünebilir mi?",
-    a: "Evet. Audit veya Gap Analysis sonuç ekranında, \"PDF rapor indir\" butonunun yanındaki \"Ajans adınız\" kutusuna kendi ajans/marka adını yazman yeterli — indirdiğin PDF'in üst kısmında Epicsem yerine o isim görünür. Bu isim hesabına değil, tarayıcına kaydedilir; aynı cihazdan tekrar geldiğinde otomatik dolu gelir.",
-  },
-];
 
 interface BrandRow {
   name: string;
@@ -287,9 +247,7 @@ export default function ClientsPage() {
         </div>
       )}
 
-      <ExampleScenario heading="Bir ajans 5 müşteriyi tek panelde yönetiyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

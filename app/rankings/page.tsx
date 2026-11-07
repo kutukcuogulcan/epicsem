@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
-import PageGuide from "@/components/PageGuide";
 import { Drawer, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
@@ -282,7 +281,6 @@ export default function RankingsPage() {
           </Drawer>
       )}
 
-      <PageGuide id="rankings" />
     </div>
   );
 }

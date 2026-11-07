@@ -7,53 +7,9 @@ import { ErrorBlock, TableSkeleton } from "@/components/ui";
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import ContentHub from "@/components/ContentHub";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Gap Analysis bir boşluk bulur",
-    body: "\"En iyi mobilya markaları hangileri?\" promptunda hiçbir sayfa anılmıyor bulgusu content brief'e dönüşür.",
-  },
-  {
-    title: "\"Generate article\" tıklanır",
-    body: "Brief, Content Studio'ya gönderilir ve taslak otomatik oluşturulur.",
-  },
-  {
-    title: "Uydurma yerine [NEEDS: ...] işaretlenir",
-    body: "Modelin dayanak bulamadığı bir istatistik varsa, onu uydurmak yerine açıkça [NEEDS: gerçek rakam] olarak bırakılır.",
-  },
-  {
-    title: "İnsan incelemesi yapılır",
-    body: "Taslak, [NEEDS: ...] alanları doldurulup gözden geçirilir.",
-  },
-  {
-    title: "Taslak olarak yayınlanır",
-    body: "\"Taslak olarak yayınla\" ile içerik canlıya değil, WordPress veya Shopify'da bir taslak olarak gönderilir — yayına alma kararı kullanıcıya kalır.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "İçerik uyduruluyor mu, nereden geliyor?",
-    a: "Hayır. Her taslak sadece Gap Analysis'teki gerçek bir content brief'e dayanır. Modelin dayanak bulamadığı bir bilgi varsa, onu uydurmak yerine açıkça [NEEDS: ...] şeklinde işaretleyip sana bırakır.",
-  },
-  {
-    q: "Yayınladığımda direkt canlıya mı çıkıyor?",
-    a: "Hayır — yayınlama her zaman bir taslak oluşturur (WordPress'te \"draft\", Shopify'da \"unpublished\"), asla otomatik yayına almaz. İncelemeyi ve yayına alma kararını sen WordPress veya Shopify üzerinden veriyorsun.",
-  },
-  {
-    q: "Birden fazla müşterinin sitesine bağlanabilir miyim? WordPress dışında ne destekleniyor?",
-    a: "Evet — WordPress ve Shopify ilk sınıf destekleniyor. Her müşteri için ayrı bir bağlantı (site adresi, kullanıcı adı/token) kaydedebilir, taslağı yayınlarken hangi bağlantıyı kullanacağını seçebilirsin.",
-  },
-  {
-    q: "Aylık kaç içerik üretebilirim?",
-    a: "Ücretsiz planda ayda 20 içerik üretimi hakkın var. Demo modda (API anahtarı tanımlı değilken) üretim bu kotadan düşmez.",
-  },
-];
 
 interface DraftListItem {
   id: number;
@@ -496,9 +452,7 @@ export default function ContentStudioPage() {
         </div>
       </div>
 
-      <ExampleScenario heading="Kaybedilen bir prompt, yayına hazır bir taslağa dönüşüyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

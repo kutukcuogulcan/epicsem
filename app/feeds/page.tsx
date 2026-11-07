@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
-import PageGuide from "@/components/PageGuide";
 import { Drawer, ErrorBlock, TableSkeleton } from "@/components/ui";
 
 type Kind = "keyword" | "news" | "rss" | "youtube";
@@ -404,7 +403,6 @@ export default function FeedsPage() {
           </Drawer>
       )}
 
-      <PageGuide id="feeds" />
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Block } from "@/lib/seo-assistant";
-import PageGuide from "@/components/PageGuide";
 import { useProject } from "@/components/ProjectProvider";
 
 interface Msg {
@@ -199,7 +198,6 @@ export default function AssistantPage() {
       </form>
     </div>
     <div className="mt-14">
-      <PageGuide id="assistant" />
     </div>
     </div>
   );

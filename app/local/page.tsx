@@ -5,43 +5,7 @@ import { useSearchParams } from "next/navigation";
 import UsageMeter from "@/components/UsageMeter";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { LocalOverview } from "@/components/tool/ToolOverviews";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import { useProject } from "@/components/ProjectProvider";
-
-const SCENARIO_STEPS = [
-  {
-    title: "Konu veya yorumu girin",
-    body: "\"Bu hafta sonu kampanyamız var\" gibi kısa bir konu, ya da müşterinin bıraktığı gerçek yorum metni.",
-  },
-  {
-    title: "Taslak AI ile üretilir",
-    body: "Model, işletme adı ve domaininiz dışında hiçbir bilgiyi uydurmadan (fiyat, kampanya detayı, isim vb. yok) doğal bir taslak yazar.",
-  },
-  {
-    title: "Kopyalayıp yapıştırırsınız",
-    body: "Taslağı kopyalayıp Google Business Profile'da \"Güncelleme ekle\" veya ilgili yorumun altına siz yapıştırırsınız — hiçbir şey otomatik gönderilmez.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Bu, Google Business Profile'a otomatik mi gönderiyor?",
-    a: "Hayır. Google'ın Business Profile API'si onay/inceleme gerektiriyor ve bunu anında garanti edemeyiz — o yüzden dürüst bir seçim yaptık: bu araç sadece taslak metni üretir, siz kopyalayıp Google Business Profile'a kendiniz yapıştırırsınız. WordPress/Shopify yayınlarımızdaki \"insan onayı olmadan hiçbir şey canlıya çıkmaz\" ilkesiyle aynı mantık.",
-  },
-  {
-    q: "Metinler uyduruluyor mu?",
-    a: "Hayır — model işletme adınız ve domaininiz dışında hiçbir somut bilgiyi (fiyat, kampanya, tarih, çalışan adı vb.) icat etmemesi için yönlendiriliyor. Böyle bir detay gerekiyorsa genel bir ifade kullanır, uydurmaz.",
-  },
-  {
-    q: "Olumsuz bir yoruma nasıl yanıt üretiyor?",
-    a: "Savunmacı olmadan yorumdaki somut şikayeti kabul eden, iletişimi özelden devam ettirmeye davet eden bir üslup kullanır — yasal sorumluluk kabul eden ifadeler kullanmaz.",
-  },
-  {
-    q: "Aylık kaç taslak üretebilirim?",
-    a: "İçerik Stüdyosu ile aynı kotayı paylaşır: ücretsiz planda ayda 20 üretim hakkı. Demo modda (API anahtarı tanımlı değilken) üretim bu kotadan düşmez.",
-  },
-];
 
 function useDraftGenerator() {
   const [text, setText] = useState("");
@@ -221,9 +185,7 @@ export default function LocalToolsPage() {
         )}
       </div>
 
-      <ExampleScenario heading="Bir yorumdan, kopyala-yapıştıra hazır bir yanıta" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

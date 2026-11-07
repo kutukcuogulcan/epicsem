@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
-import PageGuide from "@/components/PageGuide";
 import { Drawer, ErrorBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
@@ -411,7 +410,6 @@ export default function KeywordsPage() {
           </Drawer>
       )}
 
-      <PageGuide id="keywords" />
     </div>
   );
 }

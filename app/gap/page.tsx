@@ -6,8 +6,6 @@ import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
 import StatCard from "@/components/StatCard";
-import FAQSection from "@/components/FAQSection";
-import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
 import GapOverview from "@/components/tool/GapOverview";
@@ -15,47 +13,6 @@ import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import { Drawer, ErrorBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
-const SCENARIO_STEPS = [
-  {
-    title: "Marka, rakip ve sayfa URL'leri girilir",
-    body: "Marka bilgisi, promptlar ve denetlenecek sayfa URL'leri (ör. ana sayfa ve en çok trafik alan blog yazısı) girilir.",
-  },
-  {
-    title: "Audit + GEO aynı anda çaprazlanır",
-    body: "Her sayfa için teknik SEO/AXO skoru ile GEO testinin o sayfayı gerçekten anıp anmadığı aynı tabloda birleştirilir.",
-  },
-  {
-    title: "\"Sağlam ama görünmez\" etiketi çıkar",
-    body: "Bir blog yazısı teknik olarak sağlam, hiçbir crawler engellenmemiş, ama hiçbir AI yanıtında anılmıyor — \"Sağlam ama görünmez\" olarak işaretlenir.",
-  },
-  {
-    title: "Content brief otomatik üretilir",
-    body: "Sayfanın kaybettiği promptlar somut başlık/FAQ önerilerine çevrilir.",
-  },
-  {
-    title: "Content Studio'ya gönderilir",
-    body: "\"Generate article\" ile brief, Content Studio'da bir WordPress taslağına dönüşür.",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "Gap Analysis tam olarak neyi karşılaştırıyor?",
-    a: "Her sayfa için Audit'in ölçtüğü teknik sağlamlığı ve AI crawler erişimini, GEO testinin o sayfayı gerçekten anıp anmadığıyla çaprazlar. Yalnız birini okuduğunda göremeyeceğin şeyi gösterir: teknik olarak sağlam ama hiç anılmayan bir sayfa.",
-  },
-  {
-    q: "\"AI'ya kapalı\", \"Sağlam ama görünmez\", \"Anılıyor\", \"İyileştirme gerekli\" etiketleri ne anlama geliyor?",
-    a: "AI'ya kapalı: sayfa AI crawler'lara kapalı. Sağlam ama görünmez: teknik olarak sağlam ve erişilebilir ama hiçbir AI yanıtında anılmıyor. Anılıyor: en az bir AI yanıtında anılıyor. İyileştirme gerekli: kısmi teknik veya erişim sorunları var.",
-  },
-  {
-    q: "İçerik brief'leri (Content Briefs) nereden geliyor?",
-    a: "Girdiğin promptlardan hangilerinin hiçbir sayfanı bulamadığını tespit edip, o kaybedilen promptları somut bir başlık/FAQ önerisine çeviriyor. Buradan \"Generate article\" ile Content Studio'da bir WordPress taslağına dönüştürebilirsin.",
-  },
-  {
-    q: "Audit ve GEO'yu ayrı ayrı çalıştırmak yetmez mi?",
-    a: "Ayrı ayrı okuduğunda ikisi de yarım bir cevap verir: Audit \"teknik olarak sağlam\" der, GEO \"anılıyor mu\" der. Gap Analysis ikisini aynı satırda birleştirip asıl soruyu cevaplar: sağlam olduğu halde neden anılmıyor?",
-  },
-];
 import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
 
 const ENGINE_LABEL: Record<EngineId, string> = {
@@ -574,9 +531,7 @@ export default function GapPage() {
         </div>
       )}
 
-      <ExampleScenario heading="Bir mobilya markası 'sağlam ama görünmez' sayfasını buluyor" steps={SCENARIO_STEPS} />
 
-      <FAQSection items={FAQ_ITEMS} />
     </div>
   );
 }

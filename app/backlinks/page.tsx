@@ -5,7 +5,6 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
-import PageGuide from "@/components/PageGuide";
 import CitationTab from "@/components/tool/CitationTab";
 import { UnderlineTabs, ErrorBlock, TableSkeleton, EmptyBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
@@ -645,7 +644,6 @@ export default function BacklinksPage() {
         </>
       )}
 
-      <PageGuide id="backlinks" />
     </div>
   );
 }
