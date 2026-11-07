@@ -95,13 +95,13 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-      <div className="rounded-xl border border-border bg-panel shadow-sm">
+      <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
           <div>
-            <div className="text-sm font-bold">Gerçek kullanıcı hızı</div>
+            <div className="text-sm font-medium">Gerçek kullanıcı hızı</div>
             <div className="text-[11px] text-ink/45">Google Chrome kullanıcılarının son 28 günü · Core Web Vitals</div>
           </div>
-          <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-semibold">
+          <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-medium">
             {(["mobile", "desktop"] as const).map((st) => (
               <button key={st} type="button" disabled={psiBusy || local} onClick={() => measure(st)} className={`rounded-md px-2.5 py-1 disabled:opacity-40 ${psi && strategy === st ? "bg-ink text-white" : "text-ink/60 hover:text-ink"}`}>
                 {st === "mobile" ? "Mobil" : "Masaüstü"}
@@ -115,7 +115,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
           ) : !psi && !psiBusy ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="max-w-md text-sm text-ink/55">Ana sayfanın gerçek ziyaretçi hız verisini Google&apos;dan çek: LCP, INP, CLS. Ücretsiz; yaklaşık 20–40 saniye sürer.</p>
-              <button type="button" onClick={() => measure("mobile")} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white">
+              <button type="button" onClick={() => measure("mobile")} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white">
                 Hızı ölç
               </button>
             </div>
@@ -127,7 +127,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
           ) : psi ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${psi.passed === true ? "bg-seo/10 text-seo" : psi.passed === false ? "bg-danger/10 text-danger" : "bg-muted text-ink/55"}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${psi.passed === true ? "bg-seo/10 text-seo" : psi.passed === false ? "bg-danger/10 text-danger" : "bg-muted text-ink/55"}`}>
                   {psi.passed === true ? "Core Web Vitals: geçti" : psi.passed === false ? "Core Web Vitals: kaldı" : "Yeterli gerçek kullanıcı verisi yok"}
                 </span>
                 <span className="text-[11px] text-ink/45">
@@ -143,14 +143,14 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
                 {psi.metrics.map((m) => (
                   <div key={m.key} className="rounded-xl border border-border p-3">
                     <div className="text-[10px] leading-3 text-ink/50">{m.label}</div>
-                    <div className="mt-1 text-lg font-semibold tabular-nums">{fmt(m.key, m.p75)}</div>
-                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[10px] text-ink/35">hedef {m.good}</span>}
+                    <div className="mt-1 text-lg font-medium tabular-nums">{fmt(m.key, m.p75)}</div>
+                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[10px] text-ink/35">hedef {m.good}</span>}
                   </div>
                 ))}
               </div>
               {psi.opportunities.length > 0 && (
                 <div>
-                  <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-ink/45">En çok kazandıracak düzeltmeler</div>
+                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/45">En çok kazandıracak düzeltmeler</div>
                   <ul className="space-y-1 text-sm">
                     {psi.opportunities.map((o) => (
                       <li key={o.title} className="flex justify-between gap-3">
@@ -167,29 +167,29 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-panel shadow-sm">
+      <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="border-b border-border px-5 py-3">
-          <div className="text-sm font-bold">Arama motorlarına bildir</div>
+          <div className="text-sm font-medium">Arama motorlarına bildir</div>
           <div className="text-[11px] text-ink/45">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>
         </div>
         <div className="space-y-3 p-5">
           <div className="space-y-1.5 text-sm">
             <div className="flex items-center justify-between">
               <span>IndexNow</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${inReady ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${inReady ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Bing Webmaster</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${bingOk ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${bingOk ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
             </div>
           </div>
           {inReady || bingOk ? (
-            <button type="button" onClick={notify} disabled={sendBusy || !indexable.length} className="w-full rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <button type="button" onClick={notify} disabled={sendBusy || !indexable.length} className="w-full rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
               {sendBusy ? "Gönderiliyor…" : `${indexable.length} indekslenebilir sayfayı bildir`}
             </button>
           ) : (
             <p className="text-xs leading-5 text-ink/55">
-              <Link href="/integrations" className="font-semibold text-accent">IndexNow&apos;ı kur</Link> (ücretsiz, hesap yok) ya da WordPress&apos;te Epicsem Connector 1.2&apos;yi yükle; yeni sayfalar arama motorlarına anında bildirilsin.
+              <Link href="/integrations" className="font-medium text-accent">IndexNow&apos;ı kur</Link> (ücretsiz, hesap yok) ya da WordPress&apos;te Epicsem Connector 1.2&apos;yi yükle; yeni sayfalar arama motorlarına anında bildirilsin.
             </p>
           )}
           {sendMsg?.map((m, i) => (

@@ -63,7 +63,7 @@ export default function PersonaPrompts({
   return (
     <div className="space-y-3 rounded-xl border border-accent/20 bg-accent/[0.03] p-3">
       <div>
-        <div className="text-sm font-bold">Persona ile soru üret</div>
+        <div className="text-sm font-medium">Persona ile soru üret</div>
         <p className="text-[11px] text-ink/50">Müşterilerin AI&apos;a gerçekte nasıl sorduğunu taklit eder. Sonuçlarda persona bazında görünürlük çıkar.</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -77,7 +77,7 @@ export default function PersonaPrompts({
             type="button"
             title={p.description}
             onClick={() => toggle(p.id)}
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${selected.includes(p.id) ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-accent/50"}`}
+            className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${selected.includes(p.id) ? "border-accent bg-accent text-white" : "border-border bg-panel text-ink/60 hover:border-accent/50"}`}
           >
             {p.label}
           </button>
@@ -85,8 +85,8 @@ export default function PersonaPrompts({
       </div>
       <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Kendi personan (opsiyonel, virgülle): düğününe 1 ay kalan gelin, butik sahibi" className={input} />
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={generateFree} className="rounded-lg bg-ink px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">Soruları üret (ücretsiz)</button>
-        <button type="button" onClick={generateAi} disabled={busy} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/5 disabled:opacity-50">
+        <button type="button" onClick={generateFree} className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white hover:opacity-90">Soruları üret (ücretsiz)</button>
+        <button type="button" onClick={generateAi} disabled={busy} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/5 disabled:opacity-50">
           {busy ? "Üretiliyor…" : "✦ AI ile zenginleştir (1 kredi)"}
         </button>
         {note && <span className="text-[11px] text-ink/55">{note}</span>}
@@ -97,9 +97,9 @@ export default function PersonaPrompts({
             {list.map((p, i) => (
               <li key={i}>
                 <label className="flex cursor-pointer items-start gap-2 text-xs">
-                  <input type="checkbox" checked={p.on} onChange={() => setList((l) => l.map((x, j) => (j === i ? { ...x, on: !x.on } : x)))} className="mt-0.5 accent-[#5d16ff]" />
+                  <input type="checkbox" checked={p.on} onChange={() => setList((l) => l.map((x, j) => (j === i ? { ...x, on: !x.on } : x)))} className="mt-0.5 accent-[#4f00ff]" />
                   <span>
-                    <span className="mr-1 rounded bg-muted px-1.5 py-px text-[10px] font-semibold text-ink/55">{p.persona}</span>
+                    <span className="mr-1 rounded bg-muted px-1.5 py-px text-[10px] font-medium text-ink/55">{p.persona}</span>
                     {p.text}
                   </span>
                 </label>
@@ -114,7 +114,7 @@ export default function PersonaPrompts({
               setList([]);
               setNote(`${chosen.length} soru teste eklendi.`);
             }}
-            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-40"
           >
             Seçilenleri teste ekle ({chosen.length})
           </button>

@@ -39,7 +39,7 @@ export default function DashboardActivityChart({ data }: { data: ActivityPoint[]
           <YAxis stroke="#8a8398" fontSize={11} allowDecimals={false} />
           <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e0f5", color: "#1e1b29" }} />
           <Legend />
-          <Line type="monotone" dataKey="Üretilen" stroke="#5d16ff" strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="monotone" dataKey="Üretilen" stroke="#4f00ff" strokeWidth={2} dot={{ r: 3 }} />
           <Line type="monotone" dataKey="Yayınlanan" stroke="#16a34a" strokeWidth={2} dot={{ r: 3 }} />
         </LineChart>
       </ResponsiveContainer>

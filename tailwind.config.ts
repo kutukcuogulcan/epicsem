@@ -13,10 +13,12 @@ const config: Config = {
         // previous all-over lavender tint.
         paper: "#f8fafc",
         panel: "#ffffff",
-        muted: "#f1f5f9",
-        border: "#e2e8f0",
-        ink: "#0f172a",
-        accent: "#5d16ff",
+        muted: "#f5f5f5",
+        /** İkincil metin (Arvow: #535862). */
+        sub: "#535862",
+        border: "#e9eaeb",
+        ink: "#0a0d12",
+        accent: "#4f00ff",
         seo: "#10b981",
         geo: "#a78bfa",
         warn: "#f59e0b",

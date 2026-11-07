@@ -13,7 +13,7 @@ import EngineMarquee from "./marketing/EngineMarquee";
  */
 const FLOAT_CHIPS = [
   { label: "SEO", className: "left-[-1rem] top-[18%]", color: "#16a34a", delay: "0s" },
-  { label: "AXO", className: "right-[-1.25rem] top-[8%]", color: "#5d16ff", delay: "1.2s" },
+  { label: "AXO", className: "right-[-1.25rem] top-[8%]", color: "#4f00ff", delay: "1.2s" },
   { label: "AEO", className: "left-[6%] bottom-[-1rem]", color: "#ec4899", delay: "2.1s" },
   { label: "GEO", className: "right-[4%] bottom-[-0.75rem]", color: "#a78bfa", delay: "0.6s" },
 ];

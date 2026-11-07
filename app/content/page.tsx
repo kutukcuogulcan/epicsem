@@ -220,8 +220,8 @@ export default function ContentStudioPage() {
         <UsageMeter metric="contentGenerations" />
       </ToolPageHeader>
 
-      <details className="group rounded-xl border border-border bg-panel shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-bold">
+      <details className="group rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-medium">
           <span>Marka bilgi bankası <span className="ml-2 text-xs font-normal text-ink/45">AI yazarken uydurmasın diye ürün, fiyat, kargo, ton bilgileri</span></span>
           <span className="text-ink/30 group-open:rotate-90">▸</span>
         </summary>
@@ -231,14 +231,14 @@ export default function ContentStudioPage() {
       <ContentHub />
 
       <div className="card space-y-4">
-        <h2 className="font-bold">CMS bağlantıları</h2>
+        <h2 className="font-medium">CMS bağlantıları</h2>
         <p className="text-xs text-ink/40 -mt-2">WordPress, Shopify ya da Webhook (Zapier/Make ile Wix, Webflow, Ghost, Framer…).</p>
         {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
         <div className="space-y-2">
           {connections.map((c) => (
             <div key={c.id} className="flex items-center justify-between text-sm rounded-lg bg-muted px-3 py-2">
               <div>
-                <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-accent mr-1.5">
+                <span className="inline-block text-[10px] font-medium uppercase tracking-wide text-accent mr-1.5">
                   {c.platform === "shopify" ? "Shopify" : c.platform === "webhook" ? "Webhook" : "WordPress"}
                 </span>
                 <span className="font-medium">{c.label}</span>{" "}
@@ -333,7 +333,7 @@ export default function ContentStudioPage() {
             <button
               type="submit"
               disabled={savingConn || !connForm.label}
-              className="text-xs font-semibold rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
+              className="text-xs font-medium rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
             >
               {savingConn ? "Kaydediliyor…" : "Bağlantıyı kaydet"}
             </button>
@@ -347,7 +347,7 @@ export default function ContentStudioPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div className="card space-y-2 h-fit">
-          <h2 className="font-bold text-sm">Taslaklar</h2>
+          <h2 className="font-medium text-sm">Taslaklar</h2>
           {drafts.length === 0 && (
             <p className="text-xs text-ink/40">
               Henüz yok — <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>'teki bir içerik brifinden bir tane oluşturun.
@@ -389,14 +389,14 @@ export default function ContentStudioPage() {
               />
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h2 className="font-bold">{selectedDraft.article.title}</h2>
+                  <h2 className="font-medium">{selectedDraft.article.title}</h2>
                   <p className="text-xs text-ink/40 mt-1">
                     {selectedDraft.sourceUrl.replace(/^keyword:/, "Anahtar kelime: ")} için · {selectedDraft.article.model}
                     {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a href={`/editor?draftId=${selectedDraft.id}`} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/5">✎ Editörde aç</a>
+                  <a href={`/editor?draftId=${selectedDraft.id}`} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/5">✎ Editörde aç</a>
                   {selectedDraft.status === "published-to-wp" && (
                     <span className="badge badge-pass">Yayınlandı</span>
                   )}
@@ -411,9 +411,9 @@ export default function ContentStudioPage() {
                 return (
                   <details className="rounded-xl border border-border">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2.5">
-                      <span className={`rounded-lg px-2 py-1 text-sm font-semibold tabular-nums ${tone}`}>{cit.score}</span>
+                      <span className={`rounded-lg px-2 py-1 text-sm font-medium tabular-nums ${tone}`}>{cit.score}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold">AI alıntılanabilirlik · {cit.grade}</span>
+                        <span className="block text-sm font-medium">AI alıntılanabilirlik · {cit.grade}</span>
                         <span className="block truncate text-[11px] text-ink/50">{cit.top.length ? `Önce: ${cit.top.join(" · ")}` : "Belirgin bir eksik yok"}</span>
                       </span>
                       <span className="text-[11px] text-ink/40">detay ▾</span>
@@ -430,7 +430,7 @@ export default function ContentStudioPage() {
                       ))}
                     </ul>
                     <div className="border-t border-border px-3 py-3">
-                      <div className="mb-1.5 text-xs font-bold text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
+                      <div className="mb-1.5 text-xs font-medium text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
                       <PassageList report={analyzePassages(passagesFromMarkdown(selectedDraft.article.bodyMarkdown))} />
                     </div>
                   </details>
@@ -481,7 +481,7 @@ export default function ContentStudioPage() {
                       <button
                         onClick={publish}
                         disabled={publishing}
-                        className="text-sm font-semibold rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
+                        className="text-sm font-medium rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
                       >
                         {publishing ? "Yayınlanıyor…" : "Taslak olarak yayınla"}
                       </button>

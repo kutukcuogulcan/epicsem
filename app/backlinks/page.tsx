@@ -60,7 +60,7 @@ const SRC: Record<Src, { l: string; c: string }> = {
   wikipedia: { l: "Wikipedia", c: "#64748b" },
   hn: { l: "Hacker News", c: "#f97316" },
   reddit: { l: "Reddit", c: "#ef4444" },
-  news: { l: "Haber", c: "#5d16ff" },
+  news: { l: "Haber", c: "#4f00ff" },
   csv: { l: "CSV", c: "#16a34a" },
 };
 const path = (u: string) => u.replace(/^https?:\/\/(www\.)?[^/]+/, "") || "/";
@@ -137,7 +137,7 @@ export default function BacklinksPage() {
       { k: "0–9", n: 0, c: "#cbd5e1" },
       { k: "10–29", n: 0, c: "#f59e0b" },
       { k: "30–49", n: 0, c: "#8b5cf6" },
-      { k: "50–69", n: 0, c: "#5d16ff" },
+      { k: "50–69", n: 0, c: "#4f00ff" },
       { k: "70+", n: 0, c: "#16a34a" },
     ];
     for (const d of withDr) b[(d.dr ?? 0) >= 70 ? 4 : (d.dr ?? 0) >= 50 ? 3 : (d.dr ?? 0) >= 30 ? 2 : (d.dr ?? 0) >= 10 ? 1 : 0].n++;
@@ -211,14 +211,14 @@ export default function BacklinksPage() {
           e.preventDefault();
           load(site, true);
         }}
-        className="flex items-center gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 pl-4"
+        className="flex items-center gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 pl-4"
       >
         <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6">
           <path d="M8.5 11.5l3-3M7 9.5l-1.5 1.5a2.5 2.5 0 0 0 3.5 3.5L10.5 13M13 10.5l1.5-1.5a2.5 2.5 0 0 0-3.5-3.5L9.5 7" />
         </svg>
         <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="siten.com" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
         {mode === "analysis" && (
-          <button disabled={loading || !site.trim()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+          <button disabled={loading || !site.trim()} className="rounded-[10px] bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
             {loading ? "Yükleniyor…" : "Backlinkleri getir →"}
           </button>
         )}
@@ -235,32 +235,32 @@ export default function BacklinksPage() {
       {mode === "citations" && <CitationTab site={site.trim()} />}
 
       {mode === "analysis" && (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-ink/50">Kaynaklar</span>
+            <span className="text-xs font-medium text-ink/50">Kaynaklar</span>
             {(["wikipedia", "hn", "reddit", "news"] as const).map((k) => (
-              <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-ink/65">
+              <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-ink/65">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC[k].c }} />
                 {SRC[k].l} · ücretsiz
               </span>
             ))}
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${data?.sources.imported ? "bg-seo/10 text-seo" : "bg-muted text-ink/45"}`}>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${data?.sources.imported ? "bg-seo/10 text-seo" : "bg-muted text-ink/45"}`}>
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC.csv.c }} />
               CSV {data?.sources.imported ? `· ${data.sources.imported} alan adı` : "· yüklenmedi"}
             </span>
             {(["bing", "ahrefs"] as const).map((k) =>
               data?.sources[k] ? (
-                <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-seo/10 px-2.5 py-1 text-[11px] font-semibold text-seo">
+                <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-seo/10 px-2.5 py-1 text-[11px] font-medium text-seo">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: SRC[k].c }} />
                   {SRC[k].l} · bağlı
                 </span>
               ) : (
-                <Link key={k} href="/integrations" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[11px] font-semibold text-ink/45 hover:border-accent/40 hover:text-accent">
+                <Link key={k} href="/integrations" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[11px] font-medium text-ink/45 hover:border-accent/40 hover:text-accent">
                   + {SRC[k].l} (isteğe bağlı)
                 </Link>
               )
             )}
-            <label className={`ml-auto cursor-pointer rounded-xl border border-border px-3 py-1.5 text-xs font-bold hover:border-accent/40 ${imp.busy ? "opacity-50" : ""}`}>
+            <label className={`ml-auto cursor-pointer rounded-xl border border-border px-3 py-1.5 text-xs font-medium hover:border-accent/40 ${imp.busy ? "opacity-50" : ""}`}>
               {imp.busy ? "Yükleniyor…" : "CSV yükle"}
               <input
                 type="file"
@@ -305,18 +305,18 @@ export default function BacklinksPage() {
               ["Güçlü kaynak", String(kpi.high), "DR 50 ve üstü"],
               ["Linksiz bahsetme", String(mentions.filter((m) => m.linked === false).length), "link isteme fırsatı"],
             ].map(([l, v, sub]) => (
-              <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
+              <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
                 <div className="text-[11px] text-ink/50">{l}</div>
-                <div className="text-2xl font-semibold tabular-nums">{loading ? "…" : v}</div>
+                <div className="text-2xl font-medium tabular-nums">{loading ? "…" : v}</div>
                 <div className="text-[11px] text-ink/40">{sub}</div>
               </div>
             ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-xl border border-border bg-panel shadow-sm">
+            <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <div className="text-sm font-bold">{withDr.length ? "Domain Rating dağılımı" : "Kaynağa göre link veren siteler"}</div>
+                <div className="text-sm font-medium">{withDr.length ? "Domain Rating dağılımı" : "Kaynağa göre link veren siteler"}</div>
                 <span className="text-xs text-ink/40">{withDr.length ? "referring domain sayısı" : "DR için Ahrefs ya da Ahrefs CSV'si"}</span>
               </div>
               <div className="h-48 px-2 pt-3">
@@ -335,9 +335,9 @@ export default function BacklinksPage() {
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-panel shadow-sm">
+            <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <div className="text-sm font-bold">En sık anchor metinleri</div>
+                <div className="text-sm font-medium">En sık anchor metinleri</div>
                 <span className="text-xs text-ink/40">{anchors.length ? "alan adı sayısı" : "Bing ya da CSV ile görünür"}</span>
               </div>
               <ul className="space-y-2 p-5">
@@ -369,7 +369,7 @@ export default function BacklinksPage() {
           })()}
 
           {tab === "domains" && (
-            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
                 {([
                   ["all", "Tümü"],
@@ -377,7 +377,7 @@ export default function BacklinksPage() {
                   ["high", "DR 50+"],
                   ["lost", "Kaybedilen"],
                 ] as const).map(([k, l]) => (
-                  <button key={k} type="button" onClick={() => setStatus(k)} className={`rounded-full px-3 py-1 text-xs font-semibold ${status === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
+                  <button key={k} type="button" onClick={() => setStatus(k)} className={`rounded-full px-3 py-1 text-xs font-medium ${status === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
                     {l}
                   </button>
                 ))}
@@ -388,13 +388,13 @@ export default function BacklinksPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                      <th className="px-5 py-2 font-semibold">Alan adı</th>
-                      <th className="py-2 pr-3 font-semibold">DR</th>
-                      <th className="py-2 pr-3 text-right font-semibold">Link</th>
-                      <th className="hidden py-2 pr-3 text-right font-semibold md:table-cell">Trafik</th>
-                      <th className="hidden py-2 pr-3 font-semibold lg:table-cell">İlk görülme</th>
-                      <th className="py-2 pr-5 font-semibold">Durum</th>
+                    <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                      <th className="px-5 py-2 font-medium">Alan adı</th>
+                      <th className="py-2 pr-3 font-medium">DR</th>
+                      <th className="py-2 pr-3 text-right font-medium">Link</th>
+                      <th className="hidden py-2 pr-3 text-right font-medium md:table-cell">Trafik</th>
+                      <th className="hidden py-2 pr-3 font-medium lg:table-cell">İlk görülme</th>
+                      <th className="py-2 pr-5 font-medium">Durum</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -406,24 +406,24 @@ export default function BacklinksPage() {
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={`https://www.google.com/s2/favicons?domain=${d.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                               <span className="font-medium">{d.domain}</span>
-                              <span className="rounded px-1.5 text-[10px] font-bold text-white" style={{ background: SRC[d.source]?.c ?? "#94a3b8" }}>
+                              <span className="rounded px-1.5 text-[10px] font-medium text-white" style={{ background: SRC[d.source]?.c ?? "#94a3b8" }}>
                                 {SRC[d.source]?.l ?? d.source}
                               </span>
-                              {d.spam && <span className="rounded bg-danger/10 px-1.5 text-[10px] font-bold text-danger">spam</span>}
+                              {d.spam && <span className="rounded bg-danger/10 px-1.5 text-[10px] font-medium text-danger">spam</span>}
                             </div>
                             {d.anchors[0] && <div className="truncate pl-6 text-[11px] text-ink/45">“{d.anchors[0]}”</div>}
                           </td>
                           <td className="py-2.5 pr-3">
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${drTone(d.dr)}`}>{d.dr !== null ? Math.round(d.dr) : "—"}</span>
+                            <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${drTone(d.dr)}`}>{d.dr !== null ? Math.round(d.dr) : "—"}</span>
                           </td>
                           <td className="py-2.5 pr-3 text-right tabular-nums">{d.links}</td>
                           <td className="hidden py-2.5 pr-3 text-right text-xs tabular-nums text-ink/55 md:table-cell">{d.traffic != null ? d.traffic.toLocaleString("tr-TR") : "—"}</td>
                           <td className="hidden py-2.5 pr-3 text-xs text-ink/55 lg:table-cell">{fmtDate(d.firstSeen)}</td>
                           <td className="py-2.5 pr-5">
                             {d.lostAt ? (
-                              <span className="rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-semibold text-danger">Kaybedildi · {fmtDate(d.lostAt)}</span>
+                              <span className="rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger">Kaybedildi · {fmtDate(d.lostAt)}</span>
                             ) : (
-                              <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-semibold text-seo">Canlı</span>
+                              <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Canlı</span>
                             )}
                           </td>
                         </tr>
@@ -432,7 +432,7 @@ export default function BacklinksPage() {
                             <td colSpan={6} className="bg-muted/30 px-5 py-3 text-xs">
                               <div className="grid gap-3 md:grid-cols-3">
                                 <div>
-                                  <div className="mb-1 font-bold text-ink/50">{d.from?.length ? "Link veren sayfalar" : "Anchor metinleri"}</div>
+                                  <div className="mb-1 font-medium text-ink/50">{d.from?.length ? "Link veren sayfalar" : "Anchor metinleri"}</div>
                                   {d.from?.length
                                     ? d.from.slice(0, 8).map((f) => (
                                         <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="block truncate hover:text-accent">
@@ -444,14 +444,14 @@ export default function BacklinksPage() {
                                       : <div className="text-ink/40">—</div>}
                                 </div>
                                 <div>
-                                  <div className="mb-1 font-bold text-ink/50">Link verilen sayfaların</div>
+                                  <div className="mb-1 font-medium text-ink/50">Link verilen sayfaların</div>
                                   {d.targets.length ? d.targets.map((t) => <div key={t} className="truncate">{path(t)}</div>) : <div className="text-ink/40">—</div>}
                                 </div>
                                 <div>
-                                  <div className="mb-1 font-bold text-ink/50">Kaynak</div>
+                                  <div className="mb-1 font-medium text-ink/50">Kaynak</div>
                                   <div>{SRC[d.source]?.l ?? d.source}{d.dofollow === 0 ? " · nofollow" : ""}</div>
                                   {d.sampleUrl && (
-                                    <a href={d.sampleUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate font-semibold text-accent hover:underline">
+                                    <a href={d.sampleUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate font-medium text-accent hover:underline">
                                       Link veren sayfayı aç ↗
                                     </a>
                                   )}
@@ -469,15 +469,15 @@ export default function BacklinksPage() {
           )}
 
           {tab === "mentions" && (
-            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-                <div className="mr-2 text-sm font-bold">Markanın geçtiği haberler · son 3 ay</div>
+                <div className="mr-2 text-sm font-medium">Markanın geçtiği haberler · son 3 ay</div>
                 {([
                   ["all", "Tümü"],
                   ["unlinked", "Linksiz (fırsat)"],
                   ["linked", "Linkli"],
                 ] as const).map(([k, l]) => (
-                  <button key={k} type="button" onClick={() => setMf(k)} className={`rounded-full px-3 py-1 text-xs font-semibold ${mf === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
+                  <button key={k} type="button" onClick={() => setMf(k)} className={`rounded-full px-3 py-1 text-xs font-medium ${mf === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
                     {l}
                   </button>
                 ))}
@@ -502,11 +502,11 @@ export default function BacklinksPage() {
                         </div>
                       </div>
                       {m.linked === true ? (
-                        <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-semibold text-seo">Linkli</span>
+                        <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Linkli</span>
                       ) : m.linked === false ? (
-                        <span className="shrink-0 rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-semibold text-warn">Link yok · iste</span>
+                        <span className="shrink-0 rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn">Link yok · iste</span>
                       ) : (
-                        <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-ink/45">Kontrol edilmedi</span>
+                        <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-ink/45">Kontrol edilmedi</span>
                       )}
                     </li>
                   ))}
@@ -516,13 +516,13 @@ export default function BacklinksPage() {
           )}
 
           {tab === "pages" && (
-            <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
               {data.pages?.length ? (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                      <th className="px-5 py-2 font-semibold">Sayfa</th>
-                      <th className="py-2 pr-5 text-right font-semibold">Gelen link</th>
+                    <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                      <th className="px-5 py-2 font-medium">Sayfa</th>
+                      <th className="py-2 pr-5 text-right font-medium">Gelen link</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -533,7 +533,7 @@ export default function BacklinksPage() {
                             {path(p.url)}
                           </a>
                         </td>
-                        <td className="py-2.5 pr-5 text-right font-semibold tabular-nums">{p.count.toLocaleString("tr-TR")}</td>
+                        <td className="py-2.5 pr-5 text-right font-medium tabular-nums">{p.count.toLocaleString("tr-TR")}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -546,8 +546,8 @@ export default function BacklinksPage() {
 
           {tab === "gap" && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
-                <div className="text-sm font-bold">Rakiplerin link aldığı ama senin almadığın siteler</div>
+              <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
+                <div className="text-sm font-medium">Rakiplerin link aldığı ama senin almadığın siteler</div>
                 <p className="mt-1 text-xs text-ink/55">En fazla 4 rakip gir. Birden çok rakibe link veren siteler en üstte — bunlar sana da link vermeye en yatkın olanlar. Ahrefs (Lite+) gerekir; sonuç 24 saat saklanır.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {comps.map((c, i) => (
@@ -564,29 +564,29 @@ export default function BacklinksPage() {
                       + rakip
                     </button>
                   )}
-                  <button type="button" onClick={runGap} disabled={gapBusy || !comps.some((c) => c.trim()) || !data.sources.ahrefs} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+                  <button type="button" onClick={runGap} disabled={gapBusy || !comps.some((c) => c.trim()) || !data.sources.ahrefs} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
                     {gapBusy ? "Karşılaştırılıyor…" : "Fırsatları bul"}
                   </button>
                 </div>
                 {!data.sources.ahrefs && (
                   <p className="mt-3 text-xs text-ink/55">
-                    Bu karşılaştırma için <Link href="/integrations" className="font-semibold text-accent">Ahrefs&apos;i bağla</Link>.
+                    Bu karşılaştırma için <Link href="/integrations" className="font-medium text-accent">Ahrefs&apos;i bağla</Link>.
                   </p>
                 )}
                 {gapErr && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{gapErr}</p>}
               </div>
               {gap && (
-                <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
-                  <div className="border-b border-border px-5 py-3 text-sm font-bold">
+                <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+                  <div className="border-b border-border px-5 py-3 text-sm font-medium">
                     {gap.gaps.length} fırsat · {gap.checked.join(", ")}
                   </div>
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                        <th className="px-5 py-2 font-semibold">Alan adı</th>
-                        <th className="py-2 pr-3 font-semibold">DR</th>
-                        <th className="hidden py-2 pr-3 text-right font-semibold md:table-cell">Trafik</th>
-                        <th className="py-2 pr-3 font-semibold">Link verdiği rakipler</th>
+                      <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                        <th className="px-5 py-2 font-medium">Alan adı</th>
+                        <th className="py-2 pr-3 font-medium">DR</th>
+                        <th className="hidden py-2 pr-3 text-right font-medium md:table-cell">Trafik</th>
+                        <th className="py-2 pr-3 font-medium">Link verdiği rakipler</th>
                         <th className="py-2 pr-5" />
                       </tr>
                     </thead>
@@ -595,20 +595,20 @@ export default function BacklinksPage() {
                         <tr key={g.domain}>
                           <td className="px-5 py-2.5 font-medium">{g.domain}</td>
                           <td className="py-2.5 pr-3">
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${drTone(g.dr)}`}>{g.dr !== null ? Math.round(g.dr) : "—"}</span>
+                            <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${drTone(g.dr)}`}>{g.dr !== null ? Math.round(g.dr) : "—"}</span>
                           </td>
                           <td className="hidden py-2.5 pr-3 text-right text-xs tabular-nums text-ink/55 md:table-cell">{g.traffic != null ? g.traffic.toLocaleString("tr-TR") : "—"}</td>
                           <td className="py-2.5 pr-3">
                             <div className="flex flex-wrap gap-1">
                               {g.linksTo.map((c) => (
-                                <span key={c} className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-ink/60">
+                                <span key={c} className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-ink/60">
                                   {c}
                                 </span>
                               ))}
                             </div>
                           </td>
                           <td className="whitespace-nowrap py-2.5 pr-5 text-right text-xs">
-                            <a href={`https://${g.domain}`} target="_blank" rel="noreferrer" className="font-semibold text-accent hover:underline">
+                            <a href={`https://${g.domain}`} target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
                               Siteye git ↗
                             </a>
                           </td>

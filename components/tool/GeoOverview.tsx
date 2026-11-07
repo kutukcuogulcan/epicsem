@@ -44,7 +44,7 @@ export default function GeoOverview({ refreshKey = 0 }: { refreshKey?: number })
         title="Henüz GEO testi yok"
         body="İlk testi çalıştırdığında markanın görünürlüğü, rakiplerle karşılaştırması ve AI'ın alıntıladığı kaynaklar burada grafiklerle görünecek."
         cta={
-          <a href="#yeni-test" className="mt-1 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
+          <a href="#yeni-test" className="mt-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
             İlk testi başlat ↓
           </a>
         }

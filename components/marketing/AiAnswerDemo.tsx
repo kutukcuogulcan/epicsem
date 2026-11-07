@@ -35,7 +35,7 @@ const ENGINES = [
 ];
 
 const BARS = [
-  { name: "Markan", value: 72, color: "#5d16ff" },
+  { name: "Markan", value: 72, color: "#4f00ff" },
   { name: "Rakip A", value: 54, color: "#94a3b8" },
   { name: "Rakip B", value: 31, color: "#cbd5e1" },
 ];

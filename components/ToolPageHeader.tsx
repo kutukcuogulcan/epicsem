@@ -30,10 +30,10 @@ export function ToolPageHeader({ title, description, badge, actionButton, childr
     <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-center">
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
-          {badge && <span className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">{badge}</span>}
+          <h1 className="text-2xl font-medium text-ink">{title}</h1>
+          {badge && <span className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">{badge}</span>}
         </div>
-        {desc && <div className="mt-1 max-w-3xl text-sm text-slate-500">{desc}</div>}
+        {desc && <div className="mt-1 max-w-3xl text-sm text-sub">{desc}</div>}
         {children && <div className="mt-2">{children}</div>}
       </div>
       {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}

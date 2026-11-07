@@ -82,17 +82,17 @@ export default function IndexingPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-3 rounded-xl border border-border bg-panel shadow-sm p-5">
+        <div className="space-y-3 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
           <div className="flex flex-wrap items-center gap-2">
             <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="siten.com ya da site haritası adresi" className="min-w-0 flex-1 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm outline-none focus:border-accent" />
-            <button type="button" onClick={fromSitemap} disabled={!site.trim() || !!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50">
+            <button type="button" onClick={fromSitemap} disabled={!site.trim() || !!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50">
               {busy === "sitemap" ? "Okunuyor…" : "Site haritasından al"}
             </button>
           </div>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} placeholder={"Her satıra bir URL\nhttps://siten.com/yeni-sayfa\nhttps://siten.com/blog/guncel-yazi"} className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 font-mono text-xs outline-none focus:border-accent" />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs text-ink/50">{urls.length} geçerli URL</span>
-            <button type="button" onClick={send} disabled={!urls.length || !!busy || ready === false} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+            <button type="button" onClick={send} disabled={!urls.length || !!busy || ready === false} className="rounded-[10px] bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
               {busy === "send" ? "Gönderiliyor…" : "Arama motorlarına bildir →"}
             </button>
           </div>
@@ -111,20 +111,20 @@ export default function IndexingPage() {
         </div>
 
         <div className="space-y-3">
-          <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
-            <div className="text-sm font-semibold">IndexNow durumu</div>
+          <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
+            <div className="text-sm font-medium">IndexNow durumu</div>
             {ready === null ? (
               <p className="mt-1 text-xs text-ink/50">Siteni yaz.</p>
             ) : ready ? (
               <p className="mt-1 text-xs text-seo">Hazır — bu site için anahtar kurulu.</p>
             ) : (
               <p className="mt-1 text-xs text-ink/60">
-                Bu site için kurulu değil. <Link href="/integrations" className="font-semibold text-accent">Entegrasyonlar</Link>&apos;dan IndexNow ekle ya da WordPress&apos;te Epicsem Connector&apos;ı kur.
+                Bu site için kurulu değil. <Link href="/integrations" className="font-medium text-accent">Entegrasyonlar</Link>&apos;dan IndexNow ekle ya da WordPress&apos;te Epicsem Connector&apos;ı kur.
               </p>
             )}
           </div>
-          <div className="rounded-xl border border-border bg-panel shadow-sm p-4 text-xs leading-5 text-ink/60">
-            <div className="mb-1 text-sm font-semibold text-ink">Google?</div>
+          <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4 text-xs leading-5 text-ink/60">
+            <div className="mb-1 text-sm font-medium text-ink">Google?</div>
             Google IndexNow&apos;u desteklemiyor. Google için Search Console&apos;da URL Denetimi → &quot;Dizine eklenmesini iste&quot; kullan ya da site haritanı Search Console&apos;a gönder.
           </div>
         </div>

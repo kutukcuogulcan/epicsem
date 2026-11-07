@@ -13,7 +13,7 @@ const ITEMS: { label: string; color: string }[] = [
   { label: "Grok", color: "#0f172a" },
   { label: "Copilot", color: "#7c3aed" },
   { label: "SEO", color: "#16a34a" },
-  { label: "AXO", color: "#5d16ff" },
+  { label: "AXO", color: "#4f00ff" },
   { label: "AEO", color: "#ec4899" },
   { label: "GEO", color: "#a78bfa" },
 ];

@@ -22,6 +22,7 @@
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
     "cheerio": "^1.0.0",
+    "geist": "^1.9.2",
     "jsonrepair": "^3.13.0",
     "next": "^15.1.4",
     "pdfkit": "^0.15.1",

@@ -24,7 +24,7 @@ export function ScoreRing({ value, size = 30, stroke = 3 }: { value: number | nu
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f3" strokeWidth={stroke} />
         {value != null && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={ringColor(v)} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} />}
       </svg>
-      <span className="absolute font-semibold tabular-nums text-ink" style={{ fontSize: size * 0.34 }}>
+      <span className="absolute font-medium tabular-nums text-ink" style={{ fontSize: size * 0.34 }}>
         {value == null ? "—" : v}
       </span>
     </span>
@@ -48,7 +48,7 @@ export function SentimentBar({ value, width = 64 }: { value: number | null; widt
 export function EngineDot({ engine, size = 18 }: { engine: string; size?: number }) {
   const m = ENGINE_META[engine] ?? { name: engine, color: "#94a3b8" };
   return (
-    <span title={m.name} className="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: m.color, fontSize: size * 0.5 }}>
+    <span title={m.name} className="inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white" style={{ width: size, height: size, background: m.color, fontSize: size * 0.5 }}>
       {m.name.charAt(0)}
     </span>
   );

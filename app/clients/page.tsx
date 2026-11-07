@@ -165,7 +165,7 @@ export default function ClientsPage() {
       <ClientsOverview refreshKey={rk} />
 
       <form onSubmit={addClient} className="card space-y-3">
-        <h2 className="font-bold text-sm">Bir müşteri ekle</h2>
+        <h2 className="font-medium text-sm">Bir müşteri ekle</h2>
         <div className="grid grid-cols-2 gap-3">
           <input
             value={name}
@@ -221,7 +221,7 @@ export default function ClientsPage() {
         <button
           type="submit"
           disabled={busy === "add"}
-          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {busy === "add" ? "Kaydediliyor…" : "Müşteriyi kaydet"}
         </button>

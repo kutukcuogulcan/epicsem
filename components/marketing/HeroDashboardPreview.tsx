@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
  */
 
 const SERIES = [
-  { name: "Markan", color: "#5d16ff", points: [22, 24, 23, 27, 30, 29, 33, 36, 35, 39, 42, 44] },
+  { name: "Markan", color: "#4f00ff", points: [22, 24, 23, 27, 30, 29, 33, 36, 35, 39, 42, 44] },
   { name: "Rakip A", color: "#16a34a", points: [34, 33, 35, 34, 33, 35, 34, 36, 35, 34, 36, 35] },
   { name: "Rakip B", color: "#ef4444", points: [28, 29, 27, 28, 30, 29, 28, 27, 29, 28, 27, 28] },
   { name: "Rakip C", color: "#334155", points: [14, 15, 15, 16, 15, 17, 16, 17, 18, 17, 18, 19] },
@@ -125,7 +125,7 @@ export default function HeroDashboardPreview() {
                   />
                 ))}
                 {on && (
-                  <circle cx={W} cy={H - (44 / 50) * H} r="5" fill="#5d16ff" className="animate-pop" style={{ animationDelay: "1.6s" }} />
+                  <circle cx={W} cy={H - (44 / 50) * H} r="5" fill="#4f00ff" className="animate-pop" style={{ animationDelay: "1.6s" }} />
                 )}
               </svg>
             </div>

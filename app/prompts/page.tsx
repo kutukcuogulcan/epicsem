@@ -74,7 +74,7 @@ export default function PromptsPage() {
 
       {categories.map((cat) => (
         <div key={cat} className="space-y-3">
-          <h2 className="font-bold text-lg">{CATEGORY_LABEL[cat]}</h2>
+          <h2 className="font-medium text-lg">{CATEGORY_LABEL[cat]}</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {grouped[cat].map((p) => (
               <PromptBlock key={p.id} title={p.title} description={p.description} prompt={p.prompt} />

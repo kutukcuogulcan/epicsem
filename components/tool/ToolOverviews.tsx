@@ -33,9 +33,9 @@ function Skeleton() {
 
 function Panel({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <span className="text-sm font-bold">{title}</span>
+        <span className="text-sm font-medium">{title}</span>
         {right}
       </div>
       {children}
@@ -76,14 +76,14 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={s.map((x) => ({ ...x, date: day(x.date) }))}>
                   <defs>
-                    <linearGradient id="mS" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#5d16ff" stopOpacity={0.2} /><stop offset="100%" stopColor="#5d16ff" stopOpacity={0} /></linearGradient>
+                    <linearGradient id="mS" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#4f00ff" stopOpacity={0.2} /><stop offset="100%" stopColor="#4f00ff" stopOpacity={0} /></linearGradient>
                     <linearGradient id="mA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity={0.16} /><stop offset="100%" stopColor="#16a34a" stopOpacity={0} /></linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={30} />
                   <Tooltip contentStyle={TT} />
-                  <Area type="monotone" dataKey="score" name="SEO" stroke="#5d16ff" strokeWidth={2.5} fill="url(#mS)" />
+                  <Area type="monotone" dataKey="score" name="SEO" stroke="#4f00ff" strokeWidth={2.5} fill="url(#mS)" />
                   <Area type="monotone" dataKey="ai" name="AI erişim" stroke="#16a34a" strokeWidth={2.5} fill="url(#mA)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -94,16 +94,16 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
         </Panel>
         <Panel title="Sayfalar">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500"><th className="px-5 py-2 text-left font-medium">Sayfa</th><th className="py-2 text-left font-medium">SEO</th><th className="py-2 text-left font-medium">AI</th><th className="py-2 pr-5 text-right font-medium">Uyarı</th></tr></thead>
+            <thead><tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub"><th className="px-5 py-2 text-left font-medium">Sayfa</th><th className="py-2 text-left font-medium">SEO</th><th className="py-2 text-left font-medium">AI</th><th className="py-2 pr-5 text-right font-medium">Uyarı</th></tr></thead>
             <tbody>
               {d.pages.slice(0, 8).map((p) => {
                 const delta = p.score != null && p.prevScore != null ? p.score - p.prevScore : 0;
                 return (
                   <tr key={p.id} className="border-t border-border">
                     <td className="max-w-[11rem] truncate px-5 py-2.5 font-medium" title={p.url}>{p.label || short(p.url)}</td>
-                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-[10px] font-bold ${delta > 0 ? "text-seo" : "text-danger"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
-                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${tone(p.ai)}`}>{p.ai ?? "—"}</span></td>
-                    <td className="py-2.5 pr-5 text-right">{p.openAlerts ? <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-bold text-danger">{p.openAlerts}</span> : <span className="text-xs text-seo">✓</span>}</td>
+                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-[10px] font-medium ${delta > 0 ? "text-seo" : "text-danger"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
+                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.ai)}`}>{p.ai ?? "—"}</span></td>
+                    <td className="py-2.5 pr-5 text-right">{p.openAlerts ? <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">{p.openAlerts}</span> : <span className="text-xs text-seo">✓</span>}</td>
                   </tr>
                 );
               })}
@@ -169,7 +169,7 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
                   <YAxis allowDecimals={false} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={26} />
                   <Tooltip contentStyle={TT} cursor={{ fill: "rgba(93,22,255,0.04)" }} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="drafts" name="Taslak" fill="#5d16ff" maxBarSize={28} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="drafts" name="Taslak" fill="#4f00ff" maxBarSize={28} radius={[6, 6, 0, 0]} />
                   <Bar dataKey="published" name="Yayına gönderilen" fill="#16a34a" maxBarSize={28} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -184,11 +184,11 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
             {campaigns.slice(0, 6).map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">{c.brandName}</div>
+                  <div className="truncate text-sm font-medium">{c.brandName}</div>
                   <div className="truncate text-[11px] text-ink/45">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
+                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
                   <div className="mt-0.5 text-[10px] text-ink/40">sonraki: {next(c)}</div>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function LocalOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                 <XAxis dataKey="week" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={24} />
                 <Tooltip contentStyle={TT} />
-                <Line type="monotone" dataKey="posts" name="Gönderi" stroke="#5d16ff" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="posts" name="Gönderi" stroke="#4f00ff" strokeWidth={2.5} dot={false} />
                 <Line type="monotone" dataKey="replies" name="Yanıt" stroke="#16a34a" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -258,7 +258,7 @@ export function LocalOverview({ refreshKey = 0 }: { refreshKey?: number }) {
             {d.recent.map((r) => (
               <div key={r.id} className="px-4 py-2.5">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className={`rounded px-1.5 py-0.5 font-bold ${r.kind === "gbp-post" ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo"}`}>{r.kind === "gbp-post" ? "Gönderi" : `Yanıt${r.rating ? ` · ${r.rating}★` : ""}`}</span>
+                  <span className={`rounded px-1.5 py-0.5 font-medium ${r.kind === "gbp-post" ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo"}`}>{r.kind === "gbp-post" ? "Gönderi" : `Yanıt${r.rating ? ` · ${r.rating}★` : ""}`}</span>
                   <span className="text-ink/40">{r.business} · {day(r.createdAt)}</span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-xs text-ink/65">{r.output}</p>
@@ -328,7 +328,7 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
               <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={28} />
               <Tooltip contentStyle={TT} cursor={{ fill: "rgba(93,22,255,0.04)" }} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="SEO" fill="#5d16ff" maxBarSize={36} radius={[5, 5, 0, 0]} />
+              <Bar dataKey="SEO" fill="#4f00ff" maxBarSize={36} radius={[5, 5, 0, 0]} />
               <Bar dataKey="Site sağlığı" fill="#0ea5e9" maxBarSize={36} radius={[5, 5, 0, 0]} />
               <Bar dataKey="AI görünürlük" fill="#16a34a" maxBarSize={36} radius={[5, 5, 0, 0]} />
             </BarChart>
@@ -339,7 +339,7 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-5 py-2.5 font-medium">Müşteri</th>
                 <th className="py-2.5 pr-3 font-medium">SEO</th>
                 <th className="py-2.5 pr-3 font-medium">AXO</th>
@@ -357,15 +357,15 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(c.domain)}&sz=32`} alt="" className="h-4 w-4 rounded" />
                       <div className="min-w-0">
-                        <div className="truncate font-semibold">{c.name}</div>
+                        <div className="truncate font-medium">{c.name}</div>
                         <div className="truncate text-[11px] text-ink/40">{c.domain}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 pr-3">{c.seoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${tone(c.seoScore)}`}>{c.seoScore}</span> : <Link href={`/audit?url=${c.domain}`} className="text-[11px] font-semibold text-accent">Denetle</Link>}</td>
-                  <td className="py-2.5 pr-3">{c.axoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${tone(c.axoScore)}`}>{c.axoScore}</span> : <span className="text-xs text-ink/30">—</span>}</td>
-                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-[11px] font-semibold text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-[10px] text-danger">{c.errors} hata</span> : null}</td>
-                  <td className="py-2.5 pr-3">{c.visibility != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${tone(c.visibility * 1.25)}`}>%{c.visibility}</span> : <Link href={`/geo?clientId=${c.id}`} className="text-[11px] font-semibold text-accent">GEO testi</Link>}</td>
+                  <td className="py-2.5 pr-3">{c.seoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.seoScore)}`}>{c.seoScore}</span> : <Link href={`/audit?url=${c.domain}`} className="text-[11px] font-medium text-accent">Denetle</Link>}</td>
+                  <td className="py-2.5 pr-3">{c.axoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.axoScore)}`}>{c.axoScore}</span> : <span className="text-xs text-ink/30">—</span>}</td>
+                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-[11px] font-medium text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-[10px] text-danger">{c.errors} hata</span> : null}</td>
+                  <td className="py-2.5 pr-3">{c.visibility != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.visibility * 1.25)}`}>%{c.visibility}</span> : <Link href={`/geo?clientId=${c.id}`} className="text-[11px] font-medium text-accent">GEO testi</Link>}</td>
                   <td className="py-2.5 pr-3"><Spark data={c.visibilityTrend.map((x) => x.visibility)} /></td>
                   <td className="py-2.5 pr-5 text-right text-xs text-ink/45">{c.lastActivity ? day(c.lastActivity) : "—"}</td>
                 </tr>

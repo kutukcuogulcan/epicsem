@@ -224,7 +224,7 @@ export default function MonitorPage() {
 
       {alerts && alerts.length > 0 && (
         <div className="space-y-2">
-          <h2 className="font-bold text-sm text-danger">Aktif uyarılar</h2>
+          <h2 className="font-medium text-sm text-danger">Aktif uyarılar</h2>
           {alerts.map((a) => (
             <div key={a.id} className="card border-danger/40 flex items-start justify-between gap-4">
               <div className="text-sm">
@@ -243,7 +243,7 @@ export default function MonitorPage() {
       )}
 
       <form onSubmit={addPage} className="card space-y-3">
-        <h2 className="font-bold text-sm">İzlenecek bir sayfa ekle</h2>
+        <h2 className="font-medium text-sm">İzlenecek bir sayfa ekle</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <input
             value={url}
@@ -268,7 +268,7 @@ export default function MonitorPage() {
         <button
           type="submit"
           disabled={busy === "add"}
-          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {busy === "add" ? "Ekleniyor…" : "Sayfa ekle"}
         </button>
@@ -279,7 +279,7 @@ export default function MonitorPage() {
       {pages && pages.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold">İzlenen sayfalar ({pages.length})</h2>
+            <h2 className="font-medium">İzlenen sayfalar ({pages.length})</h2>
             <button
               onClick={() => checkNow()}
               disabled={busy === "check-all"}

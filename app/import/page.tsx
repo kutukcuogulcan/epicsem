@@ -155,7 +155,7 @@ export default function ImportPage() {
 
       <form
         onSubmit={crawl}
-        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
+        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>
@@ -172,7 +172,7 @@ export default function ImportPage() {
             value={maxPages}
             onChange={(e) => setMaxPages(Number(e.target.value))}
             disabled={loading}
-            className="rounded-xl border border-border bg-panel px-3 py-2.5 text-sm font-semibold text-ink/70 outline-none"
+            className="rounded-xl border border-border bg-panel px-3 py-2.5 text-sm font-medium text-ink/70 outline-none"
             title="En fazla taranacak sayfa"
           >
             {PAGE_LIMITS.map((n) => (
@@ -182,7 +182,7 @@ export default function ImportPage() {
           <button
             type="submit"
             disabled={loading || !url.trim()}
-            className="rounded-xl bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-accent/25 hover:opacity-90 disabled:opacity-50"
+            className="rounded-[10px] bg-accent px-6 py-2 text-sm font-medium text-white shadow-md shadow-accent/25 hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Taranıyor…" : "Siteyi tara →"}
           </button>
@@ -190,7 +190,7 @@ export default function ImportPage() {
       </form>
 
       {loading && (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-5">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
           <div className="flex items-center gap-3 text-sm text-ink/70">
             <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             Sitemap okunuyor, sayfalar ve linkler taranıyor… <span className="tabular-nums text-ink/40">{elapsed} sn</span>

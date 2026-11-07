@@ -3,14 +3,14 @@
 /**
  * Epicsem ortak UI şablonları (Arvow tarzı açık tema). Tüm araç sayfaları kart, tablo,
  * sekme ve çekmece için bunları kullanır; renkler tailwind.config.ts'teki değişkenlerden:
- * ink (metin), panel (kart), muted (ikincil zemin), border (çizgi), accent (#5d16ff),
+ * ink (metin), panel (kart), muted (ikincil zemin), border (çizgi), accent (#4f00ff),
  * seo (yeşil), warn (turuncu), danger (kırmızı).
  */
 import { useEffect, useState, type ReactNode } from "react";
 
 // ---------------- Card ----------------
 export function Card({ children, className = "", padded = true }: { children: ReactNode; className?: string; padded?: boolean }) {
-  return <div className={`rounded-xl border border-border bg-panel shadow-sm ${padded ? "p-6" : ""} ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] ${padded ? "p-6" : ""} ${className}`}>{children}</div>;
 }
 
 /** Kart başlığı: başlık + açıklama solda, eylem sağda. */
@@ -18,8 +18,8 @@ export function CardHeader({ title, subtitle, action }: { title: ReactNode; subt
   return (
     <div className="mb-4 flex items-start justify-between gap-3">
       <div>
-        <div className="text-sm font-semibold text-ink">{title}</div>
-        {subtitle && <div className="mt-0.5 text-xs text-slate-500">{subtitle}</div>}
+        <div className="text-sm font-medium text-ink">{title}</div>
+        {subtitle && <div className="mt-0.5 text-xs text-sub">{subtitle}</div>}
       </div>
       {action}
     </div>
@@ -30,12 +30,12 @@ export function CardHeader({ title, subtitle, action }: { title: ReactNode; subt
 export function StatCard({ label, value, hint, icon }: { label: ReactNode; value: ReactNode; hint?: ReactNode; icon?: ReactNode }) {
   return (
     <Card className="!p-5">
-      <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+      <div className="flex items-center justify-between text-xs font-medium text-sub">
         {label}
         {icon}
       </div>
-      <div className="mt-2 text-2xl font-semibold tabular-nums text-ink">{value}</div>
-      {hint && <div className="mt-0.5 text-xs text-slate-500">{hint}</div>}
+      <div className="mt-2 text-2xl font-medium tabular-nums text-ink">{value}</div>
+      {hint && <div className="mt-0.5 text-xs text-sub">{hint}</div>}
     </Card>
   );
 }
@@ -65,7 +65,7 @@ export function StandardTable<T>(
   return (
     <div className="w-full overflow-x-auto rounded-xl border border-border bg-panel">
       <table className="w-full text-left text-sm text-ink">
-        <thead className="border-b border-border bg-muted text-xs font-semibold uppercase text-slate-500">
+        <thead className="border-b border-border bg-[#fafafa] text-xs font-medium text-sub">
           <tr>
             {heads.map((h, i) => (
               <th key={i} className={`px-6 py-3 ${al(h.align)} ${h.className ?? ""}`}>
@@ -77,7 +77,7 @@ export function StandardTable<T>(
         <tbody className="divide-y divide-border">
           {count === 0 ? (
             <tr>
-              <td colSpan={heads.length} className="px-6 py-10 text-center text-sm text-slate-500">
+              <td colSpan={heads.length} className="px-6 py-10 text-center text-sm text-sub">
                 {props.empty ?? "Kayıt yok."}
               </td>
             </tr>
@@ -137,10 +137,10 @@ export function UnderlineTabs({ tabs, value, onChange, className = "" }: { tabs:
             key={tab.key ?? idx}
             type="button"
             onClick={() => set(idx)}
-            className={`relative flex items-center gap-1.5 whitespace-nowrap pb-3 text-sm font-medium transition-colors ${active === idx ? "text-accent" : "text-slate-500 hover:text-ink"}`}
+            className={`relative flex items-center gap-1.5 whitespace-nowrap pb-3 text-sm font-medium transition-colors ${active === idx ? "text-accent" : "text-sub hover:text-ink"}`}
           >
             {tab.label}
-            {tab.count != null && <span className={`rounded px-1.5 text-[11px] font-semibold ${active === idx ? "bg-accent/10 text-accent" : "bg-muted text-slate-500"}`}>{tab.count}</span>}
+            {tab.count != null && <span className={`rounded px-1.5 text-[11px] font-medium ${active === idx ? "bg-accent/10 text-accent" : "bg-muted text-sub"}`}>{tab.count}</span>}
             {active === idx && <span className="absolute bottom-0 left-0 h-[2px] w-full bg-accent" />}
           </button>
         ))}
@@ -215,9 +215,9 @@ export function Drawer({
           <div className="flex min-w-0 items-center gap-3">
             {icon}
             <div className="min-w-0">
-              {eyebrow && <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{eyebrow}</div>}
-              <h3 className="text-lg font-semibold text-ink">{title}</h3>
-              {subtitle && <div className="mt-0.5 text-xs text-slate-500">{subtitle}</div>}
+              {eyebrow && <div className="text-[11px] font-medium uppercase tracking-wide text-sub">{eyebrow}</div>}
+              <h3 className="text-lg font-medium text-ink">{title}</h3>
+              {subtitle && <div className="mt-0.5 text-xs text-sub">{subtitle}</div>}
             </div>
           </div>
         )}
@@ -258,12 +258,12 @@ export function PageHeader({ title, description, actions, back, badge }: { title
   return (
     <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-center">
       <div className="min-w-0">
-        {back && <div className="mb-1 text-xs text-slate-500">{back}</div>}
+        {back && <div className="mb-1 text-xs text-sub">{back}</div>}
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
-          {badge && <span className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">{badge}</span>}
+          <h1 className="text-2xl font-medium text-ink">{title}</h1>
+          {badge && <span className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">{badge}</span>}
         </div>
-        {description && <div className="mt-1 max-w-3xl text-sm text-slate-500">{description}</div>}
+        {description && <div className="mt-1 max-w-3xl text-sm text-sub">{description}</div>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>

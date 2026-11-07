@@ -44,7 +44,7 @@ export const DEFAULT_PACKAGES: ProposalPackage[] = [
   },
 ];
 
-const ACCENT = "#5d16ff";
+const ACCENT = "#4f00ff";
 const INK = "#1e1b29";
 const MUTED = "#6b6478";
 const LINE = "#e7e3f3";

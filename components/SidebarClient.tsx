@@ -54,27 +54,27 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
 
   const linkClass = (active: boolean) =>
     `flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] transition-colors ${
-      active ? "bg-muted font-semibold text-ink" : "text-ink/70 hover:bg-muted/70 hover:text-ink"
+      active ? "bg-muted font-medium text-ink" : "text-ink/70 hover:bg-muted/70 hover:text-ink"
     }`;
 
   const content = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-4 py-4 shrink-0">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-extrabold">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-medium">
             E
           </span>
-          <span className="font-extrabold text-lg tracking-tight">Epicsem</span>
+          <span className="font-medium text-lg tracking-tight">Epicsem</span>
         </Link>
       </div>
 
       {/* Gezin / Sohbet sekmeleri */}
       <div className="mx-3 mb-2 grid grid-cols-2 border-b border-border text-[13px]">
-        <Link href="/dashboard" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${!chatActive ? "border-ink font-semibold text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+        <Link href="/dashboard" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${!chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
           {TOOL_ICONS.overview}
           Gezin
         </Link>
-        <Link href="/assistant" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${chatActive ? "border-ink font-semibold text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+        <Link href="/assistant" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
           {TOOL_ICONS.chat}
           Sohbet
         </Link>
@@ -108,7 +108,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
                     >
                       <span className={active ? "text-ink" : "text-ink/55"}>{TOOL_ICONS[item.icon]}</span>
                       <span className="truncate">{item.label}</span>
-                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[9px] font-bold tracking-wide text-accent">{item.badge}</span>}
+                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[9px] font-medium tracking-wide text-accent">{item.badge}</span>}
                     </Link>
                   );
                 })}
@@ -154,10 +154,10 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
     <>
       <div className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-panel/90 backdrop-blur px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-extrabold">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-medium">
             E
           </span>
-          <span className="font-extrabold text-lg tracking-tight">Epicsem</span>
+          <span className="font-medium text-lg tracking-tight">Epicsem</span>
         </Link>
         <button
           type="button"

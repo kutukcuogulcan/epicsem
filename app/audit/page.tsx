@@ -186,7 +186,7 @@ export default function AuditPage() {
 
       <form
         onSubmit={runAudit}
-        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
+        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>
@@ -201,7 +201,7 @@ export default function AuditPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "Taranıyor…" : "Denetimi başlat →"}
         </button>
@@ -259,7 +259,7 @@ export default function AuditPage() {
           </div>
 
           <div className="card">
-            <h2 className="font-bold mb-3">AI crawler erişimi</h2>
+            <h2 className="font-medium mb-3">AI crawler erişimi</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               {result.meta.aiBotAccess.map((b) => (
                 <div key={b.bot} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
@@ -273,7 +273,7 @@ export default function AuditPage() {
           {result.fixes.length > 0 && (
             <div className="space-y-3">
               <div>
-                <h2 className="font-bold">Düzeltmeler</h2>
+                <h2 className="font-medium">Düzeltmeler</h2>
                 <p className="text-sm text-ink/50">
                   Bu sayfanın kendi içeriğinden üretildi — hiçbir şey uydurulmadı. Yayınlamadan önce gözden geçirip yapıştırın.
                 </p>
@@ -288,7 +288,7 @@ export default function AuditPage() {
 
           {groupedIssues.map((group) => (
             <div key={group.cat} className="space-y-3">
-              <h2 className="font-bold">{CATEGORY_LABEL[group.cat]}</h2>
+              <h2 className="font-medium">{CATEGORY_LABEL[group.cat]}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {group.issues.map((issue, i) => (
                   <IssueCard key={i} issue={issue} />

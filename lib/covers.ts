@@ -20,7 +20,7 @@ async function loadFonts() {
 }
 
 const PALETTES = [
-  ["#5d16ff", "#9b6bff"],
+  ["#4f00ff", "#9b6bff"],
   ["#0f766e", "#14b8a6"],
   ["#1d4ed8", "#60a5fa"],
   ["#be123c", "#fb7185"],

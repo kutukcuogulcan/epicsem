@@ -149,7 +149,7 @@ export default function QuickGeoAnalyze({
     <div className="space-y-4">
       <form
         onSubmit={start}
-        className="flex flex-col sm:flex-row gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
+        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
           <span className="text-ink/30">🌐</span>
@@ -165,7 +165,7 @@ export default function QuickGeoAnalyze({
           <button
             type="button"
             onClick={onOpenSettings}
-            className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-ink/60 hover:border-ink/30 hover:text-ink"
+            className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
             title="Marka, rakipler, promptlar ve motorlar"
           >
             ⚙ Ayarlar
@@ -173,7 +173,7 @@ export default function QuickGeoAnalyze({
           <button
             type="submit"
             disabled={active || !url.trim()}
-            className="rounded-xl bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-accent/25 hover:opacity-90 disabled:opacity-50"
+            className="rounded-[10px] bg-accent px-6 py-2 text-sm font-medium text-white shadow-md shadow-accent/25 hover:opacity-90 disabled:opacity-50"
           >
             {active ? "Analiz ediliyor…" : "Analizi başlat →"}
           </button>
@@ -181,7 +181,7 @@ export default function QuickGeoAnalyze({
       </form>
 
       {(sessionId != null || error) && (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-4">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
           <ol className="grid grid-cols-1 sm:grid-cols-5 gap-2">
             {STEPS.map((st0) => {
               const st = st0.key === "run" && runLabel ? { ...st0, label: runLabel } : st0;
@@ -202,7 +202,7 @@ export default function QuickGeoAnalyze({
             })}
           </ol>
           {error && <p className="mt-3 text-sm text-danger">{error} — adresi kontrol edip tekrar dene.</p>}
-          {done && <p className="mt-3 text-sm text-ink/60">Bitti — sonuçlar yukarıdaki panoya işlendi. Marka, rakip ve promptları <button type="button" onClick={onOpenSettings} className="font-semibold text-accent hover:underline">Ayarlar</button>'dan değiştirebilirsin.</p>}
+          {done && <p className="mt-3 text-sm text-ink/60">Bitti — sonuçlar yukarıdaki panoya işlendi. Marka, rakip ve promptları <button type="button" onClick={onOpenSettings} className="font-medium text-accent hover:underline">Ayarlar</button>'dan değiştirebilirsin.</p>}
         </div>
       )}
     </div>

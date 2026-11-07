@@ -54,7 +54,7 @@ export default function BrandMonitorsPage() {
         title="LLM Marka Monitörleri"
         description="Markanın ChatGPT, Claude, Gemini, Perplexity ve diğer AI cevaplarında nasıl göründüğünü izle."
         actions={
-          <Link href="/geo" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+          <Link href="/geo" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
             <span className="text-base leading-none">+</span> Yeni monitör
           </Link>
         }
@@ -62,7 +62,7 @@ export default function BrandMonitorsPage() {
 
       {err && <div className="rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{err}</div>}
 
-      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <svg viewBox="0 0 20 20" className="h-4 w-4 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <circle cx="9" cy="9" r="5.5" />
@@ -72,7 +72,7 @@ export default function BrandMonitorsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+            <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
               <th className="px-4 py-2.5 font-medium">Monitör</th>
               <th className="py-2.5 pr-4 font-medium">Durum</th>
               <th className="py-2.5 pr-4 text-center font-medium">Promptlar</th>
@@ -91,9 +91,9 @@ export default function BrandMonitorsPage() {
             ) : shown.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center">
-                  <div className="text-sm font-semibold">Henüz monitör yok</div>
+                  <div className="text-sm font-medium">Henüz monitör yok</div>
                   <p className="mt-1 text-xs text-ink/50">Bir marka için GEO testi çalıştırdığında burada monitör olarak görünür.</p>
-                  <Link href="/geo" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white">
+                  <Link href="/geo" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white">
                     İlk monitörü oluştur →
                   </Link>
                 </td>
@@ -107,8 +107,8 @@ export default function BrandMonitorsPage() {
                       <div className="flex items-center gap-2.5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${r.brandDomain}&sz=32`} alt="" className="h-4 w-4 rounded" />
-                        <span className="font-semibold">{r.brandName} monitörü</span>
-                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">aktif proje</span>}
+                        <span className="font-medium">{r.brandName} monitörü</span>
+                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">aktif proje</span>}
                         <span className="hidden text-xs text-ink/40 sm:inline">{r.brandDomain}</span>
                       </div>
                     </td>

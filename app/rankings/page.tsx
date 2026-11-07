@@ -144,16 +144,16 @@ export default function RankingsPage() {
         body="Takip ettiğin kelimelerde sitenin Google'daki sırasını her gün kontrol eder; yükselen ve düşen kelimeleri gösterir. AI Overview çıkan aramaları da işaretler."
       >
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setOpen(true)} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">+ Kelime ekle</button>
-          <button type="button" onClick={checkNow} disabled={!serpAvailable || !list.length || busy === "check"} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+          <button type="button" onClick={() => setOpen(true)} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">+ Kelime ekle</button>
+          <button type="button" onClick={checkNow} disabled={!serpAvailable || !list.length || busy === "check"} className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40">
             {busy === "check" ? "Kontrol ediliyor…" : "Şimdi kontrol et"}
           </button>
           {serpbear && (
             <>
-              <button type="button" onClick={() => serpbearAction("import")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+              <button type="button" onClick={() => serpbearAction("import")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40">
                 {busy === "sb-import" ? "Aktarılıyor…" : "SerpBear'dan aktar"}
               </button>
-              <button type="button" onClick={() => serpbearAction("refresh")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+              <button type="button" onClick={() => serpbearAction("refresh")} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40">
                 {busy === "sb-refresh" ? "İsteniyor…" : "SerpBear'da yenile"}
               </button>
             </>
@@ -163,7 +163,7 @@ export default function RankingsPage() {
 
       {!serpAvailable && !serpbear && (
         <div className="rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm leading-6 text-ink/70">
-          <strong>Sıralama verisi için bir kaynak bağla.</strong> İki seçenek var: ücretsiz planı olan <strong>SerpApi</strong> (her kelime kontrolü 1 arama) ya da kendi sunucundaki açık kaynak <strong>SerpBear</strong>. <Link href="/integrations" className="font-semibold text-accent">Entegrasyonlar</Link>&apos;dan bağlayınca kontroller günlük otomatik çalışır. Kelimeleri şimdiden ekleyebilirsin.
+          <strong>Sıralama verisi için bir kaynak bağla.</strong> İki seçenek var: ücretsiz planı olan <strong>SerpApi</strong> (her kelime kontrolü 1 arama) ya da kendi sunucundaki açık kaynak <strong>SerpBear</strong>. <Link href="/integrations" className="font-medium text-accent">Entegrasyonlar</Link>&apos;dan bağlayınca kontroller günlük otomatik çalışır. Kelimeleri şimdiden ekleyebilirsin.
         </div>
       )}
       {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>{msg.text}</div>}
@@ -176,9 +176,9 @@ export default function RankingsPage() {
           ["Ort. sıra", avg !== null ? String(avg) : "—"],
           ["Yükselen / düşen", `${up} / ${down}`],
         ].map(([l, v]) => (
-          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
+          <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-semibold tabular-nums">{v}</div>
+            <div className="text-2xl font-medium tabular-nums">{v}</div>
           </div>
         ))}
       </div>
@@ -186,7 +186,7 @@ export default function RankingsPage() {
       {domains.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           {["all", ...domains].map((d) => (
-            <button key={d} type="button" onClick={() => setDomainFilter(d)} className={`rounded-full px-3 py-1 text-xs font-semibold ${domainFilter === d ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
+            <button key={d} type="button" onClick={() => setDomainFilter(d)} className={`rounded-full px-3 py-1 text-xs font-medium ${domainFilter === d ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
               {d === "all" ? "Tüm siteler" : d}
             </button>
           ))}
@@ -194,22 +194,22 @@ export default function RankingsPage() {
       )}
 
       {kws && list.length === 0 ? (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center">
-          <div className="font-bold">Henüz takip edilen kelime yok</div>
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-8 text-center">
+          <div className="font-medium">Henüz takip edilen kelime yok</div>
           <p className="mt-1 text-sm text-ink/55">
-            Kelimeleri buradan ekle ya da <Link href="/keywords" className="font-semibold text-accent">Anahtar Kelime Bulucu</Link>&apos;dan seçip &quot;Sıralama takibine ekle&quot;.
+            Kelimeleri buradan ekle ya da <Link href="/keywords" className="font-medium text-accent">Anahtar Kelime Bulucu</Link>&apos;dan seçip &quot;Sıralama takibine ekle&quot;.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                <th className="px-5 py-2 font-semibold">Kelime</th>
-                <th className="py-2 pr-3 font-semibold">Sıra</th>
-                <th className="py-2 pr-3 font-semibold">Değişim</th>
-                <th className="hidden py-2 pr-3 font-semibold md:table-cell">Son 60 gün</th>
-                <th className="hidden py-2 pr-3 font-semibold lg:table-cell">Sıralanan sayfa</th>
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                <th className="px-5 py-2 font-medium">Kelime</th>
+                <th className="py-2 pr-3 font-medium">Sıra</th>
+                <th className="py-2 pr-3 font-medium">Değişim</th>
+                <th className="hidden py-2 pr-3 font-medium md:table-cell">Son 60 gün</th>
+                <th className="hidden py-2 pr-3 font-medium lg:table-cell">Sıralanan sayfa</th>
                 <th className="py-2 pr-4" />
               </tr>
             </thead>
@@ -225,9 +225,9 @@ export default function RankingsPage() {
                       <div className="text-[10px] text-ink/45">{k.domain} · {k.gl.toUpperCase()}{k.source === "serpbear" ? " · SerpBear" : ""}{k.lastCheckedAt ? ` · ${new Date(k.lastCheckedAt).toLocaleDateString("tr-TR")}` : " · henüz kontrol edilmedi"}</div>
                     </td>
                     <td className="py-2.5 pr-3">
-                      <span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${posTone(k.lastPosition)}`}>{k.lastCheckedAt ? (k.lastPosition ?? "100+") : "—"}</span>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${posTone(k.lastPosition)}`}>{k.lastCheckedAt ? (k.lastPosition ?? "100+") : "—"}</span>
                     </td>
-                    <td className="py-2.5 pr-3 text-xs font-bold tabular-nums">
+                    <td className="py-2.5 pr-3 text-xs font-medium tabular-nums">
                       {delta === null || delta === 0 ? <span className="text-ink/30">—</span> : delta > 0 ? <span className="text-seo">▲ {delta}</span> : <span className="text-danger">▼ {-delta}</span>}
                     </td>
                     <td className="hidden py-2.5 pr-3 md:table-cell">
@@ -236,7 +236,7 @@ export default function RankingsPage() {
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={h}>
                               <YAxis reversed domain={[1, "dataMax"]} hide />
-                              <Line type="monotone" dataKey="p" stroke="#5d16ff" strokeWidth={2} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="p" stroke="#4f00ff" strokeWidth={2} dot={false} isAnimationActive={false} />
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
@@ -248,7 +248,7 @@ export default function RankingsPage() {
                       {k.lastUrl ? <a href={k.lastUrl} target="_blank" rel="noreferrer" className="hover:text-accent">{k.lastUrl.replace(/^https?:\/\/(www\.)?/, "")}</a> : "—"}
                     </td>
                     <td className="whitespace-nowrap py-2.5 pr-4 text-right text-xs">
-                      <Link href={`/keywords?q=${encodeURIComponent(k.keyword)}`} className="font-semibold text-ink/55 hover:text-accent">Benzerleri</Link>
+                      <Link href={`/keywords?q=${encodeURIComponent(k.keyword)}`} className="font-medium text-ink/55 hover:text-accent">Benzerleri</Link>
                       <button type="button" onClick={() => remove(k.id)} className="ml-3 text-danger/60 hover:text-danger">Sil</button>
                     </td>
                   </tr>
@@ -261,22 +261,22 @@ export default function RankingsPage() {
 
       {open && (
         <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={add} header={<div className="min-w-0">
-              <div className="font-bold">Takibe kelime ekle</div>
+              <div className="font-medium">Takibe kelime ekle</div>
 </div>}>
             <div className="flex-1 space-y-4 px-6 py-5">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Site</label>
+                <label className="text-xs font-medium uppercase tracking-wide text-ink/45">Site</label>
                 <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siten.com" className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm outline-none focus:border-accent" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Kelimeler (her satıra bir tane)</label>
+                <label className="text-xs font-medium uppercase tracking-wide text-ink/45">Kelimeler (her satıra bir tane)</label>
                 <textarea value={text} onChange={(e) => setText(e.target.value)} rows={10} placeholder={"abiye elbise\nnişan elbisesi modelleri"} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm outline-none focus:border-accent" />
               </div>
               <p className="text-[11px] text-ink/50">Her kelime günde bir kez, Türkiye Google sonuçlarında ilk 100 içinde kontrol edilir (1 SerpApi araması).</p>
             </div>
             <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
-              <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/60 hover:bg-muted">Vazgeç</button>
-              <button disabled={busy === "add"} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white disabled:opacity-50">{busy === "add" ? "Ekleniyor…" : "Ekle"}</button>
+              <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-ink/60 hover:bg-muted">Vazgeç</button>
+              <button disabled={busy === "add"} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50">{busy === "add" ? "Ekleniyor…" : "Ekle"}</button>
             </div>
           </Drawer>
       )}

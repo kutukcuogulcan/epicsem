@@ -129,7 +129,7 @@ export default function LocalToolsPage() {
       <LocalOverview refreshKey={rk} />
 
       <div className="card space-y-3">
-        <h2 className="font-bold text-sm">İşletme bilgisi</h2>
+        <h2 className="font-medium text-sm">İşletme bilgisi</h2>
         <div className="grid grid-cols-2 gap-2">
           <input
             value={brandName}
@@ -147,7 +147,7 @@ export default function LocalToolsPage() {
       </div>
 
       <div className="card space-y-3">
-        <h2 className="font-bold">Google Business Profile gönderisi</h2>
+        <h2 className="font-medium">Google Business Profile gönderisi</h2>
         <textarea
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
@@ -159,7 +159,7 @@ export default function LocalToolsPage() {
           type="button"
           disabled={!brandReady || !topic.trim() || gbp.loading}
           onClick={() => gbp.run({ kind: "gbp-post", brandName, brandDomain, topic })}
-          className="text-sm font-semibold rounded-lg bg-accent text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
+          className="text-sm font-medium rounded-lg bg-accent text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
         >
           {gbp.loading ? "Üretiliyor…" : "Taslak üret"}
         </button>
@@ -178,7 +178,7 @@ export default function LocalToolsPage() {
       </div>
 
       <div id="reviews" className={`card space-y-3 scroll-mt-6 ${tabParam === "reviews" ? "ring-2 ring-accent/40" : ""}`}>
-        <h2 className="font-bold">Yorum yanıtı</h2>
+        <h2 className="font-medium">Yorum yanıtı</h2>
         <textarea
           value={reviewText}
           onChange={(e) => setReviewText(e.target.value)}
@@ -203,7 +203,7 @@ export default function LocalToolsPage() {
           type="button"
           disabled={!brandReady || !reviewText.trim() || reply.loading}
           onClick={() => reply.run({ kind: "review-reply", brandName, brandDomain, reviewText, rating: rating || undefined })}
-          className="text-sm font-semibold rounded-lg bg-accent text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
+          className="text-sm font-medium rounded-lg bg-accent text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
         >
           {reply.loading ? "Üretiliyor…" : "Yanıt taslağı üret"}
         </button>

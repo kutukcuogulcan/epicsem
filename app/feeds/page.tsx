@@ -165,7 +165,7 @@ export default function FeedsPage() {
   }
 
   const input = "w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm outline-none focus:border-accent";
-  const label = "text-xs font-bold uppercase tracking-wide text-ink/45";
+  const label = "text-xs font-medium uppercase tracking-wide text-ink/45";
 
   return (
     <div className="space-y-8">
@@ -174,7 +174,7 @@ export default function FeedsPage() {
         title="Beslemeler"
         body="Autoblog'un konu kaynakları. Bir besleme kur, istediğin kadar autoblog'da kullan. Beslemeler kendini yeniler, AI kullanmaz ve kredi harcamaz."
       >
-        <button type="button" onClick={() => setPicker(true)} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+        <button type="button" onClick={() => setPicker(true)} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90">
           + Yeni besleme
         </button>
       </ToolPageHeader>
@@ -184,9 +184,9 @@ export default function FeedsPage() {
       {feeds && feeds.length === 0 && (
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {KINDS.map((k) => (
-            <button key={k.id} type="button" onClick={() => startNew(k.id)} className="group rounded-xl border border-border bg-panel shadow-sm p-5 text-left transition hover:border-accent hover:shadow-md">
-              <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-lg font-bold ${k.color}`}>{k.icon}</div>
-              <div className="font-bold group-hover:text-accent">{k.title}</div>
+            <button key={k.id} type="button" onClick={() => startNew(k.id)} className="group rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 text-left transition hover:border-accent hover:shadow-md">
+              <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-lg font-medium ${k.color}`}>{k.icon}</div>
+              <div className="font-medium group-hover:text-accent">{k.title}</div>
               <p className="mt-1 text-sm text-ink/55">{k.body}</p>
             </button>
           ))}
@@ -194,15 +194,15 @@ export default function FeedsPage() {
       )}
 
       {feeds && feeds.length > 0 && (
-        <section className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                <th className="px-5 py-3 font-semibold">Besleme</th>
-                <th className="px-3 py-3 font-semibold">Tür</th>
-                <th className="px-3 py-3 font-semibold">Konular</th>
-                <th className="hidden px-3 py-3 font-semibold md:table-cell">Kullanan autoblog</th>
-                <th className="hidden px-3 py-3 font-semibold sm:table-cell">Son yenileme</th>
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                <th className="px-5 py-3 font-medium">Besleme</th>
+                <th className="px-3 py-3 font-medium">Tür</th>
+                <th className="px-3 py-3 font-medium">Konular</th>
+                <th className="hidden px-3 py-3 font-medium md:table-cell">Kullanan autoblog</th>
+                <th className="hidden px-3 py-3 font-medium sm:table-cell">Son yenileme</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -210,22 +210,22 @@ export default function FeedsPage() {
                 <tr key={f.id} onClick={() => openDetail(f.id)} className="cursor-pointer hover:bg-muted/40">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${KIND[f.kind].color}`}>{KIND[f.kind].icon}</span>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-medium ${KIND[f.kind].color}`}>{KIND[f.kind].icon}</span>
                       <div className="min-w-0">
-                        <div className="truncate font-semibold">{f.name}</div>
+                        <div className="truncate font-medium">{f.name}</div>
                         <div className="truncate text-[11px] text-ink/45">{f.config.siteUrl || f.config.query || f.config.url || ""}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-ink/60">{KIND[f.kind].title.replace(" beslemesi", "")}</td>
                   <td className="px-3 py-3">
-                    <div className="text-xs font-semibold tabular-nums">{f.total - f.done} yeni <span className="font-normal text-ink/45">/ {f.total}</span></div>
+                    <div className="text-xs font-medium tabular-nums">{f.total - f.done} yeni <span className="font-normal text-ink/45">/ {f.total}</span></div>
                     <div className="mt-1 h-1 w-24 overflow-hidden rounded-full bg-muted">
                       <div className="h-full bg-accent" style={{ width: `${f.total ? (f.done / f.total) * 100 : 0}%` }} />
                     </div>
                   </td>
                   <td className="hidden px-3 py-3 text-xs md:table-cell">
-                    {f.usedBy.length ? f.usedBy.map((c) => c.name).join(", ") : <span className="rounded-md bg-warn/10 px-2 py-0.5 font-semibold text-warn">Kullanılmıyor</span>}
+                    {f.usedBy.length ? f.usedBy.map((c) => c.name).join(", ") : <span className="rounded-md bg-warn/10 px-2 py-0.5 font-medium text-warn">Kullanılmıyor</span>}
                   </td>
                   <td className="hidden px-3 py-3 text-xs text-ink/55 sm:table-cell">
                     {f.lastError ? <span className="text-danger" title={f.lastError}>Hata</span> : ago(f.refreshedAt)}
@@ -243,7 +243,7 @@ export default function FeedsPage() {
           <div className="relative w-full max-w-lg rounded-2xl bg-panel p-5 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <div className="font-bold">Besleme oluştur</div>
+                <div className="font-medium">Besleme oluştur</div>
                 <div className="text-xs text-ink/50">Autoblog içerik için nereden bilgi alsın?</div>
               </div>
               <button type="button" onClick={() => setPicker(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 hover:bg-muted">✕</button>
@@ -251,9 +251,9 @@ export default function FeedsPage() {
             <div className="space-y-2">
               {KINDS.map((k) => (
                 <button key={k.id} type="button" onClick={() => startNew(k.id)} className="flex w-full items-start gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent hover:bg-accent/5">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-bold ${k.color}`}>{k.icon}</span>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-medium ${k.color}`}>{k.icon}</span>
                   <span>
-                    <span className="block text-sm font-bold">{k.title}</span>
+                    <span className="block text-sm font-medium">{k.title}</span>
                     <span className="block text-xs text-ink/55">{k.body}</span>
                   </span>
                 </button>
@@ -266,9 +266,9 @@ export default function FeedsPage() {
       {form && (
         <Drawer isOpen onClose={() => setForm(null)} panelClassName="flex h-full w-screen max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
               <div className="flex items-center gap-3">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-lg font-bold ${KIND[form.kind].color}`}>{KIND[form.kind].icon}</span>
+                <span className={`flex h-9 w-9 items-center justify-center rounded-lg font-medium ${KIND[form.kind].color}`}>{KIND[form.kind].icon}</span>
                 <div>
-                  <div className="font-bold">{form.id ? "Beslemeyi düzenle" : KIND[form.kind].title}</div>
+                  <div className="font-medium">{form.id ? "Beslemeyi düzenle" : KIND[form.kind].title}</div>
                   <div className="text-xs text-ink/50">{KIND[form.kind].body}</div>
                 </div>
               </div>
@@ -338,8 +338,8 @@ export default function FeedsPage() {
               {formError && <p className="text-sm text-danger">{formError}</p>}
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
-              <button type="button" onClick={() => setForm(null)} className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/60 hover:bg-muted">Vazgeç</button>
-              <button type="submit" disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+              <button type="button" onClick={() => setForm(null)} className="rounded-xl px-4 py-2 text-sm font-medium text-ink/60 hover:bg-muted">Vazgeç</button>
+              <button type="submit" disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
                 {saving ? "Besleme okunuyor…" : form.id ? "Kaydet ve yenile" : "Oluştur"}
               </button>
             </div>
@@ -350,18 +350,18 @@ export default function FeedsPage() {
         <Drawer isOpen onClose={() => setDetail(null)} panelClassName="flex h-full w-screen max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${KIND[detail.kind].color}`}>{KIND[detail.kind].icon}</span>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-xl font-medium ${KIND[detail.kind].color}`}>{KIND[detail.kind].icon}</span>
                   <div>
-                    <div className="font-bold">{detail.name}</div>
+                    <div className="font-medium">{detail.name}</div>
                     <div className="text-xs text-ink/50">{KIND[detail.kind].title} · son yenileme {ago(detail.refreshedAt)}</div>
                   </div>
                 </div>
                 
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                <button onClick={() => refreshNow(detail.id)} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 font-bold text-white disabled:opacity-50">{busy ? "Yenileniyor…" : "Şimdi yenile"}</button>
-                <button onClick={() => startEdit(detail)} className="rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-muted">Düzenle</button>
-                <Link href={`/campaigns?feed=${detail.id}`} className="rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-muted">Bu beslemeyle autoblog kur</Link>
+                <button onClick={() => refreshNow(detail.id)} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 font-medium text-white disabled:opacity-50">{busy ? "Yenileniyor…" : "Şimdi yenile"}</button>
+                <button onClick={() => startEdit(detail)} className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted">Düzenle</button>
+                <Link href={`/campaigns?feed=${detail.id}`} className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted">Bu beslemeyle autoblog kur</Link>
                 <button onClick={() => remove(detail)} className="ml-auto px-1 text-danger/70 hover:text-danger">Sil</button>
               </div>
               {detail.lastError && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{detail.lastError}</p>}
@@ -375,10 +375,10 @@ export default function FeedsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-panel">
-                    <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
-                      <th className="px-6 py-2 font-semibold">{detail.kind === "keyword" ? "Anahtar kelime" : "Başlık"}</th>
-                      <th className="px-3 py-2 font-semibold">Kaynak</th>
-                      <th className="px-3 py-2 font-semibold">Durum</th>
+                    <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
+                      <th className="px-6 py-2 font-medium">{detail.kind === "keyword" ? "Anahtar kelime" : "Başlık"}</th>
+                      <th className="px-3 py-2 font-medium">Kaynak</th>
+                      <th className="px-3 py-2 font-medium">Durum</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">

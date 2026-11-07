@@ -22,7 +22,7 @@ export interface RunSummary {
 const SEV_STYLE: Record<Severity, { dot: string; badge: string; color: string }> = {
   error: { dot: "bg-danger", badge: "bg-danger/10 text-danger", color: "#ef4444" },
   warning: { dot: "bg-warn", badge: "bg-warn/10 text-warn", color: "#f59e0b" },
-  notice: { dot: "bg-accent", badge: "bg-accent/10 text-accent", color: "#5d16ff" },
+  notice: { dot: "bg-accent", badge: "bg-accent/10 text-accent", color: "#4f00ff" },
 };
 const SEV_ORDER: Severity[] = ["error", "warning", "notice"];
 const STATUS_COLOR: Record<string, string> = { "2xx": "#16a34a", "3xx": "#f59e0b", "4xx": "#ef4444", "5xx": "#991b1b", hata: "#64748b", "?": "#cbd5e1" };
@@ -36,9 +36,9 @@ function scoreColor(n: number) {
 
 function Card({ title, right, children, className = "" }: { title: string; right?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl border border-border bg-panel shadow-sm ${className}`}>
+    <div className={`rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] ${className}`}>
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <span className="text-sm font-bold">{title}</span>
+        <span className="text-sm font-medium">{title}</span>
         {right}
       </div>
       {children}
@@ -50,7 +50,7 @@ function Delta({ now, prev, goodWhen = "down" }: { now: number; prev: number | n
   if (prev == null || now === prev) return null;
   const d = now - prev;
   const good = goodWhen === "down" ? d < 0 : d > 0;
-  return <span className={`text-xs font-semibold tabular-nums ${good ? "text-seo" : "text-danger"}`}>{d > 0 ? `+${d}` : d}</span>;
+  return <span className={`text-xs font-medium tabular-nums ${good ? "text-seo" : "text-danger"}`}>{d > 0 ? `+${d}` : d}</span>;
 }
 
 /**
@@ -109,7 +109,7 @@ export default function SiteAuditReport({
       { k: "Sağlıklı", v: healthy, c: "#16a34a" },
       { k: "Sorunlu", v: withIssues, c: "#f59e0b" },
       { k: "Yönlendirme", v: redirects, c: "#94a3b8" },
-      { k: "İndekslenemez", v: blocked, c: "#5d16ff" },
+      { k: "İndekslenemez", v: blocked, c: "#4f00ff" },
       { k: "Kırık", v: broken, c: "#ef4444" },
     ];
 
@@ -175,8 +175,8 @@ export default function SiteAuditReport({
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(site(result.filename))}&sz=64`} alt="" className="h-6 w-6 rounded" />
-            <h2 className="truncate text-xl font-semibold">{site(result.filename)}</h2>
-            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[10px] font-bold text-warn">kısmi</span>}
+            <h2 className="truncate text-xl font-medium">{site(result.filename)}</h2>
+            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn">kısmi</span>}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/50">
             <span>{rows.length} sayfa tarandı</span>
@@ -185,7 +185,7 @@ export default function SiteAuditReport({
               <select
                 value={currentId ?? ""}
                 onChange={(e) => onSelectRun(Number(e.target.value))}
-                className="rounded-lg border border-border bg-panel px-2 py-1 text-xs font-semibold text-ink/70 outline-none"
+                className="rounded-lg border border-border bg-panel px-2 py-1 text-xs font-medium text-ink/70 outline-none"
               >
                 {runs.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -231,7 +231,7 @@ export default function SiteAuditReport({
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-semibold tabular-nums" style={{ color: scoreColor(data.health) }}>{data.health}</span>
+                    <span className="text-3xl font-medium tabular-nums" style={{ color: scoreColor(data.health) }}>{data.health}</span>
                     <Delta now={data.health} prev={data.prevHealth} goodWhen="up" />
                   </div>
                 </div>
@@ -272,15 +272,15 @@ export default function SiteAuditReport({
                         <span className="h-2.5 w-2.5 rounded-sm" style={{ background: x.c }} />
                         {x.k}
                       </span>
-                      <span className="font-bold tabular-nums">{x.v}</span>
+                      <span className="font-medium tabular-nums">{x.v}</span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
-                  <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-semibold tabular-nums">{data.indexable}</div></div>
-                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-semibold tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-semibold tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-semibold tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-medium tabular-nums">{data.indexable}</div></div>
+                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-medium tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-medium tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-medium tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
                 </div>
               </div>
             </Card>
@@ -299,11 +299,11 @@ export default function SiteAuditReport({
                   >
                     <span className="flex items-center gap-2.5">
                       <span className={`h-2.5 w-2.5 rounded-full ${SEV_STYLE[k].dot}`} />
-                      <span className="text-sm font-semibold">{SEVERITY_LABEL[k]}</span>
+                      <span className="text-sm font-medium">{SEVERITY_LABEL[k]}</span>
                       <span className="text-xs text-ink/40">{data.sevTypes[k]} tür</span>
                     </span>
                     <span className="flex items-baseline gap-2">
-                      <span className="text-xl font-semibold tabular-nums" style={{ color: data.sev[k] ? SEV_STYLE[k].color : undefined }}>{data.sev[k]}</span>
+                      <span className="text-xl font-medium tabular-nums" style={{ color: data.sev[k] ? SEV_STYLE[k].color : undefined }}>{data.sev[k]}</span>
                       <Delta now={data.sev[k]} prev={data.prevSev?.[k]} />
                     </span>
                   </button>
@@ -315,9 +315,9 @@ export default function SiteAuditReport({
           {/* 2. satır: tematik raporlar */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             {data.themes.map((t) => (
-              <div key={t.key} className="rounded-xl border border-border bg-panel shadow-sm p-4">
-                <div className="text-xs font-semibold text-ink/50">{t.label}</div>
-                <div className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: scoreColor(t.score) }}>%{t.score}</div>
+              <div key={t.key} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
+                <div className="text-xs font-medium text-ink/50">{t.label}</div>
+                <div className="mt-1 text-2xl font-medium tabular-nums" style={{ color: scoreColor(t.score) }}>%{t.score}</div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${t.score}%`, background: scoreColor(t.score) }} />
                 </div>
@@ -329,10 +329,10 @@ export default function SiteAuditReport({
           {/* öneriler: öncelik sırasına göre yapılacaklar */}
           <Card
             title="Öneriler — önce bunları düzelt"
-            right={<button type="button" onClick={() => setTab("issues")} className="text-xs font-semibold text-accent hover:underline">Tüm sorunlar →</button>}
+            right={<button type="button" onClick={() => setTab("issues")} className="text-xs font-medium text-accent hover:underline">Tüm sorunlar →</button>}
           >
             {data.plan.length === 0 ? (
-              <div className="px-5 py-6 text-sm font-semibold text-seo">Kritik bir sorun yok — site sağlıklı görünüyor.</div>
+              <div className="px-5 py-6 text-sm font-medium text-seo">Kritik bir sorun yok — site sağlıklı görünüyor.</div>
             ) : (
               <ol className="divide-y divide-border">
                 {data.plan.map((it, i) => {
@@ -348,23 +348,23 @@ export default function SiteAuditReport({
                         }}
                         className="flex w-full items-start gap-4 px-5 py-3.5 text-left hover:bg-muted/40"
                       >
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">{i + 1}</span>
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-medium text-white">{i + 1}</span>
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold">{ISSUE_LABEL[it.code] ?? it.code}</span>
-                            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
+                            <span className="font-medium">{ISSUE_LABEL[it.code] ?? it.code}</span>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
                             <span className="text-xs text-ink/45">{it.n} sayfa</span>
                           </span>
                           {info && <span className="mt-0.5 block text-sm text-ink/60">{info.steps[0]}</span>}
                         </span>
                         <span className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
                           {info && (
-                            <span className="flex gap-1 text-[10px] font-semibold">
+                            <span className="flex gap-1 text-[10px] font-medium">
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Etki: {info.impact}</span>
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Zorluk: {info.effort}</span>
                             </span>
                           )}
-                          {it.gain > 0 && <span className="text-xs font-bold text-seo">Sağlık skoru +{it.gain}</span>}
+                          {it.gain > 0 && <span className="text-xs font-medium text-seo">Sağlık skoru +{it.gain}</span>}
                         </span>
                       </button>
                     </li>
@@ -399,7 +399,7 @@ export default function SiteAuditReport({
                         <span className="h-2.5 w-2.5 rounded-sm" style={{ background: STATUS_COLOR[k] ?? "#94a3b8" }} />
                         {k}
                       </span>
-                      <span className="font-bold tabular-nums">{v}</span>
+                      <span className="font-medium tabular-nums">{v}</span>
                     </div>
                   ))}
                 </div>
@@ -417,7 +417,7 @@ export default function SiteAuditReport({
                       <Tooltip cursor={{ fill: "rgba(93,22,255,0.04)" }} contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 12 }} />
                       <Bar dataKey="v" name="Sayfa" radius={[6, 6, 0, 0]}>
                         {["0", "1", "2", "3", "4", "5+", "?"].filter((k) => data.depthDist[k]).map((k) => (
-                          <Cell key={k} fill={k === "?" || k === "5+" || k === "4" ? "#f59e0b" : "#5d16ff"} />
+                          <Cell key={k} fill={k === "?" || k === "5+" || k === "4" ? "#f59e0b" : "#4f00ff"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -435,14 +435,14 @@ export default function SiteAuditReport({
       )}
 
       {tab === "issues" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
             {(["all", ...SEV_ORDER] as const).map((k) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setSevFilter(k)}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${sevFilter === k ? "border-ink bg-ink text-white" : "border-border text-ink/60 hover:border-ink/30"}`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${sevFilter === k ? "border-ink bg-ink text-white" : "border-border text-ink/60 hover:border-ink/30"}`}
               >
                 {k === "all" ? "Tümü" : SEVERITY_LABEL[k]}
                 {k !== "all" && <span className="ml-1 opacity-60">{data.sevTypes[k]}</span>}
@@ -451,7 +451,7 @@ export default function SiteAuditReport({
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-5 py-2.5 font-medium">Sorun</th>
                 <th className="py-2.5 pr-3 font-medium">Önem</th>
                 <th className="py-2.5 pr-3 font-medium max-md:hidden">Etki</th>
@@ -487,7 +487,7 @@ export default function SiteAuditReport({
                 })}
             </tbody>
           </table>
-          {data.issues.length === 0 && <div className="px-5 py-8 text-center text-sm font-semibold text-seo">Bu taramada sorun bulunmadı.</div>}
+          {data.issues.length === 0 && <div className="px-5 py-8 text-center text-sm font-medium text-seo">Bu taramada sorun bulunmadı.</div>}
         </div>
       )}
 
@@ -503,7 +503,7 @@ export default function SiteAuditReport({
       )}
 
       {tab === "pages" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
             <input
               value={q}
@@ -514,7 +514,7 @@ export default function SiteAuditReport({
             <select
               value={pageFilter ?? ""}
               onChange={(e) => setPageFilter(e.target.value || null)}
-              className="rounded-lg border border-border bg-panel px-2 py-1.5 text-xs font-semibold text-ink/70 outline-none"
+              className="rounded-lg border border-border bg-panel px-2 py-1.5 text-xs font-medium text-ink/70 outline-none"
             >
               <option value="">Tüm sayfalar</option>
               {data.issues.map((i) => (
@@ -528,7 +528,7 @@ export default function SiteAuditReport({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+                <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                   <th className="px-5 py-2.5 font-medium">Sayfa</th>
                   <th className="py-2.5 pr-3 font-medium">Durum</th>
                   <th className="py-2.5 pr-3 font-medium">Yanıt</th>
@@ -567,7 +567,7 @@ function CopyCode({ code }: { code: string }) {
             setTimeout(() => setOk(false), 1500);
           });
         }}
-        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-white/20"
+        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/20"
       >
         {ok ? "Kopyalandı" : "Kopyala"}
       </button>
@@ -611,10 +611,10 @@ function IssueRow({
           {label}
         </td>
         <td className="py-3 pr-3">
-          <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
+          <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
         </td>
         <td className="py-3 pr-3 text-xs text-ink/55 max-md:hidden">{info?.impact ?? "—"}</td>
-        <td className="py-3 pr-3 text-right font-bold tabular-nums">{n}</td>
+        <td className="py-3 pr-3 text-right font-medium tabular-nums">{n}</td>
         <td className="py-3 pr-3 text-right tabular-nums">
           {d == null ? <span className="text-ink/30">—</span> : d === 0 ? <span className="text-ink/40">0</span> : <span className={d < 0 ? "text-seo" : "text-danger"}>{d > 0 ? `+${d}` : d}</span>}
         </td>
@@ -631,24 +631,24 @@ function IssueRow({
               <div className="space-y-3 text-sm">
                 {info ? (
                   <>
-                    <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+                    <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
                       <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Etki: {info.impact}</span>
                       <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Zorluk: {info.effort}</span>
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-ink/50">Sorun nedir?</div>
+                      <div className="text-xs font-medium text-ink/50">Sorun nedir?</div>
                       <p className="mt-0.5 text-ink/80">{info.what}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-ink/50">Neden önemli?</div>
+                      <div className="text-xs font-medium text-ink/50">Neden önemli?</div>
                       <p className="mt-0.5 text-ink/75">{info.why}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-ink/50">Nasıl çözülür?</div>
+                      <div className="text-xs font-medium text-ink/50">Nasıl çözülür?</div>
                       <ol className="mt-1 space-y-1">
                         {info.steps.map((st, i) => (
                           <li key={i} className="flex gap-2 text-ink/75">
-                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent">{i + 1}</span>
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-medium text-accent">{i + 1}</span>
                             <span>{st}</span>
                           </li>
                         ))}
@@ -656,7 +656,7 @@ function IssueRow({
                     </div>
                     {info.example && (
                       <div>
-                        <div className="text-xs font-bold text-ink/50">Örnek</div>
+                        <div className="text-xs font-medium text-ink/50">Örnek</div>
                         <CopyCode code={info.example} />
                       </div>
                     )}
@@ -664,9 +664,9 @@ function IssueRow({
                 ) : null}
               </div>
               <div>
-                <div className="flex items-center justify-between text-xs font-bold text-ink/50">
+                <div className="flex items-center justify-between text-xs font-medium text-ink/50">
                   <span>Etkilenen sayfalar ({affected.length})</span>
-                  <button type="button" onClick={onShowAll} className="font-semibold text-accent hover:underline">Sayfa gezgininde aç →</button>
+                  <button type="button" onClick={onShowAll} className="font-medium text-accent hover:underline">Sayfa gezgininde aç →</button>
                 </div>
                 <div className="mt-1.5 divide-y divide-border rounded-xl border border-border bg-panel">
                   {affected.slice(0, 10).map((r) => {

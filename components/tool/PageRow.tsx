@@ -11,8 +11,8 @@ export function short(u: string) {
 function Stat({ label, value, bad = false }: { label: string; value: React.ReactNode; bad?: boolean }) {
   return (
     <div className="rounded-lg bg-muted/60 px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-ink/40">{label}</div>
-      <div className={`mt-0.5 text-sm font-semibold ${bad ? "text-danger" : "text-ink/80"}`}>{value}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-ink/40">{label}</div>
+      <div className={`mt-0.5 text-sm font-medium ${bad ? "text-danger" : "text-ink/80"}`}>{value}</div>
     </div>
   );
 }
@@ -29,7 +29,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
           {short(row.url)}
         </td>
         <td className="py-2.5 pr-3">
-          <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums ${sc && sc >= 400 ? "bg-danger/10 text-danger" : sc && sc >= 300 ? "bg-warn/10 text-warn" : sc === 0 ? "bg-danger/10 text-danger" : "bg-muted text-ink/60"}`}>
+          <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums ${sc && sc >= 400 ? "bg-danger/10 text-danger" : sc && sc >= 300 ? "bg-warn/10 text-warn" : sc === 0 ? "bg-danger/10 text-danger" : "bg-muted text-ink/60"}`}>
             {sc === 0 ? "hata" : sc ?? "—"}
           </span>
         </td>
@@ -39,9 +39,9 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
         <td className="py-2.5 pr-3 tabular-nums text-ink/60">{m?.depth ?? "—"}</td>
         <td className="py-2.5 pr-5">
           {row.issues.length === 0 ? (
-            <span className="text-xs font-semibold text-seo">✓</span>
+            <span className="text-xs font-medium text-seo">✓</span>
           ) : (
-            <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${row.issues.some((i) => CRITICAL_ISSUES.has(i)) ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}>{row.issues.length}</span>
+            <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${row.issues.some((i) => CRITICAL_ISSUES.has(i)) ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}>{row.issues.length}</span>
           )}
         </td>
       </tr>
@@ -50,7 +50,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
           <td colSpan={7} className="px-5 pb-5 pt-2">
             {sc !== null && sc >= 200 && sc < 300 && (
               <div className="mb-2 flex justify-end">
-                <a href={`/editor?url=${encodeURIComponent(row.url)}`} onClick={(e) => e.stopPropagation()} className="rounded-lg border border-accent/40 px-3 py-1 text-xs font-bold text-accent hover:bg-accent/5">✎ AI SEO Editör'de aç</a>
+                <a href={`/editor?url=${encodeURIComponent(row.url)}`} onClick={(e) => e.stopPropagation()} className="rounded-lg border border-accent/40 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/5">✎ AI SEO Editör'de aç</a>
               </div>
             )}
             {sc !== null && sc >= 200 && sc < 300 && row.issues.length > 0 && (
@@ -85,19 +85,19 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                   {m.geo?.citability != null && (
                     <div className="rounded-xl border border-border bg-panel px-3 py-2 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-ink/70">AI alıntılanabilirlik</span>
-                        <span className={`font-semibold tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
+                        <span className="font-medium text-ink/70">AI alıntılanabilirlik</span>
+                        <span className={`font-medium tabular-nums ${m.geo.citability >= 65 ? "text-seo" : m.geo.citability >= 45 ? "text-warn" : "text-danger"}`}>{m.geo.citability}/100</span>
                       </div>
                       {m.geo.citabilityTop.length > 0 && <div className="mt-0.5 text-ink/50">Önce: {m.geo.citabilityTop.join(" · ")}</div>}
                       {!!m.geo.weakPassages?.length && (
                         <div className="mt-2 border-t border-border pt-2">
-                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/40">
+                          <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-ink/40">
                             En zayıf bölümler · {m.geo.passageCount} bölüm, ort. {m.geo.passageAvg}
                           </div>
                           <ul className="space-y-1">
                             {m.geo.weakPassages.map((p) => (
                               <li key={p.heading}>
-                                <span className={`mr-1.5 rounded px-1 py-px text-[10px] font-bold tabular-nums ${p.score >= 65 ? "bg-seo/10 text-seo" : p.score >= 50 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>{p.score}</span>
+                                <span className={`mr-1.5 rounded px-1 py-px text-[10px] font-medium tabular-nums ${p.score >= 65 ? "bg-seo/10 text-seo" : p.score >= 50 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>{p.score}</span>
                                 <span className="font-medium text-ink/75">{p.heading}</span>
                                 <span className="block pl-7 text-[11px] text-ink/50">{p.tip}</span>
                               </li>
@@ -115,7 +115,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                   </div>
                   {m.brokenOutlinks.length > 0 && (
                     <div className="text-xs">
-                      <div className="font-semibold text-danger">Kırık sayfalara giden linkler</div>
+                      <div className="font-medium text-danger">Kırık sayfalara giden linkler</div>
                       {m.brokenOutlinks.slice(0, 5).map((u) => (
                         <div key={u} className="truncate text-ink/60">{short(u)}</div>
                       ))}

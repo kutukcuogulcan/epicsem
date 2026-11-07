@@ -105,7 +105,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
           </>
         }
         actions={
-          <Link href="/geo" className="rounded-lg border border-border bg-panel px-3.5 py-2 text-sm font-semibold hover:bg-muted">
+          <Link href="/geo" className="rounded-lg border border-border bg-panel px-3.5 py-2 text-sm font-medium hover:bg-muted">
             ↻ Yeniden çalıştır
           </Link>
         }
@@ -114,13 +114,13 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       {stale && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warn/30 bg-warn/5 px-4 py-3">
           <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-warn text-[10px] font-bold text-white">!</span>
+            <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-warn text-[10px] font-medium text-white">!</span>
             <div>
-              <div className="text-sm font-semibold text-warn">Veriler güncel değil</div>
+              <div className="text-sm font-medium text-warn">Veriler güncel değil</div>
               <div className="text-xs text-ink/60">Son test 7 günden eski. Markanın AI cevaplarındaki yerini görmek için testi yeniden çalıştır.</div>
             </div>
           </div>
-          <Link href="/geo" className="text-sm font-semibold text-accent underline">
+          <Link href="/geo" className="text-sm font-medium text-accent underline">
             ▶ Testi çalıştır
           </Link>
         </div>
@@ -134,32 +134,32 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
 
       {/* KPI kartları */}
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-border bg-panel p-5 shadow-sm">
-          <div className="text-sm font-semibold">Görünürlük</div>
+        <div className="rounded-2xl border border-border bg-panel p-5 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+          <div className="text-sm font-medium">Görünürlük</div>
           <div className="text-xs text-ink/45">Markanın cevaplarda geçme oranı</div>
           <div className="mt-3 flex items-center gap-3">
             <ScoreRing value={d.visibility * 100} size={40} stroke={4} />
             <div>
-              <div className="text-2xl font-semibold tabular-nums">{pct(d.visibility)}</div>
+              <div className="text-2xl font-medium tabular-nums">{pct(d.visibility)}</div>
               <div className="text-[11px] text-ink/45">tüm motorlarda</div>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-panel p-5 shadow-sm">
-          <div className="text-sm font-semibold">Duygu</div>
+        <div className="rounded-2xl border border-border bg-panel p-5 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+          <div className="text-sm font-medium">Duygu</div>
           <div className="text-xs text-ink/45">AI&apos;ın markanı ne kadar olumlu anlattığı</div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tabular-nums">{net == null ? "—" : `${net > 0 ? "+" : ""}${net}`}</span>
+            <span className="text-2xl font-medium tabular-nums">{net == null ? "—" : `${net > 0 ? "+" : ""}${net}`}</span>
             <span className="text-xs text-ink/50">({sentimentLabel(d.sentiment)})</span>
           </div>
           <div className="mt-2">
             <SentimentBar value={d.sentiment} width={260} />
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-panel p-5 shadow-sm">
-          <div className="text-sm font-semibold">Promptlar</div>
+        <div className="rounded-2xl border border-border bg-panel p-5 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+          <div className="text-sm font-medium">Promptlar</div>
           <div className="text-xs text-ink/45">İzlenen sorular</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums">
+          <div className="mt-3 text-2xl font-medium tabular-nums">
             {d.prompts.length} <span className="text-sm font-normal text-ink/50">prompt</span>
           </div>
           <div className="text-[11px] text-ink/45">{d.engines.length} AI motorunda</div>
@@ -189,10 +189,10 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
               <option value="branded">Markalı</option>
             </select>
           </div>
-          <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+                <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                   <th className="px-4 py-2.5 font-medium">Prompt</th>
                   <th className="hidden py-2.5 pr-4 font-medium md:table-cell">Konu</th>
                   <th className="py-2.5 pr-4 text-center font-medium">Görünürlük</th>
@@ -212,7 +212,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                   >
                     <td className="px-4 py-3">
                       <div className="font-medium">{p.text}</div>
-                      {p.branded && <span className="mt-0.5 inline-block rounded bg-muted px-1.5 text-[10px] font-semibold text-ink/50">markalı</span>}
+                      {p.branded && <span className="mt-0.5 inline-block rounded bg-muted px-1.5 text-[10px] font-medium text-ink/50">markalı</span>}
                     </td>
                     <td className="hidden py-3 pr-4 text-xs text-ink/55 md:table-cell">{p.topic}</td>
                     <td className="py-3 pr-4 text-center">
@@ -247,8 +247,8 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
 
       {tab === "visibility" && (
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <div className="rounded-xl border border-border bg-panel p-5 shadow-sm">
-            <div className="text-sm font-semibold">Motor kırılımı</div>
+          <div className="rounded-2xl border border-border bg-panel p-5 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+            <div className="text-sm font-medium">Motor kırılımı</div>
             <div className="text-xs text-ink/45">AI motoru başına görünürlük</div>
             <ul className="mt-3 space-y-2.5">
               {d.engines.map((e) => (
@@ -260,8 +260,8 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
               ))}
             </ul>
           </div>
-          <div className="rounded-xl border border-border bg-panel p-5 shadow-sm">
-            <div className="text-sm font-semibold">Zaman içinde görünürlük</div>
+          <div className="rounded-2xl border border-border bg-panel p-5 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+            <div className="text-sm font-medium">Zaman içinde görünürlük</div>
             <div className="text-xs text-ink/45">Her GEO testi bir nokta</div>
             {timeline.length < 2 ? (
               <div className="flex h-56 items-center justify-center text-sm text-ink/45">Grafik için en az 2 test gerekiyor.</div>
@@ -273,7 +273,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                     <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={34} tickFormatter={(v) => `${v}%`} />
                     <Tooltip formatter={(v) => [`${v}%`, "Görünürlük"]} contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }} />
-                    <Line type="monotone" dataKey="v" stroke="#5d16ff" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="v" stroke="#4f00ff" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -283,10 +283,10 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       )}
 
       {tab === "sentiment" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-4 py-2.5 font-medium">Motor</th>
                 <th className="py-2.5 pr-4 font-medium">Net duygu</th>
                 <th className="py-2.5 pr-4 font-medium">Dağılım</th>
@@ -304,7 +304,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                         {ENGINE_META[e.engine]?.name ?? e.engine}
                       </div>
                     </td>
-                    <td className="py-3 pr-4 font-semibold tabular-nums">{n == null ? "—" : `${n > 0 ? "+" : ""}${n}`}</td>
+                    <td className="py-3 pr-4 font-medium tabular-nums">{n == null ? "—" : `${n > 0 ? "+" : ""}${n}`}</td>
                     <td className="py-3 pr-4">
                       <SentimentBar value={e.sentiment} width={140} />
                     </td>
@@ -319,10 +319,10 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       )}
 
       {tab === "rivals" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-4 py-2.5 font-medium">Marka</th>
                 <th className="py-2.5 pr-4 text-center font-medium">Görünürlük</th>
                 <th className="py-2.5 pr-4 text-right font-medium">Ses payı</th>
@@ -340,7 +340,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="font-medium">{s.brand}</span>
-                        {s.domain === d.brand.domain && <span className="rounded bg-accent px-1.5 text-[10px] font-bold text-white">sen</span>}
+                        {s.domain === d.brand.domain && <span className="rounded bg-accent px-1.5 text-[10px] font-medium text-white">sen</span>}
                       </div>
                     </td>
                     <td className="py-3 pr-4 text-center">
@@ -359,13 +359,13 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       )}
 
       {tab === "sources" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           {d.sources.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-ink/45">Bu testte kaynak gösterilmedi.</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+                <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                   <th className="px-4 py-2.5 font-medium">Kaynak</th>
                   <th className="py-2.5 pr-4 font-medium">Tür</th>
                   <th className="py-2.5 pr-4 text-right font-medium">Atıf</th>
@@ -408,14 +408,14 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                 <span className="rounded-full border border-border px-3 py-1 text-xs">{open.topic}</span>
               </div>
               <div>
-                <div className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold">
+                <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium">
                   <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Kullanıcı sorusu
                 </div>
                 <div className="rounded-lg bg-muted/60 px-3.5 py-2.5 text-sm">{open.text}</div>
               </div>
               {open.mentions.length > 0 && (
                 <div>
-                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink/45">Cevaplarda geçen markalar</div>
+                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/45">Cevaplarda geçen markalar</div>
                   <div className="flex flex-wrap gap-1.5">
                     {open.mentions.map((m) => (
                       <span key={m} className={`rounded-md px-2 py-0.5 text-xs font-medium ${m === d.brand.name ? "bg-accent text-white" : "bg-accent/10 text-accent"}`}>
@@ -426,7 +426,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                 </div>
               )}
               <div>
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+                <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
                   <span className="h-1.5 w-1.5 rounded-full bg-seo" /> Cevaplar <span className="font-normal text-ink/45">({open.responses.length})</span>
                 </div>
                 <ul className="divide-y divide-border rounded-xl border border-border">
@@ -438,20 +438,20 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                           <EngineDot engine={r.engine} size={20} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 text-xs text-ink/50">
-                              <span className="font-semibold text-ink/70">{ENGINE_META[r.engine]?.name ?? r.engine}</span>
+                              <span className="font-medium text-ink/70">{ENGINE_META[r.engine]?.name ?? r.engine}</span>
                               {r.mentioned ? (
-                                <span className="rounded bg-seo/10 px-1.5 text-[10px] font-semibold text-seo">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
+                                <span className="rounded bg-seo/10 px-1.5 text-[10px] font-medium text-seo">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
                               ) : (
-                                <span className="rounded bg-danger/10 px-1.5 text-[10px] font-semibold text-danger">geçmiyor</span>
+                                <span className="rounded bg-danger/10 px-1.5 text-[10px] font-medium text-danger">geçmiyor</span>
                               )}
                             </div>
                             <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{r.text}</p>
                             {r.mentions.length > 0 && <div className="mt-1 text-[11px] text-ink/45">Geçen markalar: {r.mentions.join(", ")}</div>}
                             {exp && r.citations.length > 0 && (
                               <div className="mt-2 space-y-0.5">
-                                <div className="text-[11px] font-semibold text-ink/50">Kaynaklar</div>
+                                <div className="text-[11px] font-medium text-ink/50">Kaynaklar</div>
                                 {r.citations.map((c) => (
-                                  <a key={c.url} href={c.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className={`block truncate text-xs hover:underline ${c.isOwnDomain ? "font-semibold text-seo" : "text-accent"}`}>
+                                  <a key={c.url} href={c.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className={`block truncate text-xs hover:underline ${c.isOwnDomain ? "font-medium text-seo" : "text-accent"}`}>
                                     {c.url}
                                   </a>
                                 ))}

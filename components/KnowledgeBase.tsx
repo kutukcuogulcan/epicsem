@@ -44,10 +44,10 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
 
   const dirty = text !== saved;
   return (
-    <div className={compact ? "space-y-3" : "rounded-xl border border-border bg-panel shadow-sm p-5 space-y-3"}>
+    <div className={compact ? "space-y-3" : "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 space-y-3"}>
       {!compact && (
         <div>
-          <div className="text-sm font-bold">Marka bilgi bankası</div>
+          <div className="text-sm font-medium">Marka bilgi bankası</div>
           <p className="mt-0.5 text-xs text-ink/50">AI yazarken bunları doğru kabul eder; burada ve sayfada olmayan bilgiyi uydurmaz. Article Writer, Content Studio, Editör ve "Öneri yaz" kullanır.</p>
         </div>
       )}
@@ -61,10 +61,10 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
         disabled={state === "loading"}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={save} disabled={!dirty || state === "saving"} className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40">
+        <button type="button" onClick={save} disabled={!dirty || state === "saving"} className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-40">
           {state === "saving" ? "Kaydediliyor…" : dirty ? "Kaydet" : "Kaydedildi ✓"}
         </button>
-        <button type="button" onClick={() => fileRef.current?.click()} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-ink/60 hover:border-ink/30">.txt / .md yükle</button>
+        <button type="button" onClick={() => fileRef.current?.click()} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30">.txt / .md yükle</button>
         <input ref={fileRef} type="file" accept=".txt,.md,.csv" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         <span className="ml-auto text-[10px] text-ink/40">{text.length.toLocaleString("tr-TR")} / 20.000</span>
         {state === "error" && <span className="text-xs text-danger">Kaydedilemedi</span>}

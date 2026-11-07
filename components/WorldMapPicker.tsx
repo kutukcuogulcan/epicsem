@@ -54,7 +54,7 @@ export default function WorldMapPicker({
                   key={geo.rsmKey}
                   geography={geo}
                   onClick={() => code && onToggle(code)}
-                  fill={isSelected ? "#5d16ff" : "#e2e8f0"}
+                  fill={isSelected ? "#4f00ff" : "#e2e8f0"}
                   stroke="#f8fafc"
                   strokeWidth={0.4}
                   style={{ outline: "none", cursor: code ? "pointer" : "default" }}

@@ -109,9 +109,9 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
-        <div className="rounded-xl border border-border bg-panel shadow-sm">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <span className="text-sm font-bold">Skor trendi</span>
+            <span className="text-sm font-medium">Skor trendi</span>
             <span className="flex items-center gap-3 text-xs text-ink/50">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" />SEO</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-seo" />AXO</span>
@@ -122,8 +122,8 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
               <AreaChart data={stats.chart}>
                 <defs>
                   <linearGradient id="aSeo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#5d16ff" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#5d16ff" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#4f00ff" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#4f00ff" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="aAxo" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#16a34a" stopOpacity={0.18} />
@@ -134,18 +134,18 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
                 <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={32} />
                 <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 12 }} />
-                <Area type="monotone" dataKey="SEO" stroke="#5d16ff" strokeWidth={2.5} fill="url(#aSeo)" />
+                <Area type="monotone" dataKey="SEO" stroke="#4f00ff" strokeWidth={2.5} fill="url(#aSeo)" />
                 <Area type="monotone" dataKey="AXO" stroke="#16a34a" strokeWidth={2.5} fill="url(#aAxo)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-panel shadow-sm overflow-hidden">
-          <div className="border-b border-border px-5 py-3.5 text-sm font-bold">Son denetimler</div>
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] overflow-hidden">
+          <div className="border-b border-border px-5 py-3.5 text-sm font-medium">Son denetimler</div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-5 py-2 text-left font-medium">Site</th>
                 <th className="py-2 text-left font-medium">SEO</th>
                 <th className="py-2 text-left font-medium">AXO</th>
@@ -167,8 +167,8 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
                       <span className="truncate max-w-[10rem]">{host(r.url)}</span>
                     </span>
                   </td>
-                  <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${scoreTone(r.score)}`}>{r.score}</span></td>
-                  <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-bold tabular-nums ${scoreTone(r.aiCrawlScore)}`}>{r.aiCrawlScore}</span></td>
+                  <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${scoreTone(r.score)}`}>{r.score}</span></td>
+                  <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${scoreTone(r.aiCrawlScore)}`}>{r.aiCrawlScore}</span></td>
                   <td className="py-2.5 pr-5 text-right tabular-nums text-ink/60">{r.issueCount}</td>
                 </tr>
               ))}

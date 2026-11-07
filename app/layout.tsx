@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+// Uygulama (araç) kabuğu Arvow uygulamasıyla aynı yazı tipini kullanır: Geist (app.arvow.com'dan ölçüldü).
+import { GeistSans } from "geist/font/sans";
 // arvow.com's actual font is "Eudoxus Sans" by Stijn de Vries — an open-source geometric
 // sans released under the SIL Open Font License (OFL), which explicitly permits self-
 // hosting/bundling in a commercial site. The font used to be servable from Fontshare's
@@ -71,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isAppShell = headersList.get("x-shell") === "app";
 
   return (
-    <html lang="en" className={eudoxusSans.variable}>
+    <html lang="en" className={`${eudoxusSans.variable} ${GeistSans.variable}`}>
       <body className="font-sans">
         <script
           type="application/ld+json"
@@ -79,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         {isAppShell ? (
           <ProjectProvider>
-            <div className="min-h-screen flex flex-col md:flex-row">
+            <div className="app-shell min-h-screen flex flex-col md:flex-row">
               <Sidebar />
               <main className="app-main flex-1 min-w-0">
                 <AppTopBar />

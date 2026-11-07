@@ -53,12 +53,12 @@ export default function ProjectSwitcher() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={fav(project.domain)} alt="" className="h-4 w-4 shrink-0 rounded" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-semibold text-ink">{project.name}</span>
-              <span className="block truncate text-[11px] text-slate-500">{project.domain}</span>
+              <span className="block truncate font-medium text-ink">{project.name}</span>
+              <span className="block truncate text-[11px] text-sub">{project.domain}</span>
             </span>
           </>
         ) : (
-          <span className="flex-1 text-slate-500">{ready ? "Proje seç" : "Yükleniyor…"}</span>
+          <span className="flex-1 text-sub">{ready ? "Proje seç" : "Yükleniyor…"}</span>
         )}
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="shrink-0 text-ink/40">
           <path d="M3 4.5l3-3 3 3M3 7.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -75,18 +75,18 @@ export default function ProjectSwitcher() {
                 <img src={fav(p.domain)} alt="" className="h-4 w-4 shrink-0 rounded" />
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{p.name}</span>
-                  <span className="block truncate text-[11px] text-slate-500">{p.domain}</span>
+                  <span className="block truncate text-[11px] text-sub">{p.domain}</span>
                 </span>
               </button>
               {project?.id === p.id && <span className="text-xs text-accent">✓</span>}
-              <button type="button" onClick={() => startEdit(p)} className="hidden rounded px-1 text-[11px] text-slate-500 hover:text-ink group-hover:block">
+              <button type="button" onClick={() => startEdit(p)} className="hidden rounded px-1 text-[11px] text-sub hover:text-ink group-hover:block">
                 Düzenle
               </button>
             </div>
           ))}
           {suggestions.length > 0 && (
             <>
-              <div className="px-2 pb-1 pt-2 text-[11px] font-medium text-slate-500">Verisi olan siteler</div>
+              <div className="px-2 pb-1 pt-2 text-[11px] font-medium text-sub">Verisi olan siteler</div>
               {suggestions.map((s) => (
                 <button key={s} type="button" onClick={() => startNew(s)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-ink/70 hover:bg-muted/60">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,7 +97,7 @@ export default function ProjectSwitcher() {
               ))}
             </>
           )}
-          <button type="button" onClick={() => startNew()} className="mt-1 w-full rounded-lg border-t border-border px-2 py-2 text-left text-[13px] font-semibold text-accent hover:bg-accent/5">
+          <button type="button" onClick={() => startNew()} className="mt-1 w-full rounded-lg border-t border-border px-2 py-2 text-left text-[13px] font-medium text-accent hover:bg-accent/5">
             + Yeni proje
           </button>
         </div>
@@ -143,10 +143,10 @@ function ProjectForm({ initial, onClose }: { initial: { id?: number; name: strin
       subtitle="Seçili proje tüm sayfalarda kullanılır: site, marka adı ve rakipler bir kez girilir."
       footer={
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted">
+          <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
             Vazgeç
           </button>
-          <button disabled={busy || !name.trim() || domain.trim().length < 3} className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          <button disabled={busy || !name.trim() || domain.trim().length < 3} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
             {busy ? "Kaydediliyor…" : initial.id ? "Kaydet" : "Oluştur ve seç"}
           </button>
         </div>
@@ -154,15 +154,15 @@ function ProjectForm({ initial, onClose }: { initial: { id?: number; name: strin
     >
       <div className="space-y-4">
         <label className="block space-y-1">
-          <span className="text-xs font-semibold text-slate-500">Marka adı</span>
+          <span className="text-xs font-medium text-sub">Marka adı</span>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="ör. İş Bankası" className={inp} />
         </label>
         <label className="block space-y-1">
-          <span className="text-xs font-semibold text-slate-500">Site</span>
+          <span className="text-xs font-medium text-sub">Site</span>
           <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="ör. isbank.com.tr" className={inp} />
         </label>
         <div className="space-y-2">
-          <span className="text-xs font-semibold text-slate-500">Rakipler (GEO ve rakip analizlerinde kullanılır)</span>
+          <span className="text-xs font-medium text-sub">Rakipler (GEO ve rakip analizlerinde kullanılır)</span>
           {comps.map((c, i) => (
             <div key={i} className="flex gap-2">
               <input value={c.name} onChange={(e) => setComps((a) => a.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} placeholder="Rakip adı" className={inp} />
@@ -173,7 +173,7 @@ function ProjectForm({ initial, onClose }: { initial: { id?: number; name: strin
             </div>
           ))}
           {comps.length < 8 && (
-            <button type="button" onClick={() => setComps((a) => [...a, { name: "", domain: "" }])} className="text-xs font-semibold text-accent hover:underline">
+            <button type="button" onClick={() => setComps((a) => [...a, { name: "", domain: "" }])} className="text-xs font-medium text-accent hover:underline">
               + Rakip ekle
             </button>
           )}

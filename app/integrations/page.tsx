@@ -65,7 +65,7 @@ export default function IntegrationsPage() {
       {sharedDemo && (
         <div className="rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm leading-6 text-ink/70">
           <strong>Ortak demo hesabındasın.</strong> Girişsiz ziyaretçiler aynı demo hesabını paylaştığı için burada anahtar kaydedilemez. Kendi servislerini bağlamak için{" "}
-          <a href="/login?next=/integrations" className="font-semibold text-accent">kendi hesabınla giriş yap</a>.
+          <a href="/login?next=/integrations" className="font-medium text-accent">kendi hesabınla giriş yap</a>.
         </div>
       )}
 
@@ -76,16 +76,16 @@ export default function IntegrationsPage() {
           ["Hata veren", String((rows ?? []).filter((r) => r.config._status === "error").length)],
           ["Son güncelleme", rows?.length ? new Date(rows.map((r) => r.updatedAt).sort().pop()!).toLocaleDateString("tr-TR") : "—"],
         ].map(([l, v]) => (
-          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
+          <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-semibold tabular-nums">{v}</div>
+            <div className="text-2xl font-medium tabular-nums">{v}</div>
           </div>
         ))}
       </div>
 
       {GROUPS.map((g) => (
         <section key={g.title} className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-ink/45">{g.title}</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wide text-ink/45">{g.title}</h2>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {g.ids.map((id) => {
               const p = PROVIDERS.find((x) => x.id === id)!;
@@ -97,18 +97,18 @@ export default function IntegrationsPage() {
                   key={id}
                   type="button"
                   onClick={() => setOpen(p)}
-                  className="group flex flex-col gap-3 rounded-xl border border-border bg-panel shadow-sm p-5 text-left transition hover:border-accent/40 hover:shadow-[0_8px_30px_-12px_rgba(93,22,255,0.25)]"
+                  className="group flex flex-col gap-3 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 text-left transition hover:border-accent/40 hover:shadow-[0_8px_30px_-12px_rgba(93,22,255,0.25)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-semibold text-white ${LOGO[id].bg}`}>{LOGO[id].t}</div>
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-medium text-white ${LOGO[id].bg}`}>{LOGO[id].t}</div>
                       <div>
-                        <div className="font-bold">{p.name}</div>
+                        <div className="font-medium">{p.name}</div>
                         <div className="text-[11px] text-ink/50">{p.price}</div>
                       </div>
                     </div>
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
                         status === "ok" || viaEnv ? "bg-seo/10 text-seo" : status === "error" ? "bg-danger/10 text-danger" : "bg-muted text-ink/50"
                       }`}
                     >
@@ -119,7 +119,7 @@ export default function IntegrationsPage() {
                   {r?.config._message && <p className={`text-[11px] ${status === "ok" ? "text-seo" : "text-danger"}`}>{r.config._message}</p>}
                   <div className="mt-auto flex flex-wrap gap-1.5">
                     {p.usedIn.map((u) => (
-                      <span key={u} className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-ink/55">
+                      <span key={u} className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-ink/55">
                         {u}
                       </span>
                     ))}
@@ -177,8 +177,8 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
   return (
     <Drawer isOpen onClose={onClose} panelClassName="flex h-full w-screen max-w-md flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Entegrasyon</div>
-            <div className="font-bold">{p.name}</div>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Entegrasyon</div>
+            <div className="font-medium">{p.name}</div>
           </div>
 </div>}>
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
@@ -186,12 +186,12 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
           <ol className="space-y-2 rounded-xl bg-muted/60 p-4 text-[13px] leading-5 text-ink/70">
             {p.steps.map((s, i) => (
               <li key={i} className="flex gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent">{i + 1}</span>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-medium text-accent">{i + 1}</span>
                 <span>{s}</span>
               </li>
             ))}
           </ol>
-          <div className="flex gap-3 text-xs font-semibold">
+          <div className="flex gap-3 text-xs font-medium">
             <a href={p.signupUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
               Hesap / anahtar al ↗
             </a>
@@ -201,7 +201,7 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
           </div>
           {p.fields.map((f) => (
             <div key={f.key} className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-ink/45">
+              <label className="text-xs font-medium uppercase tracking-wide text-ink/45">
                 {f.label}
                 {f.optional && <span className="ml-1 normal-case font-medium text-ink/35">(isteğe bağlı)</span>}
               </label>
@@ -227,11 +227,11 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
           ))}
           {p.id === "indexnow" && row?.config.key && row.config.siteUrl && (
             <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-[12px] leading-5 text-ink/70">
-              Sitene şu dosyayı koy: <code className="break-all font-semibold">{row.config.siteUrl.replace(/\/+$/, "")}/{row.config.key}.txt</code>
+              Sitene şu dosyayı koy: <code className="break-all font-medium">{row.config.siteUrl.replace(/\/+$/, "")}/{row.config.key}.txt</code>
               <br />
-              İçeriği: <code className="break-all font-semibold">{row.config.key}</code>
+              İçeriği: <code className="break-all font-medium">{row.config.key}</code>
               <a
-                className="mt-1 block font-semibold text-accent hover:underline"
+                className="mt-1 block font-medium text-accent hover:underline"
                 href={`data:text/plain;charset=utf-8,${encodeURIComponent(row.config.key)}`}
                 download={`${row.config.key}.txt`}
               >
@@ -243,13 +243,13 @@ function ProviderDrawer({ p, row, onClose, onSaved }: { p: ProviderDef; row?: Ro
         </div>
         <div className="flex items-center justify-between gap-2 border-t border-border px-6 py-4">
           {row ? (
-            <button type="button" onClick={remove} disabled={busy} className="text-sm font-semibold text-danger/70 hover:text-danger disabled:opacity-40">
+            <button type="button" onClick={remove} disabled={busy} className="text-sm font-medium text-danger/70 hover:text-danger disabled:opacity-40">
               Bağlantıyı kaldır
             </button>
           ) : (
             <span />
           )}
-          <button disabled={busy} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white disabled:opacity-50">
+          <button disabled={busy} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50">
             {busy ? "Test ediliyor…" : "Kaydet ve test et"}
           </button>
         </div>

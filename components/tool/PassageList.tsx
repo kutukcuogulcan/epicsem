@@ -29,19 +29,19 @@ export default function PassageList({ report, compact = false }: { report: Passa
         <span className="ml-auto flex gap-1">
           {(["A", "B", "C", "D", "F"] as const).map((g) =>
             report.grades[g] ? (
-              <span key={g} className={`rounded px-1.5 py-px text-[10px] font-bold ${TONE[g]}`}>
+              <span key={g} className={`rounded px-1.5 py-px text-[10px] font-medium ${TONE[g]}`}>
                 {g}·{report.grades[g]}
               </span>
             ) : null
           )}
         </span>
       </div>
-      <div className="text-[10px] font-bold uppercase tracking-wide text-ink/40">{all ? "Tüm bölümler (zayıftan güçlüye)" : "Önce bunları düzelt"}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-ink/40">{all ? "Tüm bölümler (zayıftan güçlüye)" : "Önce bunları düzelt"}</div>
       <ul className="space-y-1">
         {list.map((p, i) => (
           <li key={`${p.heading}-${i}`} className="rounded-lg border border-border">
             <button type="button" onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left">
-              <span className={`shrink-0 rounded px-1.5 py-px text-[10px] font-bold tabular-nums ${TONE[p.grade]}`}>{p.score}</span>
+              <span className={`shrink-0 rounded px-1.5 py-px text-[10px] font-medium tabular-nums ${TONE[p.grade]}`}>{p.score}</span>
               <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.heading}</span>
               <span className="shrink-0 text-[10px] text-ink/40">{p.words} kel.</span>
             </button>
@@ -67,7 +67,7 @@ export default function PassageList({ report, compact = false }: { report: Passa
         ))}
       </ul>
       {report.count > list.length || all ? (
-        <button type="button" onClick={() => setAll((v) => !v)} className="text-[11px] font-semibold text-accent hover:underline">
+        <button type="button" onClick={() => setAll((v) => !v)} className="text-[11px] font-medium text-accent hover:underline">
           {all ? "Sadece en zayıfları göster" : `Tüm ${report.count} bölümü göster`}
         </button>
       ) : null}

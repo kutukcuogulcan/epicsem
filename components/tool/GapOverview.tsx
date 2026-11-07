@@ -17,7 +17,7 @@ interface GapRun {
 
 const VERDICTS: { key: GapRow["verdict"]; label: string; color: string; badge: string }[] = [
   { key: "cited", label: "Anılıyor", color: "#16a34a", badge: "bg-seo/10 text-seo" },
-  { key: "invisible", label: "Sağlam ama görünmez", color: "#5d16ff", badge: "bg-accent/10 text-accent" },
+  { key: "invisible", label: "Sağlam ama görünmez", color: "#4f00ff", badge: "bg-accent/10 text-accent" },
   { key: "needs-work", label: "İyileştirme gerekli", color: "#f59e0b", badge: "bg-warn/10 text-warn" },
   { key: "blocked", label: "AI'ya kapalı", color: "#ef4444", badge: "bg-danger/10 text-danger" },
 ];
@@ -111,9 +111,9 @@ export default function GapOverview({ refreshKey = 0 }: { refreshKey?: number })
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4">
-        <div className="rounded-xl border border-border bg-panel shadow-sm">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3.5">
-            <span className="text-sm font-bold">Sayfa durumu dağılımı</span>
+            <span className="text-sm font-medium">Sayfa durumu dağılımı</span>
             <span className="flex flex-wrap items-center gap-3 text-xs text-ink/50">
               {VERDICTS.map((v) => (
                 <span key={v.key} className="flex items-center gap-1.5">
@@ -142,14 +142,14 @@ export default function GapOverview({ refreshKey = 0 }: { refreshKey?: number })
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-panel shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <span className="text-sm font-bold">Son analiz · sayfalar</span>
+            <span className="text-sm font-medium">Son analiz · sayfalar</span>
             <span className="text-xs text-ink/40">{new Date(stats.last.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase text-slate-500">
+              <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
                 <th className="px-5 py-2 text-left font-medium">Sayfa</th>
                 <th className="py-2 text-left font-medium">SEO</th>
                 <th className="py-2 text-left font-medium">AXO</th>
@@ -165,7 +165,7 @@ export default function GapOverview({ refreshKey = 0 }: { refreshKey?: number })
                   <td className="py-2.5 tabular-nums text-ink/70">{r.seoScore}</td>
                   <td className="py-2.5 tabular-nums text-ink/70">{r.aiCrawlScore}</td>
                   <td className="py-2.5 pr-5 text-right">
-                    <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-bold ${V[r.verdict].badge}`}>{V[r.verdict].label}</span>
+                    <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${V[r.verdict].badge}`}>{V[r.verdict].label}</span>
                   </td>
                 </tr>
               ))}

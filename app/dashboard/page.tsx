@@ -60,20 +60,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {selectedBrand ? (
         <OverviewPanel brands={geoBrands} selectedDomain={selectedBrand.brandDomain} runs={overviewRuns} />
       ) : (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center space-y-3">
-          <h2 className="text-lg font-bold">Genel bakış{proj ? ` · ${proj.name}` : ""}</h2>
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-8 text-center space-y-3">
+          <h2 className="text-lg font-medium">Genel bakış{proj ? ` · ${proj.name}` : ""}</h2>
           <p className="text-sm text-ink/50 max-w-md mx-auto">
             {proj ? `${proj.name} için henüz GEO testi yok. ` : ""}Markanın ChatGPT, Gemini, Perplexity ve Claude cevaplarında ne sıklıkla geçtiğini, rakiplerle karşılaştırmasını ve
             hangi kaynakların alıntılandığını burada göreceksin. Başlamak için ilk GEO testini çalıştır.
           </p>
-          <Link href="/geo" className="inline-block rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90">
+          <Link href="/geo" className="inline-block rounded-lg bg-accent text-white px-4 py-2 text-sm font-medium hover:opacity-90">
             İlk GEO testini başlat →
           </Link>
         </div>
       )}
 
       <div className="pt-4 border-t border-border">
-        <h2 className="text-lg font-bold">Hesap özeti</h2>
+        <h2 className="text-lg font-medium">Hesap özeti</h2>
         <p className="text-sm text-ink/50">Bu ay ne çalıştırıldı, ne üretildi, ne bekliyor.</p>
       </div>
 
@@ -88,10 +88,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               {TOOL_ICONS[a.icon]}
             </span>
             <div>
-              <div className="font-bold">{a.title}</div>
+              <div className="font-medium">{a.title}</div>
               <p className="text-xs text-ink/50 mt-1">{a.body}</p>
             </div>
-            <span className="text-xs font-bold text-accent mt-auto">Başla →</span>
+            <span className="text-xs font-medium text-accent mt-auto">Başla →</span>
           </Link>
         ))}
       </div>
@@ -102,7 +102,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           className="card border-danger/40 flex items-center justify-between gap-4 hover:bg-danger/5 transition-colors"
         >
           <div className="text-sm">
-            <span className="font-bold text-danger">{summary.activeAlerts} bekleyen uyarı</span>
+            <span className="font-medium text-danger">{summary.activeAlerts} bekleyen uyarı</span>
             <span className="text-ink/50"> — bir izlenen sayfada AI crawler engellemesi tespit edildi</span>
           </div>
           <span className="text-xs text-danger font-medium shrink-0">Detaylar →</span>
@@ -136,14 +136,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="card">
-        <h2 className="font-bold mb-1">İçerik aktivitesi</h2>
+        <h2 className="font-medium mb-1">İçerik aktivitesi</h2>
         <p className="text-xs text-ink/40 mb-2">Son 14 gün — Content Studio ve Article Writer'dan üretilen ve fiilen yayınlanan taslak sayısı</p>
         <DashboardActivityChart data={summary.activity} />
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="card space-y-2">
-          <h2 className="font-bold text-sm">Bu ayki API kullanımı</h2>
+          <h2 className="font-medium text-sm">Bu ayki API kullanımı</h2>
           <div className="space-y-1.5">
             <UsageMeter metric="engineQueries" />
             <UsageMeter metric="contentGenerations" />
@@ -151,7 +151,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         </div>
         <div className="card space-y-2">
-          <h2 className="font-bold text-sm">Bağlı servisler</h2>
+          <h2 className="font-medium text-sm">Bağlı servisler</h2>
           <div className="text-xs text-ink/50 space-y-1">
             <div>{summary.activeServices.cmsConnections} CMS bağlantısı (WordPress/Shopify)</div>
             <div>{summary.activeServices.clients} kayıtlı müşteri</div>
@@ -165,7 +165,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div>
-        <h2 className="font-bold mb-3">Araçlar</h2>
+        <h2 className="font-medium mb-3">Araçlar</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {TOOLS.map((t) => (
             <Link

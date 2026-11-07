@@ -275,7 +275,7 @@ export default function GapPage() {
       <GapOverview refreshKey={overviewKey} />
 
       <div id="yeni-analiz" className="scroll-mt-24 pt-4 border-t border-border">
-        <h2 className="text-lg font-bold">Yeni analiz</h2>
+        <h2 className="text-lg font-medium">Yeni analiz</h2>
         <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler, promptlar ve kritik sayfalar otomatik çıkarılır, analiz hemen başlar.</p>
       </div>
 
@@ -290,13 +290,13 @@ export default function GapPage() {
       {manualOpen && (
       <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
         <div>
-          <div className="font-bold">Ayarlar</div>
+          <div className="font-medium">Ayarlar</div>
           <div className="text-xs text-ink/50">Marka, rakipler, promptlar, sayfalar ve motorlar.</div>
         </div>
 </div>}>
       <form onSubmit={(e) => { setManualOpen(false); runAnalysis(e); }} className="manual-form">
         <div className="card space-y-3">
-          <h2 className="font-bold text-sm">Markanız</h2>
+          <h2 className="font-medium text-sm">Markanız</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               value={brand.name}
@@ -317,7 +317,7 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-sm">Rakipler (opsiyonel)</h2>
+            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
@@ -346,7 +346,7 @@ export default function GapPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-sm">Promptlar (satır satır)</h2>
+            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
                 EN örnek
@@ -367,7 +367,7 @@ export default function GapPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-bold text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
+          <h2 className="font-medium text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
           <textarea
             value={pageUrlsText}
             onChange={(e) => setPageUrlsText(e.target.value)}
@@ -378,7 +378,7 @@ export default function GapPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-bold text-sm">Motorlar</h2>
+          <h2 className="font-medium text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -401,7 +401,7 @@ export default function GapPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-accent text-white px-5 py-3 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full rounded-xl bg-accent text-white px-5 py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
           </button>
@@ -411,7 +411,7 @@ export default function GapPage() {
       )}
 
       {loading && !gapMatrix && (
-        <div className="rounded-xl border border-border bg-panel shadow-sm p-5 text-sm text-ink/60 flex items-center gap-3">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 text-sm text-ink/60 flex items-center gap-3">
           <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           Sayfalar denetleniyor ve AI motorlarına soruluyor — bu bir iki dakika sürebilir.
         </div>
@@ -446,7 +446,7 @@ export default function GapPage() {
 
       {summaries && (
         <div className="space-y-3">
-          <h2 className="font-bold">Görünürlük özeti</h2>
+          <h2 className="font-medium">Görünürlük özeti</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {summaries.map((s) => (
               <StatCard
@@ -463,7 +463,7 @@ export default function GapPage() {
 
       {gapMatrix && (
         <div className="card">
-          <h2 className="font-bold">Gap matrisi</h2>
+          <h2 className="font-medium">Gap matrisi</h2>
           <p className="text-sm text-ink/50 mb-4">Her sayfa için teknik sağlık ile gerçek AI atfının karşılaştırması.</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -507,7 +507,7 @@ export default function GapPage() {
       {contentBriefs && contentBriefs.length > 0 && (
         <div className="space-y-3">
           <div>
-            <h2 className="font-bold">İçerik brifleri</h2>
+            <h2 className="font-medium">İçerik brifleri</h2>
             <p className="text-sm text-ink/50">
               Henüz kazanmayan her sayfa için: bu koşuda kaybettiği promptlar ve denetimin bulduğu somut içerik
               eksikleri. Bu koşunun kendi verisinden üretildi — hiçbir şey uydurulmadı.
@@ -562,7 +562,7 @@ export default function GapPage() {
                     type="button"
                     onClick={() => generateArticle(brief)}
                     disabled={generatingUrl === brief.url}
-                    className="text-xs font-semibold rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
+                    className="text-xs font-medium rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
                   >
                     {generatingUrl === brief.url ? "Oluşturuluyor…" : "Makale oluştur"}
                   </button>

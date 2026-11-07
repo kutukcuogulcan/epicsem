@@ -48,9 +48,9 @@ function Copy({ label, value }: { label: string; value?: string }) {
       })}
       className="group flex w-full items-start gap-3 rounded-xl border border-border bg-panel px-3 py-2.5 text-left transition hover:border-accent/40"
     >
-      <span className="w-20 shrink-0 pt-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/40">{label}</span>
+      <span className="w-20 shrink-0 pt-0.5 text-[10px] font-medium uppercase tracking-wide text-ink/40">{label}</span>
       <span className="min-w-0 flex-1 whitespace-pre-line text-xs leading-relaxed text-ink/80">{value}</span>
-      <span className={`shrink-0 text-[10px] font-bold ${ok ? "text-seo" : "text-accent opacity-0 group-hover:opacity-100"}`}>{ok ? "Kopyalandı" : "Kopyala"}</span>
+      <span className={`shrink-0 text-[10px] font-medium ${ok ? "text-seo" : "text-accent opacity-0 group-hover:opacity-100"}`}>{ok ? "Kopyalandı" : "Kopyala"}</span>
     </button>
   );
 }
@@ -149,8 +149,8 @@ export default function CitationTab({ site }: { site: string }) {
   const t = profile.texts;
   const inp = "w-full rounded-xl border border-border bg-muted px-3 py-2 text-sm outline-none focus:border-accent";
 
-  if (!site) return <div className="rounded-xl border border-border bg-panel shadow-sm p-8 text-center text-sm text-ink/50">Önce yukarıya siteni yaz.</div>;
-  if (loading) return <div className="h-40 animate-pulse rounded-xl border border-border bg-panel shadow-sm" />;
+  if (!site) return <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-8 text-center text-sm text-ink/50">Önce yukarıya siteni yaz.</div>;
+  if (loading) return <div className="h-40 animate-pulse rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]" />;
 
   return (
     <div className="space-y-5">
@@ -161,9 +161,9 @@ export default function CitationTab({ site }: { site: string }) {
           ["Başvuruldu", String(sent), "onay bekleyen"],
           ["Link doğrulandı", String(linked), "profilde site linki var"],
         ].map(([l, v, s]) => (
-          <div key={l} className="rounded-xl border border-border bg-panel shadow-sm p-4">
+          <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
             <div className="text-[11px] text-ink/50">{l}</div>
-            <div className="text-2xl font-semibold tabular-nums">{v}</div>
+            <div className="text-2xl font-medium tabular-nums">{v}</div>
             <div className="text-[11px] text-ink/40">{s}</div>
           </div>
         ))}
@@ -173,14 +173,14 @@ export default function CitationTab({ site }: { site: string }) {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
         {/* İşletme bilgileri */}
-        <div className="rounded-xl border border-border bg-panel shadow-sm">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div>
-              <div className="text-sm font-bold">İşletme bilgileri</div>
+              <div className="text-sm font-medium">İşletme bilgileri</div>
               <div className="text-[11px] text-ink/45">Her kayıtta birebir aynı yaz — tutarlılık hem Google hem AI için önemli</div>
             </div>
             {!editProfile && (
-              <button type="button" onClick={() => setEditProfile(true)} className="text-xs font-semibold text-accent hover:underline">
+              <button type="button" onClick={() => setEditProfile(true)} className="text-xs font-medium text-accent hover:underline">
                 Düzenle
               </button>
             )}
@@ -202,7 +202,7 @@ export default function CitationTab({ site }: { site: string }) {
                 <input value={profile.email ?? ""} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} placeholder="E-posta" className={inp} />
               </div>
               <textarea value={profile.description ?? ""} onChange={(e) => setProfile((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Kısaca ne yapıyorsunuz? (AI metinleri buna dayanır)" className={inp} />
-              <button disabled={saving} className="w-full rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+              <button disabled={saving} className="w-full rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
                 {saving ? "Kaydediliyor…" : "Kaydet"}
               </button>
             </form>
@@ -220,21 +220,21 @@ export default function CitationTab({ site }: { site: string }) {
         </div>
 
         {/* Hazır metinler */}
-        <div className="rounded-xl border border-border bg-panel shadow-sm">
+        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
             <div>
-              <div className="text-sm font-bold">Kayıt metinleri</div>
+              <div className="text-sm font-medium">Kayıt metinleri</div>
               <div className="text-[11px] text-ink/45">Formlara kopyala-yapıştır · bilgi bankana dayanır, uydurmaz</div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-semibold">
+              <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-medium">
                 {(["tr", "en"] as const).map((l) => (
                   <button key={l} type="button" onClick={() => setLang(l)} className={`rounded-md px-2 py-0.5 ${lang === l ? "bg-ink text-white" : "text-ink/55"}`}>
                     {l.toUpperCase()}
                   </button>
                 ))}
               </div>
-              <button type="button" onClick={writeTexts} disabled={writing || !profile.name} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+              <button type="button" onClick={writeTexts} disabled={writing || !profile.name} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
                 {writing ? "Yazılıyor…" : t ? "✦ Yeniden yaz" : "✦ Metinleri yaz"}
               </button>
             </div>
@@ -257,23 +257,23 @@ export default function CitationTab({ site }: { site: string }) {
       </div>
 
       {/* Kayıt listesi */}
-      <div className="overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
           <div className="mr-auto">
-            <div className="text-sm font-bold">Kayıt listesi</div>
+            <div className="text-sm font-medium">Kayıt listesi</div>
             <div className="text-[11px] text-ink/45">{showAll ? "Tüm kayıtlar" : `${BIZ_LABEL[biz]} için önerilenler`}</div>
           </div>
           <label className="flex items-center gap-1.5 text-xs text-ink/60">
-            <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} className="accent-[#5d16ff]" />
+            <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} className="accent-[#4f00ff]" />
             Tümünü göster
           </label>
-          <button type="button" onClick={() => checkAll()} disabled={checking} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+          <button type="button" onClick={() => checkAll()} disabled={checking} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50">
             {checking ? "Kontrol ediliyor…" : "Linkleri kontrol et"}
           </button>
         </div>
         {groups.map(([g, items]) => (
           <div key={g}>
-            <div className="border-b border-border bg-muted/40 px-5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">{GROUP_LABEL[g]}</div>
+            <div className="border-b border-border bg-muted/40 px-5 py-1.5 text-[10px] font-medium uppercase tracking-wide text-ink/45">{GROUP_LABEL[g]}</div>
             <ul className="divide-y divide-border">
               {items.map((d) => {
                 const r = rows[d.id];
@@ -284,8 +284,8 @@ export default function CitationTab({ site }: { site: string }) {
                       <div className="flex flex-wrap items-center gap-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${new URL(d.url).hostname}&sz=32`} alt="" className="h-4 w-4 rounded" />
-                        <span className="text-sm font-semibold">{d.name}</span>
-                        <span className={`rounded px-1.5 py-px text-[10px] font-bold ${d.priority === 3 ? "bg-accent/10 text-accent" : "bg-muted text-ink/50"}`}>{PRIO[d.priority]}</span>
+                        <span className="text-sm font-medium">{d.name}</span>
+                        <span className={`rounded px-1.5 py-px text-[10px] font-medium ${d.priority === 3 ? "bg-accent/10 text-accent" : "bg-muted text-ink/50"}`}>{PRIO[d.priority]}</span>
                         {!d.link && <span className="rounded bg-muted px-1.5 py-px text-[10px] text-ink/45">link vermez</span>}
                       </div>
                       <p className="mt-0.5 text-xs leading-relaxed text-ink/55">{d.why}</p>
@@ -297,18 +297,18 @@ export default function CitationTab({ site }: { site: string }) {
                         placeholder="Profil adresin (yayınlanınca)"
                         className="min-w-0 flex-1 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs outline-none focus:border-accent"
                       />
-                      {r?.linkFound === true && <span title="Profilde site linki bulundu" className="text-xs font-bold text-seo">✓ link</span>}
-                      {r?.linkFound === false && <span title="Profilde site linki bulunamadı" className="text-xs font-bold text-danger">link yok</span>}
+                      {r?.linkFound === true && <span title="Profilde site linki bulundu" className="text-xs font-medium text-seo">✓ link</span>}
+                      {r?.linkFound === false && <span title="Profilde site linki bulunamadı" className="text-xs font-medium text-danger">link yok</span>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <select value={st} onChange={(e) => update(d.id, { status: e.target.value })} className={`rounded-lg border-0 px-2 py-1.5 text-[11px] font-semibold ${STATUS[st][1]}`}>
+                      <select value={st} onChange={(e) => update(d.id, { status: e.target.value })} className={`rounded-lg border-0 px-2 py-1.5 text-[11px] font-medium ${STATUS[st][1]}`}>
                         {Object.entries(STATUS).map(([k, [l]]) => (
                           <option key={k} value={k}>
                             {l}
                           </option>
                         ))}
                       </select>
-                      <a href={d.url} target="_blank" rel="noreferrer" className="whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-[11px] font-bold text-white hover:opacity-90">
+                      <a href={d.url} target="_blank" rel="noreferrer" className="whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90">
                         Kayda git ↗
                       </a>
                     </div>

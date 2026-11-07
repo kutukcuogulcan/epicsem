@@ -34,8 +34,8 @@ export default function AppTopBar() {
         <Link href="/#nasil-calisir" className="text-ink/60 hover:text-ink">Nasıl çalışır</Link>
         <Link href="/#tum-araclar" className="text-ink/60 hover:text-ink">Araçlar</Link>
         <Link href="/pricing" className="text-ink/60 hover:text-ink">Fiyatlar</Link>
-        <Link href="/login" className="font-semibold text-ink/80 hover:text-ink">Giriş yap</Link>
-        <Link href="/login?mode=signup" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-bold hover:opacity-90">
+        <Link href="/login" className="font-medium text-ink/80 hover:text-ink">Giriş yap</Link>
+        <Link href="/login?mode=signup" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-medium hover:opacity-90">
           Ücretsiz başla
         </Link>
       </div>
@@ -53,7 +53,7 @@ export default function AppTopBar() {
       <Link href="/billing" className="flex items-center gap-3 group" title="Bu ayki AI motor sorgusu kullanımı">
         <div className="text-right leading-tight">
           <div className="text-[11px] text-ink/40">AI motor sorgusu</div>
-          <div className="text-xs font-semibold text-ink/80">
+          <div className="text-xs font-medium text-ink/80">
             {used.toLocaleString("tr-TR")} / {limit.toLocaleString("tr-TR")}
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function AppTopBar() {
       </Link>
       <span className="pill-outline">{u.planLabel ?? u.plan}</span>
       {u.plan !== "agency" && (
-        <Link href="/billing" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-bold hover:opacity-90">
+        <Link href="/billing" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-medium hover:opacity-90">
           Yükselt
         </Link>
       )}

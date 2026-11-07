@@ -508,7 +508,7 @@ export default function GeoPage() {
       <GeoOverview refreshKey={overviewKey} />
 
       <div id="yeni-test" className="scroll-mt-24 pt-4 border-t border-border">
-        <h2 className="text-lg font-bold">Yeni test</h2>
+        <h2 className="text-lg font-medium">Yeni test</h2>
         <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler ve promptlar otomatik çıkarılır, test hemen başlar.</p>
       </div>
 
@@ -519,7 +519,7 @@ export default function GeoPage() {
           <QuickGeoAnalyze onReady={handleWizardComplete} running={loading} onOpenSettings={() => setManualOpen(true)} />
           <p className="text-xs text-ink/40">
             Her şeyi adım adım kendin seçmek istersen{" "}
-            <button type="button" onClick={() => setWizardOpen(true)} className="font-semibold text-accent hover:underline">
+            <button type="button" onClick={() => setWizardOpen(true)} className="font-medium text-accent hover:underline">
               sihirbazla kur
             </button>
             .
@@ -530,13 +530,13 @@ export default function GeoPage() {
       {manualOpen && (
       <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
         <div>
-          <div className="font-bold">Ayarlar</div>
+          <div className="font-medium">Ayarlar</div>
           <div className="text-xs text-ink/50">Marka, rakipler, promptlar ve motorlar — değişiklikler bu testte kullanılır.</div>
         </div>
 </div>}>
       <form onSubmit={(e) => { setManualOpen(false); runTest(e); }} className="manual-form">
         <div className="card space-y-3">
-          <h2 className="font-bold text-sm">Markanız</h2>
+          <h2 className="font-medium text-sm">Markanız</h2>
           <div className="grid grid-cols-2 gap-3">
             <input
               value={brand.name}
@@ -557,7 +557,7 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-sm">Rakipler (opsiyonel)</h2>
+            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
             <button
               type="button"
               onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
@@ -586,7 +586,7 @@ export default function GeoPage() {
 
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-sm">Promptlar (satır satır)</h2>
+            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
             <div className="flex gap-2 text-xs">
               <button
                 type="button"
@@ -622,7 +622,7 @@ export default function GeoPage() {
             onAdd={(lines) => setPromptsText((t) => (t.trim() ? t.trim() + "\n" : "") + lines.join("\n"))}
           />
           <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-ink/60">
-            <span className="font-semibold text-accent">🇹🇷 Türkiye pazarı ipucu:</span> LLM&apos;ler Türkçe bir
+            <span className="font-medium text-accent">🇹🇷 Türkiye pazarı ipucu:</span> LLM&apos;ler Türkçe bir
             soruyu İngilizce eşdeğerinden farklı bir kaynak karışımıyla yanıtlayabiliyor — hedef kitleniz Türkiye
             ise <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-accent hover:underline font-medium">TR örneği</button> ile
             de test edin, İngilizce sonucun aynen geçerli olacağını varsaymayın.
@@ -631,7 +631,7 @@ export default function GeoPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-bold text-sm">Motorlar</h2>
+          <h2 className="font-medium text-sm">Motorlar</h2>
           <div className="flex flex-wrap gap-4 text-sm">
             {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
               <label key={eng} className="flex items-center gap-2">
@@ -657,7 +657,7 @@ export default function GeoPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-bold shadow-md shadow-accent/25 hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-medium shadow-md shadow-accent/25 hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "Çalışıyor…" : "Testi çalıştır →"}
           </button>
@@ -751,7 +751,7 @@ export default function GeoPage() {
 
       {resultsTab === "visibility" && engineBreakdown && engineBreakdown.length > 1 && (
         <div className="card">
-          <h2 className="font-bold">AI motoru bazında görünürlük</h2>
+          <h2 className="font-medium">AI motoru bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
             Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar görünüyor — bazı motorlar sizi
             hiç anmıyorken diğerleri anabilir, bu fark hangi motora öncelik vermeniz gerektiğini gösterir.
@@ -772,7 +772,7 @@ export default function GeoPage() {
 
       {resultsTab === "sentiment" && engineBreakdown && engineBreakdown.length > 0 && (
         <div className="card">
-          <h2 className="font-bold">AI motoru bazında duygu tonu</h2>
+          <h2 className="font-medium">AI motoru bazında duygu tonu</h2>
           <p className="text-sm text-ink/50 mb-4">
             Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar olumlu tanımlanıyor — 0 en olumsuz,
             100 en olumlu.
@@ -798,7 +798,7 @@ export default function GeoPage() {
 
       {resultsTab === "sentiment" && sentimentTrendData && (
         <div className="card">
-          <h2 className="font-bold mb-1">Duygu trendi</h2>
+          <h2 className="font-medium mb-1">Duygu trendi</h2>
           <p className="text-sm text-ink/50 mb-4">
             Bu domain için kaydedilen her koşuda marka bazında duygu tonu ({sentimentTrendData.length} koşu).
           </p>
@@ -834,7 +834,7 @@ export default function GeoPage() {
 
       {resultsTab === "visibility" && summaries && (
         <div className="card">
-          <h2 className="font-bold mb-4">Görünürlük ve pazar payı</h2>
+          <h2 className="font-medium mb-4">Görünürlük ve pazar payı</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -903,7 +903,7 @@ export default function GeoPage() {
 
       {resultsTab === "visibility" && trendData && (
         <div className="card">
-          <h2 className="font-bold mb-1">Görünürlük trendi</h2>
+          <h2 className="font-medium mb-1">Görünürlük trendi</h2>
           <p className="text-sm text-ink/50 mb-4">
             Bu domain için kaydedilen her koşuda marka bazında görünürlük ({trendData.length} koşu).
           </p>
@@ -934,7 +934,7 @@ export default function GeoPage() {
 
       {resultsTab === "sources" && sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
-          <h2 className="font-bold">Domain metrikleri</h2>
+          <h2 className="font-medium">Domain metrikleri</h2>
           <p className="text-sm text-ink/50 mb-4">
             AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği. &ldquo;Retrieved %&rdquo; ve
             &ldquo;Retrieval rate&rdquo; henüz gösterilmiyor — bunlar modelin cevabı üretirken baktığı ama
@@ -989,7 +989,7 @@ export default function GeoPage() {
       {resultsTab === "sources" && sourceDistribution && sourceDistribution.filter((d) => d.type !== "You" && d.type !== "Competitor").length > 0 && (
         <div className="card space-y-3">
           <div>
-            <h2 className="font-bold">Backlink fırsatları</h2>
+            <h2 className="font-medium">Backlink fırsatları</h2>
             <p className="text-sm text-ink/50 mt-1">
               Bu, otomatik bir link değişim ağı değil — az önceki testte AI motorlarının bu konuda zaten kaynak
               gösterdiği, markanız veya rakipleriniz olmayan siteler. AI motorlarının güvendiğini kanıtladığı bu
@@ -1023,7 +1023,7 @@ export default function GeoPage() {
 
       {resultsTab === "urls" && urlStats && urlStats.length > 0 && (
         <div className="card">
-          <h2 className="font-bold">URL metrikleri</h2>
+          <h2 className="font-medium">URL metrikleri</h2>
           <p className="text-sm text-ink/50 mb-4">
             Domain değil, tekil URL bazında atıf dağılımı — hangi sayfa (sadece hangi site) gerçekten kaynak
             gösteriliyor. &ldquo;Retrievals&rdquo; (kaynak olduğu sohbet sayısı, atıf almadan) aynı nedenle henüz
@@ -1067,7 +1067,7 @@ export default function GeoPage() {
 
       {resultsTab === "visibility" && topicBreakdown && topicBreakdown.length > 1 && (
         <div className="card">
-          <h2 className="font-bold">Konu bazında görünürlük</h2>
+          <h2 className="font-medium">Konu bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
             {ownSummary?.brand ?? "Markanız"} her prompt konusunda ne kadar görünüyor — hangi konularda görünmez
             olduğunuzu gösterir (Peec AI&apos;deki topic/tag kırılımına benzer).
@@ -1097,7 +1097,7 @@ export default function GeoPage() {
       {resultsTab === "prompts" && runs && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-bold">
+            <h2 className="font-medium">
               Tek tek koşular <span className="text-ink/30 font-normal">· {filteredRuns?.length ?? 0}/{runs.length}</span>
             </h2>
             <div className="flex items-center gap-2">

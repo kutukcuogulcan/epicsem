@@ -43,7 +43,7 @@ const RANGES = [
 ];
 
 // Peec'teki gibi her markaya ayırt edilebilir bir çizgi rengi; kendi markamız her zaman ilk renk.
-const LINE_COLORS = ["#5d16ff", "#16a34a", "#dc2626", "#334155", "#94a3b8", "#ef4444", "#84cc16", "#0ea5e9", "#f59e0b", "#a855f7"];
+const LINE_COLORS = ["#4f00ff", "#16a34a", "#dc2626", "#334155", "#94a3b8", "#ef4444", "#84cc16", "#0ea5e9", "#f59e0b", "#a855f7"];
 
 const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
   You: "Siz",
@@ -56,7 +56,7 @@ const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
   Other: "Diğer",
 };
 const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
-  You: "#5d16ff",
+  You: "#4f00ff",
   Competitor: "#ef4444",
   Corporate: "#f97316",
   Editorial: "#3b82f6",
@@ -280,14 +280,14 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
         )}
         <div className="ml-auto flex items-center gap-2">
           {anyDemo && <span className="rounded-full bg-warn/10 text-warn text-xs font-medium px-2.5 py-1">Demo veri içeriyor</span>}
-          <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-bold hover:opacity-90">
+          <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-medium hover:opacity-90">
             Yeni test
           </Link>
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-bold">Genel bakış</h2>
+        <h2 className="text-lg font-medium">Genel bakış</h2>
         <p className="text-sm text-ink/50">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
       </div>
 
@@ -307,11 +307,11 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           cta={
             <div className="mt-1 flex gap-2">
               {days < 90 && (
-                <button type="button" onClick={() => setDays(90)} className="rounded-lg border border-border bg-panel px-4 py-2 text-sm font-semibold hover:border-ink/30">
+                <button type="button" onClick={() => setDays(90)} className="rounded-lg border border-border bg-panel px-4 py-2 text-sm font-medium hover:border-ink/30">
                   Son 90 güne bak
                 </button>
               )}
-              <Link href={newTestHref} className="rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white hover:opacity-90">
+              <Link href={newTestHref} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
                 Yeni test
               </Link>
             </div>
@@ -322,7 +322,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           {/* Visibility grafiği */}
           <div className="rounded-2xl border border-border bg-panel flex flex-col">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-              <div className="font-bold text-sm">Görünürlük</div>
+              <div className="font-medium text-sm">Görünürlük</div>
               <div className="flex rounded-lg border border-border overflow-hidden text-xs">
                 {(["D", "W", "M"] as Granularity[]).map((g) => (
                   <button
@@ -330,7 +330,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                     type="button"
                     onClick={() => setGranularity(g)}
                     title={g === "D" ? "Günlük" : g === "W" ? "Haftalık" : "Aylık"}
-                    className={`px-2.5 py-1 ${granularity === g ? "bg-muted font-bold text-ink" : "text-ink/40 hover:text-ink"}`}
+                    className={`px-2.5 py-1 ${granularity === g ? "bg-muted font-medium text-ink" : "text-ink/40 hover:text-ink"}`}
                   >
                     {g === "D" ? "G" : g === "W" ? "H" : "A"}
                   </button>
@@ -363,7 +363,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           {/* Top 7 marka */}
           <div className="rounded-2xl border border-border bg-panel overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-              <div className="font-bold text-sm">İlk 7 marka</div>
+              <div className="font-medium text-sm">İlk 7 marka</div>
               <span className="text-xs text-ink/40">Satıra tıkla: grafikte gizle/göster</span>
             </div>
             <div className="overflow-x-auto">
@@ -407,20 +407,20 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                           </span>
                         </td>
                         <td className="py-2.5 whitespace-nowrap">
-                          <span className="font-semibold tabular-nums mr-1.5">{pct(b.visibility)}</span>
+                          <span className="font-medium tabular-nums mr-1.5">{pct(b.visibility)}</span>
                           <Delta value={b.dVis} />
                         </td>
                         <td className="py-2.5 whitespace-nowrap">
-                          <span className="font-semibold tabular-nums mr-1.5">{pct(b.shareOfVoice)}</span>
+                          <span className="font-medium tabular-nums mr-1.5">{pct(b.shareOfVoice)}</span>
                           <Delta value={b.dSov} />
                         </td>
                         <td className="py-2.5 whitespace-nowrap">
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-ink/30 mr-1.5 align-middle" />
-                          <span className="font-semibold tabular-nums mr-1.5">{b.avgSentiment ?? "—"}</span>
+                          <span className="font-medium tabular-nums mr-1.5">{b.avgSentiment ?? "—"}</span>
                           <Delta value={b.dSent} unit="" digits={0} />
                         </td>
                         <td className="py-2.5 pr-4 whitespace-nowrap">
-                          <span className="font-semibold tabular-nums mr-1.5">
+                          <span className="font-medium tabular-nums mr-1.5">
                             {b.avgPosition != null ? `#${b.avgPosition.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}` : "—"}
                           </span>
                           <Delta value={b.dPos} unit="" invert />
@@ -439,7 +439,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
         <>
           <div className="pt-2 flex items-end justify-between">
             <div>
-              <h2 className="text-lg font-bold">Kaynak dağılımı</h2>
+              <h2 className="text-lg font-medium">Kaynak dağılımı</h2>
               <p className="text-sm text-ink/50">AI cevaplarına en çok hangi siteler ve kaynak tipleri katkı veriyor</p>
             </div>
             <Link href="/geo" className="rounded-lg border border-border bg-panel px-3 py-1.5 text-sm hover:border-ink/30">
@@ -460,7 +460,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                       key={k}
                       type="button"
                       onClick={() => setSourceTab(k)}
-                      className={sourceTab === k ? "font-bold text-ink" : "text-ink/40 hover:text-ink"}
+                      className={sourceTab === k ? "font-medium text-ink" : "text-ink/40 hover:text-ink"}
                     >
                       {label}
                     </button>
@@ -489,7 +489,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
             </div>
 
             <div className="rounded-2xl border border-border bg-panel">
-              <div className="px-5 py-3 border-b border-border font-bold text-sm">Domain tipleri</div>
+              <div className="px-5 py-3 border-b border-border font-medium text-sm">Domain tipleri</div>
               <div className="p-3 space-y-1.5">
                 {sources.types.length === 0 && <p className="text-sm text-ink/40 px-2 py-4">Henüz atıf yok.</p>}
                 {sources.types.map((t) => (

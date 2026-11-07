@@ -1,5 +1,7 @@
 # Epicsem tasarım sistemi (Arvow tarzı açık tema)
 
+> Değerler app.arvow.com'dan tarayıcıda ölçüldü (2026-11-07): yazı tipi **Geist**, metin #0A0D12, ikincil #535862, çizgi #E9EAEB, vurgu #4F00FF, ağırlık her yerde 500, gövde 14px/20px, sayfa başlığı 24px/32px, kart köşesi 16px, düğme 32px yükseklik / 10px köşe, rozet 6px köşe, gölge 0 1px 2px rgba(13,18,28,.05).
+
 Tüm araç sayfaları aynı dili kullanır. Yeni sayfa yazarken önce `components/ui` içindeki şablonlara bak.
 
 ## Renkler (tailwind.config.ts)

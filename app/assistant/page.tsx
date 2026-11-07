@@ -18,7 +18,7 @@ function Rich({ text }: { text: string }) {
   return (
     <>
       {parts.map((p, i) =>
-        p.startsWith("**") ? <strong key={i} className="font-semibold text-ink">{p.slice(2, -2)}</strong> : p.startsWith("_") && p.endsWith("_") ? <em key={i} className="text-ink/45">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>
+        p.startsWith("**") ? <strong key={i} className="font-medium text-ink">{p.slice(2, -2)}</strong> : p.startsWith("_") && p.endsWith("_") ? <em key={i} className="text-ink/45">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>
       )}
     </>
   );
@@ -43,7 +43,7 @@ function BotBlocks({ blocks, onAsk }: { blocks: Block[]; onAsk: (q: string) => v
               {b.items.map((x, j) => (
                 <div key={j} className="rounded-xl border border-border bg-paper px-3 py-2">
                   <div className="text-[10px] text-ink/45">{x.label}</div>
-                  <div className={`text-base font-semibold tabular-nums ${x.tone === "good" ? "text-seo" : x.tone === "bad" ? "text-danger" : x.tone === "warn" ? "text-warn" : ""}`}>{x.value}</div>
+                  <div className={`text-base font-medium tabular-nums ${x.tone === "good" ? "text-seo" : x.tone === "bad" ? "text-danger" : x.tone === "warn" ? "text-warn" : ""}`}>{x.value}</div>
                 </div>
               ))}
             </div>
@@ -52,14 +52,14 @@ function BotBlocks({ blocks, onAsk }: { blocks: Block[]; onAsk: (q: string) => v
           return (
             <div key={i} className="flex flex-wrap gap-2 pt-1">
               {b.items.map((a, j) => (
-                <Link key={j} href={a.href} className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10">{a.label} →</Link>
+                <Link key={j} href={a.href} className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/10">{a.label} →</Link>
               ))}
             </div>
           );
         return (
           <div key={i} className="flex flex-wrap gap-2">
             {b.items.map((q, j) => (
-              <button key={j} type="button" onClick={() => onAsk(q)} className="rounded-full border border-border bg-panel px-3 py-1.5 text-xs font-semibold text-ink/65 hover:border-accent hover:text-accent">{q}</button>
+              <button key={j} type="button" onClick={() => onAsk(q)} className="rounded-full border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/65 hover:border-accent hover:text-accent">{q}</button>
             ))}
           </div>
         );
@@ -127,13 +127,13 @@ export default function AssistantPage() {
     <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">SEO Asistanı</h1>
+          <h1 className="text-2xl font-medium tracking-tight">SEO Asistanı</h1>
           <p className="text-sm text-ink/50">Sitenin taramalarına ve AI görünürlük testlerine bakarak cevap verir. Ücretsiz — AI kredisi harcamaz.</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-panel px-3 py-1.5">
-          <span className="text-xs font-bold text-ink/40">Site</span>
+          <span className="text-xs font-medium text-ink/40">Site</span>
           {sites && sites.length > 0 ? (
-            <select value={site} onChange={(e) => { setSite(e.target.value); setMsgs([]); }} className="bg-transparent text-sm font-semibold outline-none">
+            <select value={site} onChange={(e) => { setSite(e.target.value); setMsgs([]); }} className="bg-transparent text-sm font-medium outline-none">
               {sites.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           ) : (
@@ -142,22 +142,22 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto rounded-xl border border-border bg-panel shadow-sm p-5">
+      <div className="flex-1 space-y-5 overflow-y-auto rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
         {msgs.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-2xl text-accent">✦</div>
             <div>
-              <div className="font-bold">{site ? `${site} hakkında ne bilmek istersin?` : "Bir site seç ya da yaz"}</div>
+              <div className="font-medium">{site ? `${site} hakkında ne bilmek istersin?` : "Bir site seç ya da yaz"}</div>
               <p className="mt-1 text-sm text-ink/50">Öncelikler, AI görünürlüğü, içerik fikirleri, değişimler, belirli sorunlar…</p>
             </div>
             <div className="flex max-w-xl flex-wrap justify-center gap-2">
               {suggestions.map((q) => (
-                <button key={q} type="button" onClick={() => ask(q)} disabled={!site} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-ink/65 hover:border-accent hover:text-accent disabled:opacity-40">{q}</button>
+                <button key={q} type="button" onClick={() => ask(q)} disabled={!site} className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink/65 hover:border-accent hover:text-accent disabled:opacity-40">{q}</button>
               ))}
             </div>
             {sites && sites.length === 0 && (
               <p className="text-xs text-ink/45">
-                Henüz verin yok — önce <Link href="/import" className="font-semibold text-accent">Site Taraması</Link> ya da <Link href="/geo" className="font-semibold text-accent">GEO testi</Link> çalıştır.
+                Henüz verin yok — önce <Link href="/import" className="font-medium text-accent">Site Taraması</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.
               </p>
             )}
           </div>
@@ -192,10 +192,10 @@ export default function AssistantPage() {
           e.preventDefault();
           ask(input);
         }}
-        className="mt-3 flex gap-2 rounded-xl border border-border bg-panel shadow-sm p-2 shadow-sm focus-within:border-accent/50"
+        className="mt-3 flex gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm focus-within:border-accent/50"
       >
         <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={site ? `${site} hakkında sor… (ör. "alt metni eksik sayfalar")` : "Önce bir site seç"} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
-        <button disabled={busy || !input.trim() || !site} className="rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">Sor</button>
+        <button disabled={busy || !input.trim() || !site} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40">Sor</button>
       </form>
     </div>
     <div className="mt-14">
