@@ -10,6 +10,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import SiteAuditReport, { type RunSummary } from "@/components/tool/SiteAuditReport";
 import GhostChart from "@/components/tool/GhostChart";
 import { useProject } from "@/components/ProjectProvider";
+import { ErrorBlock } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -202,7 +203,7 @@ export default function ImportPage() {
         </div>
       )}
 
-      {error && <div className="rounded-2xl border border-danger/40 bg-danger/5 p-4 text-sm text-danger">{error}</div>}
+      <ErrorBlock message={error} />
 
       {runs === null && !result && (
         <div className="space-y-3 animate-pulse">

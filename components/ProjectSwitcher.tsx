@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useProject, type Project } from "./ProjectProvider";
 import { Drawer } from "./ui";
+import { ErrorBlock } from "@/components/ui";
 
 /** Sol menünün altındaki proje seçici (Arvow "Website & Brand"). */
 export default function ProjectSwitcher() {
@@ -67,7 +68,7 @@ export default function ProjectSwitcher() {
 
       {open && (
         <div className="absolute bottom-full left-0 right-0 z-40 mb-2 max-h-80 overflow-y-auto rounded-xl border border-border bg-panel p-1.5 shadow-lg">
-          {error && <div className="px-2 py-1.5 text-xs text-danger">{error}</div>}
+          <ErrorBlock message={error} />
           {projects.map((p) => (
             <div key={p.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] ${project?.id === p.id ? "bg-muted" : "hover:bg-muted/60"}`}>
               <button type="button" disabled={busy} onClick={() => choose(p.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
@@ -178,7 +179,7 @@ function ProjectForm({ initial, onClose }: { initial: { id?: number; name: strin
             </button>
           )}
         </div>
-        {err && <div className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{err}</div>}
+        <ErrorBlock message={err} />
       </div>
     </Drawer>
   );

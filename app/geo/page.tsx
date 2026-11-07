@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UnderlineTabs, Drawer } from "@/components/ui";
+import { UnderlineTabs, Drawer, ErrorBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 import {
   Bar,
@@ -675,7 +675,7 @@ export default function GeoPage() {
 
       {brand.name && <EntityPresence brand={brand} competitors={competitors.filter((c) => c.name)} />}
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
       {demoMode && summaries && (
         <div className="card border-warn/40 text-warn text-sm">

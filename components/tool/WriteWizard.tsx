@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useProject } from "@/components/ProjectProvider";
+import { ErrorBlock } from "@/components/ui";
 
 /**
  * AI SEO Editör — "Konudan yaz" sihirbazı (Arvow tarzı):
@@ -447,7 +448,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
           </div>
         )}
 
-        {err && <div className="mt-4 rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{err}</div>}
+        <ErrorBlock message={err} />
       </div>
     </div>
   );

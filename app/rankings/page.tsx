@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
-import { Drawer } from "@/components/ui";
+import { Drawer, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 interface Kw {
@@ -193,6 +193,7 @@ export default function RankingsPage() {
         </div>
       )}
 
+      {kws === null && <TableSkeleton rows={4} cols={4} />}
       {kws && list.length === 0 ? (
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-8 text-center">
           <div className="font-medium">Henüz takip edilen kelime yok</div>

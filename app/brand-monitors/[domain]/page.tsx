@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { PageHeader, UnderlineTabs } from "@/components/ui";
+import { PageHeader, UnderlineTabs, ErrorBlock, PageSkeleton } from "@/components/ui";
 import PromptResults from "@/components/tool/PromptResults";
 import { ENGINE_META, EngineDot, ScoreRing, SentimentBar, netSentiment, sentimentLabel } from "@/components/tool/MonitorBits";
 
@@ -109,10 +109,16 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
         <Link href="/brand-monitors" className="text-sm text-ink/55 hover:text-ink">
           ← Monitörler
         </Link>
-        <div className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">{err}</div>
+        <ErrorBlock
+          message={err}
+          onRetry={() => {
+            setErr(null);
+            load();
+          }}
+        />
       </div>
     );
-  if (!d) return <div className="py-20 text-center text-sm text-ink/45">Yükleniyor…</div>;
+  if (!d) return <PageSkeleton />;
 
   const sch = d.schedule;
   const active = !!sch?.active;

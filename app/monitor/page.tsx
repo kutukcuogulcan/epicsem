@@ -6,6 +6,7 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import { MonitorOverview } from "@/components/tool/ToolOverviews";
+import { ErrorBlock } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -274,7 +275,7 @@ export default function MonitorPage() {
         </button>
       </form>
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
       {pages && pages.length > 0 && (
         <div className="card">

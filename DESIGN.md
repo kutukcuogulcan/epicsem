@@ -37,3 +37,8 @@ Tüm araç sayfaları aynı dili kullanır. Yeni sayfa yazarken önce `component
 - Sayfalar siteyi kendileri tahmin etmez: `const { project } = useProject()` (`components/ProjectProvider.tsx`) ve `project.domain` değişince veriyi yeniden yükler.
 - Sunucu bileşenleri (Genel Bakış) çerezi okur; proje değişince `router.refresh()` ile yeniden çizilir.
 - Projeye ait veri yoksa başka markanın verisine düşülmez; boş durum gösterilir.
+
+## Ekran durumları (components/ui)
+- **Yükleniyor:** metin ("Yükleniyor…") değil iskelet: `TableSkeleton` (tablo/liste), `PageSkeleton` (sayfa), `Skeleton` (tek blok). Liste `null` iken iskelet, `[]` iken boş durum.
+- **Boş:** `EmptyBlock` — ne olmadığını ve ne yapılacağını söyler (başlık + açıklama + isteğe bağlı eylem düğmesi). Veri yokken 0 göstermek yerine bu kullanılır.
+- **Hata:** `ErrorBlock` — kırmızı uyarı + mümkünse `onRetry` ile "Tekrar dene". Hatalar sessizce yutulmaz.

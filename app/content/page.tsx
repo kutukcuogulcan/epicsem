@@ -2,6 +2,7 @@
 
 import { analyzePassages, citabilityOfMarkdown, passagesFromMarkdown } from "@/lib/citability";
 import PassageList from "@/components/tool/PassageList";
+import { ErrorBlock, TableSkeleton } from "@/components/ui";
 
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
@@ -341,7 +342,7 @@ export default function ContentStudioPage() {
               <span className={testResult.ok ? "text-xs text-seo" : "text-xs text-danger"}>{testResult.message}</span>
             )}
           </div>
-          {connError && <div className="text-xs text-danger">{connError}</div>}
+          <ErrorBlock message={connError} />
         </form>
       </div>
 
@@ -371,7 +372,7 @@ export default function ContentStudioPage() {
         </div>
 
         <div className="space-y-4">
-          {loadingDraft && <div className="card text-sm text-ink/40">Yükleniyor…</div>}
+          {loadingDraft && <TableSkeleton rows={3} cols={2} />}
 
           {!loadingDraft && !selectedDraft && (
             <div className="card text-sm text-ink/40">Soldan bir taslak seçin, ya da Gap Analysis'ten yeni bir tane oluşturun.</div>
@@ -487,7 +488,7 @@ export default function ContentStudioPage() {
                       </button>
                     </div>
                   )}
-                  {publishError && <div className="text-xs text-danger">{publishError}</div>}
+                  <ErrorBlock message={publishError} />
                 </div>
               )}
             </div>

@@ -13,6 +13,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import AuditOverview from "@/components/tool/AuditOverview";
 import { useAgencyName } from "@/lib/use-agency-name";
 import { useProject } from "@/components/ProjectProvider";
+import { ErrorBlock } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -209,7 +210,7 @@ export default function AuditPage() {
 
       {!result && <AuditOverview refreshKey={refreshKey} onPick={setUrl} />}
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
       {result && (
         <div className="space-y-8">

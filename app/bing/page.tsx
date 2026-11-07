@@ -6,6 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
 import { useProject } from "@/components/ProjectProvider";
+import { ErrorBlock, TableSkeleton, EmptyBlock } from "@/components/ui";
 
 interface Site {
   url: string;
@@ -130,7 +131,7 @@ export default function BingPage() {
         </div>
       )}
       {connected && !sites.length && !err && <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-6 text-sm text-ink/60">Bing Webmaster hesabında site yok. bing.com/webmasters'tan siteni ekleyip doğrula.</div>}
-      {err && <div className="rounded-xl bg-danger/5 px-4 py-2.5 text-sm text-danger">{err}</div>}
+      <ErrorBlock message={err} />
 
       {connected && site && (
         <>
@@ -176,7 +177,7 @@ export default function BingPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="py-10 text-center text-sm text-ink/45">{loading ? "Yükleniyor…" : "Bu site için henüz trafik verisi yok."}</div>
+              loading ? <TableSkeleton bare rows={3} cols={4} /> : <EmptyBlock compact title="Bu site için henüz trafik verisi yok" description="Bing verisi birkaç gün içinde oluşur. Site Bing Webmaster'da yeni doğrulandıysa daha sonra tekrar bak." />
             )}
           </div>
 

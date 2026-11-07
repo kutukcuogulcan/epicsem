@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import type { EntityResult } from "@/lib/entity-check";
+import { ErrorBlock } from "@/components/ui";
 
 /** Marka + rakipler için Wikipedia/Wikidata varlık kartı (GEO sayfası). */
 export default function EntityPresence({ brand, competitors }: { brand: { name: string; domain: string }; competitors: { name: string; domain: string }[] }) {
@@ -37,7 +38,7 @@ export default function EntityPresence({ brand, competitors }: { brand: { name: 
           {busy ? "Kontrol ediliyor…" : res ? "Yeniden kontrol et" : "Kontrol et"}
         </button>
       </div>
-      {err && <p className="text-xs text-danger">{err}</p>}
+      <ErrorBlock message={err} />
       {res && (
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">

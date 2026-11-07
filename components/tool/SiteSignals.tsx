@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { BulkImportRow } from "@/types";
 import type { PageSpeedResult } from "@/lib/pagespeed";
+import { ErrorBlock } from "@/components/ui";
 
 const CAT_TONE: Record<string, string> = { FAST: "bg-seo/10 text-seo", AVERAGE: "bg-warn/10 text-warn", SLOW: "bg-danger/10 text-danger" };
 const CAT_LABEL: Record<string, string> = { FAST: "İyi", AVERAGE: "Geliştirilmeli", SLOW: "Kötü" };
@@ -163,7 +164,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
               )}
             </div>
           ) : null}
-          {psiErr && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{psiErr}</p>}
+          <ErrorBlock message={psiErr} />
         </div>
       </div>
 

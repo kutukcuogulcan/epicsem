@@ -6,6 +6,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import { ClientsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
+import { ErrorBlock, TableSkeleton } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -227,8 +228,9 @@ export default function ClientsPage() {
         </button>
       </form>
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
+      {clients === null && <TableSkeleton rows={4} cols={4} />}
       {clients && clients.length > 0 && (
         <div className="space-y-3">
           {clients.map((c) => (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAgencyName } from "@/lib/use-agency-name";
-import { Drawer } from "@/components/ui";
+import { Drawer, ErrorBlock } from "@/components/ui";
 
 const DEFAULTS = [
   { name: "Başlangıç", price: "", items: "Kritik teknik SEO hatalarının düzeltilmesi\nAI arama botlarına erişim ve robots.txt düzenlemesi\nAna sayfa ve hizmet sayfalarına schema\nAylık sağlık taraması ve rapor" },
@@ -100,7 +100,7 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
                 <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Not (isteğe bağlı)</span>
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Ödeme koşulları, sözleşme süresi…" className={inp} />
               </label>
-              {err && <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{err}</p>}
+              <ErrorBlock message={err} />
             </div>
             <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
               <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-ink/60 hover:bg-muted">

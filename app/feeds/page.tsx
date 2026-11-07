@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
-import { Drawer } from "@/components/ui";
+import { Drawer, ErrorBlock, TableSkeleton } from "@/components/ui";
 
 type Kind = "keyword" | "news" | "rss" | "youtube";
 
@@ -179,8 +179,9 @@ export default function FeedsPage() {
         </button>
       </ToolPageHeader>
 
-      {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</div>}
+      <ErrorBlock message={error} />
 
+      {feeds === null && <TableSkeleton rows={4} cols={4} />}
       {feeds && feeds.length === 0 && (
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {KINDS.map((k) => (
@@ -335,7 +336,7 @@ export default function FeedsPage() {
                   </div>
                 </>
               )}
-              {formError && <p className="text-sm text-danger">{formError}</p>}
+              <ErrorBlock message={formError} />
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
               <button type="button" onClick={() => setForm(null)} className="rounded-xl px-4 py-2 text-sm font-medium text-ink/60 hover:bg-muted">Vazgeç</button>

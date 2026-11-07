@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScoreRing, SentimentBar } from "@/components/tool/MonitorBits";
-import { PageHeader } from "@/components/ui";
+import { ErrorBlock, PageHeader, EmptyBlock, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 interface Row {
@@ -61,7 +61,7 @@ export default function BrandMonitorsPage() {
         }
       />
 
-      {err && <div className="rounded-xl bg-danger/10 px-4 py-2.5 text-sm text-danger">{err}</div>}
+      <ErrorBlock message={err} />
 
       <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
@@ -85,18 +85,24 @@ export default function BrandMonitorsPage() {
           <tbody className="divide-y divide-border">
             {rows === null ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-ink/45">
-                  Yükleniyor…
+                <td colSpan={6} className="p-0">
+                  <TableSkeleton bare rows={4} cols={5} />
                 </td>
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center">
-                  <div className="text-sm font-medium">Henüz monitör yok</div>
-                  <p className="mt-1 text-xs text-ink/50">Bir marka için GEO testi çalıştırdığında burada monitör olarak görünür.</p>
-                  <Link href="/geo" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white">
-                    İlk monitörü oluştur →
-                  </Link>
+                <td colSpan={6}>
+                  <EmptyBlock
+                    title={q ? "Aramaya uyan monitör yok" : "Henüz monitör yok"}
+                    description={q ? "Başka bir marka adı ya da alan adı dene." : "Bir marka için GEO testi çalıştırdığında burada monitör olarak görünür."}
+                    action={
+                      !q && (
+                        <Link href="/geo" className="inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white">
+                          İlk monitörü oluştur →
+                        </Link>
+                      )
+                    }
+                  />
                 </td>
               </tr>
             ) : (

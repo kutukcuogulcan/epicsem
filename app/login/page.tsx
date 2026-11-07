@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ErrorBlock } from "@/components/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export default function LoginPage() {
           />
         </div>
 
-        {error && <div className="text-danger text-sm">{error}</div>}
+        <ErrorBlock message={error} />
 
         <button
           type="submit"

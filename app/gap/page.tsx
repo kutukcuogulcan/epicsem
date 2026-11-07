@@ -12,7 +12,7 @@ import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
 import GapOverview from "@/components/tool/GapOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
-import { Drawer } from "@/components/ui";
+import { Drawer, ErrorBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 const SCENARIO_STEPS = [
@@ -417,7 +417,7 @@ export default function GapPage() {
         </div>
       )}
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
       {demoMode && gapMatrix && (
         <div className="card border-warn/40 text-warn text-sm">
@@ -570,7 +570,7 @@ export default function GapPage() {
               </div>
             ))}
           </div>
-          {generateError && <div className="card border-danger/40 text-danger text-sm">{generateError}</div>}
+          <ErrorBlock message={generateError} />
         </div>
       )}
 

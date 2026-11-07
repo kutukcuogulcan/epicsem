@@ -269,3 +269,87 @@ export function PageHeader({ title, description, actions, back, badge }: { title
     </div>
   );
 }
+
+// ---------------- Ekran durumları: yükleniyor / boş / hata ----------------
+/** Gri, nabız gibi atan yer tutucu blok. */
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <span className={`block animate-pulse rounded-md bg-[#f0f1f2] ${className}`} />;
+}
+
+/** Tablo yüklenirken: başlık şeridi + iskelet satırlar. `bare` ile çerçevesiz (tbody içinde kullanmak için değil). */
+export function TableSkeleton({ rows = 5, cols = 4, bare = false }: { rows?: number; cols?: number; bare?: boolean }) {
+  const body = (
+    <div className="divide-y divide-border" aria-busy="true" aria-label="Yükleniyor">
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex items-center gap-6 px-4 py-3.5">
+          {Array.from({ length: cols }).map((__, c) => (
+            <Skeleton key={c} className={`h-3.5 ${c === 0 ? "flex-[2]" : "flex-1"}`} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+  if (bare) return body;
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+      <div className="h-10 border-b border-border bg-[#fafafa]" />
+      {body}
+    </div>
+  );
+}
+
+/** Sayfa yüklenirken: başlık + KPI kartları + tablo iskeleti. */
+export function PageSkeleton({ cards = 3 }: { cards?: number }) {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Yükleniyor">
+      <div className="space-y-2 border-b border-border pb-6">
+        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+      <div className={`grid gap-3 ${cards === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+        {Array.from({ length: cards }).map((_, i) => (
+          <div key={i} className="space-y-3 rounded-2xl border border-border bg-panel p-5">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-7 w-20" />
+          </div>
+        ))}
+      </div>
+      <TableSkeleton />
+    </div>
+  );
+}
+
+/** Boş durum: ne olmadığını ve ne yapılacağını söyler; 0'ları gerçek sonuç sanmamak için. */
+export function EmptyBlock({ title, description, action, icon, compact = false }: { title: ReactNode; description?: ReactNode; action?: ReactNode; icon?: ReactNode; compact?: boolean }) {
+  return (
+    <div className={`flex flex-col items-center text-center ${compact ? "px-4 py-8" : "px-6 py-14"}`}>
+      <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-panel text-sub shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+        {icon ?? (
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7l7-4 7 4-7 4-7-4z" />
+            <path d="M3 7v6l7 4 7-4V7" />
+          </svg>
+        )}
+      </span>
+      <div className="text-sm font-medium text-ink">{title}</div>
+      {description && <div className="mt-1 max-w-md text-sm text-sub">{description}</div>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+/** Hata durumu: anlaşılır mesaj + isteğe bağlı "Tekrar dene". */
+export function ErrorBlock({ message, onRetry, className = "" }: { message: ReactNode; onRetry?: () => void; className?: string }) {
+  if (!message) return null;
+  return (
+    <div role="alert" className={`flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm ${className}`}>
+      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-medium text-white">!</span>
+      <div className="min-w-0 flex-1 text-danger">{message}</div>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="shrink-0 text-sm font-medium text-danger underline hover:no-underline">
+          Tekrar dene
+        </button>
+      )}
+    </div>
+  );
+}

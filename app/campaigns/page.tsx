@@ -7,7 +7,7 @@ import { CampaignsOverview } from "@/components/tool/ToolOverviews";
 import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import UsageMeter from "@/components/UsageMeter";
-import { Drawer } from "@/components/ui";
+import { Drawer, ErrorBlock, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 type Source = "gap" | "rss" | "keywords" | "feed";
@@ -375,8 +375,9 @@ export default function CampaignsPage() {
       <CampaignsOverview refreshKey={rk} campaigns={campaigns ?? []} />
 
       {notice && <div className="rounded-xl border border-seo/30 bg-seo/5 px-4 py-3 text-sm text-seo">{notice}</div>}
-      {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</div>}
+      <ErrorBlock message={error} />
 
+      {campaigns === null && <TableSkeleton rows={4} cols={4} />}
       {campaigns && campaigns.length === 0 && (
         <section className="card space-y-4">
           <div>
@@ -633,7 +634,7 @@ export default function CampaignsPage() {
                     </button>
                   </div>
                   <input value={form.rssFilter} onChange={(e) => set("rssFilter", e.target.value)} placeholder="Filtre (opsiyonel): virgülle kelimeler — ör. seo, google, yapay zeka" className={input} />
-                  {feedError && <p className="text-xs text-danger">{feedError}</p>}
+                  <ErrorBlock message={feedError} />
                   {feed && (
                     <div className="rounded-xl border border-border">
                       <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[11px] text-ink/50">
@@ -733,7 +734,7 @@ export default function CampaignsPage() {
               <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">
                 Ayda yaklaşık <strong>{perMonth} makale</strong> → {credits} içerik üretim kredisi (AI). Beslemeler, konu seçimi, kapak (markalı), içindekiler ve zamanlama ücretsizdir.
               </div>
-              {formError && <p className="text-sm text-danger">{formError}</p>}
+              <ErrorBlock message={formError} />
             </div>
 
             <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">

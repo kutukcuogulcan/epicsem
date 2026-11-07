@@ -9,6 +9,7 @@ import FAQSection from "@/components/FAQSection";
 import ExampleScenario from "@/components/ExampleScenario";
 import GaugeStatCard from "@/components/GaugeStatCard";
 import { useProject } from "@/components/ProjectProvider";
+import { ErrorBlock } from "@/components/ui";
 
 const SCENARIO_STEPS = [
   {
@@ -137,7 +138,7 @@ export default function ArticleWriterPage() {
         </button>
       </form>
 
-      {error && <div className="card border-danger/40 text-danger text-sm">{error}</div>}
+      <ErrorBlock message={error} />
 
       {result && (
         <div className="space-y-8">

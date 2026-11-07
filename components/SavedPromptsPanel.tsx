@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EngineId } from "@/types";
 import ScoreBadge from "@/components/ScoreBadge";
 import GradientBar from "@/components/GradientBar";
+import { ErrorBlock, TableSkeleton } from "@/components/ui";
 
 interface BrandRow {
   name: string;
@@ -192,11 +193,11 @@ export default function SavedPromptsPanel({
         </button>
       </div>
 
-      {error && <div className="text-xs text-danger">{error}</div>}
+      <ErrorBlock message={error} />
 
       {!hasBrand && <div className="text-sm text-ink/40 text-center py-4">Önce markanızı girin.</div>}
 
-      {hasBrand && loading && <div className="text-sm text-ink/40 text-center py-4">Yükleniyor…</div>}
+      {hasBrand && loading && <TableSkeleton rows={3} cols={3} />}
 
       {hasBrand && !loading && prompts && prompts.length === 0 && (
         <div className="text-sm text-ink/40 text-center py-4">
@@ -390,7 +391,7 @@ export default function SavedPromptsPanel({
               />
             )}
 
-            {error && <div className="text-xs text-danger">{error}</div>}
+            <ErrorBlock message={error} />
 
             <div className="flex justify-end gap-2 pt-1">
               <button

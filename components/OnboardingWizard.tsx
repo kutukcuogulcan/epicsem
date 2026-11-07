@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { PERSONA_DESCRIPTION, PERSONA_EXAMPLE, PERSONA_LABEL, PERSONA_ORDER, type PersonaKey } from "@/lib/sector-packs";
 import { TARGET_MARKET_COUNTRIES, countryCodeFromName, countryNameFromCode } from "@/lib/country-map";
+import { ErrorBlock } from "@/components/ui";
 
 // react-simple-maps + world-atlas (bkz. WorldMapPicker'ın kendi doc-comment'i) sadece "market"
 // adımına ulaşıldığında gerekiyor — wizard'ın ilk yüklemesini (Adım 1: URL) şişirmemek için
@@ -811,7 +812,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               className={inputClass}
             />
           </div>
-          {discoverError && <p className="text-xs text-danger">{discoverError}</p>}
+          <ErrorBlock message={discoverError} />
           {prefillWarning && <p className="text-xs text-warn/90">⚠️ {prefillWarning}</p>}
 
           {/* Kart: LLM'siz otomatik doldurma — og:site_name/<title>/TLD/<html lang>/hreflang

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ErrorBlock, TableSkeleton } from "@/components/ui";
 
 interface BrandRow {
   name: string;
@@ -336,7 +337,7 @@ export default function ContentHub() {
           </div>
         )}
 
-        {error && <div className="text-xs text-danger">{error}</div>}
+        <ErrorBlock message={error} />
         {!hasBrand && <div className="text-xs text-ink/40">Kartlara tıklamak için önce marka adı ve alan adını girin.</div>}
       </div>
 
@@ -368,7 +369,7 @@ export default function ContentHub() {
         {tab === "inputs" && (
           <>
             {!hasBrand && <div className="text-sm text-ink/40 text-center py-4">Önce markanızı girin.</div>}
-            {hasBrand && loading && <div className="text-sm text-ink/40 text-center py-4">Yükleniyor…</div>}
+            {hasBrand && loading && <TableSkeleton rows={3} cols={3} />}
             {hasBrand && !loading && inputs && inputs.length === 0 && (
               <div className="text-sm text-ink/40 text-center py-4">Kuyrukta henüz bir şey yok — yukarıdaki kartlardan ekleyin.</div>
             )}

@@ -8,7 +8,7 @@ import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import PageGuide from "@/components/PageGuide";
 import WriteWizard from "@/components/tool/WriteWizard";
-import { UnderlineTabs, Drawer } from "@/components/ui";
+import { Drawer, UnderlineTabs, EmptyBlock, TableSkeleton } from "@/components/ui";
 
 interface DraftItem {
   id: number;
@@ -252,12 +252,12 @@ export default function EditorHome({
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Yazılarda ara…" className="w-44 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs outline-none focus:border-accent" />
         </div>
         {drafts === null ? (
-          <div className="h-24 animate-pulse" />
+          <TableSkeleton bare rows={4} cols={5} />
         ) : shown.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <div className="text-sm font-medium">{rows.length ? "Bu filtrede yazı yok" : "Henüz yazı yok"}</div>
-            <p className="mt-1 text-xs text-ink/50">Yukarıdan bir sayfa aç, boş bir yazı başlat ya da Article Writer ile oluştur.</p>
-          </div>
+          <EmptyBlock
+            title={rows.length ? "Bu filtrede yazı yok" : "Henüz yazı yok"}
+            description={rows.length ? "Filtreyi ya da aramayı değiştir." : "Yukarıdan \"Konudan yaz\" ile ilk yazını oluştur ya da sitendeki bir yazıyı aç."}
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>

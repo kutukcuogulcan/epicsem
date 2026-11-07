@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
 import PageGuide from "@/components/PageGuide";
-import { Drawer } from "@/components/ui";
+import { Drawer, ErrorBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
@@ -208,7 +208,7 @@ export default function KeywordsPage() {
         </button>
       </form>
       {busy && <p className="text-xs text-ink/50">Google önerileri soru kalıpları ve a–z harfleriyle taranıyor (yaklaşık 60 sorgu, 10–20 saniye)…</p>}
-      {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</div>}
+      <ErrorBlock message={error} />
 
       {!data && !busy && (
         <div className="grid gap-3 md:grid-cols-3">

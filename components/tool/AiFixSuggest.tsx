@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { BulkImportRow } from "@/types";
 import type { PageFixSuggestion } from "@/lib/page-fix-suggest";
+import { ErrorBlock } from "@/components/ui";
 
 interface Conn {
   id: number;
@@ -210,7 +211,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
           )}
         </div>
       </div>
-      {err && <div className="text-xs text-danger">{err}</div>}
+      <ErrorBlock message={err} />
 
       <div className="grid gap-2 md:grid-cols-2">
         <Field label="SEO title" current={row.title} value={title} onChange={(v) => { setTitle(v); setOn((o) => ({ ...o, title: true })); }} max={60} on={on.title} onToggle={(v) => setOn((o) => ({ ...o, title: v }))} />

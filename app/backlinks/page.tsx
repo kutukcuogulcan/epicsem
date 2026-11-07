@@ -7,7 +7,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import ToolPageHeader from "@/components/ToolPageHeader";
 import PageGuide from "@/components/PageGuide";
 import CitationTab from "@/components/tool/CitationTab";
-import { UnderlineTabs } from "@/components/ui";
+import { UnderlineTabs, ErrorBlock, TableSkeleton, EmptyBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 interface RefDomain {
@@ -384,7 +384,15 @@ export default function BacklinksPage() {
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Alan adı ya da anchor ara…" className="ml-auto w-52 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs outline-none focus:border-accent" />
               </div>
               {shown.length === 0 ? (
-                <div className="px-5 py-10 text-center text-sm text-ink/45">{loading ? "Yükleniyor…" : "Bu filtrede link veren alan adı yok."}</div>
+                loading ? (
+                  <TableSkeleton bare rows={5} cols={5} />
+                ) : (
+                  <EmptyBlock
+                    compact
+                    title={domains.length ? "Bu filtrede link veren alan adı yok" : "Henüz link veren site bulunamadı"}
+                    description={domains.length ? "Filtreyi ya da aramayı değiştir." : "Ücretsiz kaynaklarda sitene link yok. Search Console CSV'sini yüklersen Google'ın bildiği tüm linkler gelir."}
+                  />
+                )
               ) : (
                 <table className="w-full text-sm">
                   <thead>
@@ -486,7 +494,11 @@ export default function BacklinksPage() {
                 Linksiz bahsetme: haber markanı anıyor ama sitene link vermiyor. Yazara ya da editöre kısa bir e-postayla linki eklemesini rica etmek, en kolay kazanılan backlinklerdendir. Link kontrolü ilk 20 haberde yapılır.
               </p>
               {shownMentions.length === 0 ? (
-                <div className="px-5 py-10 text-center text-sm text-ink/45">{loading ? "Yükleniyor…" : "Bu filtrede haber yok. Marka adı çok kısa ya da yeni olabilir."}</div>
+                loading ? (
+                  <TableSkeleton bare rows={4} cols={3} />
+                ) : (
+                  <EmptyBlock compact title="Bu filtrede haber yok" description="Son 3 ayda markanın geçtiği haber bulunamadı. Marka adı çok kısa ya da yeni olabilir." />
+                )
               ) : (
                 <ul className="divide-y divide-border">
                   {shownMentions.slice(0, 100).map((m) => (
@@ -573,7 +585,7 @@ export default function BacklinksPage() {
                     Bu karşılaştırma için <Link href="/integrations" className="font-medium text-accent">Ahrefs&apos;i bağla</Link>.
                   </p>
                 )}
-                {gapErr && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{gapErr}</p>}
+                <ErrorBlock message={gapErr} />
               </div>
               {gap && (
                 <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
