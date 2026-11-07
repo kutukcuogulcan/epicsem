@@ -38,6 +38,7 @@ interface Detail {
   engines: { engine: string; visibility: number; sentiment: number | null; total: number }[];
   timeline: { at: string; visibility: number; sentiment: number | null }[];
   legacy?: boolean;
+  schedule?: { active: boolean; intervalDays: number; lastAutoAt: string | null; lastError: string | null } | null;
 }
 
 type Tab = "prompts" | "visibility" | "sentiment" | "rivals" | "sources";
@@ -52,16 +53,55 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("prompts");
 
+  const [busy, setBusy] = useState<null | "run" | "schedule">(null);
+  const [note, setNote] = useState<{ t: string; bad?: boolean } | null>(null);
+
+  async function load() {
+    try {
+      const r = await fetch(`/api/brand-monitors/${domain}`);
+      if (r.status === 401) return void (window.location.href = `/login?next=/brand-monitors/${domain}`);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Monitör alınamadı");
+      setD(j);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Monitör alınamadı");
+    }
+  }
   useEffect(() => {
-    fetch(`/api/brand-monitors/${domain}`)
-      .then(async (r) => {
-        if (r.status === 401) return void (window.location.href = `/login?next=/brand-monitors/${domain}`);
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error ?? "Monitör alınamadı");
-        setD(j);
-      })
-      .catch((e) => setErr(e.message));
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domain]);
+
+  async function runNow() {
+    setBusy("run");
+    setNote(null);
+    try {
+      const r = await fetch("/api/brand-monitors/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: decodeURIComponent(domain) }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Çalıştırılamadı");
+      setNote({ t: `Test tamamlandı: ${j.prompts} prompt × ${j.engines} motor.` });
+      await load();
+    } catch (e) {
+      setNote({ t: e instanceof Error ? e.message : "Çalıştırılamadı", bad: true });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveSchedule(p: { active?: boolean; intervalDays?: number }) {
+    setBusy("schedule");
+    setNote(null);
+    try {
+      const r = await fetch("/api/brand-monitors/schedule", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: decodeURIComponent(domain), ...p }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Kaydedilemedi");
+      setD((x) => (x ? { ...x, schedule: j.schedule } : x));
+    } catch (e) {
+      setNote({ t: e instanceof Error ? e.message : "Kaydedilemedi", bad: true });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   if (err)
     return (
@@ -74,7 +114,11 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
     );
   if (!d) return <div className="py-20 text-center text-sm text-ink/45">Yükleniyor…</div>;
 
-  const stale = Date.now() - new Date(d.lastRunAt).getTime() > 7 * 864e5;
+  const sch = d.schedule;
+  const active = !!sch?.active;
+  const every = sch?.intervalDays ?? 7;
+  const nextAt = new Date(new Date(d.lastRunAt).getTime() + every * 864e5);
+  const queries = d.prompts.length * Math.max(1, d.engines.length);
   const net = netSentiment(d.sentiment);
   const timeline = d.timeline.map((t) => ({ ...t, label: new Date(t.at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }), v: Math.round(t.visibility * 100) }));
 
@@ -94,26 +138,55 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
           </>
         }
         actions={
-          <Link href="/geo" className="rounded-lg border border-border bg-panel px-3.5 py-2 text-sm font-medium hover:bg-muted">
-            ↻ Yeniden çalıştır
-          </Link>
+          <button type="button" onClick={runNow} disabled={!!busy || !!d.legacy} className="h-8 rounded-[10px] border border-border bg-panel px-3 text-sm font-medium hover:bg-[#fafafa] disabled:opacity-50">
+            {busy === "run" ? "Çalışıyor…" : "↻ Şimdi çalıştır"}
+          </button>
         }
       />
 
-      {stale && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warn/30 bg-warn/5 px-4 py-3">
+      {active ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-panel px-4 py-3 shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+          <div className="flex items-start gap-2.5">
+            <span className="mt-1.5 h-2 w-2 rounded-full bg-seo" />
+            <div>
+              <div className="text-sm font-medium">İzleme açık</div>
+              <div className="text-xs text-sub">
+                Her {every === 1 ? "gün" : `${every} günde bir`} otomatik çalışır · sonraki çalışma {nextAt.getTime() < Date.now() ? "sıradaki kontrolde" : fmt(nextAt.toISOString())} · her çalışma {queries} AI sorgusu
+                {sch?.lastError && <span className="text-danger"> · son otomatik çalışma hatası: {sch.lastError}</span>}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <select value={every} disabled={!!busy} onChange={(e) => saveSchedule({ intervalDays: Number(e.target.value) })} className="h-8 rounded-[10px] border border-border bg-panel px-2 text-sm outline-none">
+              <option value={1}>Günlük</option>
+              <option value={3}>3 günde bir</option>
+              <option value={7}>Haftalık</option>
+              <option value={14}>2 haftada bir</option>
+              <option value={30}>Aylık</option>
+            </select>
+            <button type="button" disabled={!!busy} onClick={() => saveSchedule({ active: false })} className="h-8 rounded-[10px] border border-border px-3 text-sm font-medium hover:bg-[#fafafa] disabled:opacity-50">
+              Duraklat
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-warn/30 bg-warn/5 px-4 py-3">
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-warn text-[10px] font-medium text-white">!</span>
             <div>
-              <div className="text-sm font-medium text-warn">Veriler güncel değil</div>
-              <div className="text-xs text-ink/60">Son test 7 günden eski. Markanın AI cevaplarındaki yerini görmek için testi yeniden çalıştır.</div>
+              <div className="text-sm font-medium text-warn">İzleme duraklatıldı</div>
+              <div className="text-xs text-sub">
+                Veri toplama duruyor. Markanı AI modellerinde takip etmeye devam etmek için izlemeyi başlat ({queries} AI sorgusu / çalışma).
+              </div>
             </div>
           </div>
-          <Link href="/geo" className="text-sm font-medium text-accent underline">
-            ▶ Testi çalıştır
-          </Link>
+          <button type="button" disabled={!!busy || !!d.legacy} onClick={() => saveSchedule({ active: true })} className="text-sm font-medium text-accent underline disabled:opacity-50">
+            ▶ İzlemeyi başlat
+          </button>
         </div>
       )}
+
+      {note && <div className={`rounded-xl px-4 py-2.5 text-sm ${note.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{note.t}</div>}
 
       {d.legacy && (
         <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-ink/65">

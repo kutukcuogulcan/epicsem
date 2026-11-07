@@ -2747,3 +2747,72 @@ export async function updateClient(userId: number, id: number, params: { name?: 
   );
   return row ? rowToClient(row) : null;
 }
+
+// ---------------- Marka Monitörü otomatik çalıştırma ----------------
+
+export interface MonitorSchedule {
+  userId: number;
+  brandDomain: string;
+  active: boolean;
+  intervalDays: number;
+  lastAutoAt: string | null;
+  lastError: string | null;
+}
+
+async function ensureMonitorSchedules() {
+  await ensureSchema();
+  await exec(`CREATE TABLE IF NOT EXISTS brand_monitor_schedules (
+    user_id INTEGER NOT NULL,
+    brand_domain TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT false,
+    interval_days INTEGER NOT NULL DEFAULT 7,
+    last_auto_at TIMESTAMPTZ,
+    last_error TEXT,
+    PRIMARY KEY (user_id, brand_domain)
+  )`, []);
+}
+const rowToSchedule = (r: any): MonitorSchedule => ({
+  userId: r.user_id,
+  brandDomain: r.brand_domain,
+  active: !!r.active,
+  intervalDays: Number(r.interval_days),
+  lastAutoAt: r.last_auto_at ? toIso(r.last_auto_at) : null,
+  lastError: r.last_error ?? null,
+});
+
+export async function listMonitorSchedules(userId: number): Promise<MonitorSchedule[]> {
+  await ensureMonitorSchedules();
+  return (await many<any>(`SELECT * FROM brand_monitor_schedules WHERE user_id = $1`, [userId])).map(rowToSchedule);
+}
+
+export async function setMonitorSchedule(userId: number, brandDomain: string, p: { active?: boolean; intervalDays?: number }): Promise<MonitorSchedule> {
+  await ensureMonitorSchedules();
+  const row = await one<any>(
+    `INSERT INTO brand_monitor_schedules (user_id, brand_domain, active, interval_days) VALUES ($1, $2, COALESCE($3, false), COALESCE($4, 7))
+     ON CONFLICT (user_id, brand_domain) DO UPDATE SET active = COALESCE($3, brand_monitor_schedules.active), interval_days = COALESCE($4, brand_monitor_schedules.interval_days)
+     RETURNING *`,
+    [userId, brandDomain, p.active ?? null, p.intervalDays ?? null]
+  );
+  return rowToSchedule(row);
+}
+
+export async function markMonitorRun(userId: number, brandDomain: string, error: string | null): Promise<void> {
+  await ensureMonitorSchedules();
+  await exec(`UPDATE brand_monitor_schedules SET last_auto_at = now(), last_error = $3 WHERE user_id = $1 AND brand_domain = $2`, [userId, brandDomain, error]);
+}
+
+/** Sırası gelen aktif monitörler: son GEO testi (elle ya da otomatik) aralıktan eski olanlar. */
+export async function listDueMonitorSchedules(): Promise<MonitorSchedule[]> {
+  await ensureMonitorSchedules();
+  const rows = await many<any>(
+    `SELECT s.* FROM brand_monitor_schedules s
+      WHERE s.active
+        AND COALESCE((SELECT MAX(g.created_at) FROM geo_runs g WHERE g.user_id = s.user_id AND g.brand_domain = s.brand_domain), 'epoch')
+            < now() - (s.interval_days || ' days')::interval
+        AND COALESCE(s.last_auto_at, 'epoch') < now() - interval '12 hours'
+      ORDER BY s.last_auto_at NULLS FIRST
+      LIMIT 25`,
+    []
+  );
+  return rows.map(rowToSchedule);
+}

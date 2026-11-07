@@ -17,6 +17,7 @@ interface Row {
   visibility: number | null;
   sentiment: number | null;
   demoMode: boolean;
+  schedule?: { active: boolean; intervalDays: number } | null;
 }
 
 const ago = (iso: string) => {
@@ -100,7 +101,7 @@ export default function BrandMonitorsPage() {
               </tr>
             ) : (
               shown.map((r) => {
-                const fresh = Date.now() - new Date(r.lastRunAt).getTime() < 7 * 864e5;
+                const on = !!r.schedule?.active;
                 return (
                   <tr key={r.brandDomain} onClick={() => router.push(`/brand-monitors/${encodeURIComponent(r.brandDomain)}`)} className="cursor-pointer hover:bg-muted/40">
                     <td className="px-4 py-3">
@@ -113,8 +114,8 @@ export default function BrandMonitorsPage() {
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${fresh ? "border-seo/30 bg-seo/10 text-seo" : "border-border bg-muted text-ink/55"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
-                        {fresh ? "Güncel" : "Bekliyor"}
+                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-seo/30 bg-seo/10 text-seo" : "border-border bg-muted text-sub"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
+                        {on ? "Aktif" : "Duraklatıldı"}
                       </span>
                       {r.demoMode && <span className="ml-1.5 rounded-md bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn">demo</span>}
                     </td>
@@ -133,7 +134,7 @@ export default function BrandMonitorsPage() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-ink/45">Durum: son 7 gün içinde test edilen monitörler &quot;Güncel&quot;, daha eskiler &quot;Bekliyor&quot; görünür. Testi GEO/AEO Visibility sayfasından yeniden çalıştırırsın.</p>
+      <p className="text-xs text-ink/45">Durum: &quot;Aktif&quot; monitörler seçtiğin sıklıkta (günlük, haftalık…) kendiliğinden yeniden test edilir; &quot;Duraklatıldı&quot; olanlar sadece elle çalışır. Monitöre girip izlemeyi başlatabilirsin.</p>
     </div>
   );
 }

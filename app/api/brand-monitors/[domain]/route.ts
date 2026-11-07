@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { getLatestGeoRunFull, listGeoRunHistory } from "@/lib/db";
+import { getLatestGeoRunFull, listGeoRunHistory, listMonitorSchedules } from "@/lib/db";
 import type { GeoRunResult } from "@/types";
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -13,7 +13,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ domain: st
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   const domain = decodeURIComponent((await ctx.params).domain).toLowerCase();
-  const [full, history] = await Promise.all([getLatestGeoRunFull(user.id, domain), listGeoRunHistory(user.id, domain, 60)]);
+  const [full, history, schedules] = await Promise.all([getLatestGeoRunFull(user.id, domain), listGeoRunHistory(user.id, domain, 60), listMonitorSchedules(user.id)]);
+  const schedule = schedules.find((s) => s.brandDomain === domain) ?? null;
   if (!full) {
     // Eski koşular cevap metnini saklamıyordu: sadece özet ve zaman çizelgesi gösterilir.
     const last = history[history.length - 1];
@@ -30,6 +31,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ domain: st
       prompts: [],
       engines: [],
       legacy: true,
+      schedule,
       timeline: history.map((h) => {
         const x = h.summaries.find((s) => s.domain === domain) ?? h.summaries[0];
         return { at: h.createdAt, visibility: x ? x.visibility : 0, sentiment: x?.avgSentiment ?? null };
@@ -93,5 +95,6 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ domain: st
     prompts,
     engines,
     timeline,
+    schedule,
   });
 }
