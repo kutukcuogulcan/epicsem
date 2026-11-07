@@ -128,6 +128,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
         { topic: keyword, keyword, title, site, language: lang, format, outline, faqQuestions: questions, length, tone, ...opts },
         "/api/editor/write"
       );
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
       onDone(d.id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Yazı yazılamadı");

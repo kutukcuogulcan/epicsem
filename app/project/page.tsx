@@ -66,6 +66,8 @@ export default function ProjectSettingsPage() {
   const [busy, setBusy] = useState<null | "save" | "fill">(null);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  // Ton/hitap daha önce kaydedilmediyse ve bu oturumda elle seçilmediyse "Siteden doldur" önerisi uygulanır.
+  const [voiceSet, setVoiceSet] = useState(false);
 
   const snapshot = (n: string, d: string, c: Comp[], st: Settings) => JSON.stringify({ n, d, c, st });
 
@@ -79,6 +81,7 @@ export default function ProjectSettingsPage() {
       const p = d.project;
       if (p) {
         const st: Settings = { language: "tr", tone: "professional", address: "siz", ...p.settings };
+        setVoiceSet(!!(p.settings?.tone || p.settings?.address));
         setName(p.name);
         setDomain(p.domain);
         setComps(p.competitors ?? []);
@@ -136,6 +139,10 @@ export default function ProjectSettingsPage() {
         (["description", "audience", "products", "usps", "cta"] as const).forEach((k) => {
           if (!n[k]?.trim() && g[k]) n[k] = g[k];
         });
+        if (!voiceSet) {
+          if (g.tone) n.tone = g.tone;
+          if (g.address) n.address = g.address;
+        }
         return n;
       });
       setNote(d.demo ? "Demo modunda sadece sitenin meta açıklaması alındı." : "Boş alanlar siteden dolduruldu. Kontrol edip kaydet.");
@@ -233,7 +240,10 @@ export default function ProjectSettingsPage() {
                     <button
                       key={t.v}
                       type="button"
-                      onClick={() => set("tone", t.v)}
+                      onClick={() => {
+                        set("tone", t.v);
+                        setVoiceSet(true);
+                      }}
                       className={`rounded-xl border px-3 py-2.5 text-left transition ${s.tone === t.v ? "border-[#BDB4FF] bg-accent/5 ring-1 ring-[#BDB4FF]" : "border-border hover:bg-muted/50"}`}
                     >
                       <div className="text-sm font-medium">{t.t}</div>
@@ -246,7 +256,10 @@ export default function ProjectSettingsPage() {
                 <span className="block text-sm font-medium">Okura hitap</span>
                 <div className="mt-1.5 inline-flex rounded-[10px] border border-border p-0.5">
                   {(["siz", "sen"] as const).map((a) => (
-                    <button key={a} type="button" onClick={() => set("address", a)} className={`h-7 rounded-lg px-3 text-sm font-medium ${s.address === a ? "bg-ink text-white" : "text-sub hover:text-ink"}`}>
+                    <button key={a} type="button" onClick={() => {
+                        set("address", a);
+                        setVoiceSet(true);
+                      }} className={`h-7 rounded-lg px-3 text-sm font-medium ${s.address === a ? "bg-ink text-white" : "text-sub hover:text-ink"}`}>
                       {a === "siz" ? "Siz" : "Sen"}
                     </button>
                   ))}

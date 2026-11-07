@@ -21,10 +21,15 @@ export default function UsageMeter({ metric }: { metric: keyof typeof METRIC_LAB
   const [data, setData] = useState<UsageData | null>(null);
 
   useEffect(() => {
-    fetch("/api/usage")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setData)
-      .catch(() => {});
+    const load = () =>
+      fetch("/api/usage")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((d) => d && setData(d))
+        .catch(() => {});
+    load();
+    // Kota harcayan bir işlem bitince (ör. GEO testi) sayfa "epicsem:usage-changed" olayı yayar.
+    window.addEventListener("epicsem:usage-changed", load);
+    return () => window.removeEventListener("epicsem:usage-changed", load);
   }, []);
 
   if (!data) return null;

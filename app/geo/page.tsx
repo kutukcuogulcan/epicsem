@@ -402,6 +402,7 @@ export default function GeoPage() {
       if (typeof data.chatCount === "number") setChatCount(data.chatCount);
       setInsufficientData(Boolean(data.insufficientData));
       setEngineNotes(Array.isArray(data.engineNotes) ? data.engineNotes : []);
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
       if (Array.isArray(data.topicBreakdown)) setTopicBreakdown(data.topicBreakdown);
       if (data.brandedSplit) setBrandedSplit(data.brandedSplit);
       setDemoMode(data.demoMode);

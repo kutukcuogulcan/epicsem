@@ -59,11 +59,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Aktif projeye ait veriler (başka markaya düşmez).
   // Sitesi boş eski yazılar yalnızca tek proje varken sayılır; birden çok projede karışmasın.
   const singleProject = (await listClients(user.id)).length <= 1;
-  const projDrafts = domain ? drafts.filter((d) => d.site === domain || (!d.site && singleProject)) : drafts;
-  const projCampaigns = domain ? campaigns.filter((c) => norm(c.brandDomain) === domain) : campaigns;
-  const monitor = domain ? monitors.find((m) => norm(m.brandDomain) === domain) ?? null : monitors[0] ?? null;
+  // Proje yoksa başka markanın verisi gösterilmez; ekran "proje oluştur" adımından başlar.
+  const projDrafts = domain ? drafts.filter((d) => d.site === domain || (!d.site && singleProject)) : [];
+  const projCampaigns = domain ? campaigns.filter((c) => norm(c.brandDomain) === domain) : [];
+  const monitor = domain ? monitors.find((m) => norm(m.brandDomain) === domain) ?? null : null;
   const schedule = monitor ? schedules.find((s) => norm(s.brandDomain) === norm(monitor.brandDomain)) ?? null : null;
-  const selectedBrand = brand ? geoBrands.find((b) => b.brandDomain === brand) : domain ? geoBrands.find((b) => b.brandDomain === domain) : geoBrands[0];
+  const selectedBrand = brand ? geoBrands.find((b) => b.brandDomain === brand) : domain ? geoBrands.find((b) => b.brandDomain === domain) : undefined;
   const overviewRuns = selectedBrand ? await listGeoRunsForOverview(user.id, selectedBrand.brandDomain, 90) : [];
 
   const settingsFilled = ["description", "audience", "products"].filter((k) => String((settings as Record<string, unknown>)[k] ?? "").trim()).length >= 2;
