@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UnderlineTabs, Drawer, ErrorBlock } from "@/components/ui";
+import { UnderlineTabs, Drawer, ErrorBlock, PageHeader, Card, EmptyBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 import {
   Bar,
@@ -17,12 +17,9 @@ import {
 } from "recharts";
 import type { EngineId, GeoRunResult, GeoVisibilitySummary, SourceDomainStat, SourceDomainType, TopicVisibility, UrlStat, UrlType } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
-import StatCard from "@/components/StatCard";
-import GaugeStatCard from "@/components/GaugeStatCard";
 import GradientBar from "@/components/GradientBar";
 import SavedPromptsPanel from "@/components/SavedPromptsPanel";
 import ScoreBadge from "@/components/ScoreBadge";
-import ToolPageHeader from "@/components/ToolPageHeader";
 import GeoOverview from "@/components/tool/GeoOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
@@ -129,6 +126,9 @@ function parsePromptLine(line: string): PromptInput {
   return { topic: "Genel", text: line };
 }
 
+const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
+
 export default function GeoPage() {
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
@@ -156,7 +156,15 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities">("prompts");
+  const [resultsTab, setResultsTab] = useState<"overview" | "visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities" | "library" | "entity">("overview");
+  const [testOpen, setTestOpen] = useState(false);
+  // Hazırlık bitip asıl test başlayınca çekmece kapanır; ilerleme sayfada görünür.
+  useEffect(() => {
+    if (loading) {
+      setTestOpen(false);
+      setWizardOpen(false);
+    }
+  }, [loading]);
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const summariesRef = useRef<GeoVisibilitySummary[] | null>(null);
   useEffect(() => {
@@ -327,7 +335,7 @@ export default function GeoPage() {
     setHistory(null);
     setRunResultsFilter("");
     setRunEngineFilter("all");
-    setResultsTab("prompts");
+    setResultsTab("overview");
     setRestoredAt(null);
     try {
       const res = await fetch("/api/geo", {
@@ -452,36 +460,38 @@ export default function GeoPage() {
   );
 
   return (
-    <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="GEO/AEO Visibility"
-        title="GEO / AEO Visibility"
-        body="Markanın ChatGPT, Claude, Gemini ve Perplexity cevaplarında ne sıklıkla, kaçıncı sırada ve hangi kaynaklarla geçtiği."
-      >
-        <UsageMeter metric="engineQueries" />
-      </ToolPageHeader>
-
-      <GeoOverview refreshKey={overviewKey} />
-
-      <div id="yeni-test" className="scroll-mt-24 pt-4 border-t border-border">
-        <h2 className="text-lg font-medium">Yeni test</h2>
-        <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler ve promptlar otomatik çıkarılır, test hemen başlar.</p>
-      </div>
-
-      {wizardOpen ? (
-        <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} running={loading} />
-      ) : (
-        <>
-          <QuickGeoAnalyze onReady={handleWizardComplete} running={loading} onOpenSettings={() => setManualOpen(true)} />
-          <p className="text-xs text-ink/40">
-            Her şeyi adım adım kendin seçmek istersen{" "}
-            <button type="button" onClick={() => setWizardOpen(true)} className="font-medium text-accent hover:underline">
-              sihirbazla kur
+    <div className="space-y-6">
+      <PageHeader
+        title="GEO Görünürlük"
+        description="Markanın ChatGPT, Claude, Gemini ve Perplexity cevaplarında ne sıklıkla, kaçıncı sırada ve hangi kaynaklarla geçtiği."
+        actions={
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setManualOpen(true)} className={BTN2}>
+              Ayarlar
             </button>
-            .
-          </p>
-        </>
-      )}
+            <button type="button" onClick={() => setTestOpen(true)} disabled={loading} className={BTN1}>
+              {loading ? "Test çalışıyor…" : "+ Yeni test"}
+            </button>
+          </div>
+        }
+      />
+
+      <Drawer isOpen={testOpen} onClose={() => setTestOpen(false)} eyebrow="GEO" title="Yeni test" subtitle="Sitenin adresini yaz — marka, rakipler ve promptlar otomatik çıkarılır, test hemen başlar." size="lg">
+        {wizardOpen ? (
+          <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} running={loading} />
+        ) : (
+          <div className="space-y-3">
+            <QuickGeoAnalyze onReady={handleWizardComplete} running={loading} onOpenSettings={() => { setTestOpen(false); setManualOpen(true); }} />
+            <p className="text-xs text-sub">
+              Her şeyi adım adım kendin seçmek istersen{" "}
+              <button type="button" onClick={() => setWizardOpen(true)} className="font-medium text-accent hover:underline">
+                sihirbazla kur
+              </button>
+              .
+            </p>
+          </div>
+        )}
+      </Drawer>
 
       {manualOpen && (
       <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
@@ -622,13 +632,6 @@ export default function GeoPage() {
       </Drawer>
       )}
 
-      <SavedPromptsPanel
-        brand={brand}
-        competitors={competitors.filter((c) => c.name && c.domain)}
-        engines={engines}
-      />
-
-      {brand.name && <EntityPresence brand={brand} competitors={competitors.filter((c) => c.name)} />}
 
       <ErrorBlock message={error} />
 
@@ -644,51 +647,6 @@ export default function GeoPage() {
         </div>
       )}
 
-      {demoMode && summaries && (
-        <div className="card border-warn/40 text-warn text-sm">
-          <strong>Demo modda</strong> çalışıyor — hiçbir LLM API anahtarı tanımlı değil, bu yüzden aşağıdaki
-          yanıtlar simüle edilmiştir (açıkça işaretli) ve panelin nasıl çalıştığını gösterir. Gerçek sonuçlar için
-          <code>.env</code>&apos;e gerçek anahtarlar ekleyin.
-        </div>
-      )}
-
-      {summaries && ownSummary && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <GaugeStatCard
-            label="Görünürlük"
-            score={Math.round(ownSummary.visibility * 100)}
-            description={`${ownSummary.brand} kaç promptta görünüyor`}
-            tone={ownSummary.visibility >= 0.5 ? "seo" : ownSummary.visibility >= 0.2 ? "warn" : "danger"}
-          />
-          <StatCard
-            label="Duygu tonu"
-            value={ownSummary.avgSentiment != null ? String(ownSummary.avgSentiment) : "—"}
-            description="AI seni ne kadar olumlu tanımlıyor"
-            tone={
-              ownSummary.avgSentiment == null
-                ? "ink"
-                : ownSummary.avgSentiment >= 70
-                  ? "seo"
-                  : ownSummary.avgSentiment >= 50
-                    ? "warn"
-                    : "danger"
-            }
-          />
-          <StatCard
-            label="Promptlar"
-            value={String(prompts.length)}
-            description={`${engines.length} motor üzerinden test edildi`}
-          />
-          {brandedSplit && (
-            <StatCard
-              label="Marka bilinen / keşif"
-              value={`${brandedSplit.branded} / ${brandedSplit.discovery}`}
-              description="Markanı zaten bilen vs. kategoriyi araştıran sorular"
-            />
-          )}
-        </div>
-      )}
-
       {insufficientData && summaries && (
         <div className="card border-ink/20 text-ink/50 text-sm">
           Bu koşuda yalnızca {chatCount} sohbet var (prompt × motor). 10 sohbetin altında metrikler istatistiksel
@@ -698,22 +656,45 @@ export default function GeoPage() {
 
       {loading && <RunProgress prompts={prompts.map((p) => p.text)} engines={engines} />}
 
-      {summaries && (
-        (() => {
-          const T = [
-            { key: "prompts", label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null },
-            { key: "visibility", label: "Görünürlük" },
-            { key: "sentiment", label: "Duygu" },
-            { key: "sources", label: "Domain" },
-            { key: "urls", label: "URL" },
-            { key: "rivals", label: "Rakipler", count: competitorRefs.length || null },
-            { key: "opportunities", label: "Fırsatlar" },
-          ] as const;
-          return <UnderlineTabs value={T.findIndex((t) => t.key === resultsTab)} onChange={(i) => setResultsTab(T[i].key)} tabs={T.map((t) => ({ label: t.label, count: "count" in t ? t.count : null }))} />;
-        })()
+      {(() => {
+        const T = [
+          { key: "overview", label: "Genel bakış" },
+          { key: "prompts", label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null },
+          { key: "visibility", label: "Görünürlük" },
+          { key: "sentiment", label: "Duygu" },
+          { key: "sources", label: "Kaynaklar" },
+          { key: "urls", label: "URL'ler" },
+          { key: "rivals", label: "Rakipler", count: competitorRefs.length || null },
+          { key: "opportunities", label: "Fırsatlar" },
+          { key: "library", label: "Prompt kütüphanesi" },
+          { key: "entity", label: "Bilgi grafı" },
+        ] as const;
+        return <UnderlineTabs value={T.findIndex((t) => t.key === resultsTab)} onChange={(i) => setResultsTab(T[i].key)} tabs={T.map((t) => ({ label: t.label, count: "count" in t ? t.count : null }))} />;
+      })()}
+
+      {resultsTab === "overview" && <GeoOverview refreshKey={overviewKey} onNewTest={() => setTestOpen(true)} />}
+      {resultsTab === "library" && <SavedPromptsPanel brand={brand} competitors={competitors.filter((c) => c.name && c.domain)} engines={engines} />}
+      {resultsTab === "entity" &&
+        (brand.name ? (
+          <EntityPresence brand={brand} competitors={competitors.filter((c) => c.name)} />
+        ) : (
+          <EmptyBlock title="Önce bir marka seç" description="Sol alttan proje seç ya da yeni test başlat." />
+        ))}
+      {!summaries && !loading && !["overview", "library", "entity"].includes(resultsTab) && (
+        <Card>
+          <EmptyBlock
+            title="Bu proje için test sonucu yok"
+            description="Yeni test çalıştırınca promptlar, görünürlük, kaynaklar ve rakip karşılaştırması burada görünür."
+            action={
+              <button type="button" onClick={() => setTestOpen(true)} className={BTN1}>
+                + Yeni test
+              </button>
+            }
+          />
+        </Card>
       )}
 
-      {restoredAt && summaries && (
+      {restoredAt && summaries && !["overview", "library", "entity"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/45">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
@@ -730,7 +711,9 @@ export default function GeoPage() {
             {engineBreakdown.map((e) => (
               <div key={e.engine} className="flex items-center gap-3 text-sm">
                 <div className="w-40 truncate text-ink/70 shrink-0">{ENGINE_LABEL[e.engine]}</div>
-                <GradientBar value={e.visibility} className="flex-1" />
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, e.visibility)}%` }} />
+                </div>
                 <div className="w-32 text-right text-ink/50 text-xs shrink-0">
                   %{e.visibility} görünürlük{e.sentiment != null ? ` · ${e.sentiment} ton` : ""}
                 </div>
@@ -906,11 +889,8 @@ export default function GeoPage() {
         <div className="card">
           <h2 className="font-medium">Domain metrikleri</h2>
           <p className="text-sm text-ink/50 mb-4">
-            AI motorlarının tüm koşularda hangi domainleri kaynak gösterdiği. &ldquo;Retrieved %&rdquo; ve
-            &ldquo;Retrieval rate&rdquo; henüz gösterilmiyor — bunlar modelin cevabı üretirken baktığı ama
-            metinde atıf vermediği URL&apos;leri de yakalayan ayrı bir sinyal gerektiriyor, bu da henüz kurulmadı
-            (🚨 Browser tabanlı sorgu altyapısı kartı). Aşağıdaki Citation rate asla % değil, bir orandır (1&apos;i
-            geçebilir).
+            AI motorlarının cevaplarında hangi sitelerin kaynak olarak gösterildiği. &ldquo;Oran&rdquo; cevap başına
+            ortalama atıf sayısıdır; yüzde değildir, 1&apos;i geçebilir.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-2">
@@ -947,10 +927,6 @@ export default function GeoPage() {
                   </div>
                 );
               })}
-              <p className="text-xs text-ink/30 pt-2">
-                Kurumsal/Editoryal/Kamu-Kurum sınıflandırması sezgisel bir listeye dayanır — henüz elle düzeltme
-                arayüzü yok, bu nedenle bazı domainler yanlış kovaya düşebilir.
-              </p>
             </div>
           </div>
         </div>
@@ -1040,7 +1016,7 @@ export default function GeoPage() {
           <h2 className="font-medium">Konu bazında görünürlük</h2>
           <p className="text-sm text-ink/50 mb-4">
             {ownSummary?.brand ?? "Markanız"} her prompt konusunda ne kadar görünüyor — hangi konularda görünmez
-            olduğunuzu gösterir (Peec AI&apos;deki topic/tag kırılımına benzer).
+            olduğunuzu gösterir.
           </p>
           <div className="space-y-2">
             {topicBreakdown.map((t) => {

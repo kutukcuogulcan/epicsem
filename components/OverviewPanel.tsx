@@ -33,6 +33,8 @@ interface Props {
   /** Verilirse marka değişimi sayfa yönlendirmesi yerine bunu çağırır (ör. /geo içinde). */
   onBrandChange?: (domain: string) => void;
   newTestHref?: string;
+  /** Verilirse "Yeni test" bağlantı yerine bu çağrılır; üst filtre çubuğundaki düğme gizlenir (sayfa başlığında zaten var). */
+  onNewTest?: () => void;
 }
 
 const RANGES = [
@@ -138,7 +140,7 @@ function Dropdown<T extends string | number>({
   );
 }
 
-export default function OverviewPanel({ brands, selectedDomain, runs, onBrandChange, newTestHref = "/geo" }: Props) {
+export default function OverviewPanel({ brands, selectedDomain, runs, onBrandChange, newTestHref = "/geo", onNewTest }: Props) {
   const router = useRouter();
   // Varsayılan aralık: son testi kapsayan en kısa aralık (14 günde test yoksa boş ekran
   // yerine otomatik 30/90 güne açılır).
@@ -280,16 +282,20 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
         )}
         <div className="ml-auto flex items-center gap-2">
           {anyDemo && <span className="rounded-full bg-warn/10 text-warn text-xs font-medium px-2.5 py-1">Demo veri içeriyor</span>}
-          <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-medium hover:opacity-90">
-            Yeni test
-          </Link>
+          {!onNewTest && (
+            <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-medium hover:opacity-90">
+              Yeni test
+            </Link>
+          )}
         </div>
       </div>
 
-      <div>
-        <h2 className="text-lg font-medium">Genel bakış</h2>
-        <p className="text-sm text-ink/50">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
-      </div>
+      {!onNewTest && (
+        <div>
+          <h2 className="text-lg font-medium">Genel bakış</h2>
+          <p className="text-sm text-ink/50">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
+        </div>
+      )}
 
       {inRange.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -311,9 +317,15 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                   Son 90 güne bak
                 </button>
               )}
-              <Link href={newTestHref} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-                Yeni test
-              </Link>
+              {onNewTest ? (
+                <button type="button" onClick={onNewTest} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+                  Yeni test
+                </button>
+              ) : (
+                <Link href={newTestHref} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+                  Yeni test
+                </Link>
+              )}
             </div>
           }
         />
