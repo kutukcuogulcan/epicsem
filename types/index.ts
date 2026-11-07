@@ -360,6 +360,8 @@ export interface ContentDraft {
   publishedPostUrl: string | null;
   publishedEditUrl: string | null;
   createdAt: string;
+  /** Yazının ait olduğu proje sitesi (ör. ornek.com); eski yazılarda boş olabilir. */
+  site?: string | null;
 }
 
 /** WordPress uses Application Passwords; Shopify uses a Custom App Admin API access token. */

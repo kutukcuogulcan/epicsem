@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { saveContentDraft, updateContentDraftArticle } from "@/lib/db";
+import { claimDraftSite, saveContentDraft, updateContentDraftArticle } from "@/lib/db";
+import { getActiveProject } from "@/lib/project-context";
 
 /** POST /api/editor/save { id?, sourceUrl, title, metaDescription, markdown } → taslağı kaydet/güncelle. */
 export async function POST(req: NextRequest) {
@@ -16,11 +17,14 @@ export async function POST(req: NextRequest) {
     model: "AI SEO Editör",
   };
   if (!article.bodyMarkdown.trim()) return NextResponse.json({ error: "Kaydedilecek içerik yok." }, { status: 400 });
+  // Yazı aktif projeye bağlanır (eski, sitesiz yazılar ilk kayıtta projeye geçer).
+  const project = await getActiveProject(user.id).catch(() => null);
   if (b.id) {
+    if (project) await claimDraftSite(user.id, Number(b.id), project.domain);
     const d = await updateContentDraftArticle(user.id, Number(b.id), article);
     if (!d) return NextResponse.json({ error: "Taslak bulunamadı" }, { status: 404 });
     return NextResponse.json({ draft: d });
   }
-  const d = await saveContentDraft(user.id, String(b.sourceUrl ?? "editor"), article);
+  const d = await saveContentDraft(user.id, String(b.sourceUrl ?? "editor"), article, null, project?.domain ?? null);
   return NextResponse.json({ draft: d });
 }

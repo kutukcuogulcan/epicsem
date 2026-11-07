@@ -56,7 +56,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   ]);
 
   // Aktif projeye ait veriler (başka markaya düşmez).
-  const projDrafts = domain ? drafts.filter((d) => d.sourceUrl.includes(domain) || d.sourceUrl.startsWith("keyword:")) : drafts;
+  // Sitesi boş eski yazılar yalnızca tek proje varken sayılır; birden çok projede karışmasın.
+  const singleProject = (await listClients(user.id)).length <= 1;
+  const projDrafts = domain ? drafts.filter((d) => d.site === domain || (!d.site && singleProject)) : drafts;
   const projCampaigns = domain ? campaigns.filter((c) => norm(c.brandDomain) === domain) : campaigns;
   const monitor = domain ? monitors.find((m) => norm(m.brandDomain) === domain) ?? null : monitors[0] ?? null;
   const schedule = monitor ? schedules.find((s) => norm(s.brandDomain) === norm(monitor.brandDomain)) ?? null : null;

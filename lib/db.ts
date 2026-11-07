@@ -332,6 +332,12 @@ async function initSchema(): Promise<void> {
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS posts_per_run INTEGER NOT NULL DEFAULT 1`);
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS format TEXT NOT NULL DEFAULT 'article'`);
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS campaign_id INTEGER`);
+  // Yazının ait olduğu proje sitesi (Genel Bakış ve Tüm Yazılar proje bazlı süzülsün diye).
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS site TEXT`);
+  await p.query(`UPDATE content_drafts d SET site = lower(regexp_replace(c.brand_domain, '^(https?://)?(www\\.)?([^/]+).*$', '\\3'))
+                   FROM campaigns c WHERE d.site IS NULL AND d.campaign_id = c.id`).catch(() => {});
+  await p.query(`UPDATE content_drafts SET site = lower(regexp_replace(source_url, '^https?://(www\\.)?([^/]+).*$', '\\2'))
+                   WHERE site IS NULL AND source_url ~ '^https?://'`);
   // Autoblog v2 — otomasyon modu, entegrasyon, rastgele saat, dil, kapak, içindekiler.
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 'review'`);
   await p.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS options_json TEXT NOT NULL DEFAULT '{}'`);
@@ -1397,14 +1403,22 @@ function rowToContentDraft(row: any): ContentDraft {
     publishedPostUrl: row.published_post_url,
     publishedEditUrl: row.published_edit_url,
     createdAt: toIso(row.created_at),
+    site: row.site ?? null,
   };
 }
 
-export async function saveContentDraft(userId: number, sourceUrl: string, article: GeneratedArticle, campaignId?: number | null): Promise<ContentDraft> {
+const draftSite = (s: string | null | undefined) => {
+  const v = String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  return v.includes(".") ? v : null;
+};
+
+/** site verilmezse ve sourceUrl bir adresse onun alan adı kullanılır. */
+export async function saveContentDraft(userId: number, sourceUrl: string, article: GeneratedArticle, campaignId?: number | null, site?: string | null): Promise<ContentDraft> {
   await ensureSchema();
+  const s = draftSite(site) ?? (/^https?:\/\//i.test(sourceUrl) ? draftSite(sourceUrl) : null);
   const row = await one<any>(
-    `INSERT INTO content_drafts (user_id, source_url, article_json, campaign_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-    [userId, sourceUrl, JSON.stringify(article), campaignId ?? null]
+    `INSERT INTO content_drafts (user_id, source_url, article_json, campaign_id, site) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [userId, sourceUrl, JSON.stringify(article), campaignId ?? null, s]
   );
   return rowToContentDraft(row);
 }
@@ -1441,6 +1455,14 @@ export async function saveBrandKnowledge(userId: number, content: string): Promi
 }
 
 /** AI SEO Editör'de düzenlenen taslağın makalesini günceller (sahiplik kontrollü). */
+/** Sitesi boş (eski) bir yazıyı bir projeye bağlar; zaten sitesi varsa dokunmaz. */
+export async function claimDraftSite(userId: number, id: number, site: string): Promise<void> {
+  const s = draftSite(site);
+  if (!s) return;
+  await ensureSchema();
+  await one(`UPDATE content_drafts SET site = $1 WHERE id = $2 AND user_id = $3 AND site IS NULL RETURNING id`, [s, id, userId]);
+}
+
 export async function updateContentDraftArticle(userId: number, id: number, article: GeneratedArticle): Promise<ContentDraft | null> {
   await ensureSchema();
   const row = await one<any>(

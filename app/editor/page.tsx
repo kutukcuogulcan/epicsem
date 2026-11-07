@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useProject } from "@/components/ProjectProvider";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { blocksToHtml, blocksToMd, mdToBlocks, scoreDoc, uid, type Block, type BlockType, type Check } from "@/lib/editor-score";
 import PassageList from "@/components/tool/PassageList";
@@ -221,12 +222,18 @@ export default function EditorPage() {
       setImportUrl(u);
       importFromUrl(u);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Yazı listesi aktif projeye göre gelir; proje değişince yeniden çekilir.
+  const { project } = useProject();
+  useEffect(() => {
+    setDrafts(null);
     fetch("/api/content")
       .then((r) => (r.ok ? r.json() : { drafts: [] }))
       .then((d) => setDrafts(d.drafts ?? []))
       .catch(() => setDrafts([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [project?.id]);
 
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getContentDraft, listContentDrafts } from "@/lib/db";
+import { getActiveProject } from "@/lib/project-context";
 
 export async function GET(req: NextRequest) {
   const user = await requireUser();
@@ -15,5 +16,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ draft });
   }
 
-  return NextResponse.json({ drafts: await listContentDrafts(user.id) });
+  // Varsayılan: aktif projenin yazıları (+ hiçbir projeye bağlanmamış eski yazılar). ?all=1 → hepsi.
+  const drafts = await listContentDrafts(user.id, 200);
+  if (req.nextUrl.searchParams.get("all") === "1") return NextResponse.json({ drafts: drafts.slice(0, 60) });
+  const project = await getActiveProject(user.id).catch(() => null);
+  if (!project) return NextResponse.json({ drafts: drafts.slice(0, 60), project: null });
+  return NextResponse.json({ drafts: drafts.filter((d) => !d.site || d.site === project.domain).slice(0, 60), project: project.domain });
 }

@@ -184,7 +184,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         const article = await t.write(knowledge);
         if (!demoMode) await consumeQuota(campaign.userId, "contentGenerations", 1);
         if (campaign.options.toc) article.bodyMarkdown = addTableOfContents(article.bodyMarkdown, campaign.options.language ?? "tr");
-        const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id);
+        const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id, campaign.brandDomain);
         made.push({ id: draft.id, label: t.label });
         const cit = citabilityOfMarkdown(article.bodyMarkdown, t.label);
 

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       brief: brief.join("\n"),
     });
     if (!demo) await consumeQuota(user.id, "contentGenerations", 1);
-    const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article);
+    const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
     return NextResponse.json({ id: draft.id, demo: article.demoMode });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Yazı yazılamadı, tekrar dene." }, { status: 500 });

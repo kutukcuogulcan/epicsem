@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         : await generateArticleFromUrlInput(input.type, input.topic, brand, knowledge);
 
     if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
-    const draft = await saveContentDraft(user.id, input.topic, article);
+    const draft = await saveContentDraft(user.id, input.topic, article, null, brand.domain);
     await markContentInputDrafted(user.id, input.id, draft.id);
     return NextResponse.json({ draft });
   } catch (err) {
