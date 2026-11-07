@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "monitor:check": "node scripts/check-monitors.mjs"
+    "monitor:check": "node scripts/check-monitors.mjs",
+    "smoke": "node scripts/smoke-data.mjs"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.3.0",
