@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { EngineId } from "@/types";
 import { ALL_ENGINES, runPromptAcrossEngines } from "@/lib/geo-engine";
-import { isDemoMode } from "@/lib/geo-providers";
+import { configuredEngines, isDemoMode } from "@/lib/geo-providers";
 import { getSavedPrompt, updateSavedPromptResult } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -44,9 +44,9 @@ export async function POST(req: NextRequest) {
   const engines = parsed.engines as EngineId[];
   const demoMode = isDemoMode();
   if (!demoMode) {
-    const quota = await checkQuota(user.id, "engineQueries", engines.length);
+    const quota = await checkQuota(user.id, "engineQueries", configuredEngines(engines).length);
     if (!quota.allowed) {
-      return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, engines.length) }, { status: 402 });
+      return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, configuredEngines(engines).length) }, { status: 402 });
     }
   }
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     engines,
     prompt.topic
   );
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", engines.length);
+  if (!demoMode) await consumeQuota(user.id, "engineQueries", runs.length);
 
   const mentionedCount = runs.filter((r) => r.mentioned).length;
   const visibility = Math.round((mentionedCount / runs.length) * 100);

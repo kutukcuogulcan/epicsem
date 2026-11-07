@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   const brands = await listGeoBrands(user.id);
   const wanted = req.nextUrl.searchParams.get("brand");
-  const selected = brands.find((b) => b.brandDomain === wanted) ?? brands[0];
+  // ?brand=… verildiyse sadece o marka (aktif projenin başka markaya düşmemesi için); verilmediyse ilk marka.
+  const selected = wanted ? brands.find((b) => b.brandDomain === wanted) : brands[0];
   const runs = selected ? await listGeoRunsForOverview(user.id, selected.brandDomain, 90) : [];
   return NextResponse.json({ brands, selectedDomain: selected?.brandDomain ?? null, runs });
 }

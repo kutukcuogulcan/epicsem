@@ -11,7 +11,7 @@ import {
   summarizeByTopic,
   summarizeVisibility,
 } from "@/lib/geo-engine";
-import { isDemoMode } from "@/lib/geo-providers";
+import { configuredEngines, isDemoMode } from "@/lib/geo-providers";
 import { getPreviousGeoRun, listGeoRunHistory, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   // Only gate/count when a real (billable) call is about to happen — demo mode costs
   // nothing, so it isn't metered. See lib/plans.ts for why there's no payment step here.
-  const plannedQueries = prompts.length * engines.length;
+  const plannedQueries = prompts.length * configuredEngines(engines as EngineId[]).length;
   if (!demoMode) {
     const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
@@ -76,7 +76,21 @@ export async function POST(req: NextRequest) {
       prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines as EngineId[], p.topic))
     )
   ).flat();
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", plannedQueries);
+  if (!demoMode) await consumeQuota(user.id, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
+
+  // Hangi motorlar çalışmadı? (anahtar yok ya da sağlayıcı hata/kredi bitti) — kullanıcıya açıkça söylenir.
+  const ENGINE_NAMES: Record<string, string> = { openai: "ChatGPT", anthropic: "Claude", google: "Gemini", perplexity: "Perplexity", deepseek: "DeepSeek", xai: "Grok", meta: "Meta AI", microsoft: "Copilot" };
+  const answered = new Set(allRuns.map((r) => r.engine));
+  const live = configuredEngines(engines as EngineId[]);
+  const engineNotes = demoMode
+    ? []
+    : [
+        ...live.filter((e) => !answered.has(e)).map((e) => `${ENGINE_NAMES[e] ?? e} cevap vermedi (API kredisi bitmiş ya da limit aşılmış olabilir).`),
+        ...(engines as EngineId[]).filter((e) => !live.includes(e)).map((e) => `${ENGINE_NAMES[e] ?? e} için API anahtarı tanımlı değil, atlandı.`),
+      ];
+  if (!demoMode && allRuns.length === 0) {
+    return NextResponse.json({ error: `Hiçbir AI motorundan cevap alınamadı. ${engineNotes.join(" ")}`.trim() }, { status: 502 });
+  }
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
@@ -115,6 +129,7 @@ export async function POST(req: NextRequest) {
     history,
     // Kart §10: below this many chats, metrics are too noisy to trust at face value.
     chatCount: allRuns.length,
+    engineNotes,
     insufficientData: allRuns.length < MIN_CHATS_FOR_RELIABLE_METRIC,
   });
 }

@@ -336,3 +336,8 @@ export function isDemoMode(): boolean {
   const anyConfigured = Object.values(PROVIDERS).some((p) => p.isConfigured());
   return process.env.DEMO_MODE === "true" || !anyConfigured;
 }
+
+/** Gerçek modda sadece anahtarı tanımlı motorlar çalışır; kota da yalnız onlar için hesaplanır. */
+export function configuredEngines(engines: EngineId[]): EngineId[] {
+  return isDemoMode() ? engines : engines.filter((e) => PROVIDERS[e].isConfigured());
+}

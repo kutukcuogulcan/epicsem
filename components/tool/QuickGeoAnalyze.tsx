@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useProject } from "@/components/ProjectProvider";
 
 /**
  * Arvow tarzı "tek kutu" GEO analizi: kullanıcı sadece adresini yazar. Arka planda
@@ -44,6 +45,11 @@ export default function QuickGeoAnalyze({
   onOpenSettings: () => void;
 }) {
   const [url, setUrl] = useState("");
+  // Aktif projenin sitesi kutuya hazır gelsin.
+  const { project } = useProject();
+  useEffect(() => {
+    if (project?.domain) setUrl(project.domain);
+  }, [project?.domain]);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [status, setStatus] = useState<Record<string, StepStatus>>({});
   const [error, setError] = useState<string | null>(null);

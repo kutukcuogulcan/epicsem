@@ -1,6 +1,6 @@
 import type { EngineId } from "@/types";
 import { computeShareOfVoice, computeSourceDistribution, computeUrlStats, runPromptAcrossEngines, summarizeByTopic, summarizeVisibility } from "@/lib/geo-engine";
-import { isDemoMode } from "@/lib/geo-providers";
+import { isDemoMode, configuredEngines } from "@/lib/geo-providers";
 import { saveGeoRun } from "@/lib/db";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 
@@ -18,7 +18,7 @@ export interface GeoRunInput {
 export async function executeGeoRun(userId: number, input: GeoRunInput) {
   const { brand, competitors, prompts, engines } = input;
   const demoMode = isDemoMode();
-  const planned = prompts.length * engines.length;
+  const planned = prompts.length * configuredEngines(engines).length;
   if (!demoMode) {
     const quota = await checkQuota(userId, "engineQueries", planned);
     if (!quota.allowed) {
@@ -28,7 +28,7 @@ export async function executeGeoRun(userId: number, input: GeoRunInput) {
     }
   }
   const allRuns = (await Promise.all(prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines, p.topic)))).flat();
-  if (!demoMode) await consumeQuota(userId, "engineQueries", planned);
+  if (!demoMode) await consumeQuota(userId, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))

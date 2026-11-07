@@ -3,13 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import OverviewPanel, { type OverviewRunData } from "@/components/OverviewPanel";
 import GhostChart from "./GhostChart";
+import { useProject } from "@/components/ProjectProvider";
 
 /** /geo sayfasına girince ilk görülen pano: markanın görünürlük KPI'ları, trend grafiği,
  * ilk 7 marka ve kaynak dağılımı (gerçek geo_runs). `refreshKey` değişince yeniden çeker
  * (yeni test bittiğinde). */
 export default function GeoOverview({ refreshKey = 0 }: { refreshKey?: number }) {
   const [data, setData] = useState<{ brands: { brandName: string; brandDomain: string }[]; selectedDomain: string | null; runs: OverviewRunData[] } | null>(null);
+  const { project, ready } = useProject();
   const [brand, setBrand] = useState<string | null>(null);
+  // Aktif proje değişince pano o projenin sitesine geçer.
+  useEffect(() => {
+    if (ready) setBrand(project?.domain ?? null);
+  }, [ready, project?.domain]);
 
   const load = useCallback(async (b: string | null) => {
     try {
@@ -22,8 +28,9 @@ export default function GeoOverview({ refreshKey = 0 }: { refreshKey?: number })
   }, []);
 
   useEffect(() => {
-    load(brand);
-  }, [brand, refreshKey, load]);
+    if (ready) load(brand ?? project?.domain ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand, refreshKey, load, ready]);
 
   if (!data) {
     return (
@@ -41,7 +48,7 @@ export default function GeoOverview({ refreshKey = 0 }: { refreshKey?: number })
   if (!data.selectedDomain) {
     return (
       <GhostChart
-        title="Henüz GEO testi yok"
+        title={project ? `${project.name} için henüz GEO testi yok` : "Henüz GEO testi yok"}
         body="İlk testi çalıştırdığında markanın görünürlüğü, rakiplerle karşılaştırması ve AI'ın alıntıladığı kaynaklar burada grafiklerle görünecek."
         cta={
           <a href="#yeni-test" className="mt-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">

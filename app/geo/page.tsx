@@ -192,6 +192,7 @@ export default function GeoPage() {
   const [urlStats, setUrlStats] = useState<UrlStat[] | null>(null);
   const [chatCount, setChatCount] = useState<number>(0);
   const [insufficientData, setInsufficientData] = useState(false);
+  const [engineNotes, setEngineNotes] = useState<string[]>([]);
   const [topicBreakdown, setTopicBreakdown] = useState<TopicVisibility[] | null>(null);
   const [brandedSplit, setBrandedSplit] = useState<{ branded: number; discovery: number } | null>(null);
   const [suggesting, setSuggesting] = useState(false);
@@ -400,6 +401,7 @@ export default function GeoPage() {
       if (Array.isArray(data.urlStats)) setUrlStats(data.urlStats);
       if (typeof data.chatCount === "number") setChatCount(data.chatCount);
       setInsufficientData(Boolean(data.insufficientData));
+      setEngineNotes(Array.isArray(data.engineNotes) ? data.engineNotes : []);
       if (Array.isArray(data.topicBreakdown)) setTopicBreakdown(data.topicBreakdown);
       if (data.brandedSplit) setBrandedSplit(data.brandedSplit);
       setDemoMode(data.demoMode);
@@ -676,6 +678,18 @@ export default function GeoPage() {
       {brand.name && <EntityPresence brand={brand} competitors={competitors.filter((c) => c.name)} />}
 
       <ErrorBlock message={error} />
+
+      {engineNotes.length > 0 && (
+        <div className="rounded-xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm text-ink/80">
+          <div className="font-medium text-warn">Bazı AI motorları bu testte çalışmadı</div>
+          <ul className="mt-1 list-disc pl-5 text-sub">
+            {engineNotes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+          <div className="mt-1 text-xs text-sub">Sonuçlar sadece cevap veren motorlara göre hesaplandı; çalışmayan motorlar kotadan düşülmedi. Anahtarları Entegrasyonlar sayfasından ya da Render ortam değişkenlerinden kontrol et.</div>
+        </div>
+      )}
 
       {demoMode && summaries && (
         <div className="card border-warn/40 text-warn text-sm">

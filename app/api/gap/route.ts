@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { EngineId } from "@/types";
 import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptAcrossEngines, summarizeVisibility } from "@/lib/geo-engine";
-import { isDemoMode } from "@/lib/geo-providers";
+import { configuredEngines, isDemoMode } from "@/lib/geo-providers";
 import { auditPagesForGap, buildGapMatrix } from "@/lib/gap-analysis";
 import { saveGapRun } from "@/lib/db";
 import { buildContentBriefs } from "@/lib/content-brief";
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const { brand, competitors, prompts, engines, pageUrls } = parsed;
   const demoMode = isDemoMode();
 
-  const plannedQueries = prompts.length * engines.length;
+  const plannedQueries = prompts.length * configuredEngines(engines as EngineId[]).length;
   if (!demoMode) {
     const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     auditPagesForGap(pageUrls),
   ]);
   const allRuns = allRunsNested.flat();
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", plannedQueries);
+  if (!demoMode) await consumeQuota(user.id, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))
