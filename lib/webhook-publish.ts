@@ -17,7 +17,12 @@ export interface WebhookPayload {
   draftId: number | null;
   sentAt: string;
   /** "draft" (varsayılan) ya da "publish" — Autoblog tam otomatik modunda "publish". */
-  status?: "draft" | "publish";
+  status?: "draft" | "publish" | "future";
+  /** status "future" iken yayın zamanı (ISO, UTC). Alıcı sistem bu saatte yayına almalı. */
+  scheduledAt?: string | null;
+  slug?: string;
+  /** JSON-LD (BlogPosting + FAQPage) — alıcı sayfanın <head>'ine ekleyebilir. */
+  schemaJson?: string;
   coverImageUrl?: string | null;
 }
 
@@ -51,7 +56,7 @@ export async function testWebhook(url: string, secret: string): Promise<{ ok: bo
   }
 }
 
-export async function publishDraftToWebhook(params: { url: string; secret: string; title: string; bodyMarkdown: string; excerpt: string; sourceUrl: string; draftId: number; status?: "draft" | "publish"; coverImageUrl?: string | null }): Promise<{ postUrl: string; editUrl: string }> {
+export async function publishDraftToWebhook(params: { url: string; secret: string; title: string; bodyMarkdown: string; excerpt: string; sourceUrl: string; draftId: number; status?: "draft" | "publish" | "future"; scheduledAt?: string | null; slug?: string; schemaJson?: string; coverImageUrl?: string | null }): Promise<{ postUrl: string; editUrl: string }> {
   const r = await send(params.url, params.secret, {
     event: "draft.published",
     title: params.title,
@@ -62,6 +67,9 @@ export async function publishDraftToWebhook(params: { url: string; secret: strin
     draftId: params.draftId,
     sentAt: new Date().toISOString(),
     status: params.status ?? "draft",
+    scheduledAt: params.scheduledAt ?? null,
+    slug: params.slug,
+    schemaJson: params.schemaJson,
     coverImageUrl: params.coverImageUrl ?? null,
   });
   if (r.status < 200 || r.status >= 300) throw new Error(`Webhook ${r.status} döndürdü`);

@@ -1,3 +1,4 @@
+import { slugify } from "./article-post";
 /**
  * WordPress REST API integration — the one CMS target for now (by far the most common
  * one agencies' clients run). Publishing ALWAYS creates a `status: "draft"` post, never
@@ -44,30 +45,53 @@ export async function testWpConnection(siteUrl: string, username: string, appPas
   }
 }
 
-/** Deliberately minimal — this codebase has no markdown-rendering dependency (same call as
- * the Screaming Frog CSV import writing its own parser instead of adding one), and WP's
- * classic content field just needs reasonable HTML, not a full CommonMark implementation. */
+/** Hafif markdown → HTML (bağımlılık yok). Başlıklar, madde/numaralı listeler, tablolar,
+ * alıntılar, kalın/italik/kod ve bağlantılar. Başlıklara içindekiler için id verilir. */
 export function markdownToHtml(markdown: string): string {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const html: string[] = [];
-  let inList = false;
+  let list: "ul" | "ol" | null = null;
+  let table: string[][] | null = null;
+  const used = new Map<string, number>();
 
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function inline(text: string): string {
-    return text
+    return esc(text)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/(?<!\*)\*(?!\*)(.+?)\*(?!\*)/g, "<em>$1</em>")
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[([^\]]+)\]\(((?:https?:\/\/|#|\/)[^\s)]*)\)/g, '<a href="$2">$1</a>');
   }
-
   function closeList() {
-    if (inList) {
-      html.push("</ul>");
-      inList = false;
+    if (list) html.push(`</${list}>`);
+    list = null;
+  }
+  function closeTable() {
+    if (!table) return;
+    const rows = table.filter((r) => !r.every((c) => /^:?-{2,}:?$/.test(c)));
+    if (rows.length) {
+      const [head, ...body] = rows;
+      html.push("<table>", `<thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead>`, "<tbody>");
+      for (const r of body) html.push(`<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`);
+      html.push("</tbody>", "</table>");
     }
+    table = null;
+  }
+  function anchor(text: string): string {
+    const base = slugify(text.replace(/[*_`]/g, "")) || "bolum";
+    const n = used.get(base) ?? 0;
+    used.set(base, n + 1);
+    return n ? `${base}-${n + 1}` : base;
   }
 
   for (const raw of lines) {
     const line = raw.trim();
+    if (/^\|.*\|$/.test(line)) {
+      closeList();
+      (table ??= []).push(line.slice(1, -1).split("|").map((c) => c.trim()));
+      continue;
+    }
+    closeTable();
     if (line === "") {
       closeList();
       continue;
@@ -76,22 +100,32 @@ export function markdownToHtml(markdown: string): string {
     if (heading) {
       closeList();
       const level = heading[1].length;
-      html.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+      const id = level === 2 || level === 3 ? ` id="${anchor(heading[2])}"` : "";
+      html.push(`<h${level}${id}>${inline(heading[2])}</h${level}>`);
       continue;
     }
     const bullet = line.match(/^[-*]\s+(.*)$/);
-    if (bullet) {
-      if (!inList) {
-        html.push("<ul>");
-        inList = true;
+    const num = line.match(/^\d+[.)]\s+(.*)$/);
+    if (bullet || num) {
+      const kind = bullet ? "ul" : "ol";
+      if (list !== kind) {
+        closeList();
+        html.push(`<${kind}>`);
+        list = kind;
       }
-      html.push(`<li>${inline(bullet[1])}</li>`);
+      html.push(`<li>${inline((bullet ?? num)![1])}</li>`);
       continue;
     }
     closeList();
+    const quote = line.match(/^>\s?(.*)$/);
+    if (quote) {
+      html.push(`<blockquote><p>${inline(quote[1])}</p></blockquote>`);
+      continue;
+    }
     html.push(`<p>${inline(line)}</p>`);
   }
   closeList();
+  closeTable();
   return html.join("\n");
 }
 
@@ -108,8 +142,14 @@ export async function publishDraftToWordpress(params: {
   title: string;
   bodyMarkdown: string;
   excerpt?: string;
-  /** "publish" yalnızca kullanıcı Autoblog'da tam otomatik modu bilerek seçtiyse gönderilir. */
-  status?: "draft" | "publish";
+  /** "publish"/"future" yalnızca kullanıcı bilerek seçtiyse (editörde Yayınla/Zamanla, Autoblog tam otomatik). */
+  status?: "draft" | "publish" | "future";
+  /** status "future" iken yayın zamanı (ISO, UTC). */
+  scheduleAt?: string | null;
+  slug?: string;
+  /** Epicsem Connector eklentisi kuruluysa meta açıklama ve JSON-LD olarak sayfaya basılır; yoksa WordPress yok sayar. */
+  metaDescription?: string;
+  schemaJson?: string;
   cover?: { mime: string; data: Buffer } | null;
 }): Promise<WpPublishResult> {
   const base = normalizeBase(params.siteUrl);
@@ -142,13 +182,18 @@ export async function publishDraftToWordpress(params: {
       title: params.title,
       content: markdownToHtml(params.bodyMarkdown),
       excerpt: params.excerpt ?? "",
-      status: params.status === "publish" ? "publish" : "draft",
+      status: params.status === "publish" ? "publish" : params.status === "future" && params.scheduleAt ? "future" : "draft",
+      ...(params.status === "future" && params.scheduleAt ? { date_gmt: params.scheduleAt.replace(/\.\d+Z$/, "").replace(/Z$/, "") } : {}),
+      ...(params.slug ? { slug: params.slug } : {}),
+      ...(params.metaDescription || params.schemaJson
+        ? { meta: { ...(params.metaDescription ? { epicsem_metadesc: params.metaDescription } : {}), ...(params.schemaJson ? { epicsem_schema: params.schemaJson } : {}) } }
+        : {}),
       ...(featuredMedia ? { featured_media: featuredMedia } : {}),
     }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
-    throw new Error(`WordPress'e taslak gönderilemedi: HTTP ${res.status} — ${await res.text()}`);
+    throw new Error(`WordPress'e gönderilemedi: HTTP ${res.status} — ${(await res.text()).slice(0, 300)}`);
   }
   const data = await res.json();
   return {

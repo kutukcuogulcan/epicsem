@@ -133,7 +133,10 @@ export async function publishDraftToShopify(params: {
   title: string;
   bodyMarkdown: string;
   excerpt?: string;
-  status?: "draft" | "publish";
+  status?: "draft" | "publish" | "future";
+  scheduleAt?: string | null;
+  slug?: string;
+  metaDescription?: string;
   cover?: { mime: string; data: Buffer } | null;
 }): Promise<ShopifyPublishResult> {
   const domain = normalizeShopDomain(params.shopDomain);
@@ -152,21 +155,26 @@ export async function publishDraftToShopify(params: {
         summary_html: params.excerpt ?? "",
         // Unpublished — Shopify's equivalent of a WordPress draft. A human reviews and
         // publishes it from the Shopify admin; nothing here ever goes live automatically.
-        published: params.status === "publish",
+        published: params.status === "publish" || (params.status === "future" && !!params.scheduleAt),
+        // Shopify ileri tarihli published_at verilen makaleyi o saatte yayına alır (zamanlama).
+        ...(params.status === "future" && params.scheduleAt ? { published_at: params.scheduleAt } : {}),
+        ...(params.slug ? { handle: params.slug } : {}),
+        ...(params.metaDescription ? { metafields: [{ namespace: "global", key: "description_tag", value: params.metaDescription.slice(0, 320), type: "single_line_text_field" }] } : {}),
         ...(params.cover ? { image: { attachment: params.cover.data.toString("base64"), alt: params.title } } : {}),
       },
     }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
-    throw new Error(`Shopify'a taslak gönderilemedi: HTTP ${res.status} — ${await res.text()}`);
+    throw new Error(`Shopify'a gönderilemedi: HTTP ${res.status} — ${(await res.text()).slice(0, 300)}`);
   }
   const data = await res.json();
   const editUrl = `https://${domain}/admin/blogs/${blog.id}/articles/${data.article.id}`;
+  const live = params.status === "publish" || params.status === "future";
   return {
     postId: data.article.id,
-    // Unpublished articles have no live URL yet — point both at the admin editor.
-    postUrl: editUrl,
+    // Yayınlanmamış makalenin canlı adresi yok — o durumda ikisi de yönetim paneline gider.
+    postUrl: live && blog.handle && data.article.handle ? `https://${domain}/blogs/${blog.handle}/${data.article.handle}` : editUrl,
     editUrl,
   };
 }

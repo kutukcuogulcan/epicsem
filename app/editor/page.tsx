@@ -6,6 +6,7 @@ import { useProject } from "@/components/ProjectProvider";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { blocksToHtml, blocksToMd, mdToBlocks, scoreDoc, uid, type Block, type BlockType, type Check } from "@/lib/editor-score";
 import PassageList from "@/components/tool/PassageList";
+import PublishDrawer from "@/components/tool/PublishDrawer";
 import EditorHome from "@/components/tool/EditorHome";
 
 interface DraftItem {
@@ -124,6 +125,7 @@ export default function EditorPage() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [draftId, setDraftId] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [pubOpen, setPubOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -336,8 +338,8 @@ export default function EditorPage() {
   }
 
   /* ---------------- kaydet / dışa aktar ---------------- */
-  async function save() {
-    if (!blocks) return;
+  async function save(): Promise<number | null> {
+    if (!blocks) return null;
     setBusy("save");
     try {
       const r = await fetch("/api/editor/save", {
@@ -345,15 +347,17 @@ export default function EditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: draftId, sourceUrl: sourceUrl || "editor", title: title || blocks.find((b) => b.type === "h1")?.text || "", metaDescription: meta, markdown: blocksToMd(blocks) }),
       });
-      if (r.status === 401) return void (window.location.href = `/login?next=${encodeURIComponent("/editor")}`);
+      if (r.status === 401) { window.location.href = `/login?next=${encodeURIComponent("/editor")}`; return null; }
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Kaydedilemedi");
       setDraftId(d.draft.id);
       setDirty(false);
       window.history.replaceState(null, "", `/editor?draftId=${d.draft.id}`);
       flash("Kaydedildi.");
+      return d.draft.id as number;
     } catch (e) {
       flash(e instanceof Error ? e.message : "Kaydedilemedi", true);
+      return null;
     } finally {
       setBusy(null);
     }
@@ -392,13 +396,30 @@ export default function EditorPage() {
         <button type="button" onClick={undo} disabled={!history.length} className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30 disabled:opacity-40">↶ Geri al</button>
         <button type="button" onClick={() => copy("md")} className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30">Markdown</button>
         <button type="button" onClick={() => copy("html")} className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30">HTML</button>
-        {draftId && !dirty ? (
-          <Link href={`/content?draftId=${draftId}`} className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-accent hover:text-accent">Yayınla →</Link>
-        ) : null}
+        <button
+          type="button"
+          onClick={async () => {
+            // Yayından önce son hali kaydet.
+            const id = dirty || !draftId ? await save() : draftId;
+            if (id) setPubOpen(true);
+          }}
+          disabled={busy === "save"}
+          className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-accent hover:text-accent disabled:opacity-50"
+        >
+          Yayınla
+        </button>
         <button type="button" onClick={save} disabled={busy === "save"} className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50">
           {busy === "save" ? "Kaydediliyor…" : dirty || !draftId ? "Kaydet" : "Kaydedildi ✓"}
         </button>
       </div>
+      <PublishDrawer
+        open={pubOpen}
+        onClose={() => setPubOpen(false)}
+        draftId={draftId}
+        title={title || blocks.find((b) => b.type === "h1")?.text || ""}
+        markdown={blocksToMd(blocks)}
+        metaDescription={meta}
+      />
       {msg && <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg ${msg.bad ? "bg-danger text-white" : "bg-ink text-white"}`}>{msg.t}</div>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">

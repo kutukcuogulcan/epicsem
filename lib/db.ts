@@ -334,6 +334,10 @@ async function initSchema(): Promise<void> {
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS campaign_id INTEGER`);
   // Yazının ait olduğu proje sitesi (Genel Bakış ve Tüm Yazılar proje bazlı süzülsün diye).
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS site TEXT`);
+  // Yayın durumu: remote-draft (sitede taslak) | scheduled | published | error
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS publish_state TEXT`);
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`);
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS publish_error TEXT`);
   await p.query(`UPDATE content_drafts d SET site = lower(regexp_replace(c.brand_domain, '^(https?://)?(www\\.)?([^/]+).*$', '\\3'))
                    FROM campaigns c WHERE d.site IS NULL AND d.campaign_id = c.id`).catch(() => {});
   await p.query(`UPDATE content_drafts SET site = lower(regexp_replace(source_url, '^https?://(www\\.)?([^/]+).*$', '\\2'))
@@ -1404,6 +1408,9 @@ function rowToContentDraft(row: any): ContentDraft {
     publishedEditUrl: row.published_edit_url,
     createdAt: toIso(row.created_at),
     site: row.site ?? null,
+    publishState: row.publish_state ?? (row.status === "published-to-wp" ? "remote-draft" : null),
+    scheduledAt: row.scheduled_at ? toIso(row.scheduled_at) : null,
+    publishError: row.publish_error ?? null,
   };
 }
 
@@ -1487,13 +1494,24 @@ export async function getLatestCrawlPages(userId: number, host: string): Promise
 }
 
 /** Ownership-checked — only marks the draft published if the calling user actually owns it. */
-export async function markDraftPublished(userId: number, id: number, params: { connectionId: number; postUrl: string; editUrl: string }): Promise<void> {
+export async function markDraftPublished(
+  userId: number,
+  id: number,
+  params: { connectionId: number; postUrl: string; editUrl: string; state?: "remote-draft" | "scheduled" | "published"; scheduledAt?: string | null }
+): Promise<void> {
   await ensureSchema();
   await exec(
-    `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = $1, published_post_url = $2, published_edit_url = $3, published_at = now()
+    `UPDATE content_drafts SET status = 'published-to-wp', published_connection_id = $1, published_post_url = $2, published_edit_url = $3, published_at = now(),
+            publish_state = $6, scheduled_at = $7, publish_error = NULL
      WHERE id = $4 AND user_id = $5`,
-    [params.connectionId, params.postUrl, params.editUrl, id, userId]
+    [params.connectionId, params.postUrl, params.editUrl, id, userId, params.state ?? "remote-draft", params.scheduledAt ?? null]
   );
+}
+
+/** Siteye gönderim başarısız olduysa hatayı yazıya not eder (Tüm Yazılar'da "Hata" olarak görünür). */
+export async function markDraftPublishError(userId: number, id: number, message: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE content_drafts SET publish_state = 'error', publish_error = $1 WHERE id = $2 AND user_id = $3`, [message.slice(0, 500), id, userId]);
 }
 
 // ---------------- dashboard overview ----------------

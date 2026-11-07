@@ -20,6 +20,7 @@ import UsageMeter from "@/components/UsageMeter";
 import DashboardActivityChart from "@/components/DashboardActivityChart";
 import { Card, CardHeader, StatCard } from "@/components/ui";
 import { ScoreRing } from "@/components/tool/MonitorBits";
+import { publishLabel } from "@/lib/publish-state";
 
 export const metadata = {
   title: "Genel Bakış — Epicsem",
@@ -79,7 +80,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
   const writtenThisMonth = projDrafts.filter((d) => new Date(d.createdAt).getTime() >= monthStart).length;
-  const published = projDrafts.filter((d) => d.status !== "draft").length;
+  const published = projDrafts.filter((d) => publishLabel(d).key === "published").length;
+  const scheduled = projDrafts.filter((d) => publishLabel(d).key === "scheduled").length;
   const activeCampaigns = projCampaigns.filter((c) => c.status === "active").length;
   const nextRun = projCampaigns
     .filter((c) => c.status === "active" && c.nextRunAt)
@@ -169,7 +171,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           icon={<ScoreRing value={monitor?.visibility != null ? monitor.visibility * 100 : null} size={22} stroke={2.5} />}
         />
         <StatCard label="Bu ay yazılan" value={writtenThisMonth} hint={`Toplam ${projDrafts.length} yazı`} />
-        <StatCard label="Yayınlanan" value={published} hint={cms.length ? `${cms.length} site bağlı` : "Site bağlı değil"} />
+        <StatCard label="Yayınlanan" value={published} hint={scheduled ? `${scheduled} zamanlandı` : cms.length ? `${cms.length} site bağlı` : "Site bağlı değil"} />
         <StatCard label="Autoblog" value={activeCampaigns ? `${activeCampaigns} aktif` : "Kapalı"} hint={nextRun ? `Sıradaki: ${fmtDate(nextRun)}` : "Planlı yazı yok"} />
       </div>
 
@@ -209,9 +211,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {d.sourceUrl.startsWith("keyword:") && <div className="truncate text-xs text-sub">{d.sourceUrl.slice(8)}</div>}
                     </td>
                     <td className="hidden py-3 pr-4 sm:table-cell">
-                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${d.status === "draft" ? "border-border bg-muted text-sub" : "border-seo/30 bg-seo/10 text-seo"}`}>
-                        {d.status === "draft" ? "Taslak" : "Yayında"}
-                      </span>
+                      {(() => {
+                        const st = publishLabel(d);
+                        return (
+                          <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                            {st.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="whitespace-nowrap py-3 pr-6 text-right tabular-nums text-sub">{fmtDate(d.createdAt)}</td>
                   </tr>

@@ -9,6 +9,7 @@ import { citabilityOfMarkdown } from "@/lib/citability";
 import PageGuide from "@/components/PageGuide";
 import WriteWizard from "@/components/tool/WriteWizard";
 import { Drawer, UnderlineTabs, EmptyBlock, TableSkeleton } from "@/components/ui";
+import { publishLabel } from "@/lib/publish-state";
 
 interface DraftItem {
   id: number;
@@ -16,16 +17,13 @@ interface DraftItem {
   article: { title: string; metaDescription: string; bodyMarkdown: string };
   status?: string;
   publishedPostUrl?: string | null;
+  publishState?: string | null;
+  scheduledAt?: string | null;
+  publishError?: string | null;
   createdAt: string;
 }
 
 const tone = (n: number) => (n >= 65 ? "bg-seo/10 text-seo" : n >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger");
-const STATUS: Record<string, [string, string]> = {
-  draft: ["Taslak", "bg-muted text-ink/55"],
-  approved: ["Onaylı", "bg-accent/10 text-accent"],
-  "published-to-wp": ["Yayında", "bg-seo/10 text-seo"],
-  published: ["Yayında", "bg-seo/10 text-seo"],
-};
 const source = (s: string) => (s.startsWith("keyword:") ? `Anahtar kelime · ${s.slice(8)}` : s === "editor" ? "Editörde yazıldı" : s.replace(/^https?:\/\/(www\.)?/, ""));
 
 /**
@@ -53,7 +51,7 @@ export default function EditorHome({
 }) {
   const [kbOpen, setKbOpen] = useState(false);
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<"all" | "weak" | "published">("all");
+  const [filter, setFilter] = useState<"all" | "weak" | "site" | "published">("all");
   const [limit, setLimit] = useState(12);
   const [entry, setEntry] = useState<"write" | "open">("write");
 
@@ -71,7 +69,7 @@ export default function EditorHome({
     const n = rows.length;
     const scored = rows.filter((r) => r.geo !== null);
     const avg = scored.length ? Math.round(scored.reduce((a, r) => a + (r.geo ?? 0), 0) / scored.length) : null;
-    const pub = rows.filter((r) => r.status?.startsWith("published")).length;
+    const pub = rows.filter((r) => publishLabel(r).key === "published").length;
     const month = rows.filter((r) => Date.now() - new Date(r.createdAt).getTime() < 30 * 864e5).length;
     const words = rows.reduce((a, r) => a + r.words, 0);
     return { n, avg, pub, month, words };
@@ -103,7 +101,7 @@ export default function EditorHome({
   }, [rows]);
 
   const shown = rows
-    .filter((r) => (filter === "weak" ? r.geo !== null && r.geo < 45 : filter === "published" ? r.status?.startsWith("published") : true))
+    .filter((r) => (filter === "weak" ? r.geo !== null && r.geo < 45 : filter === "published" ? publishLabel(r).key === "published" : filter === "site" ? publishLabel(r).key !== "draft" : true))
     .filter((r) => !q || (r.article.title + " " + r.sourceUrl).toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")));
 
   return (
@@ -243,6 +241,7 @@ export default function EditorHome({
           {([
             ["all", "Tümü"],
             ["weak", "Zayıf GEO"],
+            ["site", "Sitede"],
             ["published", "Yayında"],
           ] as const).map(([k, l]) => (
             <button key={k} type="button" onClick={() => setFilter(k)} className={`rounded-full px-3 py-1 text-xs font-medium ${filter === k ? "bg-ink text-white" : "bg-muted text-ink/60"}`}>
@@ -271,7 +270,7 @@ export default function EditorHome({
             </thead>
             <tbody className="divide-y divide-border">
               {shown.slice(0, limit).map((d) => {
-                const st = STATUS[d.status ?? "draft"] ?? STATUS.draft;
+                const st = publishLabel(d);
                 return (
                   <tr key={d.id} onClick={() => onOpen(d.id)} className="cursor-pointer hover:bg-muted/40">
                     <td className="max-w-[28rem] px-5 py-2.5">
@@ -283,7 +282,12 @@ export default function EditorHome({
                     </td>
                     <td className="hidden py-2.5 pr-3 text-xs tabular-nums text-ink/60 md:table-cell">{d.words.toLocaleString("tr-TR")}</td>
                     <td className="hidden py-2.5 pr-3 sm:table-cell">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${st[1]}`}>{st[0]}</span>
+                      <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
+                      {d.publishedPostUrl && st.key !== "draft" && st.key !== "error" && (
+                        <a href={d.publishedPostUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="ml-1.5 text-[11px] text-accent hover:underline">
+                          aç ↗
+                        </a>
+                      )}
                     </td>
                     <td className="whitespace-nowrap py-2.5 pr-5 text-right text-xs text-ink/45">{new Date(d.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</td>
                   </tr>

@@ -210,8 +210,8 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
           held.push(`"${t.label}" (${cit.score}/100)`);
         } else if (campaign.mode !== "review" && campaign.options.connectionId) {
           try {
-            const r = await publishDraftToConnection(campaign.userId, draft, campaign.options.connectionId, campaign.mode === "publish" ? "publish" : "draft");
-            sent.push(r.postUrl || r.editUrl || "gönderildi");
+            const r = await publishDraftToConnection(campaign.userId, draft, campaign.options.connectionId, campaign.mode === "publish" ? "publish" : "draft", { brandName: campaign.brandName });
+            sent.push((r.postUrl || r.editUrl || "gönderildi") + (r.downgraded ? " (doldurulmamış [NEEDS] alanı var, taslak olarak gönderildi)" : ""));
           } catch (err) {
             errors.push(`"${t.label}" siteye gönderilemedi: ${err instanceof Error ? err.message : "hata"}`);
           }

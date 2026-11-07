@@ -362,6 +362,10 @@ export interface ContentDraft {
   createdAt: string;
   /** Yazının ait olduğu proje sitesi (ör. ornek.com); eski yazılarda boş olabilir. */
   site?: string | null;
+  /** Sitedeki durum: sitede taslak, zamanlandı, yayında ya da hata. */
+  publishState?: "remote-draft" | "scheduled" | "published" | "error" | null;
+  scheduledAt?: string | null;
+  publishError?: string | null;
 }
 
 /** WordPress uses Application Passwords; Shopify uses a Custom App Admin API access token. */
