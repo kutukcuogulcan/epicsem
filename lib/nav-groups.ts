@@ -57,6 +57,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Yönetim",
     items: [
+      { href: "/project", label: "Proje Ayarları", icon: "settings" },
       { href: "/clients", label: "Müşteriler", icon: "clients" },
       { href: "/integrations", label: "Entegrasyonlar", icon: "integrations" },
       { href: "/prompts", label: "Claude Code Prompts", icon: "prompts" },

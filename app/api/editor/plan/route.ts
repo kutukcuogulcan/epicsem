@@ -3,8 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { isDemoMode, runFast } from "@/lib/geo-providers";
 import { runForJsonObject } from "@/lib/llm-json";
-import { getBrandKnowledge } from "@/lib/db";
-import { knowledgeBlock } from "@/lib/knowledge-prompt";
+import { projectContextBlock } from "@/lib/project-context";
 import { rootHost } from "@/lib/backlinks";
 
 export const maxDuration = 60;
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
   const format = b.format === "listicle" ? "listicle" : "article";
   if (keyword.length < 2) return NextResponse.json({ error: "Anahtar kelime yaz." }, { status: 400 });
 
-  const kb = knowledgeBlock((await getBrandKnowledge(user.id)).content);
+  const kb = await projectContextBlock(user.id, site || null);
   const brandLine = site ? `Marka sitesi: ${site}.` : "";
 
   if (step === "topics") {

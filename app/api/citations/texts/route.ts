@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
-import { getBrandKnowledge, getCitationProfile, saveCitationProfile } from "@/lib/db";
+import { getCitationProfile, saveCitationProfile } from "@/lib/db";
 import { isDemoMode, runFast } from "@/lib/geo-providers";
 import { runForJsonObject } from "@/lib/llm-json";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { rootHost } from "@/lib/backlinks";
 import { BIZ_LABEL, type BizType } from "@/lib/citation-directories";
+import { projectContextBlock } from "@/lib/project-context";
 
 /**
  * POST { site } — kayıt formlarına yapıştırılacak metinler: slogan, kısa/uzun açıklama,
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   const quota = await checkQuota(user.id, "contentGenerations", 1);
   if (!quota.allowed) return NextResponse.json({ error: quotaExceededMessage("contentGenerations", quota, 1) }, { status: 402 });
 
-  const kb = (await getBrandKnowledge(user.id).catch(() => ({ content: "" }))).content.slice(0, 4000);
+  const kb = (await projectContextBlock(user.id, site).catch(() => "")).trim().slice(0, 5000);
   const prompt = `You write business listing texts for directory/profile sign-up forms (Google Business Profile, Bing Places, Trustpilot, LinkedIn, Product Hunt etc.).
 Use ONLY the facts below. Never invent awards, numbers, years, prices, locations or claims. If a fact is missing, leave it out.
 

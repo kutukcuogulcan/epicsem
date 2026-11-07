@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromBrief, generateArticleFromUrlInput } from "@/lib/content-generator";
-import { getBrandKnowledge } from "@/lib/db";
+import { projectContextBlock } from "@/lib/project-context";
 import { getContentInput, markContentInputDrafted, markContentInputFailed, saveContentDraft } from "@/lib/db";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const brand = { name: input.brandName, domain: input.brandDomain };
 
   try {
-    const knowledge = (await getBrandKnowledge(user.id)).content;
+    const knowledge = (await projectContextBlock(user.id, brand.domain)).trim();
     const article =
       input.type === "seo-gap" || input.type === "listicle"
         ? await generateArticleFromBrief(

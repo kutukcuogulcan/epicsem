@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromTopic } from "@/lib/content-generator";
-import { getBrandKnowledge, getLatestCrawlPages, listKnownSites, saveContentDraft } from "@/lib/db";
+import { getLatestCrawlPages, listKnownSites, saveContentDraft } from "@/lib/db";
+import { projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { rootHost } from "@/lib/backlinks";
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       format,
       language,
       takeaways: b.takeaways !== false,
-      knowledge: (await getBrandKnowledge(user.id)).content,
+      knowledge: (await projectContextBlock(user.id, site || null)).trim(),
       title: String(b.title ?? "").trim().slice(0, 200) || undefined,
       outline: outline.length ? outline : undefined,
       faqQuestions,

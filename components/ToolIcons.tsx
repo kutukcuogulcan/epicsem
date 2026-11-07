@@ -146,6 +146,12 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="4.75" cy="13.25" r="1.25" fill="currentColor" />
     </ToolIcon>
   ),
+  settings: (
+    <ToolIcon>
+      <circle cx="9" cy="9" r="2.25" />
+      <path d="M9 2.5v1.75M9 13.75v1.75M2.5 9h1.75M13.75 9h1.75M4.4 4.4l1.25 1.25M12.35 12.35l1.25 1.25M4.4 13.6l1.25-1.25M12.35 5.65l1.25-1.25" />
+    </ToolIcon>
+  ),
   knowledge: (
     <ToolIcon>
       <path d="M3 3.5h4.5A1.5 1.5 0 0 1 9 5v10a1.5 1.5 0 0 0-1.5-1.5H3z" />

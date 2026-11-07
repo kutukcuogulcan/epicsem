@@ -35,7 +35,18 @@ const INTENT_TONE: Record<string, string> = {
 export default function WriteWizard({ onDone }: { onDone: (id: number) => void }) {
   const { project } = useProject();
   useEffect(() => {
-    if (project) setSite(project.domain);
+    if (!project) return;
+    setSite(project.domain);
+    // Proje ayarlarındaki dil ve tonu varsayılan yap.
+    fetch("/api/project/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const st = d?.project?.settings;
+        if (!st) return;
+        if (["tr", "en", "de"].includes(st.language)) setLang(st.language);
+        if (st.tone) setTone(st.tone);
+      })
+      .catch(() => {});
   }, [project?.domain]);
 
   const [step, setStep] = useState(0);

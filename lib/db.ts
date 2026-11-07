@@ -2816,3 +2816,41 @@ export async function listDueMonitorSchedules(): Promise<MonitorSchedule[]> {
   );
   return rows.map(rowToSchedule);
 }
+
+// ---------------- Proje ayarları (Arvow "Website & Brand") ----------------
+
+export interface ProjectSettings {
+  description?: string;
+  language?: string; // tr, en, de…
+  country?: string;
+  audience?: string;
+  tone?: "professional" | "friendly" | "expert" | "simple";
+  address?: "siz" | "sen";
+  voiceNotes?: string;
+  avoid?: string;
+  products?: string;
+  usps?: string;
+  cta?: string;
+  /** Proje bazlı bilgi bankası (eskiden kullanıcı başına tekti). */
+  knowledge?: string;
+}
+
+async function ensureClientSettings() {
+  await ensureSchema();
+  await exec(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS settings_json TEXT NOT NULL DEFAULT '{}'`, []);
+}
+
+export async function getClientSettings(userId: number, clientId: number): Promise<ProjectSettings> {
+  await ensureClientSettings();
+  const row = await one<any>(`SELECT settings_json FROM clients WHERE id = $1 AND user_id = $2`, [clientId, userId]);
+  try {
+    return row ? (JSON.parse(row.settings_json || "{}") as ProjectSettings) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function saveClientSettings(userId: number, clientId: number, s: ProjectSettings): Promise<void> {
+  await ensureClientSettings();
+  await exec(`UPDATE clients SET settings_json = $1 WHERE id = $2 AND user_id = $3`, [JSON.stringify(s), clientId, userId]);
+}

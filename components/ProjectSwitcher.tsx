@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useProject, type Project } from "./ProjectProvider";
 import { Drawer } from "./ui";
@@ -101,6 +102,11 @@ export default function ProjectSwitcher() {
           <button type="button" onClick={() => startNew()} className="mt-1 w-full rounded-lg border-t border-border px-2 py-2 text-left text-[13px] font-medium text-accent hover:bg-accent/5">
             + Yeni proje
           </button>
+          {project && (
+            <Link href="/project" onClick={() => setOpen(false)} className="block w-full rounded-lg px-2 py-2 text-left text-[13px] text-sub hover:bg-muted/60 hover:text-ink">
+              Proje ayarları (marka sesi, kitle…)
+            </Link>
+          )}
         </div>
       )}
 

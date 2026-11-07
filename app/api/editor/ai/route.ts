@@ -3,8 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { runFast } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
-import { getBrandKnowledge } from "@/lib/db";
-import { knowledgeBlock } from "@/lib/knowledge-prompt";
+import { projectContextBlock } from "@/lib/project-context";
 
 export const maxDuration = 60;
 
@@ -56,7 +55,7 @@ export async function POST(req: NextRequest) {
     prompt = `Görev: ${how}\nHedef anahtar kelime: "${keyword || "(yok)"}"\nMakale başlığı: "${title}"\n${rules}\n\nDÜZENLENECEK METİN:\n${text}`;
   }
 
-  prompt += knowledgeBlock((await getBrandKnowledge(user.id)).content);
+  prompt += await projectContextBlock(user.id);
   const r = await runFast(prompt, 0.5).catch(() => null);
   if (!r?.text) return NextResponse.json({ error: "AI şu an yanıt vermedi (API anahtarı tanımlı mı?)." }, { status: 503 });
   const clean = r.text.replace(/^```(?:markdown|md)?\s*/i, "").replace(/```\s*$/, "").trim();

@@ -1,7 +1,6 @@
 import { generateArticleFromBrief, generateArticleFromTopic, styleInstructions } from "./content-generator";
 import { fetchPageSummary } from "./content-fetch";
 import {
-  getBrandKnowledge,
   getFeed,
   getLatestGapRunBriefs,
   listUsedContentUrls,
@@ -19,6 +18,7 @@ import { isDemoMode } from "./geo-providers";
 import { fetchFeed, matchesFilter } from "./rss";
 import { checkQuota, consumeQuota } from "./usage-guard";
 import type { GeneratedArticle } from "@/types";
+import { projectContextBlock } from "@/lib/project-context";
 
 /**
  * Autoblog — "kur ve unut" içerik üretimi. Üç konu kaynağı:
@@ -165,7 +165,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
     }
 
     const demoMode = isDemoMode();
-    const knowledge = (await getBrandKnowledge(campaign.userId).catch(() => ({ content: "" }))).content;
+    const knowledge = (await projectContextBlock(campaign.userId, campaign.brandDomain).catch(() => "")).trim();
     const made: { id: number; label: string }[] = [];
     const sent: string[] = [];
     const held: string[] = [];
