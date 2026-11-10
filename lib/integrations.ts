@@ -205,6 +205,42 @@ export async function testIntegration(provider: ProviderId, config: Record<strin
       if (dr["ahrefs.com"] == null) throw new Error("Ahrefs yanıt vermedi.");
       return "Bağlandı · Domain Rating çalışıyor (backlink listesi için ücretli plan gerekir)";
     }
+    case "anthropic": {
+      if (!secrets.apiKey) throw new Error("API anahtarı boş.");
+      const r = await fetch("https://api.anthropic.com/v1/models", { headers: { "x-api-key": secrets.apiKey, "anthropic-version": "2023-06-01" }, signal: T(15_000) });
+      if (r.status === 401) throw new Error("Anahtar geçersiz.");
+      if (!r.ok) throw new Error(`Anthropic: HTTP ${r.status}`);
+      const j = await r.json().catch(() => ({}));
+      return `Bağlandı · ${(j.data ?? []).length} model erişilebilir`;
+    }
+    case "openai": {
+      if (!secrets.apiKey) throw new Error("API anahtarı boş.");
+      const r = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${secrets.apiKey}` }, signal: T(15_000) });
+      if (r.status === 401) throw new Error("Anahtar geçersiz.");
+      if (!r.ok) throw new Error(`OpenAI: HTTP ${r.status}`);
+      return "Bağlandı (kredi bakiyesi ilk testte kontrol edilir)";
+    }
+    case "google_ai": {
+      if (!secrets.apiKey) throw new Error("API anahtarı boş.");
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(secrets.apiKey)}`, { signal: T(15_000) });
+      if (r.status === 400 || r.status === 403) throw new Error("Anahtar geçersiz ya da Gemini API etkin değil.");
+      if (!r.ok) throw new Error(`Gemini: HTTP ${r.status}`);
+      return "Bağlandı";
+    }
+    case "perplexity": {
+      if (!secrets.apiKey) throw new Error("API anahtarı boş.");
+      // Perplexity'nin model listesi uç noktası yok; 1 token'lık küçük bir istek atılır.
+      const r = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${secrets.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: "ping" }], max_tokens: 1 }),
+        signal: T(20_000),
+      });
+      if (r.status === 401) throw new Error("Anahtar geçersiz.");
+      if (r.status === 402 || r.status === 429) throw new Error("Kredi yok ya da limit aşıldı.");
+      if (!r.ok) throw new Error(`Perplexity: HTTP ${r.status}`);
+      return "Bağlandı";
+    }
     case "indexnow": {
       if (!config.siteUrl) throw new Error("Site adresi gerekli.");
       if (!config.key) throw new Error("Anahtar üretilemedi.");

@@ -5,6 +5,7 @@ import { deleteIntegration, getIntegration, listIntegrations, saveIntegration } 
 import { providerById, type ProviderId } from "@/lib/integration-providers";
 import { testIntegration } from "@/lib/integrations";
 import { newIndexNowKey, validKey } from "@/lib/indexnow";
+import { applyAiKeys, isAppOwner } from "@/lib/ai-keys";
 
 /**
  * Kullanıcı entegrasyonları. Gizli alanlar istemciye yalnızca maskeli döner.
@@ -13,7 +14,12 @@ import { newIndexNowKey, validKey } from "@/lib/indexnow";
 export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  return NextResponse.json({ integrations: await listIntegrations(user.id), envSerpApi: !!process.env.SERPAPI_API_KEY, sharedDemo: user.email === DEMO_EMAIL });
+  return NextResponse.json({
+    integrations: await listIntegrations(user.id),
+    envSerpApi: !!process.env.SERPAPI_API_KEY,
+    sharedDemo: user.email === DEMO_EMAIL,
+    isOwner: await isAppOwner(user.id),
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,6 +33,7 @@ export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}));
   const def = providerById(String(b.provider ?? ""));
   if (!def) return NextResponse.json({ error: "Bilinmeyen servis." }, { status: 400 });
+  if (def.appWide && !(await isAppOwner(user.id))) return NextResponse.json({ error: "AI motoru anahtarlarını yalnızca uygulama sahibi ekleyebilir." }, { status: 403 });
   const cur = await getIntegration(user.id, def.id);
   const config: Record<string, string> = {};
   const secrets: Record<string, string> = {};
@@ -61,6 +68,8 @@ export async function POST(req: NextRequest) {
     message = e instanceof Error ? e.message : "Bağlantı kurulamadı";
   }
   await saveIntegration(user.id, def.id, { ...saved.config, _status: ok ? "ok" : "error", _message: message.slice(0, 300), _checkedAt: new Date().toISOString() }, {});
+  // AI anahtarı ise sunucuda hemen devreye al (yeniden başlatma gerekmez).
+  if (def.appWide) await applyAiKeys().catch((e) => console.error("[ai-keys] apply failed:", e));
   return NextResponse.json({ ok, message });
 }
 
@@ -69,6 +78,9 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   const provider = req.nextUrl.searchParams.get("provider") ?? "";
   if (!providerById(provider)) return NextResponse.json({ error: "Bilinmeyen servis." }, { status: 400 });
+  const def = providerById(provider)!;
+  if (def.appWide && !(await isAppOwner(user.id))) return NextResponse.json({ error: "Yalnızca uygulama sahibi." }, { status: 403 });
   await deleteIntegration(user.id, provider);
+  if (def.appWide) await applyAiKeys().catch(() => {});
   return NextResponse.json({ ok: true });
 }

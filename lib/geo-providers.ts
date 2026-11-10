@@ -74,6 +74,11 @@ class OpenAiProvider implements LlmProvider {
  * Sonuç süreç boyunca önbellekte tutulur.
  */
 const anthropicModelCache: Partial<Record<"flagship" | "fast", string>> = {};
+/** Anahtar değişince (Entegrasyonlar) model seçimi yeniden yapılsın. */
+export function resetAnthropicModelCache() {
+  delete anthropicModelCache.flagship;
+  delete anthropicModelCache.fast;
+}
 
 export async function resolveAnthropicModel(tier: "flagship" | "fast" = "flagship"): Promise<string> {
   const envModel = tier === "fast" ? process.env.ANTHROPIC_FAST_MODEL : process.env.ANTHROPIC_MODEL;

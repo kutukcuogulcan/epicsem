@@ -12,7 +12,13 @@ interface Row {
   updatedAt: string;
 }
 
-const GROUPS: { title: string; ids: ProviderId[] }[] = [
+const GROUPS: { title: string; ids: ProviderId[]; ownerOnly?: boolean; note?: string }[] = [
+  {
+    title: "Yapay zekâ motorları",
+    ids: ["anthropic", "openai", "google_ai", "perplexity"],
+    ownerOnly: true,
+    note: "Uygulamanın tamamında kullanılır (AI yazma, öneriler, GEO testleri). Anahtar sunucuda saklanır, kaydedince hemen devreye girer; Render'daki değerin önüne geçer.",
+  },
   { title: "Arama verisi", ids: ["serpapi", "google_ads", "serpbear"] },
   { title: "İndeksleme ve backlink", ids: ["indexnow", "bing", "ahrefs"] },
   { title: "Performans ve görsel", ids: ["google_psi", "ogimg"] },
@@ -27,12 +33,17 @@ const LOGO: Record<ProviderId, { bg: string; t: string }> = {
   google_psi: { bg: "bg-[#f4b400]", t: "PS" },
   ogimg: { bg: "bg-[#ec4899]", t: "OG" },
   ahrefs: { bg: "bg-[#ff8800]", t: "A" },
+  anthropic: { bg: "bg-[#d97757]", t: "C" },
+  openai: { bg: "bg-[#0a0d12]", t: "AI" },
+  google_ai: { bg: "bg-[#4285f4]", t: "G" },
+  perplexity: { bg: "bg-[#20808d]", t: "P" },
 };
 
 export default function IntegrationsPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [envSerp, setEnvSerp] = useState(false);
   const [sharedDemo, setSharedDemo] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [open, setOpen] = useState<ProviderDef | null>(null);
 
   async function refresh() {
@@ -45,6 +56,7 @@ export default function IntegrationsPage() {
     setRows(d.integrations ?? []);
     setEnvSerp(!!d.envSerpApi);
     setSharedDemo(!!d.sharedDemo);
+    setIsOwner(!!d.isOwner);
   }
   useEffect(() => {
     refresh();
@@ -71,7 +83,7 @@ export default function IntegrationsPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
           ["Bağlı servis", `${connected} / ${PROVIDERS.length}`],
-          ["Ücretsiz kullanılabilen", String(PROVIDERS.length)],
+          ["Ücretsiz kullanılabilen", String(PROVIDERS.filter((p) => !p.appWide).length)],
           ["Hata veren", String((rows ?? []).filter((r) => r.config._status === "error").length)],
           ["Son güncelleme", rows?.length ? new Date(rows.map((r) => r.updatedAt).sort().pop()!).toLocaleDateString("tr-TR") : "—"],
         ].map(([l, v]) => (
@@ -82,9 +94,10 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      {GROUPS.map((g) => (
+      {GROUPS.filter((g) => !g.ownerOnly || isOwner).map((g) => (
         <section key={g.title} className="space-y-3">
           <h2 className="text-xs font-medium uppercase tracking-wide text-ink/45">{g.title}</h2>
+          {g.note && <p className="-mt-1 text-xs text-sub">{g.note}</p>}
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {g.ids.map((id) => {
               const p = PROVIDERS.find((x) => x.id === id)!;

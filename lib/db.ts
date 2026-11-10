@@ -2638,6 +2638,18 @@ export async function saveIntegration(userId: number, provider: string, config: 
   );
 }
 
+/** Uygulama sahibi: ADMIN_EMAIL tanımlıysa o kullanıcı, değilse ilk kayıt olan kullanıcı. */
+export async function getAppOwnerId(): Promise<number | null> {
+  await ensureSchema();
+  const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  if (email) {
+    const r = await one<any>(`SELECT id FROM users WHERE lower(email) = $1`, [email]);
+    if (r) return r.id;
+  }
+  const r = await one<any>(`SELECT id FROM users ORDER BY id ASC LIMIT 1`, []);
+  return r ? r.id : null;
+}
+
 export async function deleteIntegration(userId: number, provider: string): Promise<void> {
   await ensureSchema();
   await exec(`DELETE FROM user_integrations WHERE user_id = $1 AND provider = $2`, [userId, provider]);

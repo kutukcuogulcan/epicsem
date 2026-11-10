@@ -4,7 +4,7 @@
  * Hiçbiri zorunlu değil: bağlı değilse araçlar Epicsem'in ücretsiz yerleşik yöntemini kullanır.
  */
 
-export type ProviderId = "serpapi" | "serpbear" | "ogimg" | "google_ads" | "google_psi" | "bing" | "indexnow" | "ahrefs";
+export type ProviderId = "serpapi" | "serpbear" | "ogimg" | "google_ads" | "google_psi" | "bing" | "indexnow" | "ahrefs" | "anthropic" | "openai" | "google_ai" | "perplexity";
 
 export interface ProviderField {
   key: string;
@@ -26,6 +26,8 @@ export interface ProviderDef {
   signupUrl: string;
   fields: ProviderField[];
   steps: string[];
+  /** Uygulama genelinde kullanılır (tüm AI yazma ve GEO testleri); yalnız uygulama sahibi ekleyebilir. */
+  appWide?: boolean;
 }
 
 export const PROVIDERS: ProviderDef[] = [
@@ -150,6 +152,55 @@ export const PROVIDERS: ProviderDef[] = [
       "Ücretsiz anahtarla alan adlarının Domain Rating (DR) puanı gelir.",
       "Backlink listesi ve rakip karşılaştırması için Ahrefs Lite veya üstü plan gerekir (API birimi harcar; sonuçlar 24 saat önbelleğe alınır).",
     ],
+  },
+  // --- Yapay zekâ motorları (uygulama geneli; sadece uygulama sahibi) ---
+  {
+    id: "anthropic",
+    name: "Claude (Anthropic)",
+    tagline: "AI yazma, öneriler ve GEO testlerinde Claude motoru. Anahtar sunucuda saklanır, kimseye gösterilmez.",
+    price: "Kullandıkça öde",
+    usedIn: ["AI SEO Editör", "Autoblog", "GEO testi · Claude"],
+    docsUrl: "https://docs.claude.com/en/api/overview",
+    signupUrl: "https://console.anthropic.com/settings/keys",
+    fields: [{ key: "apiKey", label: "API anahtarı", secret: true, placeholder: "sk-ant-…" }],
+    steps: ["console.anthropic.com → Settings → API Keys → Create Key.", "Billing bölümünde kredi tanımlı olduğundan emin ol.", "Anahtarı aşağıya yapıştır ve 'Kaydet ve test et'e bas."],
+    appWide: true,
+  },
+  {
+    id: "openai",
+    name: "ChatGPT (OpenAI)",
+    tagline: "GEO testlerinde ChatGPT motoru ve AI görselleri.",
+    price: "Kullandıkça öde",
+    usedIn: ["GEO testi · ChatGPT", "AI kapak görseli"],
+    docsUrl: "https://platform.openai.com/docs/api-reference",
+    signupUrl: "https://platform.openai.com/api-keys",
+    fields: [{ key: "apiKey", label: "API anahtarı", secret: true, placeholder: "sk-…" }],
+    steps: ["platform.openai.com → API keys → Create new secret key.", "Billing bölümünde kredi olduğundan emin ol.", "Anahtarı aşağıya yapıştır ve test et."],
+    appWide: true,
+  },
+  {
+    id: "google_ai",
+    name: "Gemini (Google AI)",
+    tagline: "GEO testlerinde Gemini motoru.",
+    price: "Ücretsiz kota var",
+    usedIn: ["GEO testi · Gemini"],
+    docsUrl: "https://ai.google.dev/gemini-api/docs",
+    signupUrl: "https://aistudio.google.com/app/apikey",
+    fields: [{ key: "apiKey", label: "API anahtarı", secret: true, placeholder: "AIza…" }],
+    steps: ["aistudio.google.com → Get API key → Create API key.", "Anahtarı aşağıya yapıştır ve test et."],
+    appWide: true,
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    tagline: "GEO testlerinde Perplexity motoru — cevaplarında kaynak (alıntı) verdiği için kaynak analizi için önemli.",
+    price: "Kullandıkça öde",
+    usedIn: ["GEO testi · Perplexity", "Kaynak analizi"],
+    docsUrl: "https://docs.perplexity.ai/",
+    signupUrl: "https://www.perplexity.ai/settings/api",
+    fields: [{ key: "apiKey", label: "API anahtarı", secret: true, placeholder: "pplx-…" }],
+    steps: ["perplexity.ai → Settings → API → Generate.", "Kredi yükle.", "Anahtarı aşağıya yapıştır ve test et (çok küçük bir test sorgusu yapılır)."],
+    appWide: true,
   },
 ];
 
