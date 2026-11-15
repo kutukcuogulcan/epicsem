@@ -171,7 +171,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
             </div>
           );
         })}
-        <span className="ml-auto whitespace-nowrap pl-3 text-[11px] text-ink/40">Konu ve plan ücretsiz · yazı 1 kota</span>
+        <span className="ml-auto hidden whitespace-nowrap pl-3 text-[11px] text-ink/40">Konu ve plan ücretsiz · yazı 1 kota</span>
       </div>
 
       <div className="p-5">
