@@ -8,7 +8,9 @@ export type IssueCategory =
   | "ai-crawlability"
   | "performance"
   | "content"
-  | "localization";
+  | "localization"
+  | "images"
+  | "links";
 
 export interface SeoIssueResult {
   category: IssueCategory;
@@ -38,6 +40,12 @@ export interface SeoAuditResult {
     aiBotAccess: AiBotAccess[];
     htmlLang: string | null;
     hreflangs: string[];
+    /** Ek kontroller (eski kayıtlarda yok). */
+    images?: { total: number; noAlt: number; noSize: number; lazy: number };
+    links?: { internal: number; external: number; checked: number; broken: string[]; redirects: number; outboundCitations: number };
+    sitemap?: { url: string | null; urls: number; checked: number; broken: string[]; redirects: string[]; inRobots: boolean };
+    llmsTxt?: boolean;
+    eeat?: { author: boolean; date: boolean; citations: number; about: boolean };
   };
 }
 

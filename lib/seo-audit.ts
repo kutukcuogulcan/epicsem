@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { AI_BOTS } from "./ai-bots";
 import { isBotAllowed, parseRobotsTxt } from "./robots";
 import { generateFaqSchema, generateMetaDescription, generateOrganizationSchema } from "./fix-generator";
+import { auditEeat, auditImages, auditLinks, auditLlmsTxt, auditSitemap, validateSchema } from "./audit-extra";
 import type { AiBotAccess, GeneratedFix, IssueCategory, IssueSeverity, SeoAuditResult, SeoIssueResult } from "@/types";
 
 const FETCH_TIMEOUT_MS = 12000;
@@ -262,12 +263,14 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
 
   // ---- 6. robots.txt & sitemap ----
   let robotsTxtFound = false;
+  let robotsText: string | null = null;
   let robotsBlocks: ReturnType<typeof parseRobotsTxt> = [];
   try {
     const robotsRes = await fetchWithTimeout(`${parsed.origin}/robots.txt`);
     if (robotsRes.ok) {
       robotsTxtFound = true;
       const text = await robotsRes.text();
+      robotsText = text;
       robotsBlocks = parseRobotsTxt(text);
     }
   } catch {
@@ -281,20 +284,13 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     recommendation: robotsTxtFound ? "" : "Add a robots.txt so you can deliberately control which AI and search crawlers may access the site.",
   });
 
-  let sitemapFound = false;
-  try {
-    const sitemapRes = await fetchWithTimeout(`${parsed.origin}/sitemap.xml`);
-    sitemapFound = sitemapRes.ok;
-  } catch {
-    sitemapFound = false;
-  }
-  pushIssue(issues, {
-    category: "crawlability",
-    severity: sitemapFound ? "pass" : "warning",
-    title: sitemapFound ? "sitemap.xml found" : "No sitemap.xml found",
-    detail: sitemapFound ? `${parsed.origin}/sitemap.xml` : "No sitemap detected at the default location.",
-    recommendation: sitemapFound ? "" : "Publish an XML sitemap and reference it in robots.txt to help both search and AI crawlers discover all indexable pages.",
-  });
+  // ---- 6b. Ek kontroller: sitemap içeriği, llms.txt, şema alanları, görseller, linkler, E-E-A-T ----
+  const [sm, llms, links] = await Promise.all([auditSitemap(parsed.origin, robotsText), auditLlmsTxt(parsed.origin), auditLinks($, url)]);
+  const sitemapFound = sm.found;
+  const schemaCheck = validateSchema($);
+  const imgs = auditImages($, parsed.origin);
+  const eeat = auditEeat($, schemaCheck.nodes, wordCount, links.stats.outboundCitations);
+  for (const i of [...sm.issues, ...llms.issues, ...schemaCheck.issues, ...imgs.issues, ...links.issues, ...eeat.issues]) pushIssue(issues, i);
 
   // ---- 7. AI bot accessibility (AXO) ----
   const aiBotAccess: AiBotAccess[] = AI_BOTS.map((bot) => ({
@@ -326,7 +322,7 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   }
 
   // ---- 8. Score calculation ----
-  const score = computeScore(issues, ["meta", "headings", "schema", "crawlability", "content", "performance"]);
+  const score = computeScore(issues, ["meta", "headings", "schema", "crawlability", "content", "performance", "images", "links"]);
   const aiCrawlScore = computeAiCrawlScore(aiBotAccess, hasSchema, hasFaqSchema);
 
   return {
@@ -349,6 +345,11 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
       aiBotAccess,
       htmlLang,
       hreflangs,
+      images: imgs.stats,
+      links: links.stats,
+      sitemap: sm.stats,
+      llmsTxt: llms.found,
+      eeat: eeat.signals,
     },
   };
 }

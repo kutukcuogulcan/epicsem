@@ -10,6 +10,7 @@ import type { IssueCategory, IssueSeverity, SeoAuditResult, SeoIssueResult } fro
 import { Drawer } from "@/components/ui";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
+import type { PageSpeedResult } from "@/lib/pagespeed";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -26,6 +27,8 @@ const CATEGORY_LABEL: Record<IssueCategory, string> = {
   performance: "Performans",
   content: "İçerik",
   localization: "Dil",
+  images: "Görseller",
+  links: "Linkler",
 };
 const SEV: Record<IssueSeverity, { label: string; dot: string; chip: string; rank: number }> = {
   critical: { label: "Kritik", dot: "bg-danger", chip: "bg-danger/10 text-danger", rank: 0 },
@@ -59,6 +62,23 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const [open, setOpen] = useState<SeoIssueResult | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [allBots, setAllBots] = useState(false);
+  const [psi, setPsi] = useState<PageSpeedResult | null>(null);
+  const [psiBusy, setPsiBusy] = useState(false);
+  const [psiErr, setPsiErr] = useState<string | null>(null);
+  async function measure() {
+    setPsiBusy(true);
+    setPsiErr(null);
+    try {
+      const r = await fetch(`/api/pagespeed?url=${encodeURIComponent(result.url)}&strategy=mobile`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Ölçüm başarısız");
+      setPsi(d);
+    } catch (e) {
+      setPsiErr(e instanceof Error ? e.message : "Ölçüm başarısız");
+    } finally {
+      setPsiBusy(false);
+    }
+  }
 
   const issues = useMemo(() => result.issues.filter((i) => i.severity !== "pass").sort((a, b) => SEV[a.severity].rank - SEV[b.severity].rank), [result.issues]);
   const counts = { critical: issues.filter((i) => i.severity === "critical").length, warning: issues.filter((i) => i.severity === "warning").length, info: issues.filter((i) => i.severity === "info").length };
@@ -85,7 +105,17 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
     ["Canonical", result.meta.canonical ? "Var" : "Yok", !!result.meta.canonical],
     ["Sayfa dili", result.meta.htmlLang ?? "Belirtilmemiş", !!result.meta.htmlLang],
     ["robots.txt", result.meta.robotsTxtFound ? "Bulundu" : "Bulunamadı", result.meta.robotsTxtFound],
-    ["sitemap.xml", result.meta.sitemapFound ? "Bulundu" : "Bulunamadı", result.meta.sitemapFound],
+    ["sitemap.xml", result.meta.sitemap ? (result.meta.sitemap.url ? `${result.meta.sitemap.urls.toLocaleString("tr-TR")} URL${result.meta.sitemap.broken.length ? ` · ${result.meta.sitemap.broken.length} kırık` : ""}` : "Bulunamadı") : result.meta.sitemapFound ? "Bulundu" : "Bulunamadı", result.meta.sitemap ? !!result.meta.sitemap.url && !result.meta.sitemap.broken.length : result.meta.sitemapFound],
+    ...(result.meta.llmsTxt !== undefined ? ([["llms.txt", result.meta.llmsTxt ? "Bulundu" : "Yok", result.meta.llmsTxt]] as [string, React.ReactNode, boolean][]) : []),
+    ...(result.meta.images && result.meta.images.total
+      ? ([["Görseller", `${result.meta.images.total} görsel${result.meta.images.noAlt ? ` · ${result.meta.images.noAlt} alt metinsiz` : " · hepsinde alt var"}`, result.meta.images.noAlt === 0]] as [string, React.ReactNode, boolean][])
+      : []),
+    ...(result.meta.links
+      ? ([["Linkler", `${result.meta.links.internal} iç · ${result.meta.links.external} dış${result.meta.links.broken.length ? ` · ${result.meta.links.broken.length} kırık` : ""}`, result.meta.links.internal > 0 && !result.meta.links.broken.length]] as [string, React.ReactNode, boolean][])
+      : []),
+    ...(result.meta.eeat
+      ? ([["Yazar / tarih", `${result.meta.eeat.author ? "Yazar var" : "Yazar yok"} · ${result.meta.eeat.date ? "tarih var" : "tarih yok"}`, result.meta.eeat.author && result.meta.eeat.date]] as [string, React.ReactNode, boolean][])
+      : []),
   ];
 
   async function copy(code: string, key: string) {
@@ -220,6 +250,49 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                   <span className="min-w-0 flex-1 break-words">{v}</span>
                 </div>
               ))}
+            </div>
+          </Card>
+
+          {/* Sayfa hızı (Core Web Vitals) — isteğe bağlı, Google PageSpeed (ücretsiz) */}
+          <Card>
+            <div className="flex items-start justify-between gap-3 px-5 pt-4">
+              <div>
+                <h3 className="text-sm font-semibold">Sayfa hızı (Core Web Vitals)</h3>
+                <p className="text-xs text-sub">Google PageSpeed · mobil · ücretsiz, ~30 sn</p>
+              </div>
+              <button type="button" onClick={measure} disabled={psiBusy} className="inline-flex h-8 shrink-0 items-center rounded-[10px] bg-panel px-3 text-sm font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted disabled:opacity-60">
+                {psiBusy ? "Ölçülüyor…" : psi ? "Tekrar ölç" : "Ölç"}
+              </button>
+            </div>
+            <div className="px-5 pb-4 pt-3 text-[13px]">
+              {psiErr && <p className="text-xs text-danger">{psiErr}</p>}
+              {!psi && !psiErr && <p className="text-xs text-sub">LCP, INP ve CLS gerçek kullanıcı verisi; yoksa laboratuvar puanı.</p>}
+              {psi && (
+                <div className="space-y-1.5">
+                  {psi.labScore !== null && (
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-[22px] font-semibold tabular-nums ${scoreColor(psi.labScore)}`}>{psi.labScore}</span>
+                      <span className="text-xs text-sub">/100 performans</span>
+                      {psi.passed !== null && <span className={`ml-auto rounded-md px-2 py-0.5 text-[11px] font-medium ${psi.passed ? "bg-seo/10 text-seo" : "bg-danger/10 text-danger"}`}>{psi.passed ? "CWV geçti" : "CWV kaldı"}</span>}
+                    </div>
+                  )}
+                  {psi.metrics
+                    .filter((m) => m.p75 !== null)
+                    .map((m) => (
+                      <div key={m.key} className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${m.category === "FAST" ? "bg-seo" : m.category === "AVERAGE" ? "bg-warn" : "bg-danger"}`} />
+                        <span className="flex-1 text-sub">{m.label}</span>
+                        <span className="tabular-nums">{m.key === "CLS" ? m.p75!.toFixed(2) : m.p75! >= 1000 ? `${(m.p75! / 1000).toFixed(1)} sn` : `${m.p75} ms`}</span>
+                      </div>
+                    ))}
+                  {psi.fieldScope === "none" && <p className="text-[11px] text-sub">Bu sayfa için gerçek kullanıcı verisi yok; puan laboratuvar ölçümü.</p>}
+                  {psi.opportunities.slice(0, 3).map((o) => (
+                    <div key={o.title} className="text-[11px] text-sub">
+                      • {o.title} <span className="tabular-nums">(~{(o.savingsMs / 1000).toFixed(1)} sn)</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         </div>
