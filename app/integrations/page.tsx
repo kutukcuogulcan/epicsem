@@ -75,7 +75,7 @@ export default function IntegrationsPage() {
 
       {sharedDemo && (
         <div className="rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm leading-6 text-ink/70">
-          <strong>Ortak demo hesabındasın.</strong> Girişsiz ziyaretçiler aynı demo hesabını paylaştığı için burada anahtar kaydedilemez. Kendi servislerini bağlamak için{" "}
+          <strong>Ortak demo hesabındasın.</strong> Claude, ChatGPT gibi AI motoru anahtarlarını girmek için kendi hesabınla giriş yapman gerekiyor. Girişsiz ziyaretçiler aynı demo hesabını paylaştığı için burada anahtar kaydedilemez. Kendi servislerini bağlamak için{" "}
           <a href="/login?next=/integrations" className="font-medium text-accent">kendi hesabınla giriş yap</a>.
         </div>
       )}

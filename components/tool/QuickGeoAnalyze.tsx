@@ -207,7 +207,21 @@ export default function QuickGeoAnalyze({
               );
             })}
           </ol>
-          {error && <p className="mt-3 text-sm text-danger">{error} — adresi kontrol edip tekrar dene.</p>}
+          {error && (
+            <p className="mt-3 text-sm text-danger">
+              {error}
+              {/anahtar|kredi/i.test(error) ? (
+                <>
+                  {" "}
+                  <a href="/integrations" className="font-medium underline">
+                    Entegrasyonlar →
+                  </a>
+                </>
+              ) : (
+                " — adresi kontrol edip tekrar dene."
+              )}
+            </p>
+          )}
           {done && <p className="mt-3 text-sm text-ink/60">Bitti — sonuçlar yukarıdaki panoya işlendi. Marka, rakip ve promptları <button type="button" onClick={onOpenSettings} className="font-medium text-accent hover:underline">Ayarlar</button>'dan değiştirebilirsin.</p>}
         </div>
       )}

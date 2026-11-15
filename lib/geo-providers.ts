@@ -60,7 +60,7 @@ class OpenAiProvider implements LlmProvider {
         ...(options?.maxTokens ? { max_tokens: Math.min(16000, options.maxTokens) } : {}),
       }),
     });
-    if (!res.ok) throw new Error(`OpenAI API error: ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", res.status, await res.text()));
     const data = await res.json();
     return { text: data.choices?.[0]?.message?.content ?? "", model };
   }
@@ -148,7 +148,7 @@ class AnthropicProvider implements LlmProvider {
         res = await send(false);
       } else throw new Error(`Anthropic API error: ${res.status} ${body}`);
     }
-    if (!res.ok) throw new Error(`Anthropic API error: ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(friendlyApiError("Claude", res.status, await res.text()));
     const data = await res.json();
     const text = Array.isArray(data.content) ? data.content.map((c: { text?: string }) => c.text ?? "").join("") : "";
     return { text, model };
@@ -205,7 +205,7 @@ class PerplexityProvider implements LlmProvider {
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!res.ok) throw new Error(`Perplexity API error: ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(friendlyApiError("Perplexity", res.status, await res.text()));
     const data = await res.json();
     let text = data.choices?.[0]?.message?.content ?? "";
     const citations: string[] | undefined = data.citations;
@@ -345,4 +345,15 @@ export function isDemoMode(): boolean {
 /** Gerçek modda sadece anahtarı tanımlı motorlar çalışır; kota da yalnız onlar için hesaplanır. */
 export function configuredEngines(engines: EngineId[]): EngineId[] {
   return isDemoMode() ? engines : engines.filter((e) => PROVIDERS[e].isConfigured());
+}
+
+/** Sağlayıcı hatalarını kullanıcının anlayacağı, ne yapacağını söyleyen Türkçe mesaja çevirir. */
+export function friendlyApiError(name: string, status: number, body: string): string {
+  if (status === 401 || /invalid.{0,10}api.?key|authentication_error/i.test(body))
+    return `${name} API anahtarı geçersiz. Entegrasyonlar sayfasından ${name} anahtarını yenile (Entegrasyonlar → Yapay zekâ motorları).`;
+  if (status === 402 || /insufficient_quota|credit balance|billing/i.test(body))
+    return `${name} hesabında kredi yok. Sağlayıcının panelinden (Billing) kredi yükle.`;
+  if (status === 429) return `${name} istek limiti aşıldı. Birkaç dakika sonra tekrar dene.`;
+  if (status >= 500) return `${name} şu an yanıt vermiyor (HTTP ${status}). Biraz sonra tekrar dene.`;
+  return `${name} hatası: HTTP ${status} ${body.slice(0, 200)}`;
 }

@@ -2646,7 +2646,8 @@ export async function getAppOwnerId(): Promise<number | null> {
     const r = await one<any>(`SELECT id FROM users WHERE lower(email) = $1`, [email]);
     if (r) return r.id;
   }
-  const r = await one<any>(`SELECT id FROM users ORDER BY id ASC LIMIT 1`, []);
+  // Ortak demo hesabı (girişsiz ziyaretçiler) asla uygulama sahibi olamaz.
+  const r = await one<any>(`SELECT id FROM users WHERE email <> 'demo@epicsem.local' ORDER BY id ASC LIMIT 1`, []);
   return r ? r.id : null;
 }
 
