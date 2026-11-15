@@ -685,6 +685,22 @@ export async function getPreviousAuditRun(userId: number, url: string): Promise<
   return rowToAuditSummary(rows[1]);
 }
 
+/** Bir alan adı (host) için en son kayıtlı denetimin tam sonucu + o URL'in geçmişi. */
+export async function getLatestAuditForHost(
+  userId: number,
+  host: string
+): Promise<{ result: SeoAuditResult; createdAt: string; history: AuditRunSummary[] } | null> {
+  await ensureSchema();
+  const h = host.replace(/^www\./, "").toLowerCase();
+  const row = await one<any>(
+    `SELECT * FROM audit_runs WHERE user_id = $1 AND (url ILIKE $2 OR url ILIKE $3) ORDER BY id DESC LIMIT 1`,
+    [userId, `%://${h}%`, `%://www.${h}%`]
+  );
+  if (!row) return null;
+  const hist = await many<any>(`SELECT * FROM (SELECT * FROM audit_runs WHERE user_id = $1 AND url = $2 ORDER BY id DESC LIMIT 12) r ORDER BY id ASC`, [userId, row.url]);
+  return { result: JSON.parse(row.result_json), createdAt: toIso(row.created_at), history: hist.map(rowToAuditSummary) };
+}
+
 export async function getAuditHistory(userId: number, url: string, limit = 10): Promise<AuditRunSummary[]> {
   await ensureSchema();
   const rows = await many<any>(

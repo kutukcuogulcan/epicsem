@@ -34,8 +34,8 @@ export function generateMetaDescription($: CheerioAPI, title: string | null): Ge
 
   return {
     kind: "meta-description",
-    label: "Draft meta description",
-    note: "Built from the page's own first paragraph — read it before publishing, it's a starting point, not final copy.",
+    label: "Meta açıklama taslağı",
+    note: "Sayfanın kendi ilk paragrafından üretildi. Yayınlamadan önce oku; son hali değil, başlangıç taslağı.",
     code: draft,
   };
 }
@@ -57,10 +57,10 @@ export function generateOrganizationSchema(url: string, title: string | null, ht
 
   return {
     kind: "organization-schema",
-    label: "Organization JSON-LD",
+    label: "Organization şeması (JSON-LD)",
     note: isTurkish
-      ? "Paste inside a <script type=\"application/ld+json\"> tag in <head>. Replace the logo URL with a real one. lang=\"tr\" was detected, so an \"areaServed\": \"TR\" hint was added — remove it if this brand doesn't primarily serve the Turkish market."
-      : "Paste inside a <script type=\"application/ld+json\"> tag in <head>. Replace the logo URL with a real one — this is the one field that couldn't be read off the page.",
+      ? "<head> içinde bir <script type=\"application/ld+json\"> etiketinin içine yapıştır. Logo adresini gerçek logonla değiştir. Sayfa Türkçe olduğu için \"areaServed\": \"TR\" eklendi; marka ağırlıklı olarak Türkiye'ye hizmet vermiyorsa kaldır."
+      : "<head> içinde bir <script type=\"application/ld+json\"> etiketinin içine yapıştır. Logo adresini gerçek logonla değiştir; sayfadan okunamayan tek alan bu.",
     code,
   };
 }
@@ -107,8 +107,8 @@ ${items
 
   return {
     kind: "faq-schema",
-    label: `FAQPage JSON-LD (${items.length} question${items.length > 1 ? "s" : ""} found on the page)`,
-    note: "Extracted from headings on the page that end in \"?\" plus the text right after them — check the answers read well before publishing.",
+    label: `SSS şeması (sayfada ${items.length} soru bulundu)`,
+    note: "Sayfada \"?\" ile biten başlıklar ve hemen altındaki metinden çıkarıldı. Yayınlamadan önce cevapların düzgün okunduğunu kontrol et.",
     code,
   };
 }

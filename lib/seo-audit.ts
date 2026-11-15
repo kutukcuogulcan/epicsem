@@ -49,18 +49,18 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
       pushIssue(issues, {
         category: "crawlability",
         severity: "critical",
-        title: `Page returned HTTP ${res.status}`,
-        detail: `Fetching ${url} did not return a 200 OK response.`,
-        recommendation: "Ensure the URL resolves correctly and returns a 200 status for both users and crawlers.",
+        title: `Sayfa HTTP ${res.status} döndürdü`,
+        detail: `${url} adresi 200 (başarılı) yanıtı vermedi.`,
+        recommendation: "Adresin hem kullanıcılar hem tarayıcılar için 200 durum koduyla açıldığından emin ol.",
       });
     }
   } catch (err) {
     pushIssue(issues, {
       category: "crawlability",
       severity: "critical",
-      title: "Page could not be fetched",
-      detail: err instanceof Error ? err.message : "Unknown fetch error",
-      recommendation: "Confirm the domain is reachable, not blocked by a firewall/WAF, and DNS resolves publicly.",
+      title: "Sayfa açılamadı",
+      detail: err instanceof Error ? err.message : "Bilinmeyen bağlantı hatası",
+      recommendation: "Alan adının erişilebilir olduğunu, güvenlik duvarı/WAF tarafından engellenmediğini ve DNS kaydının doğru olduğunu kontrol et.",
     });
     return buildEmptyResult(url, issues);
   }
@@ -73,20 +73,20 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "meta",
       severity: "critical",
-      title: "Missing <title> tag",
-      detail: "No <title> element was found in the page <head>.",
-      recommendation: "Add a unique, descriptive <title> (50-60 chars) — it's the single strongest on-page signal for both classic SEO and how AI engines summarize the page.",
+      title: "Sayfa başlığı (title) yok",
+      detail: "Sayfanın <head> bölümünde <title> etiketi bulunamadı.",
+      recommendation: "50-60 karakterlik, sayfaya özgü ve açıklayıcı bir başlık ekle. Hem Google hem AI motorları sayfanın konusunu ilk buradan anlar.",
     });
   } else if (title.length > 60) {
     pushIssue(issues, {
       category: "meta",
       severity: "info",
-      title: "Title tag is long",
-      detail: `Title is ${title.length} characters: "${title}"`,
-      recommendation: "Keep titles under ~60 characters so they aren't truncated in SERPs.",
+      title: "Sayfa başlığı uzun",
+      detail: `Başlık ${title.length} karakter: "${title}"`,
+      recommendation: "Arama sonuçlarında kesilmemesi için başlığı 60 karakterin altında tut.",
     });
   } else {
-    pushIssue(issues, { category: "meta", severity: "pass", title: "Title tag present", detail: title, recommendation: "" });
+    pushIssue(issues, { category: "meta", severity: "pass", title: "Sayfa başlığı var", detail: title, recommendation: "" });
   }
 
   const description = $('meta[name="description"]').attr("content")?.trim() || null;
@@ -94,12 +94,12 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "meta",
       severity: "warning",
-      title: "Missing meta description",
-      detail: "No <meta name=\"description\"> tag found.",
-      recommendation: "Write a 140-160 character summary. AI answer engines often lift this text directly when the page has no clearer summary.",
+      title: "Meta açıklama yok",
+      detail: "<meta name=\"description\"> etiketi bulunamadı.",
+      recommendation: "140-160 karakterlik bir özet yaz. AI motorları sayfada daha net bir özet yoksa bu metni doğrudan kullanır.",
     });
   } else {
-    pushIssue(issues, { category: "meta", severity: "pass", title: "Meta description present", detail: description, recommendation: "" });
+    pushIssue(issues, { category: "meta", severity: "pass", title: "Meta açıklama var", detail: description, recommendation: "" });
   }
 
   const canonical = $('link[rel="canonical"]').attr("href") || null;
@@ -107,9 +107,9 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "meta",
       severity: "info",
-      title: "No canonical tag",
-      detail: "No <link rel=\"canonical\"> found.",
-      recommendation: "Add a self-referencing canonical to avoid duplicate-content ambiguity for crawlers.",
+      title: "Canonical etiketi yok",
+      detail: "<link rel=\"canonical\"> etiketi bulunamadı.",
+      recommendation: "Sayfanın kendisini gösteren bir canonical ekle; tarayıcılar kopya içerik konusunda kararsız kalmasın.",
     });
   }
 
@@ -120,20 +120,20 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "headings",
       severity: "warning",
-      title: "No H1 found",
-      detail: "The page has zero <h1> elements.",
-      recommendation: "Add exactly one clear H1 stating the page's main topic — both Google and LLMs use it as the primary topic signal.",
+      title: "H1 başlığı yok",
+      detail: "Sayfada hiç <h1> başlığı yok.",
+      recommendation: "Sayfanın ana konusunu söyleyen tek bir H1 ekle. Google ve AI motorları konuyu öncelikle buradan anlar.",
     });
   } else if (h1Count > 1) {
     pushIssue(issues, {
       category: "headings",
       severity: "info",
-      title: `Multiple H1 tags (${h1Count})`,
-      detail: "More than one <h1> can dilute topical clarity.",
-      recommendation: "Use a single H1 per page; structure the rest with H2/H3.",
+      title: `Birden fazla H1 başlığı (${h1Count})`,
+      detail: "Birden fazla <h1>, sayfanın ana konusunu bulanıklaştırır.",
+      recommendation: "Sayfada tek H1 kullan; diğer başlıkları H2/H3 olarak düzenle.",
     });
   } else {
-    pushIssue(issues, { category: "headings", severity: "pass", title: "Single H1 present", detail: h1s.first().text().trim(), recommendation: "" });
+    pushIssue(issues, { category: "headings", severity: "pass", title: "Tek H1 başlığı var", detail: h1s.first().text().trim(), recommendation: "" });
   }
 
   // ---- 4. Content depth ----
@@ -143,24 +143,24 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "content",
       severity: "warning",
-      title: "Thin content",
-      detail: `Approx. ${wordCount} words of visible text.`,
-      recommendation: "Generative engines favor pages that fully answer a question in self-contained text. Expand to cover the topic thoroughly (definitions, specifics, comparisons) rather than relying on JS-rendered or sparse content.",
+      title: "İçerik çok kısa",
+      detail: `Görünen metin yaklaşık ${wordCount} kelime.`,
+      recommendation: "AI motorları bir soruyu kendi içinde eksiksiz cevaplayan sayfaları tercih eder. Konuyu tanımlar, somut bilgiler ve karşılaştırmalarla genişlet.",
     });
   } else {
-    pushIssue(issues, { category: "content", severity: "pass", title: "Sufficient content depth", detail: `~${wordCount} words`, recommendation: "" });
+    pushIssue(issues, { category: "content", severity: "pass", title: "İçerik yeterli uzunlukta", detail: `~${wordCount} kelime`, recommendation: "" });
   }
 
   // Answer-first check: does the first ~150 words directly address a question-like structure?
   const first150 = bodyText.split(" ").slice(0, 150).join(" ");
-  const hasDirectAnswerPattern = /\b(is|are|means|refers to|works by|helps you|allows you)\b/i.test(first150.slice(0, 400));
+  const hasDirectAnswerPattern = /\b(is|are|means|refers to|works by|helps you|allows you)\b|(dır|dir|dur|dür|tır|tir|tur|tür|nedir|demektir|sağlar|anlamına gelir)\b/i.test(first150.slice(0, 400));
   if (wordCount >= 200 && !hasDirectAnswerPattern) {
     pushIssue(issues, {
       category: "content",
       severity: "info",
-      title: "Content may not lead with a direct answer",
-      detail: "The opening ~150 words don't show an obvious definitional/answer pattern.",
-      recommendation: "AI engines quote or paraphrase best when the top of the page states the direct answer in 1-2 sentences before elaborating (the 'answer-first' pattern).",
+      title: "Sayfa doğrudan bir cevapla başlamıyor olabilir",
+      detail: "İlk ~150 kelimede net bir tanım ya da cevap cümlesi görünmüyor.",
+      recommendation: "AI motorları, sayfanın en başında konuyu 1-2 cümlede doğrudan cevaplayan metinleri daha çok alıntılar (önce cevap, sonra ayrıntı).",
     });
   }
 
@@ -189,16 +189,16 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "schema",
       severity: "warning",
-      title: "No structured data (JSON-LD) found",
-      detail: "No <script type=\"application/ld+json\"> blocks detected.",
-      recommendation: "Add Organization/Product/Article/FAQPage schema as relevant. Structured data is one of the clearest machine-readable signals LLM crawlers and Google AI Overviews use to extract facts confidently.",
+      title: "Yapısal veri (JSON-LD) yok",
+      detail: "Sayfada <script type=\"application/ld+json\"> bloğu bulunamadı.",
+      recommendation: "Uygun olanları ekle: Organization, Product, Article, FAQPage. Yapısal veri, AI motorlarının ve Google AI Overviews'un bilgileri güvenle okuduğu en net sinyallerden biridir.",
     });
   } else {
     pushIssue(issues, {
       category: "schema",
       severity: "pass",
-      title: "Structured data present",
-      detail: `Types found: ${Array.from(schemaTypes).join(", ")}`,
+      title: "Yapısal veri var",
+      detail: `Bulunan türler: ${Array.from(schemaTypes).join(", ")}`,
       recommendation: "",
     });
   }
@@ -207,9 +207,9 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "schema",
       severity: "info",
-      title: "No FAQPage schema",
-      detail: "FAQPage structured data was not detected.",
-      recommendation: "If the page answers common questions, mark them up with FAQPage schema — it's one of the highest-leverage formats for direct citation in AI answers.",
+      title: "SSS (FAQPage) şeması yok",
+      detail: "FAQPage yapısal verisi bulunamadı.",
+      recommendation: "Sayfa sık sorulan soruları cevaplıyorsa bunları FAQPage şemasıyla işaretle. AI cevaplarında doğrudan alıntılanmanın en etkili yollarından biridir.",
     });
   }
 
@@ -223,25 +223,25 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     pushIssue(issues, {
       category: "localization",
       severity: "info",
-      title: "No <html lang> attribute",
-      detail: "The page doesn't declare a language via <html lang=\"...\">.",
-      recommendation: "Declare it (e.g. lang=\"tr\" for Turkish content) — search engines and AI crawlers use it to route content to the right locale/language audience, and it's required for hreflang to work correctly.",
+      title: "Sayfa dili belirtilmemiş",
+      detail: "Sayfa <html lang=\"...\"> ile dilini belirtmiyor.",
+      recommendation: "Dili belirt (Türkçe içerik için lang=\"tr\"). Arama motorları ve AI tarayıcıları içeriği doğru dildeki kullanıcılara bununla ulaştırır; hreflang için de gereklidir.",
     });
   } else {
     pushIssue(issues, {
       category: "localization",
       severity: "pass",
-      title: "Language declared",
-      detail: `<html lang="${htmlLang}">${hreflangs.length > 0 ? ` · hreflang alternates: ${hreflangs.join(", ")}` : ""}`,
+      title: "Sayfa dili belirtilmiş",
+      detail: `<html lang="${htmlLang}">${hreflangs.length > 0 ? ` · hreflang alternatifleri: ${hreflangs.join(", ")}` : ""}`,
       recommendation: "",
     });
     if (htmlLang.startsWith("tr") && hreflangs.length === 0) {
       pushIssue(issues, {
         category: "localization",
         severity: "info",
-        title: "Turkish page with no hreflang alternates",
-        detail: "lang=\"tr\" is declared but no <link rel=\"alternate\" hreflang=\"...\"> tags were found.",
-        recommendation: "If this brand also serves other languages/markets, add hreflang alternates (including an x-default) so Google and AI engines don't treat the Turkish and other-language pages as duplicates or serve the wrong one to Turkish users.",
+        title: "Türkçe sayfada hreflang alternatifi yok",
+        detail: "lang=\"tr\" belirtilmiş ama <link rel=\"alternate\" hreflang=\"...\"> etiketi yok.",
+        recommendation: "Marka başka dil/pazarlara da hizmet veriyorsa hreflang alternatiflerini (x-default dahil) ekle; aksi halde Google ve AI motorları sayfaları kopya sanabilir ya da yanlış dildeki sayfayı gösterebilir.",
       });
     }
   }
@@ -276,9 +276,9 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   pushIssue(issues, {
     category: "crawlability",
     severity: robotsTxtFound ? "pass" : "info",
-    title: robotsTxtFound ? "robots.txt found" : "No robots.txt found",
-    detail: robotsTxtFound ? `${parsed.origin}/robots.txt` : "A missing robots.txt is not an error, but it means you can't explicitly allow/disallow AI crawlers.",
-    recommendation: robotsTxtFound ? "" : "Add a robots.txt so you can deliberately control which AI and search crawlers may access the site.",
+    title: robotsTxtFound ? "robots.txt bulundu" : "robots.txt yok",
+    detail: robotsTxtFound ? `${parsed.origin}/robots.txt` : "robots.txt olmaması hata değil, ama AI tarayıcılarına açıkça izin verip engelleyemezsin.",
+    recommendation: robotsTxtFound ? "" : "Hangi AI ve arama tarayıcılarının siteye erişebileceğini kontrol etmek için bir robots.txt ekle.",
   });
 
   let sitemapFound = false;
@@ -291,9 +291,9 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   pushIssue(issues, {
     category: "crawlability",
     severity: sitemapFound ? "pass" : "warning",
-    title: sitemapFound ? "sitemap.xml found" : "No sitemap.xml found",
-    detail: sitemapFound ? `${parsed.origin}/sitemap.xml` : "No sitemap detected at the default location.",
-    recommendation: sitemapFound ? "" : "Publish an XML sitemap and reference it in robots.txt to help both search and AI crawlers discover all indexable pages.",
+    title: sitemapFound ? "sitemap.xml bulundu" : "sitemap.xml yok",
+    detail: sitemapFound ? `${parsed.origin}/sitemap.xml` : "Varsayılan konumda site haritası bulunamadı.",
+    recommendation: sitemapFound ? "" : "Bir XML site haritası yayınla ve robots.txt içinde belirt; arama ve AI tarayıcıları tüm sayfaları daha kolay bulur.",
   });
 
   // ---- 7. AI bot accessibility (AXO) ----
@@ -310,17 +310,17 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
       category: "ai-crawlability",
       severity: blockedCitation.length ? "critical" : "warning",
       title: blockedCitation.length
-        ? `${blockedCitation.length} AI search/citation crawler(s) blocked in robots.txt`
-        : `${blockedBots.length} AI training crawler(s) blocked in robots.txt`,
-      detail: blockedBots.map((b) => `${b.bot} (${b.engine}${b.role === "training" ? ", training" : ""})`).join(", "),
-      recommendation: "If you want this content to be eligible for citation in ChatGPT, Claude, Perplexity, or Google AI Overviews, remove the Disallow rule for these user-agents. If the block is intentional (e.g. protecting content from AI training), that's a valid choice — just make sure it's deliberate, not a default from your CMS/CDN.",
+        ? `robots.txt ${blockedCitation.length} AI arama/alıntı botunu engelliyor`
+        : `robots.txt ${blockedBots.length} AI eğitim botunu engelliyor`,
+      detail: blockedBots.map((b) => `${b.bot} (${b.engine}${b.role === "training" ? ", eğitim" : ""})`).join(", "),
+      recommendation: "Bu içeriğin ChatGPT, Claude, Perplexity veya Google AI Overviews cevaplarında alıntılanmasını istiyorsan bu botlar için Disallow kuralını kaldır. Engel bilinçliyse (ör. içeriği AI eğitiminden korumak) sorun değil; sadece CMS/CDN'in varsayılan ayarı olmadığından emin ol.",
     });
   } else {
     pushIssue(issues, {
       category: "ai-crawlability",
       severity: "pass",
-      title: "No AI crawlers blocked",
-      detail: "GPTBot, ClaudeBot, PerplexityBot, Google-Extended and others can all reach this URL.",
+      title: "Hiçbir AI botu engellenmiyor",
+      detail: "GPTBot, ClaudeBot, PerplexityBot, Google-Extended ve diğerleri bu sayfaya erişebiliyor.",
       recommendation: "",
     });
   }

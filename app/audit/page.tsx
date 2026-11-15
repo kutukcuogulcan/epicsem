@@ -1,46 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SeoAuditResult, IssueCategory } from "@/types";
-import ScoreGauge from "@/components/ScoreGauge";
-import IssueCard from "@/components/IssueCard";
-import FixCard from "@/components/FixCard";
-import PromptBlock from "@/components/PromptBlock";
-import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
-import ToolPageHeader from "@/components/ToolPageHeader";
+import type { SeoAuditResult } from "@/types";
 import AuditOverview from "@/components/tool/AuditOverview";
+import AuditDashboard, { type AuditHistoryPoint } from "@/components/tool/AuditDashboard";
 import { useAgencyName } from "@/lib/use-agency-name";
 import { useProject } from "@/components/ProjectProvider";
-import { ErrorBlock } from "@/components/ui";
-
-const CATEGORY_LABEL: Record<IssueCategory, string> = {
-  meta: "Meta & title",
-  headings: "Başlıklar",
-  schema: "Structured data",
-  crawlability: "Crawlability",
-  "ai-crawlability": "AI crawler erişimi (AXO)",
-  performance: "Performans",
-  content: "İçerik derinliği",
-  localization: "Dil & yerelleştirme",
-};
-
-interface PreviousAuditRun {
-  score: number;
-  aiCrawlScore: number;
-  blockedBots: number;
-  createdAt: string;
-}
-
-function TrendChip({ label, delta, lowerIsBetter = false }: { label: string; delta: number; lowerIsBetter?: boolean }) {
-  if (delta === 0) return <span className="text-ink/40">{label} değişmedi</span>;
-  const improved = lowerIsBetter ? delta < 0 : delta > 0;
-  return (
-    <span className={improved ? "text-seo" : "text-danger"}>
-      {label} {delta > 0 ? "+" : ""}
-      {delta} (önceki koşuya göre)
-    </span>
-  );
-}
+import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
 
 export default function AuditPage() {
   const [url, setUrl] = useState("");
@@ -51,9 +17,35 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SeoAuditResult | null>(null);
-  const [previousRun, setPreviousRun] = useState<PreviousAuditRun | null>(null);
   const [agencyName, setAgencyName] = useAgencyName();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [history, setHistory] = useState<AuditHistoryPoint[]>([]);
+  const [resultAt, setResultAt] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+
+  // Aktif projenin son denetimini otomatik göster.
+  useEffect(() => {
+    if (!project?.domain) return;
+    let off = false;
+    fetch(`/api/audit/latest?domain=${encodeURIComponent(project.domain)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (off) return;
+        if (d?.latest) {
+          setResult(d.latest.result);
+          setResultAt(d.latest.createdAt);
+          setHistory(d.latest.history ?? []);
+        } else {
+          setResult(null);
+          setHistory([]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      off = true;
+    };
+  }, [project?.domain, refreshKey]);
 
   useEffect(() => {
     // Ana sayfadaki "siteniz.com" kutusundan gelen ?url= ön-doldurması.
@@ -81,7 +73,6 @@ export default function AuditPage() {
     setLoading(true);
     setError(null);
     setResult(null);
-    setPreviousRun(null);
     try {
       const res = await fetch("/api/audit", {
         method: "POST",
@@ -95,8 +86,8 @@ export default function AuditPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Denetim başarısız oldu");
       setResult(data);
-      setRefreshKey((k) => k + 1);
-      setPreviousRun(data.previousRun ?? null);
+      setResultAt(new Date().toISOString());
+      setHistory((h) => [...h, { score: data.score, aiCrawlScore: data.aiCrawlScore, createdAt: new Date().toISOString() }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -126,137 +117,88 @@ export default function AuditPage() {
     URL.revokeObjectURL(objectUrl);
   }
 
-  const groupedIssues = result
-    ? (Object.keys(CATEGORY_LABEL) as IssueCategory[]).map((cat) => ({
-        cat,
-        issues: result.issues.filter((i) => i.category === cat),
-      })).filter((g) => g.issues.length > 0)
-    : [];
+  const host = (() => {
+    try {
+      return result ? new URL(result.url).hostname.replace(/^www\./, "") : project?.domain ?? "";
+    } catch {
+      return project?.domain ?? "";
+    }
+  })();
+  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
   return (
-    <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="SEO + AXO Audit"
-        title="SEO + AXO Audit"
-        body="Teknik SEO temelleri ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişimi — tek taramada."
+    <div className="space-y-6">
+      <PageHeader
+        title={result ? `${host} ne kadar sağlıklı?` : "Site Denetimi"}
+        description={
+          result
+            ? `${result.url} · ~${result.meta.wordCount} kelime · son denetim ${new Date(resultAt ?? result.fetchedAt).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+            : "Teknik SEO temelleri ve GPTBot, ClaudeBot, PerplexityBot gibi AI tarayıcılarının sayfaya erişimi — tek taramada."
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {result && (
+              <button type="button" onClick={() => setPdfOpen(true)} className={BTN2}>
+                PDF rapor
+              </button>
+            )}
+            <button type="button" onClick={() => setFormOpen(true)} disabled={loading} className={BTN1}>
+              {loading ? "Taranıyor…" : "+ Yeni denetim"}
+            </button>
+          </div>
+        }
       />
-
-      <form
-        onSubmit={runAudit}
-        className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10 transition-all"
-      >
-        <div className="flex flex-1 items-center gap-2 px-3">
-          <span className="text-ink/30">🌐</span>
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Denetlenecek adres — ör. siteniz.com"
-            required
-            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/35"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Taranıyor…" : "Denetimi başlat →"}
-        </button>
-      </form>
-
-      {!result && <AuditOverview refreshKey={refreshKey} onPick={setUrl} />}
 
       <ErrorBlock message={error} />
 
-      {result && (
-        <div className="space-y-8">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <input
-              value={agencyName}
-              onChange={(e) => setAgencyName(e.target.value)}
-              placeholder="Ajans adınız (opsiyonel — PDF'te görünür)"
-              className="w-64 rounded-lg bg-panel border border-border px-3 py-1.5 text-xs outline-none focus:border-accent"
-            />
-            <button
-              onClick={downloadPdf}
-              className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"
-            >
-              PDF rapor indir
-            </button>
-          </div>
-
-          <PromptBlock variant="hero"
-            title="Fix with Claude Code"
-            description="Bu denetimin bulgularıyla önceden doldurulmuş bir prompt — sitenizin reposunda çalışan Claude Code'a yapıştırın, güvenle otomatik düzeltilebilecekleri düzeltsin."
-            prompt={buildAuditFixPrompt(result)}
-          />
-          <div className="card flex flex-wrap items-center gap-8">
-            <ScoreGauge label="Teknik SEO skoru" score={result.score} colorClass="text-seo" />
-            <ScoreGauge label="AI crawlability (AXO) skoru" score={result.aiCrawlScore} colorClass="text-accent" />
-            <div className="text-sm text-ink/60 space-y-1">
-              <div><span className="text-ink/40">URL:</span> {result.url}</div>
-              <div><span className="text-ink/40">Başlık:</span> {result.meta.title ?? "—"}</div>
-              <div><span className="text-ink/40">Kelime sayısı:</span> ~{result.meta.wordCount}</div>
-              <div><span className="text-ink/40">Structured data:</span> {result.meta.hasSchema ? result.meta.schemaTypes.join(", ") : "yok"}</div>
-              {previousRun && (
-                <div className="flex flex-wrap gap-x-4 pt-1 text-xs">
-                  <TrendChip label="SEO" delta={result.score - previousRun.score} />
-                  <TrendChip label="AXO" delta={result.aiCrawlScore - previousRun.aiCrawlScore} />
-                  <TrendChip
-                    label="Engellenen bot"
-                    delta={result.meta.aiBotAccess.filter((b) => !b.allowed).length - previousRun.blockedBots}
-                    lowerIsBetter
-                  />
-                </div>
-              )}
-              {!previousRun && (
-                <div className="pt-1 text-xs text-ink/30">Bu URL için ilk kaydedilen koşu — sonraki koşularda burada bir trend görünecek.</div>
-              )}
-            </div>
-          </div>
-
-          <div className="card">
-            <h2 className="font-medium mb-3">AI crawler erişimi</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-              {result.meta.aiBotAccess.map((b) => (
-                <div key={b.bot} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-                  <span>{b.bot} <span className="text-ink/40">({b.engine})</span></span>
-                  <span className={b.allowed ? "text-seo" : "text-danger"}>{b.allowed ? "İzinli" : "Engelli"}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {result.fixes.length > 0 && (
-            <div className="space-y-3">
-              <div>
-                <h2 className="font-medium">Düzeltmeler</h2>
-                <p className="text-sm text-ink/50">
-                  Bu sayfanın kendi içeriğinden üretildi — hiçbir şey uydurulmadı. Yayınlamadan önce gözden geçirip yapıştırın.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {result.fixes.map((fix, i) => (
-                  <FixCard key={i} fix={fix} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {groupedIssues.map((group) => (
-            <div key={group.cat} className="space-y-3">
-              <h2 className="font-medium">{CATEGORY_LABEL[group.cat]}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {group.issues.map((issue, i) => (
-                  <IssueCard key={i} issue={issue} />
-                ))}
-              </div>
-            </div>
-          ))}
+      {loading && (
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-panel px-5 py-4 text-sm shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          {url} taranıyor — sayfa, robots.txt, sitemap ve AI botu erişimi kontrol ediliyor…
         </div>
       )}
 
+      {result ? (
+        <AuditDashboard result={result} history={history} />
+      ) : (
+        !loading && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-dashed border-border bg-panel px-6 py-10 text-center">
+              <div className="text-base font-semibold">{project ? `${project.domain} için henüz denetim yok` : "Henüz denetim yok"}</div>
+              <p className="mx-auto mt-1 max-w-md text-sm text-sub">Siteni tara; teknik SEO sorunlarını, AI tarayıcılarının erişimini ve hazır düzeltme kodlarını tek ekranda gör. AI kullanmaz, ücretsizdir.</p>
+              <button type="button" onClick={() => setFormOpen(true)} className={`${BTN1} mt-4`}>
+                Denetimi başlat
+              </button>
+            </div>
+            <AuditOverview refreshKey={refreshKey} onPick={(u) => { setUrl(u); setFormOpen(true); }} />
+          </div>
+        )
+      )}
 
+      <Drawer isOpen={formOpen} onClose={() => setFormOpen(false)} eyebrow="Site Denetimi" title="Yeni denetim" subtitle="Bir sayfa adresi yaz; teknik SEO ve AI erişimi kontrol edilir." size="md">
+        <form
+          onSubmit={(e) => {
+            setFormOpen(false);
+            runAudit(e);
+          }}
+          className="space-y-3"
+        >
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="ör. https://siteniz.com/sayfa" required className="h-10 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]" />
+          <button type="submit" disabled={loading} className={BTN1}>
+            Denetimi başlat →
+          </button>
+        </form>
+      </Drawer>
+
+      <Drawer isOpen={pdfOpen} onClose={() => setPdfOpen(false)} eyebrow="Rapor" title="PDF rapor indir" subtitle="Müşterine gönderebileceğin markalı rapor." size="md">
+        <div className="space-y-3">
+          <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Ajans adın (opsiyonel, PDF'te görünür)" className="h-10 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]" />
+          <button type="button" onClick={downloadPdf} className={BTN1}>
+            PDF indir
+          </button>
+        </div>
+      </Drawer>
     </div>
   );
 }
