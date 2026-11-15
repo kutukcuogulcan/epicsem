@@ -29,6 +29,8 @@ export interface PromptGroup {
   visibility: number; // 0-1
   sentiment: number | null; // 0-100
   mentions: string[];
+  /** Bu soruda cevaplarda en sık ilk sırada anılan marka. */
+  leader?: string | null;
   responses: PromptResponse[];
 }
 
@@ -63,7 +65,18 @@ export function groupRuns(runs: RawRun[], brandNames: string[]): PromptGroup[] {
       mentions: mentionsIn(r.responseText),
       citations: (r.citations ?? []).slice(0, 8),
     }));
+    const firsts = new Map<string, number>();
+    for (const r of responses) {
+      const low = r.text.toLocaleLowerCase("tr");
+      const first = r.mentions
+        .map((n) => ({ n, at: low.indexOf(n.toLocaleLowerCase("tr")) }))
+        .filter((x) => x.at >= 0)
+        .sort((a, b) => a.at - b.at)[0];
+      if (first) firsts.set(first.n, (firsts.get(first.n) ?? 0) + 1);
+    }
+    const leader = [...firsts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
     return {
+      leader,
       text,
       topic: rs[0].topic ?? "Genel",
       branded: !!rs[0].branded,
@@ -76,6 +89,25 @@ export function groupRuns(runs: RawRun[], brandNames: string[]): PromptGroup[] {
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
+
+/** Cevap metninde markaları işaretler: kendi markan mor, rakipler kırmızı. */
+function highlight(text: string, names: string[], own: string) {
+  const list = [...new Set(names.filter(Boolean))].sort((a, b) => b.length - a.length);
+  const clean = text.replace(/\*\*/g, "");
+  if (!list.length) return clean;
+  // Alan adı / URL içindeki geçişleri (modaevi.com, https://…) işaretleme.
+  const re = new RegExp(`((?<![\\p{L}\\p{N}/.@-])(?:${list.map(esc).join("|")})(?![\\p{L}\\p{N}]|\\.[\\p{L}]))`, "giu");
+  return clean.split(re).map((part, i) => {
+    const hit = list.find((n) => n.toLocaleLowerCase("tr") === part.toLocaleLowerCase("tr"));
+    if (!hit) return part;
+    const mine = hit.toLocaleLowerCase("tr") === own.toLocaleLowerCase("tr");
+    return (
+      <mark key={i} className={`rounded px-0.5 font-semibold ${mine ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger"}`}>
+        {part}
+      </mark>
+    );
+  });
+}
 
 export default function PromptResults({ prompts, brandName, runAt, emptyText = "Bu filtrede prompt yok." }: { prompts: PromptGroup[]; brandName: string; runAt?: string | null; emptyText?: string }) {
   const [q, setQ] = useState("");
@@ -123,6 +155,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
               <th className="py-2.5 pr-4 text-center font-medium">Görünürlük</th>
               <th className="py-2.5 pr-4 font-medium">Duygu</th>
               <th className="hidden py-2.5 pr-4 font-medium lg:table-cell">Motorlar</th>
+              <th className="hidden py-2.5 pr-4 font-medium sm:table-cell">Lider</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -155,11 +188,20 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                     ))}
                   </div>
                 </td>
+                <td className="hidden py-3 pr-4 sm:table-cell">
+                  {p.leader ? (
+                    <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${p.leader === brandName ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger"}`}>
+                      {p.leader === brandName ? "Siz" : p.leader}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-sub">—</span>
+                  )}
+                </td>
               </tr>
             ))}
             {!shown.length && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sub">
+                <td colSpan={6} className="px-4 py-10 text-center text-sub">
                   {emptyText}
                 </td>
               </tr>
@@ -220,7 +262,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                               <span className="rounded-md bg-danger/10 px-1.5 text-[10px] font-medium text-danger">geçmiyor</span>
                             )}
                           </div>
-                          <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{r.text}</p>
+                          <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{highlight(r.text, open.mentions, brandName)}</p>
                           {r.mentions.length > 0 && <div className="mt-1 text-[11px] text-sub">Geçen markalar: {r.mentions.join(", ")}</div>}
                           {exp && r.citations.length > 0 && (
                             <div className="mt-2 space-y-0.5">

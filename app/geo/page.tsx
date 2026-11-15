@@ -21,6 +21,7 @@ import GradientBar from "@/components/GradientBar";
 import SavedPromptsPanel from "@/components/SavedPromptsPanel";
 import ScoreBadge from "@/components/ScoreBadge";
 import GeoOverview from "@/components/tool/GeoOverview";
+import GeoDashboard from "@/components/tool/GeoDashboard";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
@@ -462,8 +463,12 @@ export default function GeoPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="GEO Görünürlük"
-        description="Markanın ChatGPT, Claude, Gemini ve Perplexity cevaplarında ne sıklıkla, kaçıncı sırada ve hangi kaynaklarla geçtiği."
+        title={brand.name && runs?.length ? `AI'da ${brand.name} ne kadar görünüyor?` : "GEO Görünürlük"}
+        description={
+          runs?.length
+            ? `${new Set(runs.map((r) => r.promptText)).size} prompt · ${new Set(runs.map((r) => r.engine)).size} motor · ${runs.length} AI cevabı${restoredAt ? ` · son test ${new Date(restoredAt).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}`
+            : "Markanın ChatGPT, Claude, Gemini ve Perplexity cevaplarında ne sıklıkla, kaçıncı sırada ve hangi kaynaklarla geçtiği."
+        }
         actions={
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setManualOpen(true)} className={BTN2}>
@@ -672,7 +677,19 @@ export default function GeoPage() {
         return <UnderlineTabs value={T.findIndex((t) => t.key === resultsTab)} onChange={(i) => setResultsTab(T[i].key)} tabs={T.map((t) => ({ label: t.label, count: "count" in t ? t.count : null }))} />;
       })()}
 
-      {resultsTab === "overview" && <GeoOverview refreshKey={overviewKey} onNewTest={() => setTestOpen(true)} />}
+      {resultsTab === "overview" &&
+        (runs && runs.length && brand.domain ? (
+          <GeoDashboard
+            runs={runs}
+            brand={brand}
+            competitors={competitors}
+            summaries={summaries}
+            runAt={restoredAt ?? new Date().toISOString()}
+            onTab={(t) => setResultsTab(t)}
+          />
+        ) : (
+          <GeoOverview refreshKey={overviewKey} onNewTest={() => setTestOpen(true)} />
+        ))}
       {resultsTab === "library" && <SavedPromptsPanel brand={brand} competitors={competitors.filter((c) => c.name && c.domain)} engines={engines} />}
       {resultsTab === "entity" &&
         (brand.name ? (
