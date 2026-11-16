@@ -43,6 +43,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const pid = Number((await cookies()).get("epicsem_project")?.value);
   const proj = (pid ? await getClient(user.id, pid) : null) ?? (await listClients(user.id))[0] ?? null;
+  // Hiç projesi olmayan yeni kullanıcı doğrudan kurulum sihirbazına.
+  if (!proj) redirect("/onboarding");
   const domain = proj ? norm(proj.domain) : null;
 
   const [summary, geoBrands, drafts, campaigns, monitors, schedules, cms, settings] = await Promise.all([

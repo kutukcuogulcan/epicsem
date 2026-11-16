@@ -99,8 +99,11 @@ export default function ProjectSwitcher() {
               ))}
             </>
           )}
-          <button type="button" onClick={() => startNew()} className="mt-1 w-full rounded-lg border-t border-border px-2 py-2 text-left text-[13px] font-medium text-accent hover:bg-accent/5">
-            + Yeni proje
+          <Link href="/onboarding" onClick={() => setOpen(false)} className="mt-1 block w-full rounded-lg border-t border-border px-2 py-2 text-left text-[13px] font-medium text-accent hover:bg-accent/5">
+            + Yeni proje (sihirbaz)
+          </Link>
+          <button type="button" onClick={() => startNew()} className="w-full rounded-lg px-2 py-1.5 text-left text-[12px] text-sub hover:bg-muted/60 hover:text-ink">
+            Hızlı ekle (sadece ad ve site)
           </button>
           {project && (
             <Link href="/project" onClick={() => setOpen(false)} className="block w-full rounded-lg px-2 py-2 text-left text-[13px] text-sub hover:bg-muted/60 hover:text-ink">

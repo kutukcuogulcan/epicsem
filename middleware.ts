@@ -9,7 +9,7 @@ import { SESSION_COOKIE } from "@/lib/auth-cookie-name";
  * deliberately dumb (no DB access, no node:sqlite import) so it can run in the Edge
  * middleware runtime without pulling in Node-only APIs.
  */
-const PROTECTED_PREFIXES = ["/billing", "/audit", "/geo", "/gap", "/monitor", "/clients", "/import", "/content", "/editor", "/assistant", "/feeds", "/keywords", "/rankings", "/integrations", "/bing", "/backlinks", "/brand-monitors", "/knowledge", "/indexing", "/project"];
+const PROTECTED_PREFIXES = ["/billing", "/audit", "/geo", "/gap", "/monitor", "/clients", "/import", "/content", "/editor", "/assistant", "/feeds", "/keywords", "/rankings", "/integrations", "/bing", "/backlinks", "/brand-monitors", "/knowledge", "/indexing", "/project", "/onboarding"];
 
 // Tool pages get the sidebar app-shell instead of the marketing top-nav — see
 // app/layout.tsx. Broader than PROTECTED_PREFIXES (e.g. /dashboard, /campaigns aren't
@@ -38,6 +38,7 @@ const APP_SHELL_PREFIXES = [
   "/knowledge",
   "/indexing",
   "/project",
+  "/onboarding",
 ];
 
 export function middleware(req: NextRequest) {
