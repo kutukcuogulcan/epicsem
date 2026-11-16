@@ -106,7 +106,7 @@ export default function ImportPage() {
     <div className="space-y-8">
       <ToolPageHeader
         breadcrumbLabel="Site Taraması"
-        title="Site Taraması"
+        title="Sitenin tüm sayfaları sağlıklı mı?"
         body="Tüm siteni tara: sağlık skoru, hatalar/uyarılar/bildirimler, tematik puanlar ve her sorun için neden önemli, nasıl düzeltilir."
       />
 

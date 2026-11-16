@@ -48,7 +48,7 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
       {!compact && (
         <div>
           <div className="text-sm font-medium">Marka bilgi bankası</div>
-          <p className="mt-0.5 text-xs text-ink/50">AI yazarken bunları doğru kabul eder; burada ve sayfada olmayan bilgiyi uydurmaz. Article Writer, Content Studio, Editör ve "Öneri yaz" kullanır.</p>
+          <p className="mt-0.5 text-xs text-ink/50">AI yazarken bunları doğru kabul eder; burada ve sayfada olmayan bilgiyi uydurmaz. Editör, Autoblog, Sayfa Analizi, yorum yanıtları ve "Öneri yaz" kullanır.</p>
         </div>
       )}
       {compact && <p className="text-[11px] leading-relaxed text-ink/50">AI düzenlemelerinde doğru kabul edilecek marka bilgileri. Ürün, hizmet, fiyat aralığı, adres, garanti, kargo, ton…</p>}

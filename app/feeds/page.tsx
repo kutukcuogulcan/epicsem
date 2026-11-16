@@ -170,7 +170,7 @@ export default function FeedsPage() {
     <div className="space-y-8">
       <ToolPageHeader
         breadcrumbLabel="Beslemeler"
-        title="Beslemeler"
+        title="Autoblog'un konuları nereden geliyor?"
         body="Autoblog'un konu kaynakları. Bir besleme kur, istediğin kadar autoblog'da kullan. Beslemeler kendini yeniler, AI kullanmaz ve kredi harcamaz."
       >
         <button type="button" onClick={() => setPicker(true)} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90">

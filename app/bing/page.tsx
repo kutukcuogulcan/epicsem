@@ -105,7 +105,7 @@ export default function BingPage() {
     <div className="space-y-6">
       <ToolPageHeader
         breadcrumbLabel="Bing Webmaster"
-        title="Bing Webmaster"
+        title="Bing'de ve ChatGPT aramasında nasıl görünüyorsun?"
         body="Bing'deki tıklama, gösterim ve sorguların. ChatGPT arama ve Microsoft Copilot Bing indeksini kullandığı için burada görünmek AI görünürlüğünü doğrudan etkiler."
       >
         {sites.length > 0 && (
