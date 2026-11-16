@@ -5,7 +5,7 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { fetchPageSummary } from "@/lib/content-fetch";
 import { isDemoMode, runFast } from "@/lib/geo-providers";
 import { runForJsonObject } from "@/lib/llm-json";
-import { projectContextBlock } from "@/lib/project-context";
+import { brandContextFor } from "@/lib/ai-small";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { readableZodError } from "@/lib/zod-error";
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const quota = await checkQuota(user.id, "engineQueries", 1);
   if (!quota.allowed) return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, 1) }, { status: 402 });
 
-  const ctx = await projectContextBlock(user.id).catch(() => "");
+  const ctx = await brandContextFor(user.id, page.url);
   const prompt = `Sen kıdemli bir SEO ve GEO (yapay zekâ arama) uzmanısın. Aşağıdaki sayfa için denetimde bulunan sorunlara SİTEYE ÖZEL, kopyalanıp kullanılabilir düzeltmeler yaz.
 KURALLAR: Yalnızca sayfada yazan ya da marka bilgisinde verilen bilgileri kullan. Fiyat, rakam, ödül, müşteri sayısı UYDURMA. Sayfanın dilinde yaz (Türkçe sayfaysa Türkçe). Kısa ve net ol.
 ${ctx}

@@ -32,3 +32,12 @@ export async function runSmallAiJson(userId: number, prompt: string): Promise<Re
 export class QuotaError extends Error {}
 
 export const str = (v: unknown, n: number) => (typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "null" ? v.trim().slice(0, n) : null);
+
+/** Yalnızca site, kayıtlı bir projeyle eşleşiyorsa o projenin marka bağlamını döndürür (başka markanın bilgisi karışmasın). */
+export async function brandContextFor(userId: number, site: string): Promise<string> {
+  const { getActiveProject, projectContextBlock } = await import("@/lib/project-context");
+  const n = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const p = await getActiveProject(userId, site).catch(() => null);
+  if (!p || n(p.domain) !== n(site)) return `\nMarka: ${n(site)} (başka bir markanın adını kullanma)\n`;
+  return projectContextBlock(userId, site).catch(() => "");
+}

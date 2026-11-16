@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isDemoMode } from "@/lib/geo-providers";
 import { readableZodError } from "@/lib/zod-error";
-import { projectContextBlock } from "@/lib/project-context";
-import { guardSmallAi, QuotaError, runSmallAiJson, str } from "@/lib/ai-small";
+import { brandContextFor, guardSmallAi, QuotaError, runSmallAiJson, str } from "@/lib/ai-small";
 
 export const maxDuration = 45;
 
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (isDemoMode())
     return NextResponse.json({ demo: true, result: { subject: `${body.target.domain} — kısa bir rica`, body: "Merhaba,\n\nDemo mod: gerçek anahtar tanımlanınca kişiselleştirilmiş e-posta taslağı burada görünür.\n\nTeşekkürler" } });
 
-  const ctx = await projectContextBlock(g.userId).catch(() => "");
+  const ctx = await brandContextFor(g.userId, body.site);
   const goal =
     body.kind === "unlinked"
       ? `Bu yazı/haber markamızı anıyor ama sitemize (${body.site}) link vermiyor. Yazara teşekkür edip, okuyucular için kolaylık olsun diye ilgili yere link eklemesini nazikçe rica et.`
