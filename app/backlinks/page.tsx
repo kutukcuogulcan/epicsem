@@ -88,6 +88,21 @@ export default function BacklinksPage() {
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
   const [open, setOpen] = useState<string | null>(null);
   const [srcOpen, setSrcOpen] = useState(false);
+  const [mail, setMail] = useState<{ busy: boolean; err: string | null; to: string; subject: string; body: string; demo?: boolean } | null>(null);
+  const [mailCopied, setMailCopied] = useState(false);
+  async function draftMail(kind: "unlinked" | "lost" | "gap", target: { domain: string; url?: string; title?: string }) {
+    setMail({ busy: true, err: null, to: target.domain, subject: "", body: "" });
+    setMailCopied(false);
+    try {
+      const r = await fetch("/api/backlinks/outreach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site: data?.site ?? site, kind, target }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Taslak yazılamadı");
+      setMail({ busy: false, err: null, to: target.domain, subject: d.result.subject, body: d.result.body, demo: !!d.demo });
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
+    } catch (e) {
+      setMail({ busy: false, err: e instanceof Error ? e.message : "Taslak yazılamadı", to: target.domain, subject: "", body: "" });
+    }
+  }
   const [comps, setComps] = useState<string[]>(["", "", ""]);
   const [gap, setGap] = useState<{ gaps: Gap[]; checked: string[]; cachedAt?: string } | null>(null);
   const [gapBusy, setGapBusy] = useState(false);
@@ -213,7 +228,7 @@ export default function BacklinksPage() {
       kind: "Kolay link",
       color: "text-seo",
       title: `${unlinked.length} haberde linksiz anılıyorsun`,
-      body: "Bu haberler markanı anıyor ama sitene link vermiyor. Editöre kısa bir e-postayla linki eklemesini rica et.",
+      body: "Bu haberler markanı anıyor ama sitene link vermiyor. Her haberin yanındaki \"Link iste\" ile yapay zekâ kısa bir rica e-postası yazar.",
       cta: (
         <button type="button" onClick={() => setTab("mentions")} className={BTN2}>
           Haberleri gör
@@ -529,7 +544,12 @@ export default function BacklinksPage() {
                   {m.linked === true ? (
                     <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Linkli</span>
                   ) : m.linked === false ? (
-                    <span className="shrink-0 rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn">Link yok · iste</span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn">Link yok</span>
+                      <button type="button" onClick={() => draftMail("unlinked", { domain: m.domain, url: m.url, title: m.title })} className="text-[11px] font-medium text-accent hover:underline" title="1 AI sorgusu">
+                        ✦ Link iste
+                      </button>
+                    </span>
                   ) : (
                     <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">Kontrol edilmedi</span>
                   )}
@@ -629,7 +649,10 @@ export default function BacklinksPage() {
                         </div>
                       </td>
                       <td className="whitespace-nowrap py-2.5 pr-5 text-right text-xs">
-                        <a href={`https://${g.domain}`} target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
+                        <button type="button" onClick={() => draftMail("gap", { domain: g.domain })} className="mr-3 font-medium text-accent hover:underline" title="1 AI sorgusu">
+                          ✦ Tanışma e-postası
+                        </button>
+                        <a href={`https://${g.domain}`} target="_blank" rel="noreferrer" className="font-medium text-sub hover:text-accent">
                           Siteye git ↗
                         </a>
                       </td>
@@ -697,10 +720,57 @@ export default function BacklinksPage() {
               <div className="mb-1.5 text-xs font-medium text-sub">Link verilen sayfaların</div>
               {openDomain.targets.length ? openDomain.targets.map((t) => <div key={t} className="truncate">{/^\d+$/.test(t) ? `${t} sayfa` : path(t)}</div>) : <div className="text-sub">—</div>}
             </div>
-            {openDomain.sampleUrl && (
-              <a href={openDomain.sampleUrl} target="_blank" rel="noreferrer" className={BTN1}>
-                Link veren sayfayı aç ↗
-              </a>
+            <div className="flex flex-wrap gap-2">
+              {openDomain.sampleUrl && (
+                <a href={openDomain.sampleUrl} target="_blank" rel="noreferrer" className={BTN2}>
+                  Link veren sayfayı aç ↗
+                </a>
+              )}
+              {openDomain.lostAt && (
+                <button type="button" onClick={() => draftMail("lost", { domain: openDomain.domain, url: openDomain.sampleUrl ?? undefined })} className={BTN1}>
+                  ✦ Linki geri iste (e-posta taslağı)
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Drawer>
+
+      {/* Link isteme e-postası */}
+      <Drawer isOpen={!!mail} onClose={() => setMail(null)} eyebrow="E-posta taslağı · gönderilmez" title={mail?.to ?? ""} subtitle="Yapay zekâ yazdı (1 AI sorgusu). Kontrol et, adını ekle, kendi e-postandan gönder." size="lg">
+        {mail && (
+          <div className="space-y-4 text-[13px]">
+            {mail.busy && (
+              <div className="flex items-center gap-3 text-sub">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                Taslak yazılıyor…
+              </div>
+            )}
+            <ErrorBlock message={mail.err} />
+            {mail.demo && <p className="rounded-lg bg-warn/5 px-3 py-2 text-xs text-ink/70">Demo mod: yapay zekâ çalışmadı, örnek çıktı gösteriliyor.</p>}
+            {mail.subject && (
+              <>
+                <div>
+                  <div className="mb-1 text-xs font-medium text-sub">Konu</div>
+                  <input value={mail.subject} onChange={(e) => setMail({ ...mail, subject: e.target.value })} className="h-9 w-full rounded-[10px] border border-border bg-panel px-3 outline-none focus:border-[#BDB4FF]" />
+                </div>
+                <div>
+                  <div className="mb-1 text-xs font-medium text-sub">Metin</div>
+                  <textarea value={mail.body} onChange={(e) => setMail({ ...mail, body: e.target.value })} rows={12} className="w-full rounded-[10px] border border-border bg-panel px-3 py-2 leading-6 outline-none focus:border-[#BDB4FF]" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard.writeText(`${mail.subject}\n\n${mail.body}`).then(() => {
+                      setMailCopied(true);
+                      setTimeout(() => setMailCopied(false), 1800);
+                    })
+                  }
+                  className={BTN1}
+                >
+                  {mailCopied ? "Kopyalandı ✓" : "Konu + metni kopyala"}
+                </button>
+              </>
             )}
           </div>
         )}

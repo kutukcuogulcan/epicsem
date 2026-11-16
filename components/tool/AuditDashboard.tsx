@@ -11,6 +11,7 @@ import { Drawer } from "@/components/ui";
 import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import type { PageSpeedResult } from "@/lib/pagespeed";
+import type { AiFixResult } from "@/app/api/audit/ai-fix/route";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -62,6 +63,23 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const [open, setOpen] = useState<SeoIssueResult | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [allBots, setAllBots] = useState(false);
+  const [aiFix, setAiFix] = useState<{ busy: boolean; err: string | null; r: AiFixResult | null; demo?: boolean } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  async function runAiFix() {
+    setAiOpen(true);
+    if (aiFix?.r) return;
+    setAiFix({ busy: true, err: null, r: null });
+    try {
+      const issues = result.issues.filter((i) => i.severity !== "pass").slice(0, 30).map((i) => ({ title: i.title, detail: i.detail.slice(0, 380), category: i.category }));
+      const r = await fetch("/api/audit/ai-fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: result.url, issues }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Düzeltmeler yazılamadı");
+      setAiFix({ busy: false, err: null, r: d.result, demo: !!d.demo });
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
+    } catch (e) {
+      setAiFix({ busy: false, err: e instanceof Error ? e.message : "Düzeltmeler yazılamadı", r: null });
+    }
+  }
   const [psi, setPsi] = useState<PageSpeedResult | null>(null);
   const [psiBusy, setPsiBusy] = useState(false);
   const [psiErr, setPsiErr] = useState<string | null>(null);
@@ -297,6 +315,86 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           </Card>
         </div>
       </div>
+
+      {/* AI ile siteye özel düzeltmeler */}
+      {result.issues.some((i) => i.severity !== "pass") && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#BDB4FF] bg-accent/[0.04] px-5 py-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-base text-white">✦</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold">Bu sayfaya özel düzeltmeleri yapay zekâ yazsın</div>
+            <p className="text-[13px] text-sub">Yeni title, meta açıklama, H1, en üste konacak doğrudan cevap paragrafı, SSS ve her sorun için somut talimat. Sayfada olmayan bilgi uydurulmaz.</p>
+          </div>
+          <span className="text-[11px] text-sub">1 AI sorgusu</span>
+          <button type="button" onClick={runAiFix} disabled={aiFix?.busy} className="inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60">
+            {aiFix?.busy ? "Yazılıyor…" : aiFix?.r ? "Sonuçları aç" : "AI ile düzeltme yaz"}
+          </button>
+        </div>
+      )}
+
+      <Drawer isOpen={aiOpen} onClose={() => setAiOpen(false)} eyebrow="Yapay zekâ düzeltmeleri" title={result.url.replace(/^https?:\/\/(www\.)?/, "")} subtitle="Sayfanın kendi içeriğinden yazıldı. Kontrol et, kopyala, sitene yapıştır." size="xl">
+        <div className="space-y-5 text-[13px]">
+          {aiFix?.busy && (
+            <div className="flex items-center gap-3 text-sub">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              Sayfa okunuyor ve düzeltmeler yazılıyor (15–30 sn)…
+            </div>
+          )}
+          {aiFix?.err && <p className="rounded-lg bg-danger/5 px-3 py-2 text-danger">{aiFix.err}</p>}
+          {aiFix?.demo && <p className="rounded-lg bg-warn/5 px-3 py-2 text-xs text-ink/70">Demo mod: yapay zekâ çalışmadı, örnek çıktı gösteriliyor.</p>}
+          {aiFix?.r && (
+            <>
+              {([
+                ["Title", aiFix.r.title, "t", 60],
+                ["Meta açıklama", aiFix.r.metaDescription, "m", 155],
+                ["H1", aiFix.r.h1, "h", 0],
+                ["Doğrudan cevap (sayfanın en üstüne)", aiFix.r.directAnswer, "d", 0],
+              ] as const)
+                .filter(([, v]) => v)
+                .map(([l, v, k, max]) => (
+                  <div key={k}>
+                    <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-sub">
+                      <span>{l}</span>
+                      <span className={max && (v as string).length > max ? "text-warn" : ""}>{(v as string).length} karakter</span>
+                    </div>
+                    <div className="rounded-xl border border-border p-3 leading-6">{v}</div>
+                    <button type="button" onClick={() => copy(v as string, `ai-${k}`)} className="mt-1.5 text-xs font-medium text-accent hover:underline">
+                      {copied === `ai-${k}` ? "Kopyalandı ✓" : "Kopyala"}
+                    </button>
+                  </div>
+                ))}
+              {aiFix.r.faq.length > 0 && (
+                <div>
+                  <div className="mb-1.5 text-xs font-medium text-sub">SSS önerisi (FAQPage şeması için)</div>
+                  <div className="divide-y divide-border rounded-xl border border-border">
+                    {aiFix.r.faq.map((f) => (
+                      <div key={f.q} className="p-3">
+                        <div className="font-medium">{f.q}</div>
+                        <div className="mt-0.5 text-sub">{f.a}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => copy(aiFix.r!.faq.map((f) => `${f.q}\n${f.a}`).join("\n\n"), "ai-faq")} className="mt-1.5 text-xs font-medium text-accent hover:underline">
+                    {copied === "ai-faq" ? "Kopyalandı ✓" : "Hepsini kopyala"}
+                  </button>
+                </div>
+              )}
+              {aiFix.r.fixes.length > 0 && (
+                <div>
+                  <div className="mb-1.5 text-xs font-medium text-sub">Sorun başına düzeltme</div>
+                  <ul className="space-y-2">
+                    {aiFix.r.fixes.map((f) => (
+                      <li key={f.issue} className="rounded-xl border border-border p-3">
+                        <div className="text-xs font-semibold">{f.issue}</div>
+                        <div className="mt-1 leading-5 text-ink/80">{f.fix}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Drawer>
 
       {/* Hazır düzeltmeler */}
       {result.fixes.length > 0 && (

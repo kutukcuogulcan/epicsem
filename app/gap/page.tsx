@@ -92,6 +92,8 @@ export default function GapPage() {
   const [open, setOpen] = useState<string | null>(null);
   const [vf, setVf] = useState<"all" | GapRow["verdict"]>("all");
   const autoRunRef = useRef(false);
+  const [why, setWhy] = useState<{ busy: boolean; err: string | null; r: { summary: string; differences: { them: string; you: string }[]; todo: string[] } | null; rival: string; demo?: boolean } | null>(null);
+  const [whyOpen, setWhyOpen] = useState(false);
 
   // Proje → marka/rakip + son koşu
   useEffect(() => {
@@ -197,6 +199,27 @@ export default function GapPage() {
     setPdfOpen(false);
   }
 
+  async function runWhy(rival: GeoVisibilitySummary, own: GeoVisibilitySummary | null) {
+    if (!run) return;
+    setWhyOpen(true);
+    if (why?.r && why.rival === rival.brand) return;
+    setWhy({ busy: true, err: null, r: null, rival: rival.brand });
+    try {
+      const lostQuestions = Array.from(new Set(run.contentBriefs.flatMap((b) => b.suggestedHeadings))).slice(0, 15);
+      const r = await fetch("/api/gap/ai-why", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand: { name: run.brandName, domain: run.brandDomain }, rival: { name: rival.brand, domain: rival.domain, visibility: rival.visibility }, ownVisibility: own?.visibility ?? null, lostQuestions }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Analiz başarısız");
+      setWhy({ busy: false, err: null, r: d.result, rival: rival.brand, demo: !!d.demo });
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
+    } catch (e) {
+      setWhy({ busy: false, err: e instanceof Error ? e.message : "Analiz başarısız", r: null, rival: rival.brand });
+    }
+  }
+
   async function runAnalysis(e?: React.FormEvent) {
     e?.preventDefault();
     if (!brand.name || !brand.domain) return setError("Marka adını ve domainini gir.");
@@ -285,11 +308,11 @@ export default function GapPage() {
         kind: "Rakip",
         color: "text-warn",
         title: `${d.leader.brand} AI'da senden önde`,
-        body: `${d.leader.brand} ${pct(d.leader.visibility)}, sen ${pct(d.own.visibility)} görünürlükte. Hangi sorularda önerildiğini GEO'da gör, o soruları cevaplayan yazılar çıkar.`,
+        body: `${d.leader.brand} ${pct(d.leader.visibility)}, sen ${pct(d.own.visibility)} görünürlükte. Yapay zekâ iki siteyi karşılaştırıp farkı ve yapılacakları çıkarsın (1 AI sorgusu).`,
         cta: (
-          <Link href="/geo" className={BTN2}>
-            Soruları gör
-          </Link>
+          <button type="button" onClick={() => runWhy(d.leader!, d.own)} className={BTN2}>
+            ✦ Neden önde?
+          </button>
         ),
       });
     const nw = d.m.filter((r) => r.verdict === "needs-work");
@@ -488,6 +511,11 @@ export default function GapPage() {
                               {s.brand}
                               {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">Siz</span>}
                             </span>
+                            {!me && d.own && s.visibility > d.own.visibility && s.domain && (
+                              <button type="button" onClick={() => runWhy(s, d.own)} title="Yapay zekâ ile karşılaştır (1 AI sorgusu)" className="text-[11px] font-medium text-accent hover:underline">
+                                neden?
+                              </button>
+                            )}
                             <span className="tabular-nums">{pct(s.visibility)}</span>
                           </div>
                           <div className="ml-6 mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -592,6 +620,61 @@ export default function GapPage() {
             )}
           </div>
         )}
+      </Drawer>
+
+      {/* Rakip neden önde? */}
+      <Drawer isOpen={whyOpen} onClose={() => setWhyOpen(false)} eyebrow="Yapay zekâ karşılaştırması" title={why ? `${why.rival} neden önde?` : ""} subtitle="İki sitenin ana sayfası okunur; yalnızca sayfalarda görülen farklara dayanır." size="xl">
+        <div className="space-y-5 text-[13px]">
+          {why?.busy && (
+            <div className="flex items-center gap-3 text-sub">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              Siteler okunuyor ve karşılaştırılıyor (15–30 sn)…
+            </div>
+          )}
+          <ErrorBlock message={why?.err ?? null} />
+          {why?.demo && <p className="rounded-lg bg-warn/5 px-3 py-2 text-xs text-ink/70">Demo mod: yapay zekâ çalışmadı, örnek çıktı gösteriliyor.</p>}
+          {why?.r && (
+            <>
+              <p className="rounded-xl bg-accent/[0.04] p-3 leading-6">{why.r.summary}</p>
+              {why.r.differences.length > 0 && (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-[#fafafa] text-left text-xs text-sub">
+                        <th className="px-3 py-2 font-medium">{why.rival}</th>
+                        <th className="px-3 py-2 font-medium">{run?.brandName ?? "Sen"}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {why.r.differences.map((x) => (
+                        <tr key={x.them}>
+                          <td className="px-3 py-2 align-top">{x.them}</td>
+                          <td className="px-3 py-2 align-top text-sub">{x.you}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {why.r.todo.length > 0 && (
+                <div>
+                  <div className="mb-1.5 text-xs font-medium text-sub">Bu hafta yapılabilecekler</div>
+                  <ol className="space-y-1.5">
+                    {why.r.todo.map((x, i) => (
+                      <li key={x} className="flex gap-2 rounded-lg border border-border px-3 py-2">
+                        <span className="font-semibold text-accent">{i + 1}.</span>
+                        <span>{x}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              <Link href="/geo" className={BTN2}>
+                GEO&apos;da soruları gör
+              </Link>
+            </>
+          )}
+        </div>
       </Drawer>
 
       {/* Yeni analiz */}
