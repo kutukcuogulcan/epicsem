@@ -968,6 +968,17 @@ export async function saveLocalGeneration(userId: number, g: { kind: string; bus
   await exec(`INSERT INTO local_generations (user_id, kind, business, input, output, rating) VALUES ($1, $2, $3, $4, $5, $6)`, [userId, g.kind, g.business, g.input.slice(0, 2000), g.output.slice(0, 4000), g.rating ?? null]);
 }
 
+/** Yerel sayfası — bir türün (gönderi / yorum yanıtı) üretim geçmişi, istenirse tek işletmeye göre. */
+export async function listLocalGenerations(userId: number, kind: "gbp-post" | "review-reply", business?: string | null, limit = 200) {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT id, kind, business, input, output, rating, created_at FROM local_generations
+      WHERE user_id = $1 AND kind = $2 AND ($3::text IS NULL OR lower(business) = lower($3)) ORDER BY id DESC LIMIT $4`,
+    [userId, kind, business ?? null, limit]
+  );
+  return rows.map((r) => ({ id: r.id as number, kind: r.kind as string, business: r.business as string, input: r.input as string, output: r.output as string, rating: (r.rating ?? null) as number | null, createdAt: toIso(r.created_at) }));
+}
+
 export async function localOverview(userId: number) {
   await ensureSchema();
   const weeks = await many<any>(
