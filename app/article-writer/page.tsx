@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ArticleAuditResult, ArticleSchemaStatus } from "@/types";
-import ToolPageHeader from "@/components/ToolPageHeader";
+import { PageHeader } from "@/components/ui";
 import UsageMeter from "@/components/UsageMeter";
 import PromptBlock from "@/components/PromptBlock";
 import GaugeStatCard from "@/components/GaugeStatCard";
@@ -69,13 +69,11 @@ export default function ArticleWriterPage() {
 
   return (
     <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="Article Writer"
-        title="Article Writer"
-        body="Tek bir sayfayı derinlemesine denetler — title, meta, canonical, görsel alt metni, internal link fırsatları, FAQ/Article schema — ve bulunan boşluklara göre somut makale önerileri üretir. /audit'in ücretsiz teknik taramasından farklı olarak bir yapay zeka modeli çalıştırır."
-      >
-        <UsageMeter metric="contentGenerations" />
-      </ToolPageHeader>
+      <PageHeader
+        title="Bu sayfa nasıl daha iyi olur?"
+        description="Tek bir sayfayı yapay zekâyla derinlemesine inceler: title, meta, görsel alt metni, iç link fırsatları, şema; ve boşluklara göre somut yazı önerileri çıkarır. Her analiz 1 içerik kotası kullanır."
+        actions={<UsageMeter metric="contentGenerations" />}
+      />
 
       <form onSubmit={runAnalysis} className="flex gap-3">
         <input

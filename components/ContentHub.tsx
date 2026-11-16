@@ -275,7 +275,7 @@ export default function ContentHub() {
     <div className="space-y-4">
       <div className="card space-y-3">
         <div>
-          <h2 className="font-bold">Content Hub</h2>
+          <h2 className="font-bold">İçerik kaynakları</h2>
           <p className="text-xs text-ink/50 mt-0.5">
             Her giriş gerçek bir kaynağa dayanır — ya en son Rakip Boşluğu bulgunuza, ya da sizin verdiğiniz gerçek
             bir URL&apos;ye. Hiçbir başlık veya sayı uydurulmaz.
@@ -348,21 +348,21 @@ export default function ContentHub() {
             onClick={() => setTab("inputs")}
             className={`pb-2 -mb-px border-b-2 ${tab === "inputs" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
           >
-            Inputs {inputs ? `(${inputs.length})` : ""}
+            Girişler {inputs ? `(${inputs.length})` : ""}
           </button>
           <button
             type="button"
             onClick={() => setTab("generations")}
             className={`pb-2 -mb-px border-b-2 ${tab === "generations" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
           >
-            Generations ({generationsCount})
+            Üretilenler ({generationsCount})
           </button>
           <button
             type="button"
             onClick={() => setTab("publications")}
             className={`pb-2 -mb-px border-b-2 ${tab === "publications" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
           >
-            Publications ({publicationsCount})
+            Yayınlananlar ({publicationsCount})
           </button>
         </div>
 

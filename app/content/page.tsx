@@ -1,29 +1,32 @@
 "use client";
 
-import { analyzePassages, citabilityOfMarkdown, passagesFromMarkdown } from "@/lib/citability";
-import PassageList from "@/components/tool/PassageList";
-import { ErrorBlock, TableSkeleton } from "@/components/ui";
+import Link from "next/link";
+import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
+import { publishLabel } from "@/lib/publish-state";
 
 import { useEffect, useState } from "react";
 import type { CmsConnection, CmsPlatform, ContentDraft } from "@/types";
 import UsageMeter from "@/components/UsageMeter";
-import ToolPageHeader from "@/components/ToolPageHeader";
-import KnowledgeBase from "@/components/KnowledgeBase";
 import ContentHub from "@/components/ContentHub";
 
 interface DraftListItem {
   id: number;
   sourceUrl: string;
-  article: { title: string; demoMode: boolean };
-  status: ContentDraft["status"];
+  article: { title: string; demoMode?: boolean };
+  status?: ContentDraft["status"];
+  publishedPostUrl?: string | null;
+  publishState?: string | null;
+  scheduledAt?: string | null;
+  publishError?: string | null;
+  site?: string | null;
   createdAt: string;
 }
 
 export default function ContentStudioPage() {
   const [connections, setConnections] = useState<CmsConnection[]>([]);
   const [drafts, setDrafts] = useState<DraftListItem[]>([]);
-  const [selectedDraft, setSelectedDraft] = useState<ContentDraft | null>(null);
-  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [connsLoaded, setConnsLoaded] = useState(false);
 
   const [connForm, setConnForm] = useState<{ platform: CmsPlatform; label: string; siteUrl: string; authIdentifier: string; authSecret: string }>({
     platform: "wordpress",
@@ -37,15 +40,13 @@ export default function ContentStudioPage() {
   const [savingConn, setSavingConn] = useState(false);
   const [connError, setConnError] = useState<string | null>(null);
 
-  const [selectedConnectionId, setSelectedConnectionId] = useState<number | null>(null);
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState<string | null>(null);
 
   function refreshConnections() {
     fetch("/api/cms/connections")
       .then((res) => (res.status === 401 ? { connections: [] } : res.json()))
       .then((data) => setConnections(data.connections ?? []))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setConnsLoaded(true));
   }
 
   function refreshDrafts() {
@@ -55,29 +56,16 @@ export default function ContentStudioPage() {
       .catch(() => {});
   }
 
-  function loadDraft(id: number) {
-    setLoadingDraft(true);
-    fetch(`/api/content?id=${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.draft) {
-          setSelectedDraft(data.draft);
-          window.history.replaceState(null, "", `/content?draftId=${id}`);
-        }
-      })
-      .finally(() => setLoadingDraft(false));
-  }
-
   useEffect(() => {
+    // Eski bağlantılar: /content?draftId= → editör
+    const id = new URLSearchParams(window.location.search).get("draftId");
+    if (id) {
+      window.location.replace(`/editor?draftId=${id}`);
+      return;
+    }
     refreshConnections();
     refreshDrafts();
-    const id = new URLSearchParams(window.location.search).get("draftId");
-    if (id) loadDraft(Number(id));
   }, []);
-
-  useEffect(() => {
-    if (connections.length > 0 && selectedConnectionId === null) setSelectedConnectionId(connections[0].id);
-  }, [connections, selectedConnectionId]);
 
   async function testConnection() {
     setTesting(true);
@@ -125,6 +113,7 @@ export default function ContentStudioPage() {
       if (!res.ok) throw new Error(data.error ?? "Bağlantı kaydedilemedi");
       setConnForm({ platform: "wordpress", label: "", siteUrl: "", authIdentifier: "", authSecret: "" });
       setTestResult(null);
+      setAddOpen(false);
       refreshConnections();
     } catch (err) {
       setConnError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
@@ -138,81 +127,206 @@ export default function ContentStudioPage() {
     refreshConnections();
   }
 
-  async function publish() {
-    if (!selectedDraft || !selectedConnectionId) return;
-    setPublishing(true);
-    setPublishError(null);
-    try {
-      const res = await fetch("/api/content/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draftId: selectedDraft.id, connectionId: selectedConnectionId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Yayınlama başarısız oldu");
-      loadDraft(selectedDraft.id);
-      refreshDrafts();
-    } catch (err) {
-      setPublishError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
-    } finally {
-      setPublishing(false);
-    }
-  }
+  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-50";
+  const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
+  const INPUT = "h-9 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]";
+  const chip = (on: boolean) =>
+    `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
+  const PL: Record<string, string> = { wordpress: "WordPress", shopify: "Shopify", webhook: "Webhook" };
+  const sent = drafts.filter((d) => publishLabel(d).key !== "draft");
+  const published = drafts.filter((d) => publishLabel(d).key === "published");
+  const scheduled = drafts.filter((d) => publishLabel(d).key === "scheduled");
+  const failed = drafts.filter((d) => publishLabel(d).key === "error");
+  const waiting = drafts.filter((d) => publishLabel(d).key === "draft");
+
+  const actions: { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[] = [];
+  if (!connections.length)
+    actions.push({
+      kind: "Kurulum",
+      color: "text-danger",
+      title: "Henüz bağlı site yok",
+      body: "WordPress, Shopify ya da Webhook (Wix, Webflow, Ghost, Framer…) bağla; yazıları editörden tek tıkla sitene taslak olarak gönder ya da zamanla.",
+      cta: <button type="button" onClick={() => setAddOpen(true)} className={BTN2}>Site bağla</button>,
+    });
+  if (failed.length)
+    actions.push({
+      kind: "Hata",
+      color: "text-danger",
+      title: `${failed.length} yazı gönderilemedi`,
+      body: `"${failed[0].article.title || "Başlıksız"}": ${failed[0].publishError ?? "gönderim hatası"}`,
+      cta: <Link href={`/editor?draftId=${failed[0].id}`} className={BTN2}>Yazıyı aç</Link>,
+    });
+  if (waiting.length && connections.length)
+    actions.push({
+      kind: "Bekleyen",
+      color: "text-accent",
+      title: `${waiting.length} yazı henüz sitede değil`,
+      body: "Editörde \"Yayınla\" ile sitene taslak olarak gönderebilir, hemen yayınlayabilir ya da ileri bir tarihe zamanlayabilirsin.",
+      cta: <Link href="/editor" className={BTN2}>Tüm Yazılar</Link>,
+    });
+  if (actions.length < 3)
+    actions.push({
+      kind: "Otomatik",
+      color: "text-seo",
+      title: "Yayını Autoblog'a bırak",
+      body: "Autoblog, kelime listesinden ya da beslemeden yazıları düzenli üretip bağlı siteye taslak olarak gönderir.",
+      cta: <Link href="/campaigns" className={BTN2}>Autoblog</Link>,
+    });
 
   return (
-    <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="İçerik Stüdyosu"
-        title="İçerik Stüdyosu"
-        body={
-          <>
-            <a href="/gap" className="text-accent hover:underline">Rakip Boşluğu</a>&apos;nda üretilen makaleler
-            buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
-            bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
-            bırakılır. Yayınlama her zaman bir <strong>taslak</strong> oluşturur (WordPress veya Shopify), asla canlı
-            bir gönderi değil — inceleyip yayına almayı siz WordPress veya Shopify&apos;dan yaparsınız.
-          </>
+    <div className="space-y-6">
+      <PageHeader
+        title={connections.length ? "Yazıların nereye yayınlanıyor?" : "Yayın Hedefleri"}
+        description={
+          connections.length
+            ? `${connections.length} bağlı site · ${sent.length} yazı gönderildi · ${published.length} yayında`
+            : "Yazılarının gideceği siteleri bağla. Yayınlama varsayılan olarak sitede taslak oluşturur; sen onaylayınca yayına çıkar."
         }
-      >
-        <UsageMeter metric="contentGenerations" />
-      </ToolPageHeader>
+        actions={
+          <button type="button" onClick={() => setAddOpen(true)} className={BTN1}>
+            + Site bağla
+          </button>
+        }
+      />
 
-      <details className="group rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-medium">
-          <span>Marka bilgi bankası <span className="ml-2 text-xs font-normal text-ink/45">AI yazarken uydurmasın diye ürün, fiyat, kargo, ton bilgileri</span></span>
-          <span className="text-ink/30 group-open:rotate-90">▸</span>
-        </summary>
-        <div className="border-t border-border p-5"><KnowledgeBase compact /></div>
-      </details>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {([
+          ["Bağlı site", String(connections.length), connections.length ? Array.from(new Set(connections.map((c) => PL[c.platform] ?? c.platform))).join(", ") : "henüz yok", ""],
+          ["Sitede taslak", String(drafts.filter((d) => publishLabel(d).key === "remote-draft").length), "onayını bekliyor", ""],
+          ["Zamanlanmış", String(scheduled.length), "ileri tarihli", ""],
+          ["Yayında", String(published.length), "canlı yazı", published.length ? "text-seo" : ""],
+          ["Hata", String(failed.length), "gönderilemeyen", failed.length ? "text-danger" : ""],
+        ] as const).map(([l, v, hint, col]) => (
+          <div key={l} className={`${CARD} px-4 py-4`}>
+            <div className="text-xs font-medium text-sub">{l}</div>
+            <div className={`mt-1.5 text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{connsLoaded ? v : "…"}</div>
+            <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+          </div>
+        ))}
+      </div>
 
-      <ContentHub />
-
-      <div className="card space-y-4">
-        <h2 className="font-medium">CMS bağlantıları</h2>
-        <p className="text-xs text-ink/40 -mt-2">WordPress, Shopify ya da Webhook (Zapier/Make ile Wix, Webflow, Ghost, Framer…).</p>
-        {connections.length === 0 && <p className="text-sm text-ink/40">Henüz bağlantı yok — aşağıdan bir tane ekleyin.</p>}
-        <div className="space-y-2">
-          {connections.map((c) => (
-            <div key={c.id} className="flex items-center justify-between text-sm rounded-lg bg-muted px-3 py-2">
-              <div>
-                <span className="inline-block text-[10px] font-medium uppercase tracking-wide text-accent mr-1.5">
-                  {c.platform === "shopify" ? "Shopify" : c.platform === "webhook" ? "Webhook" : "WordPress"}
-                </span>
-                <span className="font-medium">{c.label}</span>{" "}
-                <span className="text-ink/40">
-                  — {c.siteUrl} ({c.authIdentifier ? `${c.authIdentifier}, ` : ""}
-                  {c.authSecretMasked})
-                </span>
-              </div>
-              <button onClick={() => deleteConnection(c.id)} className="text-xs text-danger hover:underline">
-                Kaldır
-              </button>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
+        <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
+          {actions.slice(0, 3).map((a) => (
+            <div key={a.title} className={`${CARD} flex flex-col p-4`}>
+              <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+              <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+              <p className="mt-1 text-[13px] text-sub">{a.body}</p>
+              <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
             </div>
           ))}
         </div>
+      </div>
 
-        <form onSubmit={saveConnection} className="space-y-2 border-t border-border pt-4">
-          <div className="flex gap-2 text-xs">
+      <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr]">
+        <div className={`${CARD} overflow-hidden`}>
+          <div className="px-5 py-3 text-sm font-semibold">Bağlı siteler</div>
+          {connections.length === 0 ? (
+            <div className="border-t border-border px-5 py-8 text-center text-[13px] text-sub">
+              Henüz bağlı site yok.
+              <div className="mt-3">
+                <button type="button" onClick={() => setAddOpen(true)} className={BTN1}>
+                  + Site bağla
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border border-t border-border">
+              {connections.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 px-5 py-3 text-[13px]">
+                  <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">{PL[c.platform] ?? c.platform}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{c.label}</div>
+                    <div className="truncate text-[11px] text-sub">
+                      {c.siteUrl}
+                      {c.authIdentifier ? ` · ${c.authIdentifier}` : ""}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => deleteConnection(c.id)} className="text-xs font-medium text-danger/70 hover:text-danger">
+                    Kaldır
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className={`${CARD} overflow-hidden`}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm font-semibold">Son gönderilenler</span>
+            <Link href="/editor" className="text-xs font-medium text-accent hover:underline">
+              Tüm Yazılar →
+            </Link>
+          </div>
+          {sent.length === 0 ? (
+            <div className="border-t border-border px-5 py-8 text-center text-[13px] text-sub">Henüz siteye gönderilen yazı yok. Editörde &quot;Yayınla&quot; ile gönder.</div>
+          ) : (
+            <table className="w-full text-[13px]">
+              <tbody className="divide-y divide-border border-t border-border">
+                {sent.slice(0, 12).map((d) => {
+                  const st = publishLabel(d);
+                  return (
+                    <tr key={d.id} className="hover:bg-[#fafafa]">
+                      <td className="max-w-[18rem] py-2.5 pl-5">
+                        <Link href={`/editor?draftId=${d.id}`} className="block truncate font-medium hover:text-accent">
+                          {d.article.title || "Başlıksız"}
+                        </Link>
+                      </td>
+                      <td className="py-2.5 pr-3">
+                        <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                          {st.label}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap py-2.5 pr-5 text-right text-xs">
+                        {d.publishedPostUrl ? (
+                          <a href={d.publishedPostUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                            aç ↗
+                          </a>
+                        ) : (
+                          <span className="text-sub">{new Date(d.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      <ContentHub />
+
+      {/* Site bağla */}
+      <Drawer
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        eyebrow="Yayın Hedefleri"
+        title="Site bağla"
+        subtitle="Bağlantı bilgileri şifreli saklanır. Yayınlama varsayılan olarak sitede taslak oluşturur."
+        size="lg"
+        as="form"
+        onSubmit={saveConnection}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={testConnection}
+              disabled={testing || !connForm.siteUrl || !connForm.authSecret || (connForm.platform === "wordpress" && !connForm.authIdentifier)}
+              className={BTN2}
+            >
+              {testing ? "Test ediliyor…" : "Bağlantıyı test et"}
+            </button>
+            <button type="submit" disabled={savingConn || !connForm.label} className={BTN1}>
+              {savingConn ? "Kaydediliyor…" : "Kaydet"}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 text-[13px]">
+          <div className="flex flex-wrap gap-2">
             {(["wordpress", "shopify", "webhook"] as CmsPlatform[]).map((p) => (
               <button
                 key={p}
@@ -225,234 +339,41 @@ export default function ContentStudioPage() {
                     authSecret: p === "webhook" ? `whsec_${Array.from(crypto.getRandomValues(new Uint8Array(16))).map((x) => x.toString(16).padStart(2, "0")).join("")}` : "",
                   }))
                 }
-                className={`rounded-lg px-3 py-1.5 font-medium border ${
-                  connForm.platform === p ? "bg-accent text-white border-accent" : "border-border hover:bg-muted"
-                }`}
+                className={chip(connForm.platform === p)}
               >
                 {p === "shopify" ? "Shopify" : p === "webhook" ? "Webhook · Zapier · Make" : "WordPress"}
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              value={connForm.label}
-              onChange={(e) => setConnForm((f) => ({ ...f, label: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "Etiket (örn. Müşterinin Shopify mağazası)" : connForm.platform === "webhook" ? "Etiket (örn. Webflow – Zapier)" : "Etiket (örn. Müşterinin WP sitesi)"}
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <input
-              value={connForm.siteUrl}
-              onChange={(e) => setConnForm((f) => ({ ...f, siteUrl: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "magaza.myshopify.com" : connForm.platform === "webhook" ? "https://hooks.zapier.com/hooks/catch/…" : "https://musteri-sitesi.com"}
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            {connForm.platform === "wordpress" && (
-              <input
-                value={connForm.authIdentifier}
-                onChange={(e) => setConnForm((f) => ({ ...f, authIdentifier: e.target.value }))}
-                placeholder="WordPress kullanıcı adı"
-                required
-                className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-              />
-            )}
-            <input
-              value={connForm.authSecret}
-              onChange={(e) => setConnForm((f) => ({ ...f, authSecret: e.target.value }))}
-              placeholder={connForm.platform === "shopify" ? "Admin API erişim token'ı (shpat_…)" : connForm.platform === "webhook" ? "İmza anahtarı" : "Uygulama parolası"}
-              type={connForm.platform === "webhook" ? "text" : "password"}
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-sub">Etiket</div>
+            <input value={connForm.label} onChange={(e) => setConnForm((f) => ({ ...f, label: e.target.value }))} placeholder={connForm.platform === "shopify" ? "ör. Müşterinin Shopify mağazası" : connForm.platform === "webhook" ? "ör. Webflow – Zapier" : "ör. Şirket blogu"} required className={INPUT} />
           </div>
-          <p className="text-xs text-ink/40">
-            {connForm.platform === "webhook"
-              ? "Wix, Webflow, Ghost, Framer, Squarespace, GoHighLevel, Notion… için: Zapier'de 'Webhooks by Zapier → Catch Hook' (ya da Make/n8n'de Webhook) oluşturup adresini buraya yapıştırın. Taslak title, metaDescription, markdown ve html alanlarıyla JSON olarak gönderilir; istek X-Epicsem-Signature (HMAC-SHA256, yukarıdaki anahtarla) ile imzalanır."
-              : connForm.platform === "shopify"
-              ? "Shopify'da: Ayarlar → Uygulamalar ve satış kanalları → Uygulama geliştir → yeni bir özel uygulama oluşturup Admin API erişiminde write_content iznini açın, oluşan token'ı buraya yapıştırın."
-              : "WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekleyin. Gerçek giriş parolanız değil."}
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={testConnection}
-              disabled={
-                testing ||
-                !connForm.siteUrl ||
-                !connForm.authSecret ||
-                (connForm.platform === "wordpress" && !connForm.authIdentifier)
-              }
-              className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
-            >
-              {testing ? "Test ediliyor…" : "Bağlantıyı test et"}
-            </button>
-            <button
-              type="submit"
-              disabled={savingConn || !connForm.label}
-              className="text-xs font-medium rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
-            >
-              {savingConn ? "Kaydediliyor…" : "Bağlantıyı kaydet"}
-            </button>
-            {testResult && (
-              <span className={testResult.ok ? "text-xs text-seo" : "text-xs text-danger"}>{testResult.message}</span>
-            )}
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-sub">{connForm.platform === "webhook" ? "Webhook adresi" : "Site adresi"}</div>
+            <input value={connForm.siteUrl} onChange={(e) => setConnForm((f) => ({ ...f, siteUrl: e.target.value }))} placeholder={connForm.platform === "shopify" ? "magaza.myshopify.com" : connForm.platform === "webhook" ? "https://hooks.zapier.com/hooks/catch/…" : "https://siten.com"} required className={INPUT} />
           </div>
-          <ErrorBlock message={connError} />
-        </form>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <div className="card space-y-2 h-fit">
-          <h2 className="font-medium text-sm">Taslaklar</h2>
-          {drafts.length === 0 && (
-            <p className="text-xs text-ink/40">
-              Henüz yok — <a href="/gap" className="text-accent hover:underline">Rakip Boşluğu</a>'ndaki bir içerik brifinden bir tane oluşturun.
-            </p>
-          )}
-          {drafts.map((d) => (
-            <button
-              key={d.id}
-              onClick={() => loadDraft(d.id)}
-              className={`w-full text-left text-xs rounded-lg px-3 py-2 hover:bg-muted ${
-                selectedDraft?.id === d.id ? "bg-muted" : ""
-              }`}
-            >
-              <div className="font-medium truncate">{d.article.title}</div>
-              <div className="text-ink/40 flex items-center gap-2">
-                <span>{d.status === "published-to-wp" ? "Yayınlandı" : "Taslak"}</span>
-                {d.article.demoMode && <span className="text-warn">demo</span>}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          {loadingDraft && <TableSkeleton rows={3} cols={2} />}
-
-          {!loadingDraft && !selectedDraft && (
-            <div className="card text-sm text-ink/40">Soldan bir taslak seçin, ya da Rakip Boşluğu'ndan yeni bir tane oluşturun.</div>
-          )}
-
-          {!loadingDraft && selectedDraft && (
-            <div className="card space-y-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                key={selectedDraft.id}
-                src={`/api/cover/${selectedDraft.id}`}
-                alt=""
-                className="aspect-[1200/630] w-full rounded-xl border border-border object-cover"
-                onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
-              />
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <h2 className="font-medium">{selectedDraft.article.title}</h2>
-                  <p className="text-xs text-ink/40 mt-1">
-                    {selectedDraft.sourceUrl.replace(/^keyword:/, "Anahtar kelime: ")} için · {selectedDraft.article.model}
-                    {selectedDraft.article.demoMode && " · simüle edildi — API anahtarı tanımlı değil"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <a href={`/editor?draftId=${selectedDraft.id}`} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/5">✎ Editörde aç</a>
-                  {selectedDraft.status === "published-to-wp" && (
-                    <span className="badge badge-pass">Yayınlandı</span>
-                  )}
-                </div>
-              </div>
-
-              <p className="text-sm text-ink/70 italic">{selectedDraft.article.metaDescription}</p>
-
-              {(() => {
-                const cit = citabilityOfMarkdown(selectedDraft.article.bodyMarkdown);
-                const tone = cit.score >= 65 ? "text-seo bg-seo/10" : cit.score >= 45 ? "text-warn bg-warn/10" : "text-danger bg-danger/10";
-                return (
-                  <details className="rounded-xl border border-border">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2.5">
-                      <span className={`rounded-lg px-2 py-1 text-sm font-medium tabular-nums ${tone}`}>{cit.score}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">AI alıntılanabilirlik · {cit.grade}</span>
-                        <span className="block truncate text-[11px] text-ink/50">{cit.top.length ? `Önce: ${cit.top.join(" · ")}` : "Belirgin bir eksik yok"}</span>
-                      </span>
-                      <span className="text-[11px] text-ink/40">detay ▾</span>
-                    </summary>
-                    <ul className="space-y-1.5 border-t border-border px-3 py-3 text-xs">
-                      {cit.checks.map((c) => (
-                        <li key={c.key} className="flex gap-2">
-                          <span className={c.ok ? "text-seo" : "text-warn"}>{c.ok ? "✓" : "!"}</span>
-                          <span>
-                            <span className="font-medium">{c.label}</span>
-                            {!c.ok && <span className="block text-ink/50">{c.hint}</span>}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="border-t border-border px-3 py-3">
-                      <div className="mb-1.5 text-xs font-medium text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
-                      <PassageList report={analyzePassages(passagesFromMarkdown(selectedDraft.article.bodyMarkdown))} />
-                    </div>
-                  </details>
-                );
-              })()}
-
-              {selectedDraft.article.openPlaceholders.length > 0 && (
-                <div className="rounded-lg border border-warn/40 bg-warn/5 p-3 text-xs text-warn space-y-1">
-                  <div className="font-medium">Yayına hazır olmadan önce bir insan gerekiyor:</div>
-                  {selectedDraft.article.openPlaceholders.map((p, i) => (
-                    <div key={i}>{p}</div>
-                  ))}
-                </div>
-              )}
-
-              <pre className="whitespace-pre-wrap text-sm text-ink/80 bg-muted rounded-lg p-4 max-h-[28rem] overflow-y-auto font-sans">
-                {selectedDraft.article.bodyMarkdown}
-              </pre>
-
-              {selectedDraft.status === "published-to-wp" ? (
-                <div className="flex gap-3 text-sm">
-                  {selectedDraft.publishedPostUrl && (
-                    <a href={selectedDraft.publishedPostUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-                      Gönderiyi görüntüle
-                    </a>
-                  )}
-                  {selectedDraft.publishedEditUrl && (
-                    <a href={selectedDraft.publishedEditUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-                      Sitede düzenle
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <div className="border-t border-border pt-3 space-y-2">
-                  {connections.length === 0 ? (
-                    <p className="text-xs text-ink/40">Bu taslağı yayınlamak için yukarıdan bir WordPress veya Shopify bağlantısı ekleyin.</p>
-                  ) : (
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <select
-                        value={selectedConnectionId ?? ""}
-                        onChange={(e) => setSelectedConnectionId(Number(e.target.value))}
-                        className="text-sm rounded-lg bg-panel border border-border px-2 py-1.5 outline-none"
-                      >
-                        {connections.map((c) => (
-                          <option key={c.id} value={c.id}>{c.label}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={publish}
-                        disabled={publishing}
-                        className="text-sm font-medium rounded-lg bg-accent text-white px-4 py-1.5 hover:opacity-90 disabled:opacity-50"
-                      >
-                        {publishing ? "Yayınlanıyor…" : "Taslak olarak yayınla"}
-                      </button>
-                    </div>
-                  )}
-                  <ErrorBlock message={publishError} />
-                </div>
-              )}
+          {connForm.platform === "wordpress" && (
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium text-sub">WordPress kullanıcı adı</div>
+              <input value={connForm.authIdentifier} onChange={(e) => setConnForm((f) => ({ ...f, authIdentifier: e.target.value }))} required className={INPUT} />
             </div>
           )}
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-sub">{connForm.platform === "shopify" ? "Admin API token (shpat_…)" : connForm.platform === "webhook" ? "İmza anahtarı" : "Uygulama parolası"}</div>
+            <input value={connForm.authSecret} onChange={(e) => setConnForm((f) => ({ ...f, authSecret: e.target.value }))} type={connForm.platform === "webhook" ? "text" : "password"} required className={INPUT} />
+          </div>
+          <p className="rounded-lg bg-[#fafafa] px-3 py-2 text-xs leading-5 text-sub">
+            {connForm.platform === "webhook"
+              ? "Wix, Webflow, Ghost, Framer, Squarespace, Notion… için: Zapier'de 'Webhooks by Zapier → Catch Hook' (ya da Make/n8n'de Webhook) oluştur, adresini buraya yapıştır. Yazı title, metaDescription, markdown ve html alanlarıyla JSON olarak gider; istek X-Epicsem-Signature (HMAC-SHA256) ile imzalanır."
+              : connForm.platform === "shopify"
+                ? "Shopify'da: Ayarlar → Uygulamalar ve satış kanalları → Uygulama geliştir → özel uygulama oluştur, Admin API'de write_content iznini aç, oluşan token'ı buraya yapıştır."
+                : "WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekle. Gerçek giriş parolan değil."}
+          </p>
+          {testResult && <p className={`rounded-lg px-3 py-2 text-xs ${testResult.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>{testResult.message}</p>}
+          <ErrorBlock message={connError} />
         </div>
-      </div>
-
-
+      </Drawer>
     </div>
   );
 }
