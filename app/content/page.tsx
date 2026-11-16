@@ -166,7 +166,7 @@ export default function ContentStudioPage() {
         title="İçerik Stüdyosu"
         body={
           <>
-            <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>&apos;te üretilen makaleler
+            <a href="/gap" className="text-accent hover:underline">Rakip Boşluğu</a>&apos;nda üretilen makaleler
             buraya gelir. Her taslak sadece o sayfanın gerçek audit/gap bulgularına dayanır — modelin dayanak
             bulamadığı her şey, uydurma bir bilgi yerine açık bir <code>[NEEDS: …]</code> placeholder&apos;ı olarak
             bırakılır. Yayınlama her zaman bir <strong>taslak</strong> oluşturur (WordPress veya Shopify), asla canlı
@@ -307,7 +307,7 @@ export default function ContentStudioPage() {
           <h2 className="font-medium text-sm">Taslaklar</h2>
           {drafts.length === 0 && (
             <p className="text-xs text-ink/40">
-              Henüz yok — <a href="/gap" className="text-accent hover:underline">Gap Analysis</a>'teki bir içerik brifinden bir tane oluşturun.
+              Henüz yok — <a href="/gap" className="text-accent hover:underline">Rakip Boşluğu</a>'ndaki bir içerik brifinden bir tane oluşturun.
             </p>
           )}
           {drafts.map((d) => (
@@ -331,7 +331,7 @@ export default function ContentStudioPage() {
           {loadingDraft && <TableSkeleton rows={3} cols={2} />}
 
           {!loadingDraft && !selectedDraft && (
-            <div className="card text-sm text-ink/40">Soldan bir taslak seçin, ya da Gap Analysis'ten yeni bir tane oluşturun.</div>
+            <div className="card text-sm text-ink/40">Soldan bir taslak seçin, ya da Rakip Boşluğu'ndan yeni bir tane oluşturun.</div>
           )}
 
           {!loadingDraft && selectedDraft && (

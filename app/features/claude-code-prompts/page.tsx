@@ -59,7 +59,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Neden boş şablon, benim verilerimle doldurulmuş değil?",
-    a: "Burası genel amaçlı, herkesin kullanabileceği statik bir şablon kütüphanesi. Kendi gerçek bulgularınla önceden doldurulmuş bir prompt istiyorsan Audit veya Gap Analysis'i çalıştır — ikisinde de sonuç sayfasında \"Fix with Claude Code\" butonu var, o senin domainine ve o koşunun gerçek sonuçlarına göre otomatik oluşturulmuş bir prompt üretir.",
+    a: "Burası genel amaçlı, herkesin kullanabileceği statik bir şablon kütüphanesi. Kendi gerçek bulgularınla önceden doldurulmuş bir prompt istiyorsan Audit veya Rakip Boşluğu'nu çalıştır — ikisinde de sonuç sayfasında \"Fix with Claude Code\" butonu var, o senin domainine ve o koşunun gerçek sonuçlarına göre otomatik oluşturulmuş bir prompt üretir.",
   },
   {
     q: "Ücretli mi, hesap açmam gerekiyor mu?",
@@ -72,7 +72,7 @@ const FEATURES = [
   { title: "Kategorilere ayrılmış", body: "Teknik SEO, AI crawler erişimi, schema, GEO citation gap'leri ve içerik brief'leri için ayrı kategoriler." },
   { title: "Kendi reponuzda çalışır", body: "Her prompt, Claude Code veya benzer bir kodlama ajanıyla kendi site kodunuzda kullanılmak üzere yazıldı." },
   { title: "Uydurma istatistik yok", body: "Şablonlar, gerçek verinizi siz sağlayacak şekilde tasarlandı — sahte sayı veya iddia içermez." },
-  { title: "Gerçek sonuçla önceden dolu versiyon", body: "Audit veya Gap Analysis'in \"Fix with Claude Code\" butonu, aynı promptların sizin gerçek verinizle doldurulmuş halini üretir." },
+  { title: "Gerçek sonuçla önceden dolu versiyon", body: "Audit veya Rakip Boşluğu'nun \"Fix with Claude Code\" butonu, aynı promptların sizin gerçek verinizle doldurulmuş halini üretir." },
 ];
 
 export default function ClaudeCodePromptsLandingPage() {

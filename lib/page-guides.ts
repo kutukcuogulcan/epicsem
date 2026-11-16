@@ -95,7 +95,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       { title: "Siteni seç", body: "Daha önce taradığın ya da GEO testi yaptığın siteyi üstten seçersin." },
       { title: "Soru sor", body: "\"ChatGPT'de neden rakiplerim çıkıyor?\", \"Ne yazmalıyım?\" gibi sorular sorarsın." },
       { title: "Veriye dayalı cevap", body: "Asistan taramaların, AI görünürlük testlerin ve sıralamalarından derlediği somut maddelerle cevap verir." },
-      { title: "İlgili araca geç", body: "Cevaptaki linklerle doğrudan Editör'e, Site Taraması'na ya da Gap Analysis'e gidersin." },
+      { title: "İlgili araca geç", body: "Cevaptaki linklerle doğrudan Editör'e, Site Taraması'na ya da Rakip Boşluğu'na gidersin." },
     ],
     faq: [
       { q: "AI kredisi harcıyor mu?", a: "Hayır. Asistan kurallarla çalışır ve sadece kendi verilerine (taramalar, testler) bakar; ücretsizdir." },

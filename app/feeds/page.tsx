@@ -289,7 +289,7 @@ export default function FeedsPage() {
                   <div className="space-y-1.5">
                     <label className={label}>Site adresi</label>
                     <input value={form.siteUrl} onChange={(e) => setForm({ ...form, siteUrl: e.target.value })} placeholder="siteniz.com" className={input} />
-                    <p className="text-[11px] text-ink/45">Bu site için Gap Analysis ya da GEO testin varsa oradaki sorular da eklenir.</p>
+                    <p className="text-[11px] text-ink/45">Bu site için Rakip Boşluğu ya da GEO testin varsa oradaki sorular da eklenir.</p>
                   </div>
                   <div className="space-y-1.5">
                     <label className={label}>Başlangıç kelimeleri</label>

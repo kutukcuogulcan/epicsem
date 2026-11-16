@@ -47,9 +47,9 @@ const SOURCES: { id: Source; title: string; body: string; icon: string }[] = [
   { id: "feed", title: "Kayıtlı besleme", body: "Kendini yenileyen kelime, haber, RSS ya da YouTube beslemesi.", icon: "≋" },
   { id: "keywords", title: "Anahtar kelimeler", body: "Hedeflediğin kelimeleri yaz, sırayla makaleye dönüşsün.", icon: "#" },
   { id: "rss", title: "RSS beslemesi", body: "Sektör blogu ya da haber sitesi yeni yazı yayınladıkça kendi yorumunla yaz.", icon: "◉" },
-  { id: "gap", title: "Gap Analysis", body: "AI motorlarında kaybettiğin gerçek sorulardan içerik üret.", icon: "◎" },
+  { id: "gap", title: "Rakip Boşluğu", body: "AI motorlarında kaybettiğin gerçek sorulardan içerik üret.", icon: "◎" },
 ];
-const SOURCE_LABEL: Record<Source, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
+const SOURCE_LABEL: Record<Source, string> = { gap: "Rakip Boşluğu", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
 const MODES: { id: Mode; title: string; body: string; steps: [string, boolean][] }[] = [
   { id: "review", title: "Onaylı otomasyon", body: "Yazılar Content Studio'da onayını bekler. Sen yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", false]] },
   { id: "cms-draft", title: "Sitede taslak", body: "Yazılar sitene taslak olarak gider. Sitende tek tıkla yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Sitede taslak", true]] },
@@ -341,7 +341,7 @@ export default function CampaignsPage() {
         title="Autoblog"
         body={
           <>
-            Anahtar kelime listesi, bir RSS beslemesi ya da Gap Analysis sonuçlarından düzenli olarak SEO + GEO uyumlu makale
+            Anahtar kelime listesi, bir RSS beslemesi ya da Rakip Boşluğu sonuçlarından düzenli olarak SEO + GEO uyumlu makale
             taslağı üretir. İster Content Studio&apos;da onayını beklesin, ister sitene taslak olarak gitsin, ister doğrudan yayınlansın.
           </>
         }
@@ -585,10 +585,10 @@ export default function CampaignsPage() {
                   {ideas && (
                     <div className="rounded-xl border border-border p-3">
                       {ideas.length === 0 ? (
-                        <p className="text-xs text-ink/50">Bu domain için öneri çıkacak veri yok — önce <Link href="/gap" className="font-medium text-accent">Gap Analysis</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.</p>
+                        <p className="text-xs text-ink/50">Bu domain için öneri çıkacak veri yok — önce <Link href="/gap" className="font-medium text-accent">Rakip Boşluğu</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.</p>
                       ) : (
                         <>
-                          <div className="mb-2 text-[11px] text-ink/50">Gap Analysis ve GEO promptlarından — eklemek için tıkla:</div>
+                          <div className="mb-2 text-[11px] text-ink/50">Rakip Boşluğu ve GEO promptlarından — eklemek için tıkla:</div>
                           <div className="flex flex-wrap gap-1.5">
                             {ideas.map((q) => {
                               const added = keywordList.some((k) => k.toLowerCase() === q.toLowerCase());
@@ -641,8 +641,8 @@ export default function CampaignsPage() {
 
               {form.source === "gap" && (
                 <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs leading-5 text-ink/60">
-                  Bu domainin <strong>son Gap Analysis</strong> sonucundaki içerik brief&apos;leri sırayla yazılır: AI motorlarının sorduğu ama markanın kaybettiği sorular, eksik başlıklar ve içerik boşlukları.
-                  Henüz çalıştırmadıysan önce <Link href="/gap" className="font-medium text-accent">Gap Analysis</Link>&apos;e git.
+                  Bu domainin <strong>son Rakip Boşluğu</strong> sonucundaki içerik brief&apos;leri sırayla yazılır: AI motorlarının sorduğu ama markanın kaybettiği sorular, eksik başlıklar ve içerik boşlukları.
+                  Henüz çalıştırmadıysan önce <Link href="/gap" className="font-medium text-accent">Rakip Boşluğu</Link>&apos;na git.
                 </div>
               )}
 

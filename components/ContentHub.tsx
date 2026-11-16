@@ -50,11 +50,11 @@ const TYPE_BADGE_CLASS: Record<InputType, string> = {
 // (server picks a real, grounded Gap Analysis finding — no form needed); otherwise
 // clicking reveals a single URL field, since that URL *is* the grounding source.
 const CARDS: { type: InputType | "youtube" | "free-tool"; title: string; hint: string; direct?: boolean; disabled?: boolean }[] = [
-  { type: "seo-gap", title: "SEO Makale Ekle", hint: "Son Gap Analysis bulgusundan", direct: true },
+  { type: "seo-gap", title: "SEO Makale Ekle", hint: "Son Rakip Boşluğu bulgusundan", direct: true },
   { type: "news", title: "Haber Temelli Yazı", hint: "Gerçek bir haber URL'si" },
   { type: "comparison", title: "Rakip Karşılaştırması", hint: "Rakip sayfa URL'si" },
   { type: "alternatives", title: "Rakip Alternatifleri", hint: "Rakip sayfa URL'si" },
-  { type: "listicle", title: "Liste Yazısı", hint: "Son Gap Analysis bulgusundan", direct: true },
+  { type: "listicle", title: "Liste Yazısı", hint: "Son Rakip Boşluğu bulgusundan", direct: true },
   { type: "youtube", title: "YouTube → Blog Yazısı", hint: "Yakında", disabled: true },
   { type: "free-tool", title: "Ücretsiz Araç Şablonu", hint: "Yakında", disabled: true },
 ];
@@ -277,7 +277,7 @@ export default function ContentHub() {
         <div>
           <h2 className="font-bold">Content Hub</h2>
           <p className="text-xs text-ink/50 mt-0.5">
-            Her giriş gerçek bir kaynağa dayanır — ya en son Gap Analysis bulgunuza, ya da sizin verdiğiniz gerçek
+            Her giriş gerçek bir kaynağa dayanır — ya en son Rakip Boşluğu bulgunuza, ya da sizin verdiğiniz gerçek
             bir URL&apos;ye. Hiçbir başlık veya sayı uydurulmaz.
           </p>
         </div>

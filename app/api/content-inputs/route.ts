@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   const latest = await getLatestGapRunBriefs(user.id, parsed.brand.domain);
   if (!latest || latest.contentBriefs.length === 0) {
     return NextResponse.json(
-      { error: "Önce bu marka için bir Gap Analysis çalıştırın — bu tip, gerçek bulgulara dayanır." },
+      { error: "Önce bu marka için bir Rakip Boşluğu analizi çalıştırın — bu tip, gerçek bulgulara dayanır." },
       { status: 400 }
     );
   }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const brief = latest.contentBriefs.find((b) => !usedDraftUrls.has(b.url) && !queuedUrls.has(b.url));
   if (!brief) {
     return NextResponse.json(
-      { error: "Son Gap Analysis'teki tüm bulgular zaten kuyrukta veya taslağa dönüştürülmüş." },
+      { error: "Son Rakip Boşluğu'ndaki tüm bulgular zaten kuyrukta veya taslağa dönüştürülmüş." },
       { status: 400 }
     );
   }

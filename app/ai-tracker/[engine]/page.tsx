@@ -67,7 +67,7 @@ export default async function EngineTrackerPage({ params }: { params: Promise<{ 
           { title: "Sitenizin adresini yazın", body: "Marka, rakipler ve sektörünüzdeki gerçek sorular otomatik çıkarılır." },
           { title: `Sorular ${e.name}'e sorulur`, body: `Her prompt ${e.vendor} API'si üzerinden ${e.name}'e gönderilir; cevaptaki marka adları ve kaynaklar ayrıştırılır.` },
           { title: "Görünürlük ve rakip payı çıkar", body: "Markanızın kaç cevapta, kaçıncı sırada geçtiği ve rakiplerin payı tek panoda." },
-          { title: "Eksik içeriği kapatın", body: "Gap Analysis ve AI SEO Editör ile anılmadığınız konular için cevap-önce içerik hazırlayın." },
+          { title: "Eksik içeriği kapatın", body: "Rakip Boşluğu ve AI SEO Editör ile anılmadığınız konular için cevap-önce içerik hazırlayın." },
         ]}
       />
 

@@ -117,7 +117,7 @@ export default function ClientsPage() {
         body={
           <>
             Her müşterinin marka ve rakip bilgisini bir kere kaydedin — her seferinde yeniden yazmak yerine önceden
-            dolu bir Audit, GEO testi veya Gap Analysis&apos;e direkt atlayın, ve her koşudan kendi ajans adınızla
+            dolu bir Audit, GEO testi veya Rakip Boşluğu&apos;na direkt atlayın, ve her koşudan kendi ajans adınızla
             bir PDF rapor üretin.
           </>
         }

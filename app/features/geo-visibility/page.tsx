@@ -71,7 +71,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Aylık kaç sorgu hakkım var?",
-    a: "Ücretsiz planda GEO/AEO ve Gap Analysis birlikte, ayda toplam 300 AI motor sorgusu (prompt sayısı × motor sayısı) içeriyor. Demo modda hiçbir sorgu bu kotadan düşmez.",
+    a: "Ücretsiz planda GEO/AEO ve Rakip Boşluğu birlikte, ayda toplam 300 AI motor sorgusu (prompt sayısı × motor sayısı) içeriyor. Demo modda hiçbir sorgu bu kotadan düşmez.",
   },
   {
     q: "Neden Türkçe promptları ayrı test etmeliyim?",

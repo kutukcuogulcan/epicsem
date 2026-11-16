@@ -54,7 +54,7 @@ const GROUPS = [
     items: [
       { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
       { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör — Türkçe ve İngilizce promptları ayrı test edebilirsin.", landingHref: "/features/geo-visibility" },
-      { label: "Gap Analysis", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
+      { label: "Rakip Boşluğu", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
       { label: "Article Writer", href: "/article-writer", body: "Tek bir sayfayı derinlemesine denetler — title, meta, canonical, alt text, internal link fırsatları, FAQ/Article schema — ve bulunan boşluklara göre somut makale önerileri üretir." },
     ],
   },
@@ -64,7 +64,7 @@ const GROUPS = [
     tone: "text-warn",
     items: [
       { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir.", landingHref: "/features/axo-monitoring" },
-      { label: "Autoblog", href: "/campaigns", body: "Anahtar kelime listesi, RSS beslemesi ya da Gap Analysis'ten günlük/haftalık/aylık otomatik taslak makale üretir — hiçbir şey kendiliğinden yayınlanmaz." },
+      { label: "Autoblog", href: "/campaigns", body: "Anahtar kelime listesi, RSS beslemesi ya da Rakip Boşluğu'ndan günlük/haftalık/aylık otomatik taslak makale üretir — hiçbir şey kendiliğinden yayınlanmaz." },
       { label: "Site Taraması", href: "/import", body: "Sadece adresi yaz; tüm siteyi tarayıp eksik meta/başlık, kırık link ve thin content sorunlarını tek panoda gör.", landingHref: "/features/bulk-import" },
       { label: "Content Studio", href: "/content", body: "Kaybedilen promptları somut başlık/FAQ önerilerine çevirir, taslağı WordPress veya Shopify'a yayınlar.", landingHref: "/features/content-studio" },
       { label: "Yerel İşletme (GBP)", href: "/local", body: "Google Business Profile gönderisi ve müşteri yorumlarına yanıt taslağı üretir — kopyala, yapıştır, sen onayla." },

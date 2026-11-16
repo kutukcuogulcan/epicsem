@@ -44,7 +44,7 @@ const SCENARIO_STEPS = [
   },
   {
     title: "Aynı marka GEO ve Gap'te de kullanılır",
-    body: "Aynı kayıt, GEO testi ve Gap Analysis linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
+    body: "Aynı kayıt, GEO testi ve Rakip Boşluğu linklerinde de marka/rakip bilgisini otomatik doldurur — hiçbir şey yeniden yazılmaz.",
   },
   {
     title: "Rapor kendi ajans adınızla indirilir",
@@ -67,12 +67,12 @@ const FAQ_ITEMS = [
   },
   {
     q: "PDF raporda kendi ajans adım görünebilir mi?",
-    a: "Evet. Audit veya Gap Analysis sonuç ekranında \"Ajans adınız\" kutusuna kendi ajans/marka adınızı yazmanız yeterli — indirilen PDF'in üst kısmında Epicsem yerine o isim görünür. İsim hesabınıza değil tarayıcınıza kaydedilir.",
+    a: "Evet. Audit veya Rakip Boşluğu sonuç ekranında \"Ajans adınız\" kutusuna kendi ajans/marka adınızı yazmanız yeterli — indirilen PDF'in üst kısmında Epicsem yerine o isim görünür. İsim hesabınıza değil tarayıcınıza kaydedilir.",
   },
 ];
 
 const FEATURES = [
-  { title: "Bir kere kaydet, her yerde kullan", body: "Marka adı, domain ve rakip bilgisi Audit, GEO ve Gap Analysis'te otomatik doldurulur." },
+  { title: "Bir kere kaydet, her yerde kullan", body: "Marka adı, domain ve rakip bilgisi Audit, GEO ve Rakip Boşluğu'nda otomatik doldurulur." },
   { title: "Notlar", body: "Hesap contact'ı, sözleşme kapsamı veya hatırlamak istediğiniz her şeyi müşteri kaydına ekleyin." },
   { title: "Sınırsız rakip", body: "Her müşteri için istediğiniz kadar rakip ekleyip karşılaştırmalarda kullanabilirsiniz." },
   { title: "Kendi hesabınıza özel", body: "Kayıtlı müşteriler yalnızca sizin hesabınızla ilişkilendirilir, başka kullanıcılar göremez." },
@@ -87,7 +87,7 @@ export default function ClientsLandingPage() {
         breadcrumbLabel="Clients"
         eyebrow="CLIENTS"
         title={<>5-10 müşteri yönetiyorsanız, marka bilgisini <span className="text-accent">her seferinde yeniden yazmayın.</span></>}
-        body="Epicsem'in Clients aracı, her müşterinizin marka adını, domainini ve rakiplerini bir kere kaydetmenizi sağlar — sonraki her Audit, GEO testi ve Gap Analysis koşusunda bu bilgi otomatik doldurulmuş olarak açılır."
+        body="Epicsem'in Clients aracı, her müşterinizin marka adını, domainini ve rakiplerini bir kere kaydetmenizi sağlar — sonraki her Audit, GEO testi ve Rakip Boşluğu koşusunda bu bilgi otomatik doldurulmuş olarak açılır."
         primaryCta={{ href: "/clients", label: "Ücretsiz müşteri ekle" }}
         secondaryCta={{ href: "/features/seo-axo-audit", label: "Audit'i incele" }}
         image={{ src: "/screenshots/clients-form.png", alt: "Epicsem Clients — müşteri ekleme formu", path: "epicsem.app/clients", width: 1399, height: 398 }}

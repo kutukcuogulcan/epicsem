@@ -23,7 +23,7 @@ export default function Footer() {
         <nav className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/audit" className="hover:text-accent transition-colors">Audit</Link>
           <Link href="/geo" className="hover:text-accent transition-colors">GEO/AEO</Link>
-          <Link href="/gap" className="hover:text-accent transition-colors">Gap Analysis</Link>
+          <Link href="/gap" className="hover:text-accent transition-colors">Rakip Boşluğu</Link>
           <Link href="/ai-tracker/chatgpt" className="hover:text-accent transition-colors">ChatGPT takibi</Link>
           <Link href="/ai-tracker/gemini" className="hover:text-accent transition-colors">Gemini takibi</Link>
           <Link href="/ai-tracker/perplexity" className="hover:text-accent transition-colors">Perplexity takibi</Link>

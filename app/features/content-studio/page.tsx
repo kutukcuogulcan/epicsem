@@ -19,7 +19,7 @@ const COMPARISON = {
   withItems: {
     title: "Epicsem Content Studio ile",
     items: [
-      "Gap Analysis'in bulduğu boşluk direkt brief'e dönüşür",
+      "Rakip Boşluğu'nun bulduğu boşluk direkt brief'e dönüşür",
       "Dayanaksız bilgi [NEEDS: ...] olarak işaretlenir, uydurulmaz",
       "Taslak otomatik WordPress veya Shopify'a gönderilir",
       "Yayınlama her zaman taslak — canlıya alma kararı sizde",
@@ -30,12 +30,12 @@ const COMPARISON = {
 export const metadata = {
   title: "Content Studio — Kaybedilen Promptlardan Yayına Hazır İçerik | Epicsem",
   description:
-    "Gap Analysis'in bulduğu içerik boşluklarını, gerçek verilere dayanan WordPress taslaklarına dönüştürün — hiçbir istatistik uydurulmaz.",
+    "Rakip Boşluğu'nun bulduğu içerik boşluklarını, gerçek verilere dayanan WordPress taslaklarına dönüştürün — hiçbir istatistik uydurulmaz.",
 };
 
 const SCENARIO_STEPS = [
   {
-    title: "Gap Analysis bir boşluk bulur",
+    title: "Rakip Boşluğu bir boşluk bulur",
     body: "\"En iyi mobilya markaları hangileri?\" promptunda hiçbir sayfa anılmıyor bulgusu content brief'e dönüşür.",
   },
   {
@@ -59,7 +59,7 @@ const SCENARIO_STEPS = [
 const FAQ_ITEMS = [
   {
     q: "İçerik uyduruluyor mu, nereden geliyor?",
-    a: "Hayır. Her taslak sadece Gap Analysis'teki gerçek bir content brief'e dayanır. Modelin dayanak bulamadığı bir bilgi varsa, onu uydurmak yerine açıkça [NEEDS: ...] şeklinde işaretleyip sana bırakır.",
+    a: "Hayır. Her taslak sadece Rakip Boşluğu'ndaki gerçek bir content brief'e dayanır. Modelin dayanak bulamadığı bir bilgi varsa, onu uydurmak yerine açıkça [NEEDS: ...] şeklinde işaretleyip sana bırakır.",
   },
   {
     q: "Yayınladığımda direkt canlıya mı çıkıyor?",
@@ -76,7 +76,7 @@ const FAQ_ITEMS = [
 ];
 
 const FEATURES = [
-  { title: "Gap Analysis'ten otomatik brief", body: "Kaybedilen promptlar, doğrudan bir content brief'e ve oradan taslağa dönüşür." },
+  { title: "Rakip Boşluğu'ndan otomatik brief", body: "Kaybedilen promptlar, doğrudan bir content brief'e ve oradan taslağa dönüşür." },
   { title: "Uydurma yok, [NEEDS: ...] var", body: "Model dayanak bulamadığı bir bilgiyi uydurmaz, açıkça işaretleyip insana bırakır." },
   { title: "WordPress taslağı, asla canlı değil", body: "Yayınlama her zaman bir draft oluşturur — yayına alma kararı her zaman sizde." },
   { title: "Çoklu müşteri WordPress bağlantısı", body: "Her müşteri için ayrı bir WordPress bağlantısı kaydedip taslağı doğru siteye gönderin." },
@@ -91,8 +91,8 @@ export default function ContentStudioLandingPage() {
         breadcrumbLabel="Content Studio"
         eyebrow="CONTENT STUDIO"
         title={<>Kaybettiğiniz her prompt, <span className="text-accent">yayına hazır bir içerik fikri</span> olabilir.</>}
-        body={<>Gap Analysis&apos;in bulduğu &quot;bu sayfaların hiçbirinde anılmıyorsunuz&quot; sonuçları, Content Studio&apos;da gerçek verilere dayanan bir WordPress veya Shopify taslağına dönüşür — hiçbir istatistik uydurulmaz, dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.</>}
-        primaryCta={{ href: "/gap", label: "Gap Analysis'ten başlayın" }}
+        body={<>Rakip Boşluğu&apos;nun bulduğu &quot;bu sayfaların hiçbirinde anılmıyorsunuz&quot; sonuçları, Content Studio&apos;da gerçek verilere dayanan bir WordPress veya Shopify taslağına dönüşür — hiçbir istatistik uydurulmaz, dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.</>}
+        primaryCta={{ href: "/gap", label: "Rakip Boşluğu'ndan başlayın" }}
         secondaryCta={{ href: "/content", label: "Content Studio'ya git" }}
         image={{ src: "/screenshots/content-studio-form.png", alt: "Epicsem Content Studio — CMS bağlantı formu", path: "epicsem.app/content", width: 1399, height: 423 }}
       />
@@ -112,9 +112,9 @@ export default function ContentStudioLandingPage() {
       <FAQSection items={FAQ_ITEMS} />
 
       <FeatureCTA
-        title="Bir Gap Analysis çalıştırıp ilk brief'inizi çıkarın"
+        title="Bir Rakip Boşluğu analizi çalıştırıp ilk brief'inizi çıkarın"
         body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
-        cta={{ href: "/gap", label: "Gap Analysis'i başlat" }}
+        cta={{ href: "/gap", label: "Rakip Boşluğu'nu başlat" }}
       />
     </div>
   );

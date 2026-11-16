@@ -140,7 +140,7 @@ async function nextTopics(campaign: Campaign, used: Set<string>, count: number):
   // gap (varsayılan)
   const latest = await getLatestGapRunBriefs(campaign.userId, campaign.brandDomain);
   if (!latest || latest.contentBriefs.length === 0) {
-    return { topics: [], emptyReason: "Bu domain için hiç Gap Analysis sonucu yok — önce Gap Analysis çalıştır ya da kaynağı RSS / anahtar kelime yap." };
+    return { topics: [], emptyReason: "Bu domain için hiç Rakip Boşluğu sonucu yok — önce Rakip Boşluğu analizi çalıştır ya da kaynağı RSS / anahtar kelime yap." };
   }
   const fresh = latest.contentBriefs.filter((b) => !used.has(b.url));
   return {
@@ -149,7 +149,7 @@ async function nextTopics(campaign: Campaign, used: Set<string>, count: number):
       label: b.url,
       write: (knowledge) => generateArticleFromBrief(b, brand, format, knowledge, styleInstructions(style)),
     })),
-    emptyReason: "Son Gap Analysis'teki tüm konular taslağa dönüştü — yeni konu için Gap Analysis'i tekrar çalıştır.",
+    emptyReason: "Son Rakip Boşluğu'ndaki tüm konular taslağa dönüştü — yeni konu için Rakip Boşluğu'nu tekrar çalıştır.",
   };
 }
 

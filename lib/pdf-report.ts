@@ -161,7 +161,7 @@ export function buildReportPdf(input: ReportInput): PDFKit.PDFDocument {
 
   // ---- Gap matrix ----
   if (input.gap && input.gap.gapMatrix.length > 0) {
-    sectionTitle("Gap Analysis");
+    sectionTitle("Rakip Boşluğu");
     doc.font("Helvetica").fontSize(9.5);
     for (const row of input.gap.gapMatrix) {
       const verdictColor =

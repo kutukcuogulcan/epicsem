@@ -137,13 +137,13 @@ interface CampaignLite {
 
 const FREQ_DAYS: Record<string, number> = { daily: 1, weekly: 7, monthly: 30 };
 const FREQ_TR: Record<string, string> = { daily: "günlük", weekly: "haftalık", monthly: "aylık" };
-const SRC_TR: Record<string, string> = { gap: "Gap Analysis", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
+const SRC_TR: Record<string, string> = { gap: "Rakip Boşluğu", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
 
 export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: CampaignLite[]; refreshKey?: number }) {
   const d = useTool<CampaignData>("campaigns", refreshKey);
   if (!d) return <Skeleton />;
   const active = campaigns.filter((c) => c.status === "active").length;
-  if (!campaigns.length && !d.drafts) return <GhostChart title="Henüz autoblog yok" body="Bir autoblog kur — Gap Analysis, bir RSS beslemesi ya da anahtar kelime listen düzenli olarak taslak makaleye dönüşür ve üretim burada grafikte izlenir." />;
+  if (!campaigns.length && !d.drafts) return <GhostChart title="Henüz autoblog yok" body="Bir autoblog kur — Rakip Boşluğu, bir RSS beslemesi ya da anahtar kelime listen düzenli olarak taslak makaleye dönüşür ve üretim burada grafikte izlenir." />;
   const next = (c: CampaignLite) => {
     if (c.status !== "active") return "duraklatıldı";
     if (!c.lastRunAt) return "ilk çalıştırma bekleniyor";

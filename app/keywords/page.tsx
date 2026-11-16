@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import ToolPageHeader from "@/components/ToolPageHeader";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
-import { Drawer, ErrorBlock } from "@/components/ui";
+import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
@@ -181,12 +180,75 @@ export default function KeywordsPage() {
     return `/editor?${params}`;
   }
 
+  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-50";
+  const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
+  const chip = (on: boolean) =>
+    `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
+
+  const topCluster = data?.clusters?.[0] ?? null;
+  const totalVolume = ideas.reduce((a, i) => a + (i.volume ?? 0), 0);
+  const actions: { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[] = [];
+  if (data && ideas.length) {
+    if (counts("question"))
+      actions.push({
+        kind: "GEO",
+        color: "text-accent",
+        title: `${counts("question")} gerçek soru bulundu`,
+        body: "AI motorları ve Google'ın öne çıkan cevapları bu sorulardan beslenir. Her biri bir SSS maddesi ya da kısa bir cevap yazısı olabilir.",
+        cta: (
+          <button type="button" onClick={() => { setIntent("question"); setCluster(null); }} className={BTN2}>
+            Soruları göster
+          </button>
+        ),
+      });
+    if (topCluster)
+      actions.push({
+        kind: "İçerik",
+        color: "text-seo",
+        title: `En büyük konu: "${topCluster.name}"`,
+        body: `${topCluster.count} kelime bu kümede. Hepsini kapsayan tek kapsamlı yazı, ayrı ayrı küçük yazılardan daha iyi sıralanır.`,
+        cta: (
+          <Link href={editorLink(topCluster.name)} className={BTN2}>
+            Bu konuda yaz
+          </Link>
+        ),
+      });
+    if (!hasVolume)
+      actions.push({
+        kind: "Eksik veri",
+        color: "text-warn",
+        title: "Aylık arama hacmini gör",
+        body: "Şu an popülerliği öneri sıklığıyla tahmin ediyoruz. Google Keyword Planner'ı bağlarsan gerçek aylık arama ve rekabet gelir.",
+        cta: (
+          <Link href="/integrations" className={BTN2}>
+            Keyword Planner&apos;ı bağla
+          </Link>
+        ),
+      });
+    else if (counts("commercial"))
+      actions.push({
+        kind: "Satış",
+        color: "text-warn",
+        title: `${counts("commercial")} satın almaya yakın kelime`,
+        body: "Fiyat, en iyi, yorum gibi aramalar. Bunları sıralama takibine ekle, hangi sırada olduğunu her gün izle.",
+        cta: (
+          <button type="button" onClick={() => { setIntent("commercial"); setCluster(null); }} className={BTN2}>
+            Ticarileri göster
+          </button>
+        ),
+      });
+  }
+
   return (
     <div className="space-y-6">
-      <ToolPageHeader
-        breadcrumbLabel="Anahtar Kelime Bulucu"
-        title="Anahtar Kelime Bulucu"
-        body="Bir kelime yaz; Google'ın gerçek arama önerilerinden yüzlerce uzun kuyruklu kelime ve soru çıkaralım. Ücretsiz, AI kullanmaz."
+      <PageHeader
+        title={data ? `"${data.seed}" için insanlar ne arıyor?` : "Hangi konularda yazmalısın?"}
+        description={
+          data
+            ? `${ideas.length} kelime fikri · ${data.clusters.length} konu kümesi${hasVolume ? ` · toplam ${totalVolume.toLocaleString("tr-TR")} aylık arama` : ""} · Google önerilerinden, ücretsiz`
+            : "Bir kelime yaz; Google'ın gerçek arama önerilerinden yüzlerce uzun kuyruklu kelime ve soru çıkaralım. Ücretsiz, yapay zekâ kullanmaz."
+        }
       />
 
       <form
@@ -194,222 +256,368 @@ export default function KeywordsPage() {
           e.preventDefault();
           run();
         }}
-        className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm"
+        className={`${CARD} flex flex-wrap items-center gap-2 p-2 pl-4`}
       >
-        <input value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="ör. abiye elbise" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base outline-none" />
-        <select value={market} onChange={(e) => setMarket(e.target.value)} className="rounded-xl border border-border bg-muted px-3 py-2 text-sm">
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-sub" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <circle cx="9" cy="9" r="5.5" />
+          <path d="M13 13l3.5 3.5" />
+        </svg>
+        <input value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Bir kelime yaz, ör. abiye elbise" className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none" />
+        <select value={market} onChange={(e) => setMarket(e.target.value)} className="h-9 rounded-[10px] border border-border bg-panel px-2 text-[13px] outline-none">
           {MARKETS.map((m) => (
-            <option key={m.v} value={m.v}>{m.l}</option>
+            <option key={m.v} value={m.v}>
+              {m.l}
+            </option>
           ))}
         </select>
-        <button disabled={busy || !seed.trim()} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-          {busy ? "Aranıyor…" : "Kelime bul →"}
+        <button disabled={busy || !seed.trim()} className={`${BTN1} h-9 px-4`}>
+          {busy ? "Aranıyor…" : "Kelime bul"}
         </button>
       </form>
-      {busy && <p className="text-xs text-ink/50">Google önerileri soru kalıpları ve a–z harfleriyle taranıyor (yaklaşık 60 sorgu, 10–20 saniye)…</p>}
+      {busy && <p className="text-xs text-sub">Google önerileri soru kalıpları ve a–z harfleriyle taranıyor (yaklaşık 60 sorgu, 10–20 saniye)…</p>}
       <ErrorBlock message={error} />
 
       {!data && !busy && (
-        <div className="grid gap-3 md:grid-cols-3">
-          {[
-            ["Sorular", "İnsanların gerçekten sorduğu 'nasıl, nedir, hangisi' soruları — SSS ve GEO için birebir."],
-            ["Ticari kelimeler", "'fiyat, en iyi, ucuz, yorum' gibi satın almaya yakın aramalar."],
-            ["Kümeler", "Benzer kelimeler gruplanır; her küme bir yazı ya da sayfa olabilir."],
-          ].map(([t, b]) => (
-            <div key={t} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
-              <div className="font-medium">{t}</div>
-              <p className="mt-1 text-sm text-ink/55">{b}</p>
-            </div>
-          ))}
+        <div className={`${CARD} px-6 py-8`}>
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="text-base font-semibold">Neler çıkar?</div>
+            <p className="mt-1 text-sm text-sub">Kelimeleri niyete göre ayırır, benzerlerini konu kümelerinde toplarız. Her küme bir yazı, her soru bir SSS maddesi olabilir.</p>
+          </div>
+          <div className="mx-auto mt-5 grid max-w-3xl gap-3 md:grid-cols-3">
+            {[
+              ["Soru", "nasıl, nedir, hangisi… GEO ve SSS için birebir.", INTENT_TONE.question],
+              ["Ticari", "fiyat, en iyi, yorum… satın almaya yakın aramalar.", INTENT_TONE.commercial],
+              ["Karşılaştırma", "X mi Y mi, fark, alternatif… karar aşaması.", INTENT_TONE.comparison],
+            ].map(([t, b, tone]) => (
+              <div key={t} className="rounded-xl border border-border p-4">
+                <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${tone}`}>{t}</span>
+                <p className="mt-2 text-[13px] text-sub">{b}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {data && ideas.length > 0 && (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <button type="button" onClick={() => setIntent("all")} className={`rounded-2xl border p-4 text-left ${intent === "all" ? "border-accent ring-1 ring-accent" : "border-border bg-panel"}`}>
-              <div className="text-[11px] text-ink/50">Toplam fikir</div>
-              <div className="text-2xl font-medium tabular-nums">{ideas.length}</div>
-              <div className="text-[10px] text-ink/45">{data.queries} sorgudan</div>
-            </button>
-            {(["question", "commercial", "comparison", "local"] as KeywordIntent[]).map((k) => (
-              <button key={k} type="button" onClick={() => setIntent(k)} className={`rounded-2xl border p-4 text-left ${intent === k ? "border-accent ring-1 ring-accent" : "border-border bg-panel"}`}>
-                <div className="text-[11px] text-ink/50">{INTENT_LABEL[k]}</div>
-                <div className="text-2xl font-medium tabular-nums">{counts(k)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {([
+              ["all", "Toplam fikir", ideas.length, `${data.queries} Google sorgusundan`],
+              ["question", "Soru", counts("question"), "SSS ve GEO için"],
+              ["commercial", "Ticari", counts("commercial"), "satın almaya yakın"],
+              ["comparison", "Karşılaştırma", counts("comparison"), "karar aşaması"],
+              ["local", "Yerel", counts("local"), "şehir / yakınımda"],
+            ] as const).map(([k, l, n, hint]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => {
+                  setIntent(k);
+                  setCluster(null);
+                }}
+                className={`${CARD} px-4 py-4 text-left transition ${intent === k ? "!border-[#BDB4FF] ring-1 ring-[#BDB4FF]" : "hover:border-[#D5D7DA]"}`}
+              >
+                <div className="text-xs font-medium text-sub">{l}</div>
+                <div className="mt-1.5 text-[26px] font-semibold leading-8 tabular-nums">{n}</div>
+                <div className="mt-1 h-4 text-[11px] text-sub">{hint}</div>
               </button>
             ))}
           </div>
 
-          {data.clusters.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="mr-1 text-xs font-medium text-ink/45">Kümeler:</span>
-              {data.clusters.map((c) => (
-                <button key={c.name} type="button" onClick={() => setCluster(cluster === c.name ? null : c.name)} className={`rounded-full px-2.5 py-1 text-xs font-medium ${cluster === c.name ? "bg-ink text-white" : "bg-muted text-ink/65 hover:bg-ink/10"}`}>
-                  {c.name} <span className="opacity-60">{c.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-3">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Listede ara…" className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-1.5 text-sm outline-none" />
-            <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siten.com (takip / autoblog için)" className="w-52 rounded-lg bg-muted px-3 py-1.5 text-sm outline-none" />
-            <span className="text-xs text-ink/50">{sel.size} seçili</span>
-            <button type="button" disabled={!sel.size} onClick={toAutoblog} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40">Autoblog&apos;a ekle</button>
-            <button type="button" disabled={!sel.size} onClick={toRankings} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-40">Sıralama takibine ekle</button>
-            <button type="button" onClick={copyCsv} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted">Kopyala (CSV)</button>
-          </div>
-          {msg && (
-            <div className={`rounded-xl px-4 py-2.5 text-xs ${msg.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>
-              {msg.text} {msg.href && <Link href={msg.href} className="font-medium underline">{msg.hrefLabel}</Link>}
-            </div>
-          )}
-
-          <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-[#fafafa] text-left text-xs font-medium text-sub">
-                  <th className="w-10 px-4 py-2">
-                    <input
-                      type="checkbox"
-                      checked={shown.length > 0 && shown.every((i) => sel.has(i.keyword))}
-                      onChange={(e) => setSel(e.target.checked ? new Set([...sel, ...shown.map((i) => i.keyword)]) : new Set([...sel].filter((k) => !shown.some((i) => i.keyword === k))))}
-                      className="accent-[#4f00ff]"
-                    />
-                  </th>
-                  <th className="py-2 pr-3 font-medium">Anahtar kelime ({shown.length})</th>
-                  <th className="hidden py-2 pr-3 font-medium md:table-cell">Niyet</th>
-                  {hasVolume && <th className="py-2 pr-3 text-right font-medium" title="Google Keyword Planner — aylık ortalama arama">Aylık arama</th>}
-                  {hasVolume && <th className="hidden py-2 pr-3 font-medium lg:table-cell">Rekabet</th>}
-                  <th className="hidden py-2 pr-3 font-medium sm:table-cell" title="Kaç farklı sorguda önerildi — popülerlik için kaba sinyal (arama hacmi değil)">Öneri sıklığı</th>
-                  <th className="py-2 pr-4 text-right font-medium" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {shown.slice(0, 300).map((i) => (
-                  <tr key={i.keyword} className="hover:bg-muted/30">
-                    <td className="px-4 py-2">
-                      <input type="checkbox" checked={sel.has(i.keyword)} onChange={() => toggle(i.keyword)} className="accent-[#4f00ff]" />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <span className="font-medium">{i.keyword}</span>
-                      <span className="ml-2 text-[10px] text-ink/35">{i.words} kelime{i.source === "planner" ? " · Planner" : ""}</span>
-                    </td>
-                    <td className="hidden py-2 pr-3 md:table-cell">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${INTENT_TONE[i.intent]}`}>{INTENT_LABEL[i.intent]}</span>
-                    </td>
-                    {hasVolume && (
-                      <td className="py-2 pr-3 text-right text-sm font-medium tabular-nums">{i.volume != null ? i.volume.toLocaleString("tr-TR") : <span className="text-ink/30">—</span>}</td>
-                    )}
-                    {hasVolume && (
-                      <td className="hidden py-2 pr-3 text-[11px] text-ink/55 lg:table-cell">
-                        {i.competition ? COMP_LABEL[i.competition] : "—"}
-                        {i.cpcHigh ? <span className="ml-1 text-ink/35">· TBM ≤ {i.cpcHigh.toLocaleString("tr-TR")}</span> : null}
-                      </td>
-                    )}
-                    <td className="hidden py-2 pr-3 sm:table-cell">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-accent" style={{ width: `${(i.hits / maxHits) * 100}%` }} />
-                        </div>
-                        <span className="text-[11px] tabular-nums text-ink/45">{i.hits}</span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap py-2 pr-4 text-right text-xs">
-                      <button type="button" onClick={() => openSerp(i.keyword)} className="font-medium text-ink/60 hover:text-accent">Google analizi</button>
-                      <span className="mx-1.5 text-ink/20">·</span>
-                      <Link href={editorLink(i.keyword)} className="font-medium text-accent hover:underline">Yazı yaz</Link>
-                    </td>
-                  </tr>
+          {actions.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
+              <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
+                {actions.slice(0, 3).map((a) => (
+                  <div key={a.title} className={`${CARD} flex flex-col p-4`}>
+                    <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                    <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+                    <p className="mt-1 text-[13px] text-sub">{a.body}</p>
+                    <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-3 lg:grid-cols-[1fr_300px]">
+            <div className={`${CARD} overflow-hidden`}>
+              <div className="flex flex-wrap items-center gap-2 px-5 py-3">
+                {sel.size > 0 ? (
+                  <>
+                    <span className="text-[13px] font-medium">{sel.size} seçili</span>
+                    {!project && <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siten.com" className="h-8 w-40 rounded-[9px] border border-border bg-panel px-3 text-[13px] outline-none focus:border-[#BDB4FF]" />}
+                    <button type="button" onClick={toRankings} className={BTN2}>
+                      Sıralama takibine ekle
+                    </button>
+                    <button type="button" onClick={toAutoblog} className={BTN2}>
+                      Autoblog&apos;a ekle
+                    </button>
+                    <button type="button" onClick={copyCsv} className={BTN2}>
+                      Kopyala
+                    </button>
+                    <button type="button" onClick={() => setSel(new Set())} className="ml-auto text-xs font-medium text-sub hover:text-ink">
+                      Seçimi kaldır
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-semibold">
+                      {cluster ? `"${cluster}" kümesi` : intent === "all" ? "Tüm kelimeler" : INTENT_LABEL[intent as KeywordIntent]} <span className="font-normal text-sub">· {shown.length}</span>
+                    </span>
+                    {(cluster || intent !== "all") && (
+                      <button type="button" onClick={() => { setCluster(null); setIntent("all"); }} className="text-xs font-medium text-accent hover:underline">
+                        Filtreyi temizle
+                      </button>
+                    )}
+                    <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Listede ara…" className="ml-auto h-8 w-48 rounded-[9px] border border-border bg-panel px-3 text-[13px] outline-none focus:border-[#BDB4FF]" />
+                    <button type="button" onClick={copyCsv} className={BTN2}>
+                      CSV kopyala
+                    </button>
+                  </>
+                )}
+              </div>
+              {msg && (
+                <div className={`mx-5 mb-3 rounded-lg px-3 py-2 text-xs ${msg.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>
+                  {msg.text}{" "}
+                  {msg.href && (
+                    <Link href={msg.href} className="font-medium underline">
+                      {msg.hrefLabel}
+                    </Link>
+                  )}
+                </div>
+              )}
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-y border-border bg-[#fafafa] text-left text-xs text-sub">
+                    <th className="w-10 py-2 pl-5">
+                      <input
+                        type="checkbox"
+                        checked={shown.length > 0 && shown.every((i) => sel.has(i.keyword))}
+                        onChange={(e) => setSel(e.target.checked ? new Set([...sel, ...shown.map((i) => i.keyword)]) : new Set([...sel].filter((k) => !shown.some((i) => i.keyword === k))))}
+                        className="accent-[#4f00ff]"
+                      />
+                    </th>
+                    <th className="py-2 pr-3 font-medium">Anahtar kelime</th>
+                    <th className="hidden py-2 pr-3 font-medium md:table-cell">Niyet</th>
+                    {hasVolume && <th className="py-2 pr-3 text-right font-medium" title="Google Keyword Planner, aylık ortalama arama">Aylık arama</th>}
+                    {hasVolume && <th className="hidden py-2 pr-3 font-medium lg:table-cell">Rekabet</th>}
+                    {!hasVolume && <th className="hidden py-2 pr-3 font-medium sm:table-cell" title="Kaç farklı sorguda önerildi; popülerlik için kaba sinyal (arama hacmi değil)">Popülerlik</th>}
+                    <th className="py-2 pr-5 text-right font-medium" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {shown.slice(0, 300).map((i) => (
+                    <tr key={i.keyword} className={`group ${sel.has(i.keyword) ? "bg-accent/[0.03]" : "hover:bg-[#fafafa]"}`}>
+                      <td className="py-2.5 pl-5">
+                        <input type="checkbox" checked={sel.has(i.keyword)} onChange={() => toggle(i.keyword)} className="accent-[#4f00ff]" />
+                      </td>
+                      <td className="py-2.5 pr-3">
+                        <button type="button" onClick={() => openSerp(i.keyword)} className="text-left font-medium hover:text-accent">
+                          {i.keyword}
+                        </button>
+                        {i.source === "planner" && <span className="ml-2 text-[10px] text-sub">Planner</span>}
+                      </td>
+                      <td className="hidden py-2.5 pr-3 md:table-cell">
+                        <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${INTENT_TONE[i.intent]}`}>{INTENT_LABEL[i.intent]}</span>
+                      </td>
+                      {hasVolume && <td className="py-2.5 pr-3 text-right font-medium tabular-nums">{i.volume != null ? i.volume.toLocaleString("tr-TR") : <span className="text-sub">—</span>}</td>}
+                      {hasVolume && (
+                        <td className="hidden py-2.5 pr-3 text-[11px] text-sub lg:table-cell">
+                          {i.competition ? COMP_LABEL[i.competition] : "—"}
+                          {i.cpcHigh ? <span className="ml-1">· TBM ≤ {i.cpcHigh.toLocaleString("tr-TR")}</span> : null}
+                        </td>
+                      )}
+                      {!hasVolume && (
+                        <td className="hidden py-2.5 pr-3 sm:table-cell">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-accent" style={{ width: `${(i.hits / maxHits) * 100}%` }} />
+                          </div>
+                        </td>
+                      )}
+                      <td className="whitespace-nowrap py-2.5 pr-5 text-right text-xs">
+                        <button type="button" onClick={() => openSerp(i.keyword)} className="font-medium text-sub hover:text-accent">
+                          Google analizi
+                        </button>
+                        <span className="mx-1.5 text-border">|</span>
+                        <Link href={editorLink(i.keyword)} className="font-medium text-accent hover:underline">
+                          Yazı yaz
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {shown.length > 300 && <div className="border-t border-border px-5 py-2.5 text-xs text-sub">İlk 300 gösteriliyor; aramayla daralt.</div>}
+            </div>
+
+            <div className="space-y-3">
+              {data.clusters.length > 0 && (
+                <div className={CARD}>
+                  <div className="px-5 pt-4">
+                    <h3 className="text-sm font-semibold">Konu kümeleri</h3>
+                    <p className="text-xs text-sub">Her küme bir yazı olabilir · tıkla, filtrele</p>
+                  </div>
+                  <ul className="max-h-[420px] space-y-1 overflow-y-auto px-3 pb-3 pt-2">
+                    {data.clusters.map((c) => {
+                      const max = data.clusters[0].count || 1;
+                      const on = cluster === c.name;
+                      return (
+                        <li key={c.name}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCluster(on ? null : c.name);
+                              setIntent("all");
+                            }}
+                            className={`w-full rounded-lg px-2 py-1.5 text-left text-[13px] ${on ? "bg-accent/5 shadow-[inset_0_0_0_1px_#BDB4FF]" : "hover:bg-[#fafafa]"}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                              <span className="text-xs tabular-nums text-sub">{c.count}</span>
+                            </div>
+                            <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+                              <div className="h-full rounded-full bg-accent/70" style={{ width: `${(c.count / max) * 100}%` }} />
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+              <div className={`${CARD} p-4 text-[12px] leading-5 text-sub`}>
+                {hasVolume ? (
+                  "Aylık arama ve rekabet Google Keyword Planner'dan gelir. \"Planner\" işaretli kelimeler doğrudan Keyword Planner önerisidir."
+                ) : (
+                  <>
+                    &quot;Popülerlik&quot;, kelimenin kaç farklı sorguda Google tarafından önerildiğidir; arama hacmi değildir.{" "}
+                    <Link href="/integrations" className="font-medium text-accent">
+                      Keyword Planner&apos;ı bağla
+                    </Link>
+                    , gerçek aylık aramayı gör.
+                  </>
+                )}
+                {data?.adsError && <p className="mt-2 text-danger">Keyword Planner: {data.adsError}</p>}
+              </div>
+            </div>
           </div>
-          {data?.adsError && <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">Keyword Planner: {data.adsError}</p>}
-          <p className="text-[11px] text-ink/45">
-            {hasVolume
-              ? "Aylık arama ve rekabet Google Keyword Planner'dan gelir. \"Planner\" işaretli kelimeler doğrudan Keyword Planner önerisidir."
-              : <>Arama hacmi için <Link href="/integrations" className="font-medium text-accent">Google Keyword Planner&apos;ı bağla</Link>. &quot;Öneri sıklığı&quot;, kelimenin kaç farklı sorguda Google tarafından önerildiğidir — popülerlik için yön gösterir.</>}
-          </p>
         </>
       )}
 
-      {serp && (
-        <Drawer isOpen onClose={() => setSerp(null)} panelClassName="flex h-full w-screen max-w-2xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-ink/40">Google ilk sayfa analizi</div>
-                <div className="text-lg font-medium">{serp.keyword}</div>
+      <Drawer isOpen={!!serp} onClose={() => setSerp(null)} eyebrow="Google ilk sayfa analizi" title={serp?.keyword ?? ""} subtitle="İlk 10 sonuç ne yazıyor, ne kadar uzun, hangi alt konuları işliyor." size="2xl">
+        {serp && (
+          <div className="space-y-5 text-[13px]">
+            {serp.loading && <p className="text-sub">İlk 10 sonuç ve sayfaları okunuyor (15–30 sn)…</p>}
+            {serp.error && (
+              <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-ink/70">
+                {serp.error}
+                {!serpAvailable && (
+                  <p className="mt-2 text-xs text-sub">
+                    Bu özellik Google sonuçlarını okumak için SerpApi kullanır (her analiz 1 arama).{" "}
+                    <Link href="/integrations" className="font-medium text-accent">
+                      Entegrasyonlar
+                    </Link>
+                    &apos;dan ücretsiz SerpApi anahtarını bağlayabilir ya da kelimeyi doğrudan Editörde yazabilirsin.
+                  </p>
+                )}
+                <Link href={editorLink(serp.keyword)} className={`${BTN1} mt-3`}>
+                  Editörde yaz
+                </Link>
               </div>
-</div>}>
-            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-              {serp.loading && <p className="text-sm text-ink/55">İlk 10 sonuç ve sayfaları okunuyor (15–30 sn)…</p>}
-              {serp.error && (
-                <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-ink/70">
-                  {serp.error}
-                  {!serpAvailable && <p className="mt-2 text-xs text-ink/55">Bu özellik Google sonuçlarını okumak için SerpApi kullanır (her analiz 1 arama). <Link href="/integrations" className="font-medium text-accent">Entegrasyonlar</Link>&apos;dan ücretsiz SerpApi anahtarını bağlayabilir ya da kelimeyi doğrudan Editörde yazabilirsin.</p>}
-                  <Link href={editorLink(serp.keyword)} className="mt-3 inline-block font-medium text-accent">Editörde yaz →</Link>
+            )}
+            {serp.data && (
+              <>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {([
+                    ["Ort. kelime", serp.data.avgWords ?? "—"],
+                    ["SSS olan", `%${Math.round(serp.data.faqShare * 100)}`],
+                    ["Tablo olan", `%${Math.round(serp.data.tableShare * 100)}`],
+                    ["AI Overview", serp.data.aiOverview ? "Var" : "Yok"],
+                  ] as const).map(([l, v]) => (
+                    <div key={l} className="rounded-xl border border-border px-3 py-2">
+                      <div className="text-[11px] text-sub">{l}</div>
+                      <div className="text-lg font-semibold tabular-nums">{v}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {serp.data && (
-                <>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Ort. kelime</div><div className="text-xl font-medium tabular-nums">{serp.data.avgWords ?? "—"}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">SSS olan</div><div className="text-xl font-medium tabular-nums">%{Math.round(serp.data.faqShare * 100)}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">Tablo olan</div><div className="text-xl font-medium tabular-nums">%{Math.round(serp.data.tableShare * 100)}</div></div>
-                    <div className="rounded-xl bg-muted/60 p-3"><div className="text-[10px] text-ink/45">AI Overview</div><div className="text-xl font-medium">{serp.data.aiOverview ? "Var" : "Yok"}</div></div>
-                  </div>
-                  <Link href={editorLink(serp.keyword, serp.data)} className="block rounded-[10px] bg-accent px-4 py-2 text-center text-sm font-medium text-white hover:opacity-90">
-                    Bu yapıyla Editörde yaz → (ortak başlıklar + &quot;Kullanıcılar şunu da soruyor&quot; SSS olarak)
-                  </Link>
-                  {serp.data.commonTopics.length > 0 && (
-                    <div>
-                      <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink/45">Rakiplerin ortak alt konuları</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {serp.data.commonTopics.map((t) => (
-                          <span key={t.topic} className="rounded-md bg-muted px-2 py-0.5 text-xs">{t.topic} <span className="text-ink/40">{t.count}/{serp.data!.pages.length}</span></span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {serp.data.peopleAlsoAsk.length > 0 && (
-                    <div>
-                      <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink/45">Kullanıcılar şunu da soruyor</div>
-                      <ul className="list-disc space-y-1 pl-5 text-sm text-ink/75">{serp.data.peopleAlsoAsk.map((x) => <li key={x}>{x}</li>)}</ul>
-                    </div>
-                  )}
+                <Link href={editorLink(serp.keyword, serp.data)} className={`${BTN1} w-full justify-center`}>
+                  Bu yapıyla Editörde yaz (ortak başlıklar + &quot;Şunu da soruyor&quot; SSS olarak)
+                </Link>
+                {serp.data.commonTopics.length > 0 && (
                   <div>
-                    <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink/45">İlk sonuçlar</div>
-                    <div className="divide-y divide-border rounded-xl border border-border">
-                      {serp.data.pages.map((p) => (
-                        <div key={p.url} className="flex items-start gap-3 px-3 py-2.5 text-xs">
-                          <span className="w-5 shrink-0 font-medium text-ink/40">{p.position}</span>
-                          <div className="min-w-0 flex-1">
-                            <a href={p.url} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-accent">{p.title}</a>
-                            <div className="truncate text-ink/45">{p.domain} · {p.words ?? "?"} kelime · {p.h2.length} H2{p.hasFaq ? " · SSS" : ""}{p.hasTable ? " · tablo" : ""}</div>
-                          </div>
-                          {p.citability !== null && (
-                            <span title="AI alıntılanabilirlik" className={`shrink-0 rounded px-1.5 py-0.5 font-medium ${p.citability >= 65 ? "bg-seo/10 text-seo" : p.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>{p.citability}</span>
-                          )}
-                        </div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">Rakiplerin ortak alt konuları</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {serp.data.commonTopics.map((t) => (
+                        <span key={t.topic} className="rounded-md bg-muted px-2 py-0.5 text-xs">
+                          {t.topic} <span className="text-sub">{t.count}/{serp.data!.pages.length}</span>
+                        </span>
                       ))}
                     </div>
                   </div>
-                  {serp.data.relatedSearches.length > 0 && (
-                    <div>
-                      <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink/45">İlgili aramalar</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {serp.data.relatedSearches.map((x) => (
-                          <button key={x} type="button" onClick={() => { setSerp(null); setSeed(x); run(x); }} className="rounded-full border border-border px-2.5 py-1 text-xs hover:border-accent hover:text-accent">{x}</button>
-                        ))}
+                )}
+                {serp.data.peopleAlsoAsk.length > 0 && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">Kullanıcılar şunu da soruyor</div>
+                    <ul className="space-y-1">
+                      {serp.data.peopleAlsoAsk.map((x) => (
+                        <li key={x} className="rounded-lg bg-accent/5 px-3 py-1.5">
+                          {x}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <div className="mb-1.5 text-xs font-medium text-sub">İlk sonuçlar</div>
+                  <div className="divide-y divide-border rounded-xl border border-border">
+                    {serp.data.pages.map((p) => (
+                      <div key={p.url} className="flex items-start gap-3 px-3 py-2.5 text-xs">
+                        <span className="w-5 shrink-0 font-medium text-sub">{p.position}</span>
+                        <div className="min-w-0 flex-1">
+                          <a href={p.url} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-accent">
+                            {p.title}
+                          </a>
+                          <div className="truncate text-sub">
+                            {p.domain} · {p.words ?? "?"} kelime · {p.h2.length} H2{p.hasFaq ? " · SSS" : ""}
+                            {p.hasTable ? " · tablo" : ""}
+                          </div>
+                        </div>
+                        {p.citability !== null && (
+                          <span title="AI alıntılanabilirlik" className={`shrink-0 rounded px-1.5 py-0.5 font-medium ${p.citability >= 65 ? "bg-seo/10 text-seo" : p.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>
+                            {p.citability}
+                          </span>
+                        )}
                       </div>
+                    ))}
+                  </div>
+                </div>
+                {serp.data.relatedSearches.length > 0 && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">İlgili aramalar</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {serp.data.relatedSearches.map((x) => (
+                        <button
+                          key={x}
+                          type="button"
+                          onClick={() => {
+                            setSerp(null);
+                            setSeed(x);
+                            run(x);
+                          }}
+                          className={chip(false)}
+                        >
+                          {x}
+                        </button>
+                      ))}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          </Drawer>
-      )}
-
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
