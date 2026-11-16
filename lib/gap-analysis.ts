@@ -46,7 +46,10 @@ export function buildGapMatrix(audits: SeoAuditResult[], runs: GeoRunResult[]): 
     const blockedBots = audit.meta.aiBotAccess.filter((b) => !b.allowed).length;
 
     let verdict: GapRow["verdict"];
-    if (blockedBots > 0) verdict = "blocked";
+    // Yalnızca eğitim botlarını (CCBot, Google-Extended…) engellemek AI cevaplarında görünmeyi engellemez;
+    // "AI'ya kapalı" sadece arama/alıntı botlarından biri engelliyse.
+    const blockedCitation = audit.meta.aiBotAccess.filter((b) => !b.allowed && b.role !== "training").length;
+    if (blockedCitation > 0) verdict = "blocked";
     else if (citedExact > 0) verdict = "cited";
     else if (audit.score >= 60 && audit.aiCrawlScore >= 60) verdict = "invisible";
     else verdict = "needs-work";
