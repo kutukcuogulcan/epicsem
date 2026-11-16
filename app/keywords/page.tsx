@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
 import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
+import type { AiCluster, AiPrompt } from "@/app/api/keywords/ai/route";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
   question: "Soru",
@@ -70,6 +71,47 @@ export default function KeywordsPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string; href?: string; hrefLabel?: string } | null>(null);
   const [serp, setSerp] = useState<{ keyword: string; data: SerpAnalysis | null; error: string | null; loading: boolean } | null>(null);
   const [serpAvailable, setSerpAvailable] = useState(false);
+  const [ai, setAi] = useState<{ busy: boolean; err: string | null; clusters: AiCluster[]; prompts: AiPrompt[]; demo?: boolean } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [pSel, setPSel] = useState<Set<string>>(new Set());
+  const [pMsg, setPMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function runAi() {
+    if (!data) return;
+    setAiOpen(true);
+    if (ai && !ai.err && ai.clusters.length) return;
+    setAi({ busy: true, err: null, clusters: [], prompts: [] });
+    setPMsg(null);
+    try {
+      const r = await fetch("/api/keywords/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seed: data.seed, lang: market.split("|")[1], keywords: data.ideas.map((i) => i.keyword).slice(0, 200) }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "AI analizi başarısız");
+      setAi({ busy: false, err: null, clusters: d.clusters ?? [], prompts: d.prompts ?? [], demo: !!d.demo });
+      setPSel(new Set((d.prompts ?? []).map((p: AiPrompt) => p.prompt)));
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
+    } catch (e) {
+      setAi({ busy: false, err: e instanceof Error ? e.message : "AI analizi başarısız", clusters: [], prompts: [] });
+    }
+  }
+
+  async function addPrompts() {
+    if (!project) return setPMsg({ ok: false, text: "GEO takibine eklemek için soldan bir proje seç." });
+    const list = (ai?.prompts ?? []).filter((p) => pSel.has(p.prompt)).slice(0, 20);
+    if (!list.length) return;
+    setPMsg(null);
+    const r = await fetch("/api/saved-prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brand: { name: project.name, domain: project.domain }, competitors: project.competitors ?? [], prompts: list.map((p) => ({ text: p.prompt, topic: (data?.seed ?? "Genel").slice(0, 60) })) }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return setPMsg({ ok: false, text: d.error ?? "Eklenemedi" });
+    setPMsg({ ok: true, text: `${list.length} soru ${project.domain} için GEO takibine eklendi.` });
+  }
 
   useEffect(() => {
     fetch("/api/keywords/research")
@@ -92,6 +134,7 @@ export default function KeywordsPage() {
     setSel(new Set());
     setCluster(null);
     setIntent("all");
+    setAi(null);
     const [country, lang] = market.split("|");
     try {
       const r = await fetch("/api/keywords/research", {
@@ -324,6 +367,18 @@ export default function KeywordsPage() {
             ))}
           </div>
 
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#BDB4FF] bg-accent/[0.04] px-5 py-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-base text-white">✦</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">Yapay zekâ ile konu planı ve GEO soruları çıkar</div>
+              <p className="text-[13px] text-sub">Kelimeleri anlama göre yazı konularına ayırır, her konuya başlık önerir; kelimeleri insanların ChatGPT&apos;ye soracağı sorulara çevirir.</p>
+            </div>
+            <span className="text-[11px] text-sub">1 AI sorgusu</span>
+            <button type="button" onClick={runAi} disabled={ai?.busy} className={BTN1}>
+              {ai?.busy ? "Çalışıyor…" : ai && !ai.err ? "Sonuçları aç" : "AI ile analiz et"}
+            </button>
+          </div>
+
           {actions.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
@@ -504,6 +559,99 @@ export default function KeywordsPage() {
           </div>
         </>
       )}
+
+      <Drawer isOpen={aiOpen} onClose={() => setAiOpen(false)} eyebrow="Yapay zekâ analizi" title={data ? `"${data.seed}" konu planı` : "Konu planı"} subtitle="Kelimeler yalnızca Google önerilerinden; yapay zekâ yeni kelime uydurmaz, sadece gruplar ve soruya çevirir." size="2xl">
+        <div className="space-y-6 text-[13px]">
+          {ai?.busy && (
+            <div className="flex items-center gap-3 text-sub">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              Kelimeler gruplanıyor ve sorulara çevriliyor (10–20 sn)…
+            </div>
+          )}
+          {ai?.err && <ErrorBlock message={ai.err} />}
+          {ai?.demo && <p className="rounded-lg bg-warn/5 px-3 py-2 text-xs text-ink/70">Demo mod: yapay zekâ çalışmadı, örnek çıktı gösteriliyor.</p>}
+          {ai && ai.clusters.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <h3 className="text-sm font-semibold">Yazı konuları ({ai.clusters.length})</h3>
+                <span className="text-xs text-sub">her biri tek bir yazı</span>
+              </div>
+              <div className="space-y-2">
+                {ai.clusters.map((c) => (
+                  <div key={c.name} className="rounded-xl border border-border p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${INTENT_TONE[c.intent]}`}>{INTENT_LABEL[c.intent]}</span>
+                          <span className="text-xs text-sub">{c.name} · {c.keywords.length} kelime</span>
+                        </div>
+                        <div className="mt-1 font-semibold">{c.title}</div>
+                      </div>
+                      <Link href={`/editor?${new URLSearchParams({ new: c.title || c.name, h: c.keywords.slice(0, 6).join("|") })}`} className={`${BTN2} shrink-0`}>
+                        Bu konuda yaz
+                      </Link>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {c.keywords.map((k) => (
+                        <span key={k} className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-sub">
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {ai && ai.prompts.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <h3 className="text-sm font-semibold">GEO soruları ({ai.prompts.length})</h3>
+                <span className="text-xs text-sub">insanlar AI&apos;a böyle soruyor</span>
+              </div>
+              <ul className="divide-y divide-border rounded-xl border border-border">
+                {ai.prompts.map((p) => (
+                  <li key={p.prompt} className="flex items-start gap-3 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={pSel.has(p.prompt)}
+                      onChange={() =>
+                        setPSel((s) => {
+                          const n = new Set(s);
+                          if (n.has(p.prompt)) n.delete(p.prompt);
+                          else n.add(p.prompt);
+                          return n;
+                        })
+                      }
+                      className="mt-0.5 accent-[#4f00ff]"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div>{p.prompt}</div>
+                      {p.keyword && <div className="text-[11px] text-sub">kelime: {p.keyword}</div>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={addPrompts} disabled={!pSel.size} className={BTN1}>
+                  {pSel.size} soruyu GEO takibine ekle
+                </button>
+                <span className="text-[11px] text-sub">{project ? `${project.domain} projesine eklenir; çalıştırınca AI motoru kotası kullanır.` : "Önce soldan bir proje seç."}</span>
+              </div>
+              {pMsg && (
+                <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${pMsg.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>
+                  {pMsg.text}{" "}
+                  {pMsg.ok && (
+                    <Link href="/geo" className="font-medium underline">
+                      GEO Görünürlük&apos;e git
+                    </Link>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </Drawer>
 
       <Drawer isOpen={!!serp} onClose={() => setSerp(null)} eyebrow="Google ilk sayfa analizi" title={serp?.keyword ?? ""} subtitle="İlk 10 sonuç ne yazıyor, ne kadar uzun, hangi alt konuları işliyor." size="2xl">
         {serp && (
