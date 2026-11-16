@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import ToolPageHeader from "@/components/ToolPageHeader";
-import { CampaignsOverview } from "@/components/tool/ToolOverviews";
 import UsageMeter from "@/components/UsageMeter";
-import { Drawer, ErrorBlock, TableSkeleton } from "@/components/ui";
+import { Drawer, ErrorBlock, PageHeader, TableSkeleton } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
 type Source = "gap" | "rss" | "keywords" | "feed";
@@ -334,142 +332,286 @@ export default function CampaignsPage() {
   const seg = (on: boolean) =>
     `rounded-lg px-3 py-2 text-xs font-medium transition ${on ? "bg-accent text-white shadow-sm" : "bg-muted text-ink/60 hover:text-ink"}`;
 
+  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-50";
+  const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
+  const list = campaigns ?? [];
+  const active = list.filter((c) => c.status === "active");
+  const totalDrafts = list.reduce((a, c) => a + c.drafts, 0);
+  const left = list.reduce((a, c) => a + (c.queue ? Math.max(0, c.queue.total - c.queue.done) : 0), 0);
+  const soon = active
+    .map((c) => ({ c, t: c.nextRunAt ? new Date(c.nextRunAt).getTime() : c.lastRunAt ? new Date(c.lastRunAt).getTime() + FREQ_DAYS[c.frequency] * 864e5 : Date.now() }))
+    .sort((a, b) => a.t - b.t)[0];
+  const weekly = active.reduce((a, c) => a + c.postsPerRun * (7 / FREQ_DAYS[c.frequency]), 0);
+  const [sel, setSel] = useState<number | null>(null);
+  const selC = list.find((c) => c.id === sel) ?? null;
+
+  const actions: { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[] = [];
+  const paused = list.filter((c) => c.status !== "active");
+  const empty = list.filter((c) => c.queue && c.queue.total > 0 && c.queue.done >= c.queue.total);
+  const weak = list.filter((c) => c.lastDraft?.citability != null && c.lastDraft.citability < 50);
+  const auto = list.filter((c) => c.mode === "publish");
+  if (empty.length)
+    actions.push({
+      kind: "Kuyruk bitti",
+      color: "text-danger",
+      title: `${empty[0].brandName} için yazılacak konu kalmadı`,
+      body: "Kuyruktaki tüm kelimeler yazıldı; yeni kelime eklemezsen bir sonraki çalışmada yazı çıkmaz.",
+      cta: <button type="button" onClick={() => openEdit(empty[0])} className={BTN2}>Kelime ekle</button>,
+    });
+  if (weak.length)
+    actions.push({
+      kind: "Kalite",
+      color: "text-warn",
+      title: `Son taslağın AI alıntı puanı ${weak[0].lastDraft!.citability}`,
+      body: `"${weak[0].lastDraft!.title}" yayından önce editörde güçlendirilmeli: kısa cevap, soru başlıklar, somut sayı.`,
+      cta: <Link href={`/editor?draftId=${weak[0].lastDraft!.id}`} className={BTN2}>Editörde aç</Link>,
+    });
+  if (paused.length)
+    actions.push({
+      kind: "Duraklatıldı",
+      color: "text-sub",
+      title: `${paused.length} autoblog duraklatılmış`,
+      body: `${paused[0].brandName} şu an yazı üretmiyor. Hazırsan devam ettir.`,
+      cta: <button type="button" onClick={() => toggleStatus(paused[0])} className={BTN2}>Devam ettir</button>,
+    });
+  if (auto.length && actions.length < 3)
+    actions.push({
+      kind: "Dikkat",
+      color: "text-danger",
+      title: `${auto.length} autoblog kontrol etmeden yayınlıyor`,
+      body: "Tam otomasyonda yazılar sitene doğrudan çıkar. İlk haftalarda \"Sitede taslak\" modu daha güvenli.",
+      cta: <button type="button" onClick={() => openEdit(auto[0])} className={BTN2}>Modu değiştir</button>,
+    });
+  if (actions.length < 3)
+    actions.push({
+      kind: "Büyüt",
+      color: "text-accent",
+      title: "Rakip Boşluğu'ndan otomatik yazı",
+      body: "AI motorlarında kaybettiğin gerçek sorular, en hızlı görünürlük kazandıran konulardır.",
+      cta: <button type="button" onClick={() => openNew("gap")} className={BTN2}>Autoblog kur</button>,
+    });
+
   return (
-    <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="Autoblog"
-        title="Autoblog"
-        body={
-          <>
-            Anahtar kelime listesi, bir RSS beslemesi ya da Rakip Boşluğu sonuçlarından düzenli olarak SEO + GEO uyumlu makale
-            taslağı üretir. İster Content Studio&apos;da onayını beklesin, ister sitene taslak olarak gitsin, ister doğrudan yayınlansın.
-          </>
+    <div className="space-y-6">
+      <PageHeader
+        title={list.length ? "Autoblog'ların bu hafta ne yazacak?" : "Autoblog"}
+        description={
+          list.length
+            ? `${active.length} aktif autoblog · haftada ~${Math.round(weekly)} yazı · toplam ${totalDrafts} taslak`
+            : "Anahtar kelime listesi, besleme ya da Rakip Boşluğu'ndan düzenli SEO + GEO uyumlu yazı üretir. Onayını bekler, sitene taslak gönderir ya da yayınlar."
         }
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => openNew()} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90">
+        actions={
+          <button type="button" onClick={() => openNew()} className={BTN1}>
             + Yeni autoblog
           </button>
-          <UsageMeter metric="contentGenerations" />
-        </div>
-      </ToolPageHeader>
+        }
+      />
 
-      <CampaignsOverview refreshKey={rk} campaigns={campaigns ?? []} />
-
-      {notice && <div className="rounded-xl border border-seo/30 bg-seo/5 px-4 py-3 text-sm text-seo">{notice}</div>}
+      {notice && <div className="rounded-xl bg-seo/10 px-4 py-2.5 text-sm text-seo">{notice}</div>}
       <ErrorBlock message={error} />
 
       {campaigns === null && <TableSkeleton rows={4} cols={4} />}
-      {campaigns && campaigns.length === 0 && (
-        <section className="card space-y-4">
-          <div>
-            <h2 className="text-lg font-medium">İlk autoblog&apos;unu kur</h2>
-            <p className="text-sm text-ink/50">Konuların nereden gelsin?</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {campaigns && list.length === 0 && (
+        <div className={`${CARD} p-6`}>
+          <div className="text-base font-semibold">İlk autoblog&apos;unu kur</div>
+          <p className="mt-0.5 text-sm text-sub">Konular nereden gelsin?</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {SOURCES.map((s) => (
-              <button key={s.id} type="button" onClick={() => openNew(s.id)} className="group rounded-2xl border border-border bg-paper p-5 text-left transition hover:border-accent hover:shadow-md">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-lg font-medium text-accent">{s.icon}</div>
-                <div className="font-medium group-hover:text-accent">{s.title}</div>
-                <p className="mt-1 text-sm text-ink/55">{s.body}</p>
+              <button key={s.id} type="button" onClick={() => openNew(s.id)} className="group rounded-xl border border-border p-4 text-left transition hover:border-[#BDB4FF] hover:bg-accent/[0.02]">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-base font-medium text-accent">{s.icon}</div>
+                <div className="text-sm font-semibold group-hover:text-accent">{s.title}</div>
+                <p className="mt-1 text-[13px] text-sub">{s.body}</p>
               </button>
             ))}
           </div>
-        </section>
+          <div className="mt-4">
+            <UsageMeter metric="contentGenerations" />
+          </div>
+        </div>
       )}
 
-      {campaigns && campaigns.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">Autoblog&apos;ların</h2>
-            <span className="text-xs text-ink/45">{campaigns.length} autoblog</span>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {campaigns.map((c) => (
-              <article key={c.id} className="flex flex-col rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-medium">{c.brandName}</span>
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>
-                        {c.status === "active" ? "Aktif" : "Duraklatıldı"}
-                      </span>
-                    </div>
-                    <div className="truncate text-xs text-ink/45">{c.brandDomain}</div>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">{c.feed ? c.feed.name : SOURCE_LABEL[c.source]}</span>
-                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${c.mode === "publish" ? "bg-danger/10 text-danger" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-ink/55"}`}>
-                      {MODE_LABEL[c.mode ?? "review"]}{c.connection ? ` → ${c.connection.label}` : ""}
-                    </span>
-                  </div>
+      {list.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {([
+              ["Aktif autoblog", String(active.length), `/${list.length}`, paused.length ? `${paused.length} duraklatıldı` : "hepsi çalışıyor"],
+              ["Haftalık hedef", `~${Math.round(weekly)}`, "yazı", "aktif takvimlere göre"],
+              ["Üretilen taslak", String(totalDrafts), "", "tüm autobloglar"],
+              ["Kuyrukta konu", String(left), "", "yazılmayı bekleyen"],
+              ["Sıradaki çalışma", soon ? (soon.t <= Date.now() ? "Sırada" : new Date(soon.t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })) : "—", "", soon ? soon.c.brandName : "aktif autoblog yok"],
+            ] as const).map(([l, v, suf, hint]) => (
+              <div key={l} className={`${CARD} px-4 py-4`}>
+                <div className="text-xs font-medium text-sub">{l}</div>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <span className="text-[26px] font-semibold leading-8 tabular-nums">{v}</span>
+                  {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-xl bg-muted/60 px-2 py-2">
-                    <div className="text-[10px] text-ink/45">Takvim</div>
-                    <div className="text-sm font-medium">{FREQ_LABEL[c.frequency]}</div>
-                    <div className="text-[10px] text-ink/45">{c.postsPerRun} yazı · {FORMAT_LABEL[c.format]}</div>
-                  </div>
-                  <div className="rounded-xl bg-muted/60 px-2 py-2">
-                    <div className="text-[10px] text-ink/45">Üretilen</div>
-                    <div className="text-sm font-medium tabular-nums">{c.drafts}</div>
-                    <div className="text-[10px] text-ink/45">taslak</div>
-                  </div>
-                  <div className="rounded-xl bg-muted/60 px-2 py-2">
-                    <div className="text-[10px] text-ink/45">Sonraki</div>
-                    <div className="text-sm font-medium">{nextRun(c)}</div>
-                    <div className="text-[10px] text-ink/45">{c.lastRunAt ? `son: ${ago(c.lastRunAt)}` : "henüz çalışmadı"}</div>
-                  </div>
-                </div>
-
-                {(c.source === "keywords" || c.source === "feed") && c.queue && (
-                  <div className="mt-3">
-                    <div className="mb-1 flex justify-between text-[11px] text-ink/50">
-                      <span>{c.source === "feed" ? "Besleme konuları" : "Anahtar kelime kuyruğu"}</span>
-                      <span className="tabular-nums">{c.queue.done}/{c.queue.total} yazıldı</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-accent" style={{ width: `${c.queue.total ? (c.queue.done / c.queue.total) * 100 : 0}%` }} />
-                    </div>
-                  </div>
-                )}
-                {c.source === "rss" && c.config.rssUrl && <div className="mt-3 truncate text-[11px] text-ink/50">Besleme: {c.config.rssUrl}{c.config.rssFilter?.length ? ` · filtre: ${c.config.rssFilter.join(", ")}` : ""}</div>}
-
-                {c.lastDraft && (
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 text-[10px] text-ink/45">
-                        Son taslak · {ago(c.lastDraft.createdAt)}
-                        {c.lastDraft.citability !== null && (
-                          <span title="AI alıntılanabilirlik puanı" className={`rounded px-1.5 py-px font-medium ${c.lastDraft.citability >= 65 ? "bg-seo/10 text-seo" : c.lastDraft.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>
-                            AI alıntı {c.lastDraft.citability}
-                          </span>
-                        )}
-                      </div>
-                      <div className="truncate text-sm font-medium">{c.lastDraft.title}</div>
-                    </div>
-                    <Link href={`/editor?draftId=${c.lastDraft.id}`} className="shrink-0 text-xs font-medium text-accent hover:underline">Editörde aç →</Link>
-                  </div>
-                )}
-                {c.lastRunNote && <p className="mt-3 line-clamp-2 text-xs text-ink/50">{c.lastRunNote}</p>}
-
-                <div className="mt-auto flex flex-wrap items-center gap-2 pt-4 text-xs">
-                  <button onClick={() => runNow(c.id)} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90 disabled:opacity-50">
-                    {busy === `run-${c.id}` ? "Yazılıyor…" : "Şimdi çalıştır"}
-                  </button>
-                  <button onClick={() => openEdit(c)} className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted">Düzenle</button>
-                  <button onClick={() => toggleStatus(c)} disabled={busy === `toggle-${c.id}`} className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50">
-                    {c.status === "active" ? "Duraklat" : "Devam ettir"}
-                  </button>
-                  <Link href="/content" className="rounded-lg px-2 py-1.5 font-medium text-ink/55 hover:text-ink">Taslaklar</Link>
-                  <button onClick={() => removeCampaign(c)} disabled={busy === `remove-${c.id}`} className="ml-auto px-1 text-danger/70 hover:text-danger">Sil</button>
-                </div>
-              </article>
+                <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+              </div>
             ))}
           </div>
-        </section>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
+            <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
+              {actions.slice(0, 3).map((a) => (
+                <div key={a.title} className={`${CARD} flex flex-col p-4`}>
+                  <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                  <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+                  <p className="mt-1 text-[13px] text-sub">{a.body}</p>
+                  <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${CARD} overflow-hidden`}>
+            <div className="flex items-center justify-between px-5 py-3">
+              <span className="text-sm font-semibold">Autoblog&apos;ların</span>
+              <UsageMeter metric="contentGenerations" />
+            </div>
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-y border-border bg-[#fafafa] text-left text-xs text-sub">
+                  <th className="py-2 pl-5 font-medium">Autoblog</th>
+                  <th className="hidden py-2 pr-3 font-medium md:table-cell">Kaynak</th>
+                  <th className="py-2 pr-3 font-medium">Takvim</th>
+                  <th className="hidden py-2 pr-3 font-medium lg:table-cell">Yayın</th>
+                  <th className="hidden py-2 pr-3 font-medium md:table-cell">Kuyruk</th>
+                  <th className="py-2 pr-3 text-right font-medium">Taslak</th>
+                  <th className="py-2 pr-3 font-medium">Sonraki</th>
+                  <th className="py-2 pr-5 font-medium">Durum</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {list.map((c) => (
+                  <tr key={c.id} onClick={() => setSel(c.id)} className="cursor-pointer hover:bg-[#fafafa]">
+                    <td className="py-2.5 pl-5">
+                      <div className="font-medium">{c.brandName}</div>
+                      <div className="text-[11px] text-sub">{c.brandDomain}</div>
+                    </td>
+                    <td className="hidden py-2.5 pr-3 md:table-cell">
+                      <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">{c.feed ? c.feed.name : SOURCE_LABEL[c.source]}</span>
+                    </td>
+                    <td className="py-2.5 pr-3 text-xs">
+                      {FREQ_LABEL[c.frequency]} · {c.postsPerRun} {FORMAT_LABEL[c.format].toLocaleLowerCase("tr")}
+                    </td>
+                    <td className="hidden py-2.5 pr-3 lg:table-cell">
+                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.mode === "publish" ? "bg-danger/10 text-danger" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-sub"}`}>{MODE_LABEL[c.mode ?? "review"]}</span>
+                    </td>
+                    <td className="hidden py-2.5 pr-3 md:table-cell">
+                      {c.queue ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-accent" style={{ width: `${c.queue.total ? (c.queue.done / c.queue.total) * 100 : 0}%` }} />
+                          </div>
+                          <span className="text-[11px] tabular-nums text-sub">
+                            {c.queue.done}/{c.queue.total}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-sub">—</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums">{c.drafts}</td>
+                    <td className="py-2.5 pr-3 text-xs text-sub">{nextRun(c)}</td>
+                    <td className="py-2.5 pr-5">
+                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-sub"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
+
+      {/* Autoblog detayı */}
+      <Drawer isOpen={!!selC} onClose={() => setSel(null)} eyebrow={selC ? `${selC.feed ? selC.feed.name : SOURCE_LABEL[selC.source]} · ${MODE_LABEL[selC.mode ?? "review"]}` : ""} title={selC?.brandName ?? ""} subtitle={selC?.brandDomain} size="lg">
+        {selC && (
+          <div className="space-y-5 text-[13px]">
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                ["Takvim", FREQ_LABEL[selC.frequency], `${selC.postsPerRun} ${FORMAT_LABEL[selC.format].toLocaleLowerCase("tr")}`],
+                ["Üretilen", String(selC.drafts), "taslak"],
+                ["Sonraki", nextRun(selC), selC.lastRunAt ? `son: ${ago(selC.lastRunAt)}` : "henüz çalışmadı"],
+              ] as const).map(([l, v, h]) => (
+                <div key={l} className="rounded-xl border border-border px-3 py-2">
+                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-base font-semibold">{v}</div>
+                  <div className="text-[11px] text-sub">{h}</div>
+                </div>
+              ))}
+            </div>
+            {selC.queue && (
+              <div>
+                <div className="mb-1 flex justify-between text-xs text-sub">
+                  <span>{selC.source === "feed" ? "Besleme konuları" : "Anahtar kelime kuyruğu"}</span>
+                  <span className="tabular-nums">
+                    {selC.queue.done}/{selC.queue.total} yazıldı
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-accent" style={{ width: `${selC.queue.total ? (selC.queue.done / selC.queue.total) * 100 : 0}%` }} />
+                </div>
+              </div>
+            )}
+            {selC.source === "rss" && selC.config.rssUrl && (
+              <p className="break-all text-xs text-sub">
+                Besleme: {selC.config.rssUrl}
+                {selC.config.rssFilter?.length ? ` · filtre: ${selC.config.rssFilter.join(", ")}` : ""}
+              </p>
+            )}
+            {selC.connection && <p className="text-xs text-sub">Hedef site: {selC.connection.label} ({selC.connection.platform})</p>}
+            {selC.lastDraft && (
+              <div className="rounded-xl border border-border p-3">
+                <div className="flex items-center gap-2 text-[11px] text-sub">
+                  Son taslak · {ago(selC.lastDraft.createdAt)}
+                  {selC.lastDraft.citability !== null && (
+                    <span className={`rounded px-1.5 py-px font-medium ${selC.lastDraft.citability >= 65 ? "bg-seo/10 text-seo" : selC.lastDraft.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>AI alıntı {selC.lastDraft.citability}</span>
+                  )}
+                </div>
+                <div className="mt-1 font-medium">{selC.lastDraft.title}</div>
+                <Link href={`/editor?draftId=${selC.lastDraft.id}`} className="mt-2 inline-block text-xs font-medium text-accent hover:underline">
+                  Editörde aç →
+                </Link>
+              </div>
+            )}
+            {selC.lastRunNote && <p className="rounded-lg bg-[#fafafa] px-3 py-2 text-xs text-sub">{selC.lastRunNote}</p>}
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+              <button type="button" onClick={() => runNow(selC.id)} disabled={!!busy} className={BTN1}>
+                {busy === `run-${selC.id}` ? "Yazılıyor…" : "Şimdi çalıştır"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSel(null);
+                  openEdit(selC);
+                }}
+                className={BTN2}
+              >
+                Düzenle
+              </button>
+              <button type="button" onClick={() => toggleStatus(selC)} disabled={busy === `toggle-${selC.id}`} className={BTN2}>
+                {selC.status === "active" ? "Duraklat" : "Devam ettir"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  removeCampaign(selC);
+                  setSel(null);
+                }}
+                disabled={busy === `remove-${selC.id}`}
+                className="ml-auto text-xs font-medium text-danger/70 hover:text-danger"
+              >
+                Sil
+              </button>
+            </div>
+            <p className="text-[11px] text-sub">&quot;Şimdi çalıştır&quot; her yazı için 1 içerik kotası kullanır.</p>
+          </div>
+        )}
+      </Drawer>
 
       {open && (
         <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
