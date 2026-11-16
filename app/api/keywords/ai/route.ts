@@ -79,19 +79,22 @@ Yalnızca şu JSON'u döndür:
 {"clusters":[{"name":"","intent":"","title":"","keywords":[""]}],"prompts":[{"prompt":"","keyword":""}]}`;
 
   try {
-    const { parsed } = await runForJsonObject(async (extra) => {
+    const { parsed, model } = await runForJsonObject(async (extra) => {
       const r = await runFast(prompt + extra, 0.3);
       if (!r) throw new Error("Yapay zekâ sağlayıcısı bağlı değil.");
       return r;
     });
-    const set = new Set(kws);
+    const norm = (s: string) => s.toLocaleLowerCase("tr").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    const byNorm = new Map(kws.map((k) => [norm(k), k]));
+    const rawClusters = Array.isArray(parsed.clusters) ? parsed.clusters : Array.isArray(parsed.topics) ? parsed.topics : [];
+    const rawPrompts = Array.isArray(parsed.prompts) ? parsed.prompts : Array.isArray(parsed.questions) ? parsed.questions : [];
     const INTENTS = ["question", "commercial", "comparison", "local", "informational"];
     const used = new Set<string>();
-    const clusters: AiCluster[] = (Array.isArray(parsed.clusters) ? parsed.clusters : [])
+    const clusters: AiCluster[] = rawClusters
       .map((c: Record<string, unknown>) => {
         const keywords = (Array.isArray(c.keywords) ? c.keywords : [])
-          .map((k) => String(k).trim().toLocaleLowerCase("tr"))
-          .filter((k) => set.has(k) && !used.has(k));
+          .map((k) => byNorm.get(norm(String(k))) ?? "")
+          .filter((k) => k && !used.has(k));
         keywords.forEach((k) => used.add(k));
         return {
           name: String(c.name ?? "").slice(0, 60),
@@ -103,13 +106,16 @@ Yalnızca şu JSON'u döndür:
       .filter((c: AiCluster) => c.name && c.keywords.length)
       .sort((a: AiCluster, b: AiCluster) => b.keywords.length - a.keywords.length)
       .slice(0, 12);
-    const prompts: AiPrompt[] = (Array.isArray(parsed.prompts) ? parsed.prompts : [])
-      .map((p: Record<string, unknown>) => ({ prompt: String(p.prompt ?? "").trim().slice(0, 200), keyword: String(p.keyword ?? "").trim().toLocaleLowerCase("tr") }))
+    const prompts: AiPrompt[] = rawPrompts
+      .map((p: unknown) => {
+        const o = (typeof p === "string" ? { prompt: p } : (p ?? {})) as Record<string, unknown>;
+        return { prompt: String(o.prompt ?? o.question ?? o.text ?? "").trim().slice(0, 200), keyword: String(o.keyword ?? "").trim().toLocaleLowerCase("tr") };
+      })
       .filter((p: AiPrompt) => p.prompt.length >= 10)
       .slice(0, 12);
     if (!clusters.length && !prompts.length) throw new Error("Yapay zekâ kullanılabilir bir sonuç döndürmedi; tekrar dene.");
     await consumeQuota(user.id, "engineQueries", 1);
-    return NextResponse.json({ clusters, prompts });
+    return NextResponse.json({ clusters, prompts, meta: { model, rawClusters: rawClusters.length, rawPrompts: rawPrompts.length, keys: Object.keys(parsed).slice(0, 6) } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "AI analizi başarısız." }, { status: 500 });
   }
