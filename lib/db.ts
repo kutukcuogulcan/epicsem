@@ -1075,6 +1075,30 @@ export async function listRecentGapRuns(userId: number, limit = 60): Promise<{ i
   }));
 }
 
+/** /gap sayfası — bu domain için en son Gap Analysis koşusunun tamamı (özetler, matris, brifler). */
+export async function getLatestGapRun(
+  userId: number,
+  domain: string
+): Promise<{ id: number; brandName: string; brandDomain: string; demoMode: boolean; gapMatrix: GapRow[]; summaries: GeoVisibilitySummary[]; contentBriefs: ContentBrief[]; createdAt: string } | null> {
+  await ensureSchema();
+  const norm = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const row = await one<any>(
+    `SELECT * FROM gap_runs WHERE user_id = $1 AND regexp_replace(regexp_replace(lower(brand_domain), '^(https?://)?(www\\.)?', ''), '/.*$', '') = $2 ORDER BY id DESC LIMIT 1`,
+    [userId, norm]
+  );
+  if (!row) return null;
+  return {
+    id: row.id,
+    brandName: row.brand_name,
+    brandDomain: row.brand_domain,
+    demoMode: !!row.demo_mode,
+    gapMatrix: JSON.parse(row.gap_matrix_json || "[]"),
+    summaries: JSON.parse(row.summaries_json || "[]"),
+    contentBriefs: JSON.parse(row.content_briefs_json || "[]"),
+    createdAt: toIso(row.created_at),
+  };
+}
+
 /** Most recent Gap Analysis content briefs for this brand domain — what a Campaign
  * draws its next topic from. Null when Gap Analysis has never been run for it. */
 export async function getLatestGapRunBriefs(

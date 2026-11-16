@@ -1,19 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
-import StatCard from "@/components/StatCard";
-import ToolPageHeader from "@/components/ToolPageHeader";
 import { useAgencyName } from "@/lib/use-agency-name";
-import GapOverview from "@/components/tool/GapOverview";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
-import { Drawer, ErrorBlock } from "@/components/ui";
+import { Drawer, ErrorBlock, PageHeader, EmptyBlock } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
-
 import { buildContentBriefPrompt } from "@/lib/claude-code-prompt";
+
+/**
+ * Rakip Boşluğu (Gap Analysis) — GEO / Site Denetimi ile aynı düzen:
+ * soru başlığı → 5 metrik → "Ne yapmalı?" → sayfa tablosu (tıklayınca brif çekmecesi) + marka karşılaştırması.
+ * Proje seçiliyse son koşu otomatik açılır; yeni analiz ve ayarlar çekmecede.
+ */
 
 const ENGINE_LABEL: Record<EngineId, string> = {
   openai: "ChatGPT (OpenAI)",
@@ -25,57 +28,89 @@ const ENGINE_LABEL: Record<EngineId, string> = {
   meta: "Meta AI (sadece demo)",
   microsoft: "Copilot (sadece demo)",
 };
-
 const DEFAULT_ENGINES: EngineId[] = ["openai", "anthropic", "google", "perplexity"];
-
-const EN_PROMPT_PRESET = "best tools for [your category]\nhow to choose a [your category] tool\n[brand] vs [competitor]";
 const TR_PROMPT_PRESET =
   "[kategori] için en iyi markalar hangileri?\nİstanbul'da [kategori] konusunda hangi firmayı önerirsiniz?\n[marka] güvenilir mi?\n[marka] ile [rakip] arasındaki fark ne?";
 
-const VERDICT_LABEL: Record<GapRow["verdict"], string> = {
-  blocked: "AI'ya kapalı",
-  invisible: "Sağlam ama görünmez",
-  cited: "Anılıyor",
-  "needs-work": "İyileştirme gerekli",
-};
-
-const VERDICT_BADGE: Record<GapRow["verdict"], string> = {
-  blocked: "badge-critical",
-  invisible: "badge-info",
-  cited: "badge-pass",
-  "needs-work": "badge-warning",
-};
+const VERDICTS: { key: GapRow["verdict"]; label: string; hint: string; color: string; chip: string }[] = [
+  { key: "blocked", label: "AI'ya kapalı", hint: "robots.txt AI botlarını engelliyor", color: "#ef4444", chip: "bg-danger/10 text-danger" },
+  { key: "invisible", label: "Sağlam ama görünmez", hint: "Teknik olarak hazır, ama hiçbir AI motoru anmadı", color: "#4f00ff", chip: "bg-accent/10 text-accent" },
+  { key: "needs-work", label: "İyileştirme gerekli", hint: "Teknik SEO / AXO puanı düşük", color: "#f59e0b", chip: "bg-warn/10 text-warn" },
+  { key: "cited", label: "Anılıyor", hint: "AI cevaplarında kaynak olarak geçiyor", color: "#16a34a", chip: "bg-seo/10 text-seo" },
+];
+const V = Object.fromEntries(VERDICTS.map((v) => [v.key, v])) as Record<GapRow["verdict"], (typeof VERDICTS)[number]>;
 
 interface BrandRow {
   name: string;
   domain: string;
 }
+interface Run {
+  brandName: string;
+  brandDomain: string;
+  demoMode: boolean;
+  gapMatrix: GapRow[];
+  summaries: GeoVisibilitySummary[];
+  contentBriefs: ContentBrief[];
+  createdAt: string;
+}
+
+const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+function path(url: string) {
+  try {
+    const u = new URL(/^https?:\/\//.test(url) ? url : `https://${url}`);
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+const pct = (n: number) => `%${Math.round(n * 100)}`;
+
+const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
+const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
+const INPUT = "h-9 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]";
+const chip = (on: boolean) =>
+  `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
 
 export default function GapPage() {
+  const { project } = useProject();
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
-  const { project } = useProject();
-  useEffect(() => {
-    if (!project || new URLSearchParams(window.location.search).get("clientId")) return;
-    setBrand({ name: project.name, domain: project.domain });
-    if (project.competitors.length) setCompetitors(project.competitors);
-  }, [project]);
   const [promptsText, setPromptsText] = useState("");
   const [pageUrlsText, setPageUrlsText] = useState("");
   const [engines, setEngines] = useState<EngineId[]>(DEFAULT_ENGINES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [summaries, setSummaries] = useState<GeoVisibilitySummary[] | null>(null);
-  const [gapMatrix, setGapMatrix] = useState<GapRow[] | null>(null);
-  const [contentBriefs, setContentBriefs] = useState<ContentBrief[] | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
+  const [run, setRun] = useState<Run | null>(null);
+  const [runLoaded, setRunLoaded] = useState(false);
   const [generatingUrl, setGeneratingUrl] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useAgencyName();
-  const [overviewKey, setOverviewKey] = useState(0);
   const [manualOpen, setManualOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const [vf, setVf] = useState<"all" | GapRow["verdict"]>("all");
   const autoRunRef = useRef(false);
 
+  // Proje → marka/rakip + son koşu
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("clientId")) return;
+    if (!project) {
+      setRunLoaded(true);
+      return;
+    }
+    setBrand({ name: project.name, domain: project.domain });
+    if (project.competitors.length) setCompetitors(project.competitors);
+    setRunLoaded(false);
+    fetch(`/api/gap/latest?domain=${encodeURIComponent(project.domain)}`)
+      .then((r) => (r.ok ? r.json() : { run: null }))
+      .then((d) => setRun(d.run ?? null))
+      .catch(() => setRun(null))
+      .finally(() => setRunLoaded(true));
+  }, [project]);
+
+  // Müşteri sayfasından gelindiyse
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("clientId");
     if (!id) return;
@@ -88,19 +123,13 @@ export default function GapPage() {
         setPageUrlsText(data.client.domain);
         setManualOpen(true);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRunLoaded(true));
   }, []);
 
-  const prompts = useMemo(
-    () => promptsText.split("\n").map((p) => p.trim()).filter(Boolean),
-    [promptsText]
-  );
-  const pageUrls = useMemo(
-    () => pageUrlsText.split("\n").map((p) => p.trim()).filter(Boolean),
-    [pageUrlsText]
-  );
+  const prompts = useMemo(() => promptsText.split("\n").map((p) => p.trim()).filter(Boolean), [promptsText]);
+  const pageUrls = useMemo(() => pageUrlsText.split("\n").map((p) => p.trim()).filter(Boolean), [pageUrlsText]);
 
-  // Tek kutudan gelen marka/rakip/prompt/sayfalar state'e oturduktan sonra analizi kendiliğinden başlat.
   useEffect(() => {
     if (autoRunRef.current && brand.name && brand.domain && prompts.length > 0 && pageUrls.length > 0) {
       autoRunRef.current = false;
@@ -110,6 +139,7 @@ export default function GapPage() {
   }, [brand, prompts, pageUrls]);
 
   function handleQuickReady(b: BrandRow, comps: BrandRow[], text: string, urls: string[]) {
+    setNewOpen(false);
     setBrand(b);
     setCompetitors(comps.length > 0 ? comps : [{ name: "", domain: "" }]);
     setPromptsText(text);
@@ -128,7 +158,7 @@ export default function GapPage() {
       const res = await fetch("/api/content/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...brief, brandName: brand.name, brandDomain: brand.domain }),
+        body: JSON.stringify({ ...brief, brandName: run?.brandName ?? brand.name, brandDomain: run?.brandDomain ?? brand.domain }),
       });
       if (res.status === 401) {
         window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
@@ -144,16 +174,16 @@ export default function GapPage() {
   }
 
   async function downloadPdf() {
-    if (!gapMatrix) return;
+    if (!run) return;
     const res = await fetch("/api/report/pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         agencyName: agencyName.trim() || undefined,
-        clientName: brand.name,
-        clientDomain: brand.domain,
-        geo: summaries ? { summaries } : null,
-        gap: { gapMatrix, contentBriefs: contentBriefs ?? [] },
+        clientName: run.brandName,
+        clientDomain: run.brandDomain,
+        geo: run.summaries.length ? { summaries: run.summaries } : null,
+        gap: { gapMatrix: run.gapMatrix, contentBriefs: run.contentBriefs },
       }),
     });
     if (!res.ok) return;
@@ -161,45 +191,25 @@ export default function GapPage() {
     const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = objectUrl;
-    a.download = "epicsem-gap-report.pdf";
+    a.download = "epicsem-rakip-boslugu.pdf";
     a.click();
     URL.revokeObjectURL(objectUrl);
+    setPdfOpen(false);
   }
 
   async function runAnalysis(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!brand.name || !brand.domain) {
-      setError("Enter your brand name and domain.");
-      return;
-    }
-    if (prompts.length === 0) {
-      setError("Enter at least one prompt.");
-      return;
-    }
-    if (pageUrls.length === 0) {
-      setError("Enter at least one page URL to audit.");
-      return;
-    }
-    if (engines.length === 0) {
-      setError("Pick at least one engine.");
-      return;
-    }
+    if (!brand.name || !brand.domain) return setError("Marka adını ve domainini gir.");
+    if (prompts.length === 0) return setError("En az bir soru (prompt) gir.");
+    if (pageUrls.length === 0) return setError("Denetlenecek en az bir sayfa adresi gir.");
+    if (engines.length === 0) return setError("En az bir motor seç.");
     setLoading(true);
     setError(null);
-    setSummaries(null);
-    setGapMatrix(null);
-    setContentBriefs(null);
     try {
       const res = await fetch("/api/gap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          brand,
-          competitors: competitors.filter((c) => c.name && c.domain),
-          prompts,
-          engines,
-          pageUrls,
-        }),
+        body: JSON.stringify({ brand, competitors: competitors.filter((c) => c.name && c.domain), prompts, engines, pageUrls }),
       });
       if (res.status === 401) {
         window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
@@ -207,11 +217,16 @@ export default function GapPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Analiz başarısız oldu");
-      setSummaries(data.summaries);
-      setGapMatrix(data.gapMatrix);
-      setContentBriefs(data.contentBriefs);
-      setDemoMode(data.demoMode);
-      setOverviewKey((k) => k + 1);
+      setRun({
+        brandName: brand.name,
+        brandDomain: brand.domain,
+        demoMode: !!data.demoMode,
+        gapMatrix: data.gapMatrix ?? [],
+        summaries: data.summaries ?? [],
+        contentBriefs: data.contentBriefs ?? [],
+        createdAt: new Date().toISOString(),
+      });
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -219,319 +234,461 @@ export default function GapPage() {
     }
   }
 
+  /* ---------------- türetilmiş veriler ---------------- */
+  const d = useMemo(() => {
+    if (!run) return null;
+    const m = run.gapMatrix;
+    const sums = [...run.summaries].sort((a, b) => b.visibility - a.visibility);
+    const own = sums.find((s) => host(s.domain) === host(run.brandDomain)) ?? sums.find((s) => s.brand.toLowerCase() === run.brandName.toLowerCase()) ?? null;
+    const rank = own ? sums.indexOf(own) + 1 : null;
+    const rivals = sums.filter((s) => s !== own);
+    const leader = rivals[0] ?? null;
+    const count = (v: GapRow["verdict"]) => m.filter((r) => r.verdict === v).length;
+    return { m, sums, own, rank, leader, cited: count("cited"), invisible: count("invisible"), blocked: count("blocked"), needs: count("needs-work") };
+  }, [run]);
+
+  const briefFor = (url: string) => run?.contentBriefs.find((b) => b.url === url) ?? null;
+  const openRow = run?.gapMatrix.find((r) => r.url === open) ?? null;
+  const openBrief = open ? briefFor(open) : null;
+  const shown = d ? d.m.filter((r) => vf === "all" || r.verdict === vf).sort((a, b) => VERDICTS.findIndex((v) => v.key === a.verdict) - VERDICTS.findIndex((v) => v.key === b.verdict)) : [];
+
+  const actions: { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[] = [];
+  if (d && run) {
+    const blocked = d.m.filter((r) => r.verdict === "blocked");
+    if (blocked.length)
+      actions.push({
+        kind: "Kritik",
+        color: "text-danger",
+        title: `${blocked.length} sayfa AI botlarına kapalı`,
+        body: `${path(blocked[0].url)} için robots.txt ${blocked[0].blockedBots} AI botunu engelliyor. Bu sayfalar hiçbir AI cevabında kaynak olamaz.`,
+        cta: (
+          <Link href={`/audit?url=${encodeURIComponent(blocked[0].url)}`} className={BTN2}>
+            Denetimde gör
+          </Link>
+        ),
+      });
+    const inv = d.m.filter((r) => r.verdict === "invisible");
+    if (inv.length)
+      actions.push({
+        kind: "Fırsat",
+        color: "text-accent",
+        title: `${inv.length} sayfa sağlam ama AI'da anılmıyor`,
+        body: `Teknik sorun yok; içerik soruları cevaplamıyor. ${briefFor(inv[0].url)?.suggestedHeadings.length ? `${briefFor(inv[0].url)!.suggestedHeadings.length} kaybedilen soru başlığa dönüşmeli.` : "Kısa cevap, soru başlıklar ve SSS ekle."}`,
+        cta: (
+          <button type="button" onClick={() => setOpen(inv[0].url)} className={BTN2}>
+            Brifi aç
+          </button>
+        ),
+      });
+    if (d.leader && d.own && d.leader.visibility > d.own.visibility)
+      actions.push({
+        kind: "Rakip",
+        color: "text-warn",
+        title: `${d.leader.brand} AI'da senden önde`,
+        body: `${d.leader.brand} ${pct(d.leader.visibility)}, sen ${pct(d.own.visibility)} görünürlükte. Hangi sorularda önerildiğini GEO'da gör, o soruları cevaplayan yazılar çıkar.`,
+        cta: (
+          <Link href="/geo" className={BTN2}>
+            Soruları gör
+          </Link>
+        ),
+      });
+    const nw = d.m.filter((r) => r.verdict === "needs-work");
+    if (actions.length < 3 && nw.length)
+      actions.push({
+        kind: "Teknik",
+        color: "text-warn",
+        title: `${nw.length} sayfanın teknik puanı düşük`,
+        body: `${path(nw[0].url)}: SEO ${nw[0].seoScore}, AXO ${nw[0].aiCrawlScore}. Önce teknik sorunları düzelt.`,
+        cta: (
+          <Link href={`/audit?url=${encodeURIComponent(nw[0].url)}`} className={BTN2}>
+            Denetimde gör
+          </Link>
+        ),
+      });
+    if (!actions.length)
+      actions.push({
+        kind: "İyi",
+        color: "text-seo",
+        title: "Tüm sayfalar AI'da anılıyor",
+        body: "Bu koşuda denetlenen her sayfa en az bir AI cevabında kaynak olarak geçti. Yeni sayfalar ve sorularla tekrar test et.",
+        cta: (
+          <button type="button" onClick={() => setNewOpen(true)} className={BTN2}>
+            Yeni analiz
+          </button>
+        ),
+      });
+  }
+
+  const title = run ? `AI'da rakiplerin ${host(run.brandDomain)} sitesini nerede geçiyor?` : "Rakip Boşluğu";
+  const desc = run
+    ? `${run.gapMatrix.length} sayfa · ${run.summaries.length} marka · ${new Date(run.createdAt).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}${run.demoMode ? " · demo veri" : ""}`
+    : "Sayfaların teknik olarak hazır mı, ve AI motorları seni mi yoksa rakiplerini mi anıyor? Tek analizde.";
+
   return (
-    <div className="space-y-8">
-      <ToolPageHeader
-        breadcrumbLabel="Gap Analysis"
-        title="Gap Analysis"
-        body="Sayfaların teknik olarak sağlam mı, AI botlarına açık mı — ve asıl soru: AI motorları onları gerçekten anıyor mu?"
-      >
-        <UsageMeter metric="engineQueries" />
-      </ToolPageHeader>
-
-      <GapOverview refreshKey={overviewKey} />
-
-      <div id="yeni-analiz" className="scroll-mt-24 pt-4 border-t border-border">
-        <h2 className="text-lg font-medium">Yeni analiz</h2>
-        <p className="text-sm text-ink/50">Sadece sitenin adresini yaz — marka, rakipler, promptlar ve kritik sayfalar otomatik çıkarılır, analiz hemen başlar.</p>
-      </div>
-
-      <QuickGeoAnalyze
-        onReady={handleQuickReady}
-        running={loading}
-        onOpenSettings={() => setManualOpen(true)}
-        nextPath="/gap"
-        runLabel="Sayfalar denetleniyor"
-      />
-
-      {manualOpen && (
-      <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
-        <div>
-          <div className="font-medium">Ayarlar</div>
-          <div className="text-xs text-ink/50">Marka, rakipler, promptlar, sayfalar ve motorlar.</div>
-        </div>
-</div>}>
-      <form onSubmit={(e) => { setManualOpen(false); runAnalysis(e); }} className="manual-form">
-        <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Markanız</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              value={brand.name}
-              onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))}
-              placeholder="Marka adı"
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <input
-              value={brand.domain}
-              onChange={(e) => setBrand((b) => ({ ...b, domain: e.target.value }))}
-              placeholder="marka-domaini.com"
-              required
-              className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-          </div>
-        </div>
-
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Rakipler (opsiyonel)</h2>
-            <button
-              type="button"
-              onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
-              className="text-xs text-accent hover:underline"
-            >
-              + Rakip ekle
+    <div className="space-y-6">
+      <PageHeader
+        title={title}
+        description={desc}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => setManualOpen(true)} className={BTN2}>
+              Ayarlar
+            </button>
+            {run && (
+              <button type="button" onClick={() => setPdfOpen(true)} className={BTN2}>
+                PDF rapor
+              </button>
+            )}
+            <button type="button" onClick={() => setNewOpen(true)} disabled={loading} className={BTN1}>
+              {loading ? "Analiz ediliyor…" : "+ Yeni analiz"}
             </button>
           </div>
-          {competitors.map((c, i) => (
-            <div key={i} className="grid grid-cols-2 gap-3">
-              <input
-                value={c.name}
-                onChange={(e) => updateCompetitor(i, "name", e.target.value)}
-                placeholder="Rakip adı"
-                className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-              />
-              <input
-                value={c.domain}
-                onChange={(e) => updateCompetitor(i, "domain", e.target.value)}
-                placeholder="rakip-domaini.com"
-                className="rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-              />
-            </div>
-          ))}
-        </div>
+        }
+      />
 
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium text-sm">Promptlar (satır satır)</h2>
-            <div className="flex gap-2 text-xs">
-              <button type="button" onClick={() => setPromptsText(EN_PROMPT_PRESET)} className="text-accent hover:underline">
-                EN örnek
-              </button>
-              <span className="text-ink/20">·</span>
-              <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-accent hover:underline">
-                TR örnek
-              </button>
-            </div>
-          </div>
-          <textarea
-            value={promptsText}
-            onChange={(e) => setPromptsText(e.target.value)}
-            rows={6}
-            placeholder={"[kategori] için en iyi markalar hangileri?\n[marka] ile [rakip] arasındaki fark ne?"}
-            className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
-          />
-        </div>
-
-        <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Denetlenecek kritik sayfalarınız (satır satır URL)</h2>
-          <textarea
-            value={pageUrlsText}
-            onChange={(e) => setPageUrlsText(e.target.value)}
-            rows={3}
-            placeholder={"sizindomaininiz.com\nsizindomaininiz.com/blog/en-iyi-yaziniz"}
-            className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
-          />
-        </div>
-
-        <div className="card space-y-3">
-          <h2 className="font-medium text-sm">Motorlar</h2>
-          <div className="flex flex-wrap gap-4 text-sm">
-            {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
-              <label key={eng} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={engines.includes(eng)}
-                  onChange={(e) =>
-                    setEngines((prev) =>
-                      e.target.checked ? [...prev, eng] : prev.filter((x) => x !== eng)
-                    )
-                  }
-                />
-                {ENGINE_LABEL[eng]}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 border-t border-border bg-panel/95 px-6 py-4 backdrop-blur">
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-accent text-white px-5 py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {loading ? "Analiz ediliyor…" : `${pageUrls.length || 0} sayfayı ${prompts.length} prompta karşı analiz et`}
-          </button>
-        </div>
-      </form>
-      </Drawer>
-      )}
-
-      {loading && !gapMatrix && (
-        <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 text-sm text-ink/60 flex items-center gap-3">
-          <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          Sayfalar denetleniyor ve AI motorlarına soruluyor — bu bir iki dakika sürebilir.
+      {loading && (
+        <div className={`${CARD} flex items-center gap-3 p-4 text-sm text-sub`}>
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          Sayfalar denetleniyor ve AI motorlarına soruluyor. Bir iki dakika sürebilir.
         </div>
       )}
-
       <ErrorBlock message={error} />
 
-      {demoMode && gapMatrix && (
-        <div className="card border-warn/40 text-warn text-sm">
-          <strong>Demo modda</strong> çalışıyor — GEO atıfları domain/anasayfa seviyesinde simüle edilir, bu yüzden
-          domain genel olarak anılıyor olsa bile derin sayfalarda genelde 0 tam-URL atfı görürsünüz. Gerçek sayfa
-          yollu atıflar için <code>.env</code>&apos;e gerçek API anahtarları ekleyin.
-        </div>
-      )}
-
-      {gapMatrix && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <input
-            value={agencyName}
-            onChange={(e) => setAgencyName(e.target.value)}
-            placeholder="Ajans adınız (opsiyonel — PDF'te görünür)"
-            className="w-64 rounded-lg bg-panel border border-border px-3 py-1.5 text-xs outline-none focus:border-accent"
-          />
-          <button
-            onClick={downloadPdf}
-            className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted text-ink/70"
-          >
-            PDF rapor indir
-          </button>
-        </div>
-      )}
-
-      {summaries && (
-        <div className="space-y-3">
-          <h2 className="font-medium">Görünürlük özeti</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {summaries.map((s) => (
-              <StatCard
-                key={s.brand}
-                label={s.brand}
-                value={`${Math.round(s.visibility * 100)}%`}
-                description={`Pazar payı ${Math.round(s.shareOfVoice * 100)}%`}
-                tone={s.rank === 1 ? "seo" : "accent"}
-              />
-            ))}
+      {!run && runLoaded && !loading && (
+        <div className={`${CARD} p-5`}>
+          <h3 className="text-sm font-semibold">{brand.domain ? `${host(brand.domain)} için henüz analiz yok` : "Henüz analiz yok"}</h3>
+          <p className="mb-4 mt-1 text-[13px] text-sub">Sitenin adresini yaz. Marka, rakipler, sorular ve kritik sayfalar otomatik çıkarılır, analiz hemen başlar.</p>
+          <QuickGeoAnalyze onReady={handleQuickReady} running={loading} onOpenSettings={() => setManualOpen(true)} nextPath="/gap" runLabel="Sayfalar denetleniyor" />
+          <div className="mt-3">
+            <UsageMeter metric="engineQueries" />
           </div>
         </div>
       )}
+      {!runLoaded && <div className="h-64 animate-pulse rounded-2xl bg-muted" />}
 
-      {gapMatrix && (
-        <div className="card">
-          <h2 className="font-medium">Gap matrisi</h2>
-          <p className="text-sm text-ink/50 mb-4">Her sayfa için teknik sağlık ile gerçek AI atfının karşılaştırması.</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-ink/40 text-left">
-                <tr>
-                  <th className="py-2 pr-4">Sayfa</th>
-                  <th className="py-2 pr-4">SEO</th>
-                  <th className="py-2 pr-4">AXO</th>
-                  <th className="py-2 pr-4">Engellenen bot</th>
-                  <th className="py-2 pr-4">Anıldı (sayfa)</th>
-                  <th className="py-2 pr-4">Anıldı (domain)</th>
-                  <th className="py-2 pr-4">Değerlendirme</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gapMatrix.map((row) => (
-                  <tr key={row.url} className="border-t border-border">
-                    <td className="py-2 pr-4 max-w-[220px] truncate" title={row.url}>{row.url}</td>
-                    <td className="py-2 pr-4">{row.seoScore}</td>
-                    <td className="py-2 pr-4">{row.aiCrawlScore}</td>
-                    <td className="py-2 pr-4">{row.blockedBots || "—"}</td>
-                    <td className="py-2 pr-4">{row.citedExact}</td>
-                    <td className="py-2 pr-4">{row.citedDomain}</td>
-                    <td className="py-2 pr-4">
-                      <span className={`badge ${VERDICT_BADGE[row.verdict]}`}>{VERDICT_LABEL[row.verdict]}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-xs text-ink/30">
-            "Sağlam ama görünmez" = SEO/AXO skorları iyi, engelli değil, ama bu koşuda hiçbir AI motoru sayfayı
-            anmadı — teknik olarak hazır ama henüz atıf kazanmayan sayfa. Bunun sebebi genelde içerik biçimidir
-            (yeterince "cevap-önce" değil, FAQ schema yok), teknik bir sorun değil — denetimin Düzeltmeler
-            bölümüne bakın.
-          </p>
-        </div>
-      )}
+      {run && d && (
+        <>
+          {run.demoMode && (
+            <div className="rounded-xl border border-warn/30 bg-warn/5 px-4 py-2.5 text-[13px] text-ink/70">
+              Demo veri: atıflar domain düzeyinde simüle edildi. Gerçek sonuç için AI motoru anahtarları gerekir.
+            </div>
+          )}
 
-      {contentBriefs && contentBriefs.length > 0 && (
-        <div className="space-y-3">
-          <div>
-            <h2 className="font-medium">İçerik brifleri</h2>
-            <p className="text-sm text-ink/50">
-              Henüz kazanmayan her sayfa için: bu koşuda kaybettiği promptlar ve denetimin bulduğu somut içerik
-              eksikleri. Bu koşunun kendi verisinden üretildi — hiçbir şey uydurulmadı.
-            </p>
-          </div>
-          <div className="space-y-3">
-            {contentBriefs.map((brief) => (
-              <div key={brief.url} className="card space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="text-sm font-medium truncate" title={brief.url}>{brief.url}</div>
-                  <span className={`badge ${VERDICT_BADGE[brief.verdict]}`}>{VERDICT_LABEL[brief.verdict]}</span>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {([
+              ["AI görünürlüğün", d.own ? pct(d.own.visibility) : "—", "", d.own ? `pazar payı ${pct(d.own.shareOfVoice)}` : "marka cevaplarda yok", d.own && d.leader && d.own.visibility >= d.leader.visibility ? "text-seo" : ""],
+              ["Sıralaman", d.rank ? `${d.rank}.` : "—", `/${d.sums.length}`, d.leader ? `lider rakip: ${d.leader.brand}` : "", d.rank === 1 ? "text-seo" : d.rank ? "text-warn" : ""],
+              ["Anılan sayfa", String(d.cited), `/${d.m.length}`, "AI cevaplarında kaynak", d.cited ? "text-seo" : "text-danger"],
+              ["Sağlam ama görünmez", String(d.invisible), "", "içerik fırsatı", d.invisible ? "text-accent" : ""],
+              ["AI'ya kapalı sayfa", String(d.blocked), "", "robots.txt engeli", d.blocked ? "text-danger" : ""],
+            ] as const).map(([l, v, suf, hint, col]) => (
+              <div key={l} className={`${CARD} px-4 py-4`}>
+                <div className="text-xs font-medium text-sub">{l}</div>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <span className={`text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{v}</span>
+                  {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <p className="text-xs text-ink/50">{brief.reason}</p>
-
-                {brief.contentGaps.length > 0 && (
-                  <div>
-                    <div className="text-xs font-medium text-ink/60 mb-1">İçerik eksikleri</div>
-                    <ul className="text-xs text-ink/60 space-y-1 list-disc list-inside">
-                      {brief.contentGaps.map((g, i) => (
-                        <li key={i}>{g}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {brief.suggestedHeadings.length > 0 && (
-                  <div>
-                    <div className="text-xs font-medium text-ink/60 mb-1">
-                      Bu markanın kazanmadığı promptlar — bunları başlık/FAQ maddelerine dönüştürün
-                    </div>
-                    <ul className="text-xs text-accent space-y-1 list-disc list-inside">
-                      {brief.suggestedHeadings.map((h, i) => (
-                        <li key={i}>{h}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <PromptBlock
-                  bare
-                  title="Fix with Claude Code"
-                  description="Bu sayfanın tam eksikleriyle önceden doldurulmuş bir prompt — sitenizin reposunda çalışan Claude Code'a yapıştırın."
-                  prompt={buildContentBriefPrompt(brief, brand.name)}
-                />
-
-                <div className="border-t border-border pt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-ink/50">
-                    Ya da Epicsem sizin için taslak hazırlasın — yalnızca bu brifin gerçek verisine dayanır,
-                    incelemeniz için bir WordPress taslağı olarak yayınlanır, asla otomatik yayınlanmaz.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => generateArticle(brief)}
-                    disabled={generatingUrl === brief.url}
-                    className="text-xs font-medium rounded-lg bg-accent text-white px-3 py-1.5 hover:opacity-90 disabled:opacity-50 shrink-0"
-                  >
-                    {generatingUrl === brief.url ? "Oluşturuluyor…" : "Makale oluştur"}
-                  </button>
-                </div>
+                <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
               </div>
             ))}
           </div>
-          <ErrorBlock message={generateError} />
-        </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
+            <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
+              {actions.slice(0, 3).map((a) => (
+                <div key={a.title} className={`${CARD} flex flex-col p-4`}>
+                  <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                  <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+                  <p className="mt-1 text-[13px] text-sub">{a.body}</p>
+                  <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr]">
+            {/* Sayfalar */}
+            <div className={`${CARD} overflow-hidden`}>
+              <div className="px-5 pt-4">
+                <h3 className="text-sm font-semibold">Sayfalar</h3>
+                <p className="text-xs text-sub">Teknik sağlık ile gerçek AI atfının karşılaştırması · satıra tıkla → içerik brifi</p>
+              </div>
+              <div className="flex flex-wrap gap-2 px-5 py-3">
+                <button type="button" onClick={() => setVf("all")} className={chip(vf === "all")}>
+                  Tümü <span className="text-sub">{d.m.length}</span>
+                </button>
+                {VERDICTS.map((v) => {
+                  const n = d.m.filter((r) => r.verdict === v.key).length;
+                  return n ? (
+                    <button key={v.key} type="button" onClick={() => setVf(v.key)} className={chip(vf === v.key)}>
+                      <span className="h-2 w-2 rounded-full" style={{ background: v.color }} />
+                      {v.label} <span className="text-sub">{n}</span>
+                    </button>
+                  ) : null;
+                })}
+              </div>
+              {shown.length === 0 ? (
+                <div className="border-t border-border">
+                  <EmptyBlock compact title="Bu filtrede sayfa yok" description="Başka bir filtre seç." />
+                </div>
+              ) : (
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="border-y border-border bg-[#fafafa] text-left text-xs text-sub">
+                      <th className="py-2 pl-5 font-medium">Sayfa</th>
+                      <th className="py-2 pr-3 text-right font-medium">SEO</th>
+                      <th className="py-2 pr-3 text-right font-medium">AXO</th>
+                      <th className="hidden py-2 pr-3 text-right font-medium md:table-cell">Atıf</th>
+                      <th className="py-2 pr-5 font-medium">Durum</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {shown.map((r) => (
+                      <tr key={r.url} onClick={() => setOpen(r.url)} className="cursor-pointer hover:bg-[#fafafa]">
+                        <td className="max-w-[22rem] py-2.5 pl-5">
+                          <div className="truncate font-medium" title={r.url}>
+                            {path(r.url)}
+                          </div>
+                          {briefFor(r.url)?.suggestedHeadings.length ? <div className="text-[11px] text-sub">{briefFor(r.url)!.suggestedHeadings.length} kaybedilen soru</div> : null}
+                        </td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums">{r.seoScore}</td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums">{r.aiCrawlScore}</td>
+                        <td className="hidden py-2.5 pr-3 text-right tabular-nums text-sub md:table-cell" title="sayfa / domain atfı">
+                          {r.citedExact} / {r.citedDomain}
+                        </td>
+                        <td className="py-2.5 pr-5">
+                          <span title={V[r.verdict].hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${V[r.verdict].chip}`}>
+                            {V[r.verdict].label}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Marka karşılaştırması */}
+            <div className="space-y-3">
+              <div className={CARD}>
+                <div className="px-5 pt-4">
+                  <h3 className="text-sm font-semibold">AI'da kim önde?</h3>
+                  <p className="text-xs text-sub">Bu koşudaki sorularda markaların görünürlüğü</p>
+                </div>
+                <ul className="space-y-2.5 px-5 pb-4 pt-3">
+                  {d.sums.length ? (
+                    d.sums.map((s, i) => {
+                      const me = s === d.own;
+                      return (
+                        <li key={s.brand} className="text-[13px]">
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 text-xs tabular-nums text-sub">{i + 1}</span>
+                            <span className={`min-w-0 flex-1 truncate ${me ? "font-semibold" : ""}`}>
+                              {s.brand}
+                              {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">Siz</span>}
+                            </span>
+                            <span className="tabular-nums">{pct(s.visibility)}</span>
+                          </div>
+                          <div className="ml-6 mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full" style={{ width: `${Math.max(2, s.visibility * 100)}%`, background: me ? "#4f00ff" : "#c4c7cf" }} />
+                          </div>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="text-[13px] text-sub">Görünürlük verisi yok.</li>
+                  )}
+                </ul>
+              </div>
+              <div className={CARD}>
+                <div className="px-5 pt-4">
+                  <h3 className="text-sm font-semibold">Sayfa durumu</h3>
+                </div>
+                <div className="px-5 pb-4 pt-3">
+                  <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
+                    {VERDICTS.map((v) => {
+                      const n = d.m.filter((r) => r.verdict === v.key).length;
+                      return n ? <div key={v.key} style={{ width: `${(n / d.m.length) * 100}%`, background: v.color }} /> : null;
+                    })}
+                  </div>
+                  <ul className="mt-3 space-y-1.5 text-[13px]">
+                    {VERDICTS.map((v) => (
+                      <li key={v.key} className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ background: v.color }} />
+                        <span className="flex-1 text-sub">{v.label}</span>
+                        <span className="tabular-nums">{d.m.filter((r) => r.verdict === v.key).length}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
+      {/* Sayfa / brif çekmecesi */}
+      <Drawer isOpen={!!openRow} onClose={() => setOpen(null)} eyebrow={openRow ? V[openRow.verdict].label : ""} title={openRow ? path(openRow.url) : ""} subtitle={openRow ? V[openRow.verdict].hint : undefined} size="lg">
+        {openRow && (
+          <div className="space-y-5 text-[13px]">
+            <div className="grid grid-cols-4 gap-2">
+              {([
+                ["SEO", openRow.seoScore],
+                ["AXO", openRow.aiCrawlScore],
+                ["Engelli bot", openRow.blockedBots],
+                ["Atıf (sayfa/domain)", `${openRow.citedExact}/${openRow.citedDomain}`],
+              ] as const).map(([l, v]) => (
+                <div key={l} className="rounded-xl border border-border px-3 py-2">
+                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-base font-semibold tabular-nums">{v}</div>
+                </div>
+              ))}
+            </div>
+            {openBrief ? (
+              <>
+                <p className="text-sub">{openBrief.reason}</p>
+                {openBrief.suggestedHeadings.length > 0 && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">Kaybedilen sorular: bunları başlık ya da SSS maddesi yap</div>
+                    <ul className="space-y-1">
+                      {openBrief.suggestedHeadings.map((h) => (
+                        <li key={h} className="rounded-lg bg-accent/5 px-3 py-1.5 text-ink">
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {openBrief.contentGaps.length > 0 && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">İçerik eksikleri</div>
+                    <ul className="list-disc space-y-1 pl-4">
+                      {openBrief.contentGaps.map((g) => (
+                        <li key={g}>{g}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                  <button type="button" onClick={() => generateArticle(openBrief)} disabled={generatingUrl === openBrief.url} className={BTN1}>
+                    {generatingUrl === openBrief.url ? "Oluşturuluyor…" : "Makale taslağı oluştur"}
+                  </button>
+                  <Link href={`/audit?url=${encodeURIComponent(openRow.url)}`} className={BTN2}>
+                    Denetimde gör
+                  </Link>
+                  <span className="text-[11px] text-sub">Taslak 1 yazı kotası kullanır, otomatik yayınlanmaz.</span>
+                </div>
+                <ErrorBlock message={generateError} />
+                <PromptBlock bare title="Claude Code ile düzelt" description="Bu sayfanın eksikleriyle hazırlanmış komut; sitenin kod deposundaki Claude Code'a yapıştır." prompt={buildContentBriefPrompt(openBrief, run?.brandName ?? brand.name)} />
+              </>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="w-full text-sub">{openRow.verdict === "cited" ? "Bu sayfa AI cevaplarında zaten anılıyor; brif gerekmiyor." : "Bu sayfa için brif yok."}</p>
+                <Link href={`/audit?url=${encodeURIComponent(openRow.url)}`} className={BTN2}>
+                  Denetimde gör
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
 
+      {/* Yeni analiz */}
+      <Drawer isOpen={newOpen} onClose={() => setNewOpen(false)} eyebrow="Rakip Boşluğu" title="Yeni analiz" subtitle="Sitenin adresini yaz; marka, rakipler, sorular ve kritik sayfalar otomatik çıkarılır, analiz hemen başlar." size="xl">
+        <div className="space-y-4">
+          <QuickGeoAnalyze
+            onReady={handleQuickReady}
+            running={loading}
+            onOpenSettings={() => {
+              setNewOpen(false);
+              setManualOpen(true);
+            }}
+            nextPath="/gap"
+            runLabel="Sayfalar denetleniyor"
+          />
+          <UsageMeter metric="engineQueries" />
+        </div>
+      </Drawer>
+
+      {/* PDF */}
+      <Drawer isOpen={pdfOpen} onClose={() => setPdfOpen(false)} eyebrow="Rakip Boşluğu" title="PDF rapor" subtitle="Müşterine gönderebileceğin özet rapor." size="md">
+        <div className="space-y-3">
+          <div className="text-xs font-medium text-sub">Ajans adı (opsiyonel, raporda görünür)</div>
+          <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Ajansın adı" className={INPUT} />
+          <button type="button" onClick={downloadPdf} className={BTN1}>
+            PDF indir
+          </button>
+        </div>
+      </Drawer>
+
+      {/* Elle ayarlar */}
+      <Drawer
+        isOpen={manualOpen}
+        onClose={() => setManualOpen(false)}
+        eyebrow="Rakip Boşluğu"
+        title="Ayarlar"
+        subtitle="Marka, rakipler, sorular, sayfalar ve motorları elle belirle."
+        size="xl"
+        as="form"
+        onSubmit={(e: React.FormEvent) => {
+          setManualOpen(false);
+          runAnalysis(e);
+        }}
+        footer={
+          <button type="submit" disabled={loading} className={`${BTN1} w-full justify-center`}>
+            {loading ? "Analiz ediliyor…" : `${pageUrls.length} sayfayı ${prompts.length} soruya karşı analiz et`}
+          </button>
+        }
+      >
+        <div className="space-y-6 text-[13px]">
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-sub">Markan</div>
+            <div className="grid grid-cols-2 gap-2">
+              <input value={brand.name} onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))} placeholder="Marka adı" required className={INPUT} />
+              <input value={brand.domain} onChange={(e) => setBrand((b) => ({ ...b, domain: e.target.value }))} placeholder="marka.com" required className={INPUT} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium text-sub">Rakipler (opsiyonel)</div>
+              <button type="button" onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])} className="text-xs font-medium text-accent hover:underline">
+                + Rakip ekle
+              </button>
+            </div>
+            {competitors.map((c, i) => (
+              <div key={i} className="grid grid-cols-2 gap-2">
+                <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={INPUT} />
+                <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip.com" className={INPUT} />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium text-sub">Sorular (her satıra bir tane, en fazla 10)</div>
+              <button type="button" onClick={() => setPromptsText(TR_PROMPT_PRESET)} className="text-xs font-medium text-accent hover:underline">
+                Örnek doldur
+              </button>
+            </div>
+            <textarea value={promptsText} onChange={(e) => setPromptsText(e.target.value)} rows={6} placeholder={"[kategori] için en iyi markalar hangileri?\n[marka] ile [rakip] arasındaki fark ne?"} className="w-full rounded-[10px] border border-border bg-panel px-3 py-2 outline-none focus:border-[#BDB4FF]" />
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-sub">Denetlenecek sayfalar (her satıra bir adres)</div>
+            <textarea value={pageUrlsText} onChange={(e) => setPageUrlsText(e.target.value)} rows={3} placeholder={"marka.com\nmarka.com/blog/en-iyi-yazi"} className="w-full rounded-[10px] border border-border bg-panel px-3 py-2 font-mono text-xs outline-none focus:border-[#BDB4FF]" />
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-sub">Motorlar</div>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(ENGINE_LABEL) as EngineId[]).map((eng) => (
+                <button key={eng} type="button" onClick={() => setEngines((p) => (p.includes(eng) ? p.filter((x) => x !== eng) : [...p, eng]))} className={chip(engines.includes(eng))}>
+                  {ENGINE_LABEL[eng]}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-sub">Her soru × motor 1 AI sorgusu kullanır. Yalnızca anahtarı tanımlı motorlar gerçekten çalışır.</p>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }
