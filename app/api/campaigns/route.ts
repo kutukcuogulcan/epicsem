@@ -63,6 +63,7 @@ const createSchema = z
         internalLinks: z.boolean().optional(),
         media: z.boolean().optional(),
         research: z.boolean().optional(),
+        quality: z.boolean().optional(),
       })
       .default({}),
     postsPerRun: z.number().int().min(1).max(3).default(1),

@@ -1862,6 +1862,8 @@ export interface CampaignOptions {
   media?: boolean;
   /** Web aramasıyla doğrulanmış kaynak/istatistik (yazı başına +1 AI sorgusu, varsayılan kapalı). */
   research?: boolean;
+  /** Kalite kapısı: puan düşükse bir kez AI ile iyileştir (+1 AI sorgusu, yalnızca gerekirse). */
+  quality?: boolean;
 }
 
 export interface Campaign {

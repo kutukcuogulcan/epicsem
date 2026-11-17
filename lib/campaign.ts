@@ -1,4 +1,5 @@
-import { generateArticleFromBrief, generateArticleFromTopic, styleInstructions } from "./content-generator";
+import { generateArticleFromBrief, generateArticleFromTopic, reviseArticle, styleInstructions } from "./content-generator";
+import { polishMarkdown, qualityReport } from "./article-quality";
 import { fetchPageSummary } from "./content-fetch";
 import {
   getFeed,
@@ -196,6 +197,19 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         const rb = researchBrief(research, campaign.options.language ?? "tr");
         const article = await t.write(rb ? `${knowledge}\n\n${rb}` : knowledge);
         if (!demoMode) await consumeQuota(campaign.userId, "contentGenerations", 1);
+        // Kalite kapısı: dolgu temizliği (ücretsiz) + puan düşükse bir kez AI düzeltmesi (yalnızca gerekirse +1 AI sorgusu).
+        article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);
+        if (!demoMode && campaign.options.quality !== false) {
+          const qr = qualityReport(article, t.label, { hasSources: !!research?.facts.length });
+          if (qr.overall < 70 && qr.issues.length && (await checkQuota(campaign.userId, "engineQueries", 1)).allowed) {
+            const better = await reviseArticle(article, qr.issues, { keyword: t.label, language: campaign.options.language ?? "tr", knowledge }).catch(() => null);
+            if (better) {
+              await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
+              better.bodyMarkdown = polishMarkdown(better.bodyMarkdown);
+              if (qualityReport(better, t.label, { hasSources: !!research?.facts.length }).overall > qr.overall) Object.assign(article, { title: better.title, metaDescription: better.metaDescription, bodyMarkdown: better.bodyMarkdown, openPlaceholders: better.openPlaceholders });
+            }
+          }
+        }
         if (!demoMode && campaign.options.media !== false) {
           const images = await findImages([...(research?.imageQueries ?? []), t.label], 2).catch(() => []);
           article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language: campaign.options.language ?? "tr" });

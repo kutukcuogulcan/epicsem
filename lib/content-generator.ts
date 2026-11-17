@@ -174,6 +174,20 @@ function parseArticleResponse(text: string, model: string): GeneratedArticle {
   };
 }
 
+/**
+ * Editoryal kalite kuralları — "AI yazısı gibi" duran, dolgu cümleli, yüzeysel metni engeller.
+ * Hem ilk yazımda hem kalite düzeltmesinde kullanılır.
+ */
+export const EDITORIAL_RULES = `EDITORIAL QUALITY RULES (follow all of them):
+1. Answer-first: the opening paragraph answers the topic directly in 2-3 sentences (40-60 words) that could be quoted on its own by an AI answer engine. Then EVERY ## section starts with a 1-2 sentence direct answer to its heading before expanding.
+2. Be specific, not generic: concrete steps, real examples, criteria, numbers from the verified sources, common mistakes and how to avoid them, who it is / isn't for. Each section must teach something a reader could act on today. No paragraph that could be pasted into any other article.
+3. Structure for scanning: ## headings phrased as the questions people ask; short paragraphs (max 3-4 sentences, under 90 words); numbered lists for processes, bullet lists for options; at least one markdown table (comparison, checklist, or summary) when the topic allows.
+4. Cover the topic completely: include definitions of key terms, the "how", the "why", alternatives/comparisons, and practical tips. Prefer depth over repetition.
+5. Keyword: use the main keyword naturally in the title, in the first 100 words and in at least one ## heading; use natural variations and related terms instead of repeating it.
+6. Forbidden filler (never use these or similar): "Günümüzde", "Bu yazımızda / bu yazıda ... ele alacağız", "Sonuç olarak" as an empty wrap-up, "unutmamak gerekir ki", "son derece önemlidir", "hayati önem taşır", "In today's world", "In this article we will", "It is important to note", "In conclusion", "delve", "landscape", "game-changer". No rhetorical questions as openers. No empty superlatives.
+7. Brand: mention the brand where it genuinely helps the reader (a relevant service, method or example) — 2-4 times in total, never as an advert in every section, and never claim things about the brand that are not in the provided material.
+8. End with a short practical summary (checklist or 3-5 bullet "what to do next"), not a generic conclusion paragraph.`;
+
 const RESPONSE_SHAPE_INSTRUCTIONS = `Respond with ONLY a single JSON object, no markdown fences, no commentary, matching exactly this shape:
 {
   "title": "50-60 character SEO title",
@@ -329,8 +343,10 @@ export async function generateArticleFromTopic(
       : `You are writing an SEO + GEO (generative engine optimization) optimized article for ${brand.name} (${brand.domain}) targeting the search topic / keyword: "${topic}".`
   );
   lines.push(
-    (opts.language ? "" : "Write in the same language as the topic (default: Turkish). ") + "Open with a 2-3 sentence direct answer to the topic (answer-first, quotable by AI answer engines). Use ## / ### headings phrased the way people actually ask, short paragraphs, bullet lists or a table where useful, and end with a '## Sık sorulan sorular' section of 3-5 real questions with concise answers. Mention the brand naturally where it is genuinely relevant — never as an advert in every paragraph."
+    (opts.language ? "" : "Write in the same language as the topic (default: Turkish). ") + "Write like a senior subject-matter expert and editor, for a reader who wants a complete, trustworthy answer. End with a '## Sık sorulan sorular' section of 3-5 real questions, each answered in 40-60 words (in the article's language; use 'Frequently asked questions' etc. for other languages)."
   );
+  lines.push("");
+  lines.push(EDITORIAL_RULES);
   if (opts.title) {
     lines.push("");
     lines.push(`Use exactly this article title (you may lightly polish grammar, keep the meaning): "${opts.title}"`);
@@ -369,5 +385,45 @@ export async function generateArticleFromTopic(
     // Bir kez daha dene: model bazen JSON dışına taşar.
     const again = await provider.run(prompt + "\n\nReturn ONLY the JSON object. Keep bodyMarkdown under 1200 words so the JSON is complete.", { json: true, maxTokens: 8000 });
     return parseArticleResponse(again.text, again.model);
+  }
+}
+
+
+/**
+ * Kalite düzeltmesi: yazıyı kural tabanlı puanlamada eksik çıkan maddelere göre bir kez iyileştirir.
+ * Gerçek bilgileri, kaynak linklerini, görsel/video satırlarını ve [NEEDS: ...] alanlarını korur; yeni rakam uydurmaz.
+ */
+export async function reviseArticle(
+  article: GeneratedArticle,
+  issues: string[],
+  opts: { keyword: string; language?: string; knowledge?: string }
+): Promise<GeneratedArticle | null> {
+  const provider = isDemoMode() ? null : pickProvider();
+  if (!provider) return null;
+  const prompt = `You are a senior editor. Improve the article below so it fixes every issue in the list. Keep the language (${opts.language ? LANG_NAMES[opts.language] ?? opts.language : "same as the article"}), the topic, the main structure, every factual statement, every markdown link (sources and internal links), every image line (![...](...)), every standalone YouTube URL line and every [NEEDS: ...] placeholder exactly. Do NOT invent new statistics, prices, dates or brand claims. Do not shorten the article; expand thin sections instead.
+Main keyword: "${opts.keyword}"
+
+ISSUES TO FIX:
+${issues.map((i) => `- ${i}`).join("\n")}
+
+${EDITORIAL_RULES}
+
+CURRENT TITLE: ${article.title}
+CURRENT META DESCRIPTION: ${article.metaDescription}
+CURRENT ARTICLE (markdown):
+${article.bodyMarkdown}
+${knowledgeBlock(opts.knowledge)}
+
+${RESPONSE_SHAPE_INSTRUCTIONS.replace("500-900 words", "at least as long as the current article")}`;
+  try {
+    const r = await provider.run(prompt, { json: true, maxTokens: 9000 });
+    const out = parseArticleResponse(r.text, r.model);
+    // güvenlik: belirgin kısalma ya da kaybolan link/görsel varsa reddet
+    const links = (md: string) => (md.match(/\]\(https?:\/\/[^)]+\)/g) ?? []).length;
+    if (out.bodyMarkdown.length < article.bodyMarkdown.length * 0.8) return null;
+    if (links(out.bodyMarkdown) < links(article.bodyMarkdown) - 1) return null;
+    return out;
+  } catch {
+    return null;
   }
 }

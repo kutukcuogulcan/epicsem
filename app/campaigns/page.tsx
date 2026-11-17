@@ -22,7 +22,7 @@ interface Campaign {
   postsPerRun: number;
   format: Format;
   mode: Mode;
-  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean; minCitability?: number; internalLinks?: boolean; media?: boolean; research?: boolean };
+  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean; minCitability?: number; internalLinks?: boolean; media?: boolean; research?: boolean; quality?: boolean };
   nextRunAt: string | null;
   feed: { id: number; name: string; kind: string } | null;
   connection: { id: number; label: string; platform: string } | null;
@@ -84,6 +84,7 @@ const emptyForm = {
   internalLinks: true,
   media: true,
   research: false,
+  quality: true,
   minCitability: 50,
 };
 
@@ -179,6 +180,7 @@ export default function CampaignsPage() {
       internalLinks: c.options.internalLinks !== false,
       media: c.options.media !== false,
       research: !!c.options.research,
+      quality: c.options.quality !== false,
       minCitability: c.options.minCitability ?? 0,
     });
     setFeed(null);
@@ -254,6 +256,7 @@ export default function CampaignsPage() {
           internalLinks: form.internalLinks,
           media: form.media,
           research: form.research,
+          quality: form.quality,
           minCitability: form.mode === "review" ? 0 : form.minCitability,
         },
         config:
@@ -870,7 +873,8 @@ export default function CampaignsPage() {
                 {([
                   ["internalLinks", "İç linkler", "Sitenin sayfalarına 2–5 bağlam uygun link (ücretsiz)"],
                   ["media", "Görsel ve video", "Lisanslı 2 görsel (ücretsiz) + kaynak açıksa YouTube videosu"],
-                  ["research", "Kaynaklı bilgiler", "Web aramasıyla doğrulanmış istatistik ve kaynak linki · yazı başına +1 AI sorgusu"],
+                  ["research", "Kaynaklı bilgiler", "Web aramasıyla rakiplerin işlediği konular, gerçek sorular ve doğrulanmış istatistikler · yazı başına +1 AI sorgusu"],
+                  ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; SEO/GEO puanı 70'in altındaysa yazı bir kez iyileştirilir · yalnızca gerekirse +1 AI sorgusu"],
                 ] as const).map(([k, l, d]) => (
                   <label key={k} className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
                     <span>

@@ -61,7 +61,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
   const [questions, setQuestions] = useState<string[]>([]);
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [tone, setTone] = useState("professional");
-  const [opts, setOpts] = useState({ takeaways: true, faq: true, table: true, internalLinks: true, cta: false, research: true, media: true });
+  const [opts, setOpts] = useState({ takeaways: true, faq: true, table: true, internalLinks: true, cta: false, research: true, media: true, quality: true });
   const [busy, setBusy] = useState<null | "topics" | "outline" | "write">(null);
   const [err, setErr] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -404,7 +404,8 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
                     ["faq", "SSS bölümü", "Plandaki sorular cevaplanır"],
                     ["table", "Tablo", "Karşılaştırma ya da kontrol listesi"],
                     ["internalLinks", "İç linkler", "Sitenin sayfalarından 2-5 link (tarama ya da sitemap)"],
-                    ["research", "Kaynaklı bilgiler", "Web aramasıyla doğrulanmış istatistik ve kaynak linkleri · +1 AI sorgusu"],
+                    ["research", "Kaynaklı bilgiler", "Rakiplerin işlediği konular, gerçek sorular, doğrulanmış istatistikler · +1 AI sorgusu"],
+                    ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; puan 70'in altındaysa bir kez iyileştirilir · gerekirse +1 AI sorgusu"],
                     ["media", "Görsel ve video", "Lisanslı 2 görsel (ücretsiz) + kaynak açıksa ilgili YouTube videosu"],
                     ["cta", "Harekete geçirici kapanış", "Sonda markana kısa davet"],
                   ] as const).map(([k, l, d]) => (

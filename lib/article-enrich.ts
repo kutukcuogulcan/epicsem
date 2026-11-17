@@ -21,6 +21,12 @@ export interface ResearchResult {
   facts: ResearchFact[];
   youtube: { title: string; url: string; id: string } | null;
   imageQueries: string[];
+  /** Üst sıradaki sayfaların ve AI cevaplarının ortak olarak işlediği alt konular. */
+  coverage: string[];
+  /** İnsanların bu konuda gerçekten sorduğu sorular (Google "Diğer sorular", forumlar). */
+  questions: string[];
+  /** Arama niyeti: bilgi / karşılaştırma / satın alma / nasıl yapılır. */
+  intent: string | null;
   model: string;
 }
 
@@ -57,9 +63,10 @@ export async function researchTopic(topic: string, language = "tr"): Promise<Res
 Find:
 1. 3–5 specific, recent facts or statistics about this topic, each from an authoritative source page (official stats, research, reputable publications). Use the exact page URL where the fact appears.
 2. ONE relevant, high-quality YouTube video that explains this topic (a real youtube.com/watch URL you actually found).
-3. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
+3. What the top-ranking pages and AI answers for this topic cover: 5–8 short subtopics they all include (so a new article is not missing anything), the 4–6 questions people really ask about it (Google "People also ask", forums), and the search intent in 2–4 words (e.g. "informational how-to", "commercial comparison").
+4. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
 Never invent a URL or a number. If unsure, leave it out.
-Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""]}`;
+Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""],"coverage":["subtopic"],"questions":["question?"],"intent":""}`;
   const r = await runWebSearchPrompt(prompt);
   if (!r) return null;
   let parsed: Record<string, any>;
@@ -78,12 +85,23 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   const ytUrl = String(parsed.youtube?.url ?? "");
   const youtube = ytUrl ? await verifyYoutube(ytUrl) : null;
   const imageQueries = (Array.isArray(parsed.imageQueries) ? parsed.imageQueries : []).map((q: unknown) => String(q).trim().slice(0, 60)).filter(Boolean).slice(0, 2);
-  return { facts, youtube, imageQueries, model: r.model };
+  const list = (v: unknown, n: number, len: number) => (Array.isArray(v) ? v : []).map((x) => String(x ?? "").trim().slice(0, len)).filter((x) => x.length > 2).slice(0, n);
+  const intent = String(parsed.intent ?? "").trim().slice(0, 60) || null;
+  return { facts, youtube, imageQueries, coverage: list(parsed.coverage, 8, 120), questions: list(parsed.questions, 6, 160), intent, model: r.model };
 }
 
 /** Araştırma sonucunu yazı talimatına çevirir. */
 export function researchBrief(r: ResearchResult | null, language = "tr"): string {
-  if (!r?.facts.length) return "";
+  if (!r) return "";
+  const parts: string[] = [];
+  if (r.intent) parts.push(`SEARCH INTENT: ${r.intent}. Shape the article for this intent (e.g. steps for how-to, a comparison table for comparison, clear options and criteria for commercial).`);
+  if (r.coverage.length) parts.push(`TOPIC COVERAGE — the top-ranking pages and AI answers all cover these subtopics; make sure the article covers each one (as a section or within one), adding something more useful than they do:\n${r.coverage.map((c) => `- ${c}`).join("\n")}`);
+  if (r.questions.length) parts.push(`QUESTIONS PEOPLE REALLY ASK — answer them in the body or FAQ (prefer these over invented FAQ questions):\n${r.questions.map((q) => `- ${q}`).join("\n")}`);
+  if (r.facts.length) parts.push(sourcesBrief(r, language));
+  return parts.join("\n\n");
+}
+
+function sourcesBrief(r: ResearchResult, language: string): string {
   const lines = r.facts.map((f) => `- ${f.fact} — ${f.source || new URL(f.url).hostname} (${f.url})`).join("\n");
   return `VERIFIED SOURCES (found by web search and checked). Use 2–4 of these facts where they fit, citing each inline as a markdown link to its URL, e.g. "...%38 arttı ([${language === "tr" ? "kaynak" : "source"}](URL))". These are the ONLY statistics you may state; do not invent other numbers:\n${lines}`;
 }
