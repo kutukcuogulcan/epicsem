@@ -42,6 +42,51 @@ interface Campaign {
   feed: { name: string } | null;
 }
 
+interface RefreshItem {
+  key: string;
+  url: string | null;
+  title: string;
+  draftId: number | null;
+  keywords: { keyword: string; position: number | null; best: number | null }[];
+  prompts: string[];
+  words: number | null;
+  publishedAt: string | null;
+  signals: { kind: string; label: string; detail: string; weight: number }[];
+  score: number;
+  priority: "high" | "medium" | "low";
+}
+interface RefreshPlan {
+  summary: string;
+  title: string | null;
+  metaDescription: string | null;
+  changes: { where: string; what: string }[];
+  newSections: { heading: string; points: string[] }[];
+  faq: { q: string; a: string }[];
+}
+const SIG_CLS: Record<string, string> = {
+  lost: "bg-danger/10 text-danger",
+  drop: "bg-danger/10 text-danger",
+  striking: "bg-accent/10 text-accent",
+  ai: "bg-violet-50 text-violet-700",
+  stale: "bg-warn/10 text-warn",
+  thin: "bg-muted text-ink/70",
+  holes: "bg-warn/10 text-warn",
+  nofaq: "bg-muted text-ink/70",
+};
+const PRIO = { high: { label: "Yüksek", cls: "text-danger" }, medium: { label: "Orta", cls: "text-warn" }, low: { label: "Düşük", cls: "text-sub" } } as const;
+const planText = (it: RefreshItem, p: RefreshPlan) =>
+  [
+    `YENİLEME PLANI — ${it.title}${it.url ? ` (${it.url})` : ""}`,
+    p.summary,
+    p.title ? `Yeni başlık: ${p.title}` : "",
+    p.metaDescription ? `Meta açıklama: ${p.metaDescription}` : "",
+    p.changes.length ? `\nDeğişiklikler:\n${p.changes.map((c) => `- [${c.where}] ${c.what}`).join("\n")}` : "",
+    p.newSections.length ? `\nYeni bölümler:\n${p.newSections.map((n) => `## ${n.heading}\n${n.points.map((x) => `- ${x}`).join("\n")}`).join("\n")}` : "",
+    p.faq.length ? `\nSSS:\n${p.faq.map((f) => `S: ${f.q}\nC: ${f.a}`).join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
 type Kind = "published" | "scheduled" | "remote" | "planned" | "created" | "error";
 interface Ev {
   key: string;
@@ -116,6 +161,11 @@ export default function CalendarPage() {
   const [qf, setQf] = useState<"pending" | "approved" | "all">("pending");
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<Set<number>>(new Set());
+  const [refresh, setRefresh] = useState<RefreshItem[] | null>(null);
+  const [rf, setRf] = useState<"all" | "rank" | "ai" | "content">("all");
+  const [rOpen, setROpen] = useState<RefreshItem | null>(null);
+  const [plans, setPlans] = useState<Record<string, { busy: boolean; err: string | null; plan: RefreshPlan | null; demo?: boolean }>>({});
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -126,6 +176,10 @@ export default function CalendarPage() {
       const db = b.ok ? await b.json() : { campaigns: [] };
       setDrafts(da.drafts ?? []);
       setCampaigns(db.campaigns ?? []);
+      fetch("/api/refresh")
+        .then((r) => (r.ok ? r.json() : { items: [] }))
+        .then((d) => setRefresh(d.items ?? []))
+        .catch(() => setRefresh([]));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Yüklenemedi");
       setDrafts([]);
@@ -135,7 +189,9 @@ export default function CalendarPage() {
     load();
   }, [load, project?.domain]);
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "queue") setTab(1);
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "queue") setTab(1);
+    if (t === "refresh") setTab(2);
   }, []);
 
   const projCampaigns = useMemo(
@@ -285,6 +341,17 @@ export default function CalendarPage() {
         </button>
       ),
     },
+    (refresh ?? []).some((r) => r.priority === "high") && {
+      kind: "Yenile",
+      color: "text-danger",
+      title: `${(refresh ?? []).filter((r) => r.priority === "high").length} yazı acil yenileme istiyor`,
+      body: "Sıralaması düşen, 2. sayfada kalan ya da AI cevaplarında anılmayan yazılar. Güncellemek yeni yazıdan daha hızlı sonuç verir.",
+      cta: (
+        <button type="button" onClick={() => setTab(2)} className={BTN2}>
+          Yenilenecekler
+        </button>
+      ),
+    },
     projCampaigns.filter((c) => c.status === "active").length === 0 && {
       kind: "Otomasyon",
       color: "text-seo",
@@ -297,6 +364,34 @@ export default function CalendarPage() {
       ),
     },
   ].filter(Boolean) as { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[];
+
+  const makePlan = async (it: RefreshItem) => {
+    setPlans((p) => ({ ...p, [it.key]: { busy: true, err: null, plan: null } }));
+    try {
+      const r = await fetch("/api/refresh/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: it.url,
+          draftId: it.draftId,
+          title: it.title,
+          signals: it.signals.map((s) => `${s.label}: ${s.detail}`),
+          keywords: it.keywords.map((k) => `${k.keyword}${k.position ? ` (${k.position}.)` : ""}`),
+          prompts: it.prompts,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Plan yazılamadı");
+      setPlans((p) => ({ ...p, [it.key]: { busy: false, err: null, plan: j.plan, demo: j.demo } }));
+      window.dispatchEvent(new Event("epicsem:usage-changed"));
+    } catch (e) {
+      setPlans((p) => ({ ...p, [it.key]: { busy: false, err: e instanceof Error ? e.message : "Plan yazılamadı", plan: null } }));
+    }
+  };
+  const refreshRows = (refresh ?? []).filter((r) =>
+    rf === "all" ? true : rf === "rank" ? r.signals.some((s) => ["drop", "lost", "striking"].includes(s.kind)) : rf === "ai" ? r.signals.some((s) => s.kind === "ai") : r.signals.some((s) => ["stale", "thin", "holes", "nofaq"].includes(s.kind))
+  );
+  const rp = rOpen ? plans[rOpen.key] : undefined;
 
   const dayEvents = dayOpen ? byDay.get(dayOpen) ?? [] : [];
   const assignable = all.filter((d) => !d.publishedPostUrl && (d.approvedAt || d.campaignId == null) && d.plannedFor !== dayOpen).slice(0, 30);
@@ -362,6 +457,7 @@ export default function CalendarPage() {
         tabs={[
           { label: "Takvim", key: "cal" },
           { label: "Onay kuyruğu", key: "queue", count: pending.length },
+          { label: "Yenilenecekler", key: "refresh", count: refresh?.length ?? null },
         ]}
       />
 
@@ -559,6 +655,254 @@ export default function CalendarPage() {
           )}
         </div>
       )}
+
+      {tab === 2 && (
+        <div className={`${CARD} overflow-hidden`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {([
+                ["all", "Tümü"],
+                ["rank", "Sıralama"],
+                ["ai", "AI görünürlüğü"],
+                ["content", "İçerik kalitesi"],
+              ] as const).map(([k, l]) => (
+                <button key={k} type="button" className={chip(rf === k)} onClick={() => setRf(k)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <span className="text-[12px] text-sub">Sinyaller AI kullanmadan hesaplanır · &quot;Plan çıkar&quot; 1 AI sorgusu</span>
+          </div>
+          {refresh === null ? (
+            <div className="h-40 animate-pulse border-t border-border bg-muted/40" />
+          ) : refreshRows.length === 0 ? (
+            <div className="border-t border-border px-5 py-10 text-center">
+              <div className="text-sm font-semibold">Yenilenmesi gereken yazı bulunamadı</div>
+              <p className="mx-auto mt-1 max-w-md text-[13px] text-sub">
+                Sinyaller Sıralama Takibi&apos;ndeki kelimelerden, GEO sorularından ve sitene gönderdiğin yazılardan gelir. Kelime ekledikçe ve sorular çalıştıkça liste dolar.
+              </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Link href="/rankings" className={BTN2}>
+                  Sıralama Takibi
+                </Link>
+                <Link href="/prompts" className={BTN2}>
+                  GEO soruları
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <table className="w-full border-t border-border text-sm">
+              <thead className="bg-muted/40 text-left text-[11px] font-medium uppercase tracking-wide text-sub">
+                <tr>
+                  <th className="px-5 py-2">Yazı</th>
+                  <th className="py-2 pr-3">Neden</th>
+                  <th className="hidden py-2 pr-3 lg:table-cell">Kelime · sıra</th>
+                  <th className="py-2 pr-3">Öncelik</th>
+                  <th className="py-2 pr-5 text-right">İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {refreshRows.map((it) => (
+                  <tr key={it.key} onClick={() => setROpen(it)} className="cursor-pointer border-t border-border align-top hover:bg-muted/40">
+                    <td className="max-w-[320px] px-5 py-3">
+                      <div className="truncate font-medium">{it.title}</div>
+                      <div className="truncate text-xs text-sub">{it.url ? it.url.replace(/^https?:\/\/(www\.)?/, "") : "adres yok"}</div>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <div className="flex max-w-[340px] flex-wrap gap-1">
+                        {it.signals.slice(0, 3).map((s) => (
+                          <span key={s.kind} title={s.detail} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>
+                            {s.label}
+                          </span>
+                        ))}
+                        {it.signals.length > 3 && <span className="text-[11px] text-sub">+{it.signals.length - 3}</span>}
+                      </div>
+                    </td>
+                    <td className="hidden max-w-[200px] py-3 pr-3 text-[13px] text-sub lg:table-cell">
+                      {it.keywords.length ? (
+                        <span className="truncate">
+                          {it.keywords[0].keyword} · {it.keywords[0].position ? `${it.keywords[0].position}.` : "yok"}
+                          {it.keywords[0].best && it.keywords[0].position !== it.keywords[0].best ? <span className="text-sub/70"> (en iyi {it.keywords[0].best}.)</span> : null}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <div className={`text-[13px] font-semibold ${PRIO[it.priority].cls}`}>{PRIO[it.priority].label}</div>
+                      <div className="text-[11px] tabular-nums text-sub">{it.score} puan</div>
+                    </td>
+                    <td className="py-3 pr-5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          type="button"
+                          disabled={plans[it.key]?.busy}
+                          onClick={() => {
+                            setROpen(it);
+                            if (!plans[it.key]?.plan) makePlan(it);
+                          }}
+                          className={BTN1}
+                        >
+                          {plans[it.key]?.busy ? "Yazılıyor…" : plans[it.key]?.plan ? "Planı gör" : "Plan çıkar"}
+                        </button>
+                        {it.draftId && (
+                          <Link href={`/editor?draftId=${it.draftId}`} className={BTN2}>
+                            Editörde aç
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Yenileme çekmecesi */}
+      <Drawer
+        isOpen={!!rOpen}
+        onClose={() => setROpen(null)}
+        size="2xl"
+        eyebrow={rOpen ? `Yenileme · ${PRIO[rOpen.priority].label} öncelik · ${rOpen.score} puan` : ""}
+        title={rOpen?.title ?? ""}
+        subtitle={rOpen?.url ?? ""}
+        footer={
+          rOpen && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[12px] text-sub">Plan çıkarmak 1 AI motor sorgusu kullanır.</span>
+              <div className="flex gap-2">
+                {rp?.plan && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(planText(rOpen, rp.plan!)).then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1500);
+                      });
+                    }}
+                    className={BTN2}
+                  >
+                    {copied ? "Kopyalandı ✓" : "Planı kopyala"}
+                  </button>
+                )}
+                {rOpen.draftId ? (
+                  <Link href={`/editor?draftId=${rOpen.draftId}`} className={BTN2}>
+                    Editörde aç
+                  </Link>
+                ) : rOpen.url ? (
+                  <a href={rOpen.url} target="_blank" rel="noreferrer" className={BTN2}>
+                    Sayfayı aç ↗
+                  </a>
+                ) : null}
+                <button type="button" disabled={rp?.busy} onClick={() => makePlan(rOpen)} className={BTN1}>
+                  {rp?.busy ? "Yazılıyor…" : rp?.plan ? "Yeniden yaz" : "Plan çıkar"}
+                </button>
+              </div>
+            </div>
+          )
+        }
+      >
+        {rOpen && (
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              {rOpen.signals.map((s) => (
+                <div key={s.kind} className="flex items-start gap-2 rounded-xl border border-border px-3 py-2">
+                  <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>{s.label}</span>
+                  <span className="text-[13px]">{s.detail}</span>
+                </div>
+              ))}
+            </div>
+            {rOpen.keywords.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-sub">Takip edilen kelimeler</div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {rOpen.keywords.map((k) => (
+                    <span key={k.keyword} className="rounded-md bg-muted px-2 py-0.5 text-[12px]">
+                      {k.keyword} · {k.position ? `${k.position}.` : "yok"}
+                      {k.best ? ` (en iyi ${k.best}.)` : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {rOpen.prompts.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-sub">Markanın anılmadığı AI soruları</div>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px]">
+                  {rOpen.prompts.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {rp?.err && <ErrorBlock message={rp.err} onRetry={() => makePlan(rOpen)} />}
+            {rp?.busy && <div className="h-40 animate-pulse rounded-xl bg-muted" />}
+            {rp?.plan && (
+              <div className="space-y-4 rounded-2xl border border-[#BDB4FF] bg-accent/[0.03] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Yenileme planı{rp.demo ? " · demo" : ""}</div>
+                {rp.plan.summary && <p className="text-[13px]">{rp.plan.summary}</p>}
+                {(rp.plan.title || rp.plan.metaDescription) && (
+                  <div className="space-y-1 text-[13px]">
+                    {rp.plan.title && (
+                      <div>
+                        <span className="text-sub">Yeni başlık: </span>
+                        <b>{rp.plan.title}</b>
+                      </div>
+                    )}
+                    {rp.plan.metaDescription && (
+                      <div>
+                        <span className="text-sub">Meta: </span>
+                        {rp.plan.metaDescription}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {rp.plan.changes.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold">Değiştir</div>
+                    <ul className="mt-1 space-y-1 text-[13px]">
+                      {rp.plan.changes.map((c, i) => (
+                        <li key={i}>
+                          <span className="text-sub">{c.where}: </span>
+                          {c.what}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {rp.plan.newSections.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold">Ekle</div>
+                    {rp.plan.newSections.map((n) => (
+                      <div key={n.heading} className="mt-1.5">
+                        <div className="text-[13px] font-medium">## {n.heading}</div>
+                        <ul className="list-disc pl-5 text-[13px] text-ink/80">
+                          {n.points.map((p) => (
+                            <li key={p}>{p}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {rp.plan.faq.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold">SSS önerisi</div>
+                    {rp.plan.faq.map((f) => (
+                      <div key={f.q} className="mt-1.5 text-[13px]">
+                        <div className="font-medium">{f.q}</div>
+                        <div className="text-ink/80">{f.a}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
 
       {/* Yazı çekmecesi */}
       <Drawer
