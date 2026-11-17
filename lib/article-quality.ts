@@ -50,7 +50,7 @@ export function qualityReport(article: GeneratedArticle, keyword: string, opts: 
   // Yalnızca yazarın düzeltebileceği maddeler (görsel/link sonradan eklenir, onları sayma).
   // Gerçek veri olmadan düzeltilemeyecekleri de atla (aksi halde model alıntı/rakam uydurmaya itilir).
   const skip = new Set(["kw", "img", "links", "h1", "quotes", "placeholders", ...(opts.hasSources ? [] : ["stats", "cite", "stat-source"])]);
-  const failing = [...r.seoChecks.filter((c) => !skip.has(c.key)), ...r.geoChecks]
+  const failing = [...r.seoChecks, ...r.geoChecks].filter((c) => !skip.has(c.key))
     .filter((c) => !c.ok && (c.part ?? 0) < 0.85)
     .sort((a, b) => b.weight - a.weight);
   for (const c of failing.slice(0, 8)) issues.push(`${c.label}: ${c.hint}`);
