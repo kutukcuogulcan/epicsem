@@ -117,6 +117,16 @@ export function markdownToHtml(markdown: string): string {
       continue;
     }
     closeList();
+    const img = line.match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/);
+    if (img) {
+      html.push(`<figure><img src="${esc(img[2])}" alt="${esc(img[1])}" loading="lazy" /></figure>`);
+      continue;
+    }
+    // Tek başına YouTube adresi: WordPress bunu otomatik gömülü videoya çevirir (oEmbed).
+    if (/^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}\S*$/.test(line)) {
+      html.push(`<p>${esc(line)}</p>`);
+      continue;
+    }
     const quote = line.match(/^>\s?(.*)$/);
     if (quote) {
       html.push(`<blockquote><p>${inline(quote[1])}</p></blockquote>`);

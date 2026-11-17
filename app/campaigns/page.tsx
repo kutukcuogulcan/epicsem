@@ -22,7 +22,7 @@ interface Campaign {
   postsPerRun: number;
   format: Format;
   mode: Mode;
-  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean; minCitability?: number };
+  options: { connectionId?: number | null; randomMinutes?: number; language?: string; cover?: "none" | "branded" | "ai"; toc?: boolean; takeaways?: boolean; minCitability?: number; internalLinks?: boolean; media?: boolean; research?: boolean };
   nextRunAt: string | null;
   feed: { id: number; name: string; kind: string } | null;
   connection: { id: number; label: string; platform: string } | null;
@@ -81,6 +81,9 @@ const emptyForm = {
   cover: "branded" as "none" | "branded" | "ai",
   toc: true,
   takeaways: true,
+  internalLinks: true,
+  media: true,
+  research: false,
   minCitability: 50,
 };
 
@@ -173,6 +176,9 @@ export default function CampaignsPage() {
       cover: c.options.cover ?? "none",
       toc: !!c.options.toc,
       takeaways: !!c.options.takeaways,
+      internalLinks: c.options.internalLinks !== false,
+      media: c.options.media !== false,
+      research: !!c.options.research,
       minCitability: c.options.minCitability ?? 0,
     });
     setFeed(null);
@@ -245,6 +251,9 @@ export default function CampaignsPage() {
           cover: form.cover,
           toc: form.toc,
           takeaways: form.takeaways,
+          internalLinks: form.internalLinks,
+          media: form.media,
+          research: form.research,
           minCitability: form.mode === "review" ? 0 : form.minCitability,
         },
         config:
@@ -853,6 +862,19 @@ export default function CampaignsPage() {
                   </span>
                   <input type="checkbox" checked={form.takeaways} onChange={(e) => set("takeaways", e.target.checked)} className="h-4 w-4 accent-[#4f00ff]" />
                 </label>
+                {([
+                  ["internalLinks", "İç linkler", "Sitenin sayfalarına 2–5 bağlam uygun link (ücretsiz)"],
+                  ["media", "Görsel ve video", "Lisanslı 2 görsel (ücretsiz) + kaynak açıksa YouTube videosu"],
+                  ["research", "Kaynaklı bilgiler", "Web aramasıyla doğrulanmış istatistik ve kaynak linki · yazı başına +1 AI sorgusu"],
+                ] as const).map(([k, l, d]) => (
+                  <label key={k} className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
+                    <span>
+                      <span className="block text-sm font-medium">{l}</span>
+                      <span className="block text-[11px] text-ink/50">{d}</span>
+                    </span>
+                    <input type="checkbox" checked={form[k]} onChange={(e) => set(k, e.target.checked)} className="h-4 w-4 accent-[#4f00ff]" />
+                  </label>
+                ))}
               </div>
 
               <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">

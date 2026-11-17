@@ -1813,6 +1813,12 @@ export interface CampaignOptions {
   takeaways?: boolean;
   /** Sitede taslak / tam otomasyon modunda: alıntılanabilirlik puanı bunun altındaysa siteye gönderme (0 = kapalı). */
   minCitability?: number;
+  /** Sitenin sayfalarına otomatik iç link (varsayılan açık). */
+  internalLinks?: boolean;
+  /** Openverse görselleri (ücretsiz) + kaynak açıksa YouTube videosu (varsayılan açık). */
+  media?: boolean;
+  /** Web aramasıyla doğrulanmış kaynak/istatistik (yazı başına +1 AI sorgusu, varsayılan kapalı). */
+  research?: boolean;
 }
 
 export interface Campaign {

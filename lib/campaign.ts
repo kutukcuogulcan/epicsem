@@ -13,6 +13,7 @@ import { feedIsStale, refreshFeed } from "./feeds";
 import { addTableOfContents } from "./article-post";
 import { citabilityOfMarkdown } from "./citability";
 import { aiCover, brandedCover } from "./covers";
+import { findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
 import { publishDraftToConnection } from "./publish-draft";
 import { isDemoMode } from "./geo-providers";
 import { fetchFeed, matchesFilter } from "./rss";
@@ -165,7 +166,9 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
     }
 
     const demoMode = isDemoMode();
-    const knowledge = (await projectContextBlock(campaign.userId, campaign.brandDomain).catch(() => "")).trim();
+    const baseKnowledge = (await projectContextBlock(campaign.userId, campaign.brandDomain).catch(() => "")).trim();
+    const linkBrief = campaign.options.internalLinks !== false && !demoMode ? internalLinkBrief(await sitePagesForLinks(campaign.userId, campaign.brandDomain).catch(() => [])) : "";
+    const knowledge = linkBrief ? `${baseKnowledge}\n\nİÇ LİNK TALİMATI:\n${linkBrief}` : baseKnowledge;
     const made: { id: number; label: string }[] = [];
     const sent: string[] = [];
     const held: string[] = [];
@@ -181,8 +184,22 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         }
       }
       try {
-        const article = await t.write(knowledge);
+        // Kaynak araştırması (isteğe bağlı, +1 AI sorgusu): doğrulanmış istatistikler bilgi bloğuna eklenir.
+        let research: ResearchResult | null = null;
+        if (!demoMode && campaign.options.research) {
+          const rq = await checkQuota(campaign.userId, "engineQueries", 1);
+          if (rq.allowed) {
+            research = await researchTopic(t.label, campaign.options.language ?? "tr").catch(() => null);
+            if (research) await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
+          }
+        }
+        const rb = researchBrief(research, campaign.options.language ?? "tr");
+        const article = await t.write(rb ? `${knowledge}\n\n${rb}` : knowledge);
         if (!demoMode) await consumeQuota(campaign.userId, "contentGenerations", 1);
+        if (!demoMode && campaign.options.media !== false) {
+          const images = await findImages([...(research?.imageQueries ?? []), t.label], 2).catch(() => []);
+          article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language: campaign.options.language ?? "tr" });
+        }
         if (campaign.options.toc) article.bodyMarkdown = addTableOfContents(article.bodyMarkdown, campaign.options.language ?? "tr");
         const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id, campaign.brandDomain);
         made.push({ id: draft.id, label: t.label });

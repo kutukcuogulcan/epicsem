@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromTopic } from "@/lib/content-generator";
-import { getLatestCrawlPages, listKnownSites, saveContentDraft } from "@/lib/db";
+import { listKnownSites, saveContentDraft } from "@/lib/db";
 import { projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { rootHost } from "@/lib/backlinks";
+import { findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "@/lib/article-enrich";
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 /**
  * POST /api/editor/write { topic, keyword?, site?, format?, language?, takeaways?,
@@ -57,11 +58,21 @@ export async function POST(req: NextRequest) {
   if (b.table) brief.push("Include at least one useful markdown table (comparison, checklist or summary) where it genuinely helps.");
   if (b.cta && site) brief.push(`End with a short, non-pushy call to action paragraph that invites the reader to ${brand.name} (https://${site}).`);
   if (b.internalLinks && site) {
-    const pages = (await getLatestCrawlPages(user.id, site).catch(() => []))
-      .filter((p) => p.title || p.h1)
-      .slice(0, 40)
-      .map((p) => `- ${p.title || p.h1}: ${p.url}`);
-    if (pages.length) brief.push(`Add 2-4 internal links as natural in-sentence markdown links, ONLY to relevant pages from this list (use the exact URLs, skip if none fit):\n${pages.join("\n")}`);
+    const ib = internalLinkBrief(await sitePagesForLinks(user.id, site).catch(() => []));
+    if (ib) brief.push(ib);
+  }
+  // Kaynak araştırması (web araması, +1 AI sorgusu): doğrulanmış istatistikler + ilgili YouTube videosu.
+  let research: ResearchResult | null = null;
+  if (!demo && b.research !== false) {
+    const q = await checkQuota(user.id, "engineQueries", 1);
+    if (q.allowed) {
+      research = await researchTopic(String(b.title ?? "").trim() || topic, language).catch(() => null);
+      if (research) {
+        await consumeQuota(user.id, "engineQueries", 1).catch(() => {});
+        const rb = researchBrief(research, language);
+        if (rb) brief.push(rb);
+      }
+    }
   }
 
   try {
@@ -76,6 +87,11 @@ export async function POST(req: NextRequest) {
       brief: brief.join("\n"),
     });
     if (!demo) await consumeQuota(user.id, "contentGenerations", 1);
+    // Görseller (Openverse, ücretsiz) + video
+    if (!demo && b.media !== false) {
+      const images = await findImages([...(research?.imageQueries ?? []), keyword], 2).catch(() => []);
+      article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language });
+    }
     const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
     return NextResponse.json({ id: draft.id, demo: article.demoMode });
   } catch (e) {

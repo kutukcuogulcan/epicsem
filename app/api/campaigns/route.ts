@@ -60,6 +60,9 @@ const createSchema = z
         toc: z.boolean().optional(),
         takeaways: z.boolean().optional(),
         minCitability: z.number().int().min(0).max(90).optional(),
+        internalLinks: z.boolean().optional(),
+        media: z.boolean().optional(),
+        research: z.boolean().optional(),
       })
       .default({}),
     postsPerRun: z.number().int().min(1).max(3).default(1),

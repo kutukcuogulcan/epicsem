@@ -178,6 +178,20 @@ const WEB_SEARCH_CALLERS: WebSearchCaller[] = [
   },
 ];
 
+/** Yapılandırılmış ilk web-aramalı sağlayıcıyla serbest bir prompt çalıştırır (yoksa null). */
+export async function runWebSearchPrompt(prompt: string): Promise<{ text: string; model: string } | null> {
+  for (const c of WEB_SEARCH_CALLERS) {
+    if (!c.configured()) continue;
+    try {
+      const r = await c.run(prompt);
+      if (r.text.trim()) return r;
+    } catch {
+      /* sıradaki sağlayıcı */
+    }
+  }
+  return null;
+}
+
 /** Hiçbir web-arama sağlayıcısı yoksa: ilk yapılandırılmış normal model (aramasız). */
 async function runWithoutWebSearch(prompt: string): Promise<{ text: string; model: string } | null> {
   for (const id of ["anthropic", "openai", "google", "deepseek", "xai"] as const) {
