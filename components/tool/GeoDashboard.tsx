@@ -98,7 +98,7 @@ export default function GeoDashboard({
   competitors: BrandRef[];
   summaries: GeoVisibilitySummary[] | null;
   runAt: string | null;
-  onTab: (tab: "sources" | "visibility" | "opportunities" | "prompts") => void;
+  onTab: (tab: "sources" | "visibility" | "opportunities" | "prompts" | "actions") => void;
 }) {
   const [engine, setEngine] = useState<string>("all");
   const [metric, setMetric] = useState<"visibility" | "shareOfVoice" | "avgPosition">("visibility");
@@ -543,8 +543,8 @@ export default function GeoDashboard({
               <h2 className="text-base font-semibold">Ne yapmalı?</h2>
               <p className="text-xs text-sub">Bu testten çıkan, etkisi en yüksek işler</p>
             </div>
-            <button type="button" onClick={() => onTab("opportunities")} className="text-[13px] font-medium text-accent hover:underline">
-              Tüm fırsatlar →
+            <button type="button" onClick={() => onTab("actions")} className="text-[13px] font-medium text-accent hover:underline">
+              Aksiyon planı →
             </button>
           </div>
           <div className="grid gap-3 md:grid-cols-3">

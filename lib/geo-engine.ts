@@ -172,7 +172,7 @@ const EDITORIAL_HINTS = [
  * supplier, a review platform, a local business) rather than genuine miscellany, so that's the
  * more useful default than lumping everything into "Diğer". The spec also calls for a manual
  * override ("Kullanıcı her ikisini de elle değiştirebilir") — not yet built; flagged as pending. */
-function classifyDomain(domain: string, brandDomain: string, competitorDomains: string[]): SourceDomainType {
+export function classifyDomain(domain: string, brandDomain: string, competitorDomains: string[]): SourceDomainType {
   const clean = domain.replace(/^www\./, "");
   const own = brandDomain.replace(/^www\./, "");
   if (clean === own) return "You";
