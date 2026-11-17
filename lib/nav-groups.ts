@@ -19,6 +19,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/editor", label: "Tüm Yazılar", icon: "editor" },
       { href: "/campaigns", label: "Autoblog", icon: "campaigns" },
+      { href: "/calendar", label: "Takvim ve Onay", icon: "calendar" },
       { href: "/knowledge", label: "Bilgi Bankası", icon: "knowledge" },
       { href: "/content", label: "Yayın Hedefleri", icon: "content" },
       { href: "/keywords", label: "Anahtar Kelime Planlayıcı", icon: "keywords" },

@@ -374,6 +374,13 @@ export interface ContentDraft {
   publishState?: "remote-draft" | "scheduled" | "published" | "error" | null;
   scheduledAt?: string | null;
   publishError?: string | null;
+  /** Autoblog kampanyasından geldiyse kampanya id'si. */
+  campaignId?: number | null;
+  publishedAt?: string | null;
+  /** Onay kuyruğunda onaylandığı an (boşsa onay bekliyor). */
+  approvedAt?: string | null;
+  /** İçerik takviminde planlanan yayın günü (YYYY-MM-DD). */
+  plannedFor?: string | null;
 }
 
 /** WordPress uses Application Passwords; Shopify uses a Custom App Admin API access token. */

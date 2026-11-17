@@ -57,7 +57,7 @@ export async function researchTopic(topic: string, language = "tr"): Promise<Res
 Find:
 1. 3–5 specific, recent facts or statistics about this topic, each from an authoritative source page (official stats, research, reputable publications). Use the exact page URL where the fact appears.
 2. ONE relevant, high-quality YouTube video that explains this topic (a real youtube.com/watch URL you actually found).
-3. Two short ENGLISH image search queries (2–4 words) for illustrative photos of this topic.
+3. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
 Never invent a URL or a number. If unsure, leave it out.
 Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""]}`;
   const r = await runWebSearchPrompt(prompt);
@@ -113,6 +113,11 @@ export async function findImages(queries: string[], want = 2): Promise<Openverse
         if (out.length >= want) break;
         const w = Number(x.width ?? 0);
         if (!x.url || seen.has(x.url) || (w && w < 700) || !/^https:\/\//.test(x.url)) continue;
+        // Alakasız sonuçları ele: başlık/etiketler sorgudaki kelimelerden en az birini içermeli.
+        const words = q.toLowerCase().split(/\s+/).filter((s) => s.length > 3);
+        const hay = `${x.title ?? ""} ${(x.tags ?? []).map((g: any) => g?.name ?? "").join(" ")}`.toLowerCase();
+        if (words.length && !words.some((wd) => hay.includes(wd))) continue;
+        if (/\b(ai[- ]generated|example of|screenshot|diagram|logo)\b/i.test(String(x.title ?? ""))) continue;
         seen.add(x.url);
         out.push({
           url: x.url,
@@ -153,7 +158,8 @@ export function insertMedia(markdown: string, media: { images?: OpenverseImage[]
   (media.images ?? []).forEach((img, n) => {
     const k = [1, 3, 0][n];
     if (k === undefined || k >= h2.length) return;
-    const alt = (media.alt ? `${media.alt} — ${img.title}` : img.title).replace(/[\[\]]/g, "").slice(0, 120);
+    const heading = lines[h2[k]].replace(/^##\s+/, "").replace(/[*_`]/g, "");
+    const alt = (media.alt ? `${heading} – ${media.alt}` : heading).replace(/[\[\]]/g, "").slice(0, 125);
     const credit = `*${tr ? "Görsel" : "Image"}: ${img.creator ? `${img.creator}, ` : ""}${img.license || "CC"} · [Openverse](${img.landing})*`;
     inserts.push({ at: afterFirstPara(h2[k]), text: `\n![${alt}](${img.url})\n${credit}\n` });
   });

@@ -105,6 +105,12 @@ export const TOOL_ICONS: Record<string, React.ReactNode> = {
       <circle cx="9" cy="9" r="0.5" fill="currentColor" />
     </ToolIcon>
   ),
+  calendar: (
+    <ToolIcon>
+      <rect x="2.5" y="3.5" width="13" height="12" rx="2" />
+      <path d="M2.5 7.5h13M6 2v3M12 2v3" />
+    </ToolIcon>
+  ),
   keywords: (
     <ToolIcon>
       <circle cx="7.5" cy="7.5" r="4.5" />

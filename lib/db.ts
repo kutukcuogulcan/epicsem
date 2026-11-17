@@ -338,6 +338,11 @@ async function initSchema(): Promise<void> {
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS publish_state TEXT`);
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`);
   await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS publish_error TEXT`);
+  // Onay kuyruğu + içerik takvimi: onaylanma zamanı ve planlanan yayın günü.
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ`);
+  await p.query(`ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS planned_for DATE`);
+  // Reddedilen Autoblog konuları — taslak silinse de aynı konu tekrar üretilip kota harcanmasın.
+  await p.query(`CREATE TABLE IF NOT EXISTS content_rejections (user_id INTEGER NOT NULL, source_url TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, source_url))`);
   await p.query(`UPDATE content_drafts d SET site = lower(regexp_replace(c.brand_domain, '^(https?://)?(www\\.)?([^/]+).*$', '\\3'))
                    FROM campaigns c WHERE d.site IS NULL AND d.campaign_id = c.id`).catch(() => {});
   await p.query(`UPDATE content_drafts SET site = lower(regexp_replace(source_url, '^https?://(www\\.)?([^/]+).*$', '\\2'))
@@ -1449,6 +1454,12 @@ export async function deleteCmsConnection(userId: number, id: number): Promise<v
 
 // ---------------- content drafts (generated articles) ----------------
 
+/** pg DATE sütunu yerel saatle Date döner; gün kaymasın diye yerel bileşenlerden YYYY-MM-DD üretir. */
+function dateOnly(v: unknown): string {
+  if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}`;
+  return String(v).slice(0, 10);
+}
+
 function rowToContentDraft(row: any): ContentDraft {
   return {
     id: row.id,
@@ -1462,6 +1473,10 @@ function rowToContentDraft(row: any): ContentDraft {
     publishState: row.publish_state ?? (row.status === "published-to-wp" ? "remote-draft" : null),
     scheduledAt: row.scheduled_at ? toIso(row.scheduled_at) : null,
     publishError: row.publish_error ?? null,
+    campaignId: row.campaign_id ?? null,
+    publishedAt: row.published_at ? toIso(row.published_at) : null,
+    approvedAt: row.approved_at ? toIso(row.approved_at) : null,
+    plannedFor: row.planned_for ? dateOnly(row.planned_for) : null,
   };
 }
 
@@ -1512,7 +1527,35 @@ export async function saveBrandKnowledge(userId: number, content: string): Promi
   );
 }
 
-/** AI SEO Editör'de düzenlenen taslağın makalesini günceller (sahiplik kontrollü). */
+/** Onay kuyruğu: taslağı onayla / onayı geri al, planlanan günü ayarla (sahiplik kontrollü). */
+export async function reviewContentDraft(
+  userId: number,
+  id: number,
+  params: { approved?: boolean; plannedFor?: string | null }
+): Promise<ContentDraft | null> {
+  await ensureSchema();
+  const sets: string[] = [];
+  const vals: unknown[] = [id, userId];
+  if (params.approved !== undefined) sets.push(params.approved ? "approved_at = COALESCE(approved_at, now())" : "approved_at = NULL");
+  if (params.plannedFor !== undefined) {
+    vals.push(params.plannedFor);
+    sets.push(`planned_for = $${vals.length}::date`);
+  }
+  if (!sets.length) return getContentDraft(userId, id);
+  const row = await one<any>(`UPDATE content_drafts SET ${sets.join(", ")} WHERE id = $1 AND user_id = $2 RETURNING *`, vals);
+  return row ? rowToContentDraft(row) : null;
+}
+
+/** Taslağı kalıcı siler (Onay kuyruğunda "Reddet"). Sitedeki yazıya dokunmaz. Autoblog taslağıysa konusu reddedilenlere yazılır, tekrar üretilmez. */
+export async function deleteContentDraft(userId: number, id: number): Promise<boolean> {
+  await ensureSchema();
+  const row = await one<any>(`DELETE FROM content_drafts WHERE id = $1 AND user_id = $2 RETURNING id, source_url, campaign_id`, [id, userId]);
+  if (row?.campaign_id != null) {
+    await exec(`INSERT INTO content_rejections (user_id, source_url) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [userId, row.source_url]);
+  }
+  return !!row;
+}
+
 /** Sitesi boş (eski) bir yazıyı bir projeye bağlar; zaten sitesi varsa dokunmaz. */
 export async function claimDraftSite(userId: number, id: number, site: string): Promise<void> {
   const s = draftSite(site);
@@ -2104,7 +2147,10 @@ export async function listDraftCoverIds(userId: number): Promise<Set<number>> {
  * article" click or an earlier campaign run. */
 export async function listUsedContentUrls(userId: number): Promise<Set<string>> {
   await ensureSchema();
-  const rows = await many<{ source_url: string }>(`SELECT DISTINCT source_url FROM content_drafts WHERE user_id = $1`, [userId]);
+  const rows = await many<{ source_url: string }>(
+    `SELECT source_url FROM content_drafts WHERE user_id = $1 UNION SELECT source_url FROM content_rejections WHERE user_id = $1`,
+    [userId]
+  );
   return new Set(rows.map((r) => r.source_url));
 }
 

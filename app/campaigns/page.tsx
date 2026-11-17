@@ -411,9 +411,14 @@ export default function CampaignsPage() {
             : "Anahtar kelime listesi, besleme ya da Rakip Boşluğu'ndan düzenli SEO + GEO uyumlu yazı üretir. Onayını bekler, sitene taslak gönderir ya da yayınlar."
         }
         actions={
-          <button type="button" onClick={() => openNew()} className={BTN1}>
-            + Yeni autoblog
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/calendar?tab=queue" className={BTN2}>
+              Takvim ve onay
+            </Link>
+            <button type="button" onClick={() => openNew()} className={BTN1}>
+              + Yeni autoblog
+            </button>
+          </div>
         }
       />
 
