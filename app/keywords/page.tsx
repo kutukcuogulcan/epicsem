@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { KeywordIdea, KeywordIntent } from "@/lib/keyword-research";
 import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
+import type { MapRow } from "@/app/api/keywords/map/route";
 import { useProject } from "@/components/ProjectProvider";
 import type { AiCluster, AiPrompt } from "@/app/api/keywords/ai/route";
 
@@ -75,6 +76,8 @@ export default function KeywordsPage() {
   const [aiOpen, setAiOpen] = useState(false);
   const [pSel, setPSel] = useState<Set<string>>(new Set());
   const [pMsg, setPMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [cmap, setCmap] = useState<{ busy: boolean; err: string | null; rows: MapRow[]; scanned: number } | null>(null);
+  const [mf, setMf] = useState<"all" | MapRow["status"]>("all");
 
   async function runAi() {
     if (!data) return;
@@ -166,6 +169,49 @@ export default function KeywordsPage() {
   const counts = (k: KeywordIntent) => ideas.filter((i) => i.intent === k).length;
   const maxHits = Math.max(1, ...ideas.map((i) => i.hits));
   const hasVolume = ideas.some((i) => i.volume != null);
+
+  // İçerik haritası (AI'sız): her küme için sitede sayfa var mı?
+  const clusterStats = useMemo(() => {
+    const m = new Map<string, { keywords: string[]; volume: number; hits: number; intents: Set<string> }>();
+    for (const i of ideas) {
+      const e = m.get(i.cluster) ?? { keywords: [], volume: 0, hits: 0, intents: new Set<string>() };
+      e.keywords.push(i.keyword);
+      e.volume += i.volume ?? 0;
+      e.hits += i.hits;
+      e.intents.add(i.intent);
+      m.set(i.cluster, e);
+    }
+    return m;
+  }, [ideas]);
+  useEffect(() => {
+    if (!data?.clusters?.length || !domain) return;
+    let off = false;
+    setCmap({ busy: true, err: null, rows: [], scanned: 0 });
+    fetch("/api/keywords/map", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain, clusters: data.clusters.slice(0, 40).map((c) => ({ name: c.name, keywords: (clusterStats.get(c.name)?.keywords ?? []).slice(0, 30) })) }),
+    })
+      .then(async (r) => {
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Harita çıkarılamadı");
+        if (!off) setCmap({ busy: false, err: null, rows: j.rows, scanned: j.pagesScanned });
+      })
+      .catch((e) => !off && setCmap({ busy: false, err: e instanceof Error ? e.message : "Harita çıkarılamadı", rows: [], scanned: 0 }));
+    return () => {
+      off = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, domain]);
+  const mapRows = useMemo(() => {
+    const prio = { missing: 0, cannibal: 1, draft: 2, covered: 3 } as const;
+    const weight = (n: string) => {
+      const c = clusterStats.get(n);
+      return c ? (c.volume || c.hits * 10) * (c.intents.has("commercial") ? 1.5 : 1) : 0;
+    };
+    return (cmap?.rows ?? []).slice().sort((a, b) => prio[a.status] - prio[b.status] || weight(b.cluster) - weight(a.cluster));
+  }, [cmap, clusterStats]);
+  const mapCount = (st: MapRow["status"]) => (cmap?.rows ?? []).filter((r) => r.status === st).length;
   const selected = [...sel];
 
   function toggle(k: string) {
@@ -233,6 +279,20 @@ export default function KeywordsPage() {
   const totalVolume = ideas.reduce((a, i) => a + (i.volume ?? 0), 0);
   const actions: { kind: string; color: string; title: string; body: string; cta: React.ReactNode }[] = [];
   if (data && ideas.length) {
+    if (mapCount("missing") || mapCount("cannibal"))
+      actions.push({
+        kind: "İçerik haritası",
+        color: "text-danger",
+        title: mapCount("missing") ? `${mapCount("missing")} konu için sitende sayfa yok` : `${mapCount("cannibal")} konuda birden fazla sayfa yarışıyor`,
+        body: mapCount("missing")
+          ? "Bu kümelerde Google ve AI motorlarına gösterecek bir sayfan yok; en büyük kümeden başla."
+          : "Aynı konuyu hedefleyen sayfalar birbirinin sıralamasını düşürür (yamyamlık). Birini ana sayfa yap, diğerlerini birleştir ya da ona link ver.",
+        cta: (
+          <button type="button" onClick={() => document.getElementById("icerik-haritasi")?.scrollIntoView({ behavior: "smooth" })} className={BTN2}>
+            Haritayı gör
+          </button>
+        ),
+      });
     if (counts("question"))
       actions.push({
         kind: "GEO",
@@ -556,6 +616,123 @@ export default function KeywordsPage() {
                 {data?.adsError && <p className="mt-2 text-danger">Keyword Planner: {data.adsError}</p>}
               </div>
             </div>
+          </div>
+
+          {/* İçerik haritası */}
+          <div id="icerik-haritasi" className={`${CARD} overflow-hidden`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+              <div>
+                <h3 className="text-sm font-semibold">İçerik haritası — bu konular sitende var mı?</h3>
+                <p className="text-xs text-sub">
+                  {domain ? `${domain} sayfalarıyla eşleştirildi${cmap?.scanned ? ` (${cmap.scanned} sayfa)` : ""} · AI kullanmaz, ücretsiz` : "Sitenle eşleştirmek için bir proje seç ya da yukarıya alan adını yaz."}
+                </p>
+              </div>
+              {cmap && !cmap.busy && cmap.rows.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["all", "Tümü", cmap.rows.length],
+                    ["missing", "Sayfa yok", mapCount("missing")],
+                    ["cannibal", "Yamyamlık", mapCount("cannibal")],
+                    ["draft", "Taslakta", mapCount("draft")],
+                    ["covered", "Sayfa var", mapCount("covered")],
+                  ] as const).map(([k, l, n]) => (
+                    <button key={k} type="button" onClick={() => setMf(k)} className={chip(mf === k)}>
+                      {l} <span className="text-sub">{n}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {!domain ? null : cmap?.busy ? (
+              <div className="h-32 animate-pulse border-t border-border bg-muted/40" />
+            ) : cmap?.err ? (
+              <div className="border-t border-border px-5 py-4 text-[13px] text-danger">{cmap.err}</div>
+            ) : cmap && cmap.scanned === 0 ? (
+              <div className="border-t border-border px-5 py-6 text-[13px] text-sub">
+                Sitenin sayfaları okunamadı (sitemap.xml yok ya da erişilemiyor).{" "}
+                <Link href="/import" className="font-medium text-accent">
+                  Site Taraması
+                </Link>{" "}
+                çalıştırırsan harita çıkar.
+              </div>
+            ) : (
+              <table className="w-full border-t border-border text-[13px]">
+                <thead className="bg-[#fafafa] text-left text-xs text-sub">
+                  <tr>
+                    <th className="py-2 pl-5 font-medium">Konu</th>
+                    <th className="py-2 pr-3 font-medium">Durum</th>
+                    <th className="hidden py-2 pr-3 font-medium md:table-cell">Sitedeki sayfa</th>
+                    <th className="hidden py-2 pr-3 text-right font-medium lg:table-cell">Sıra</th>
+                    <th className="py-2 pr-5 text-right font-medium">Ne yapmalı</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {mapRows
+                    .filter((r) => mf === "all" || r.status === mf)
+                    .slice(0, 40)
+                    .map((r) => {
+                      const cs = clusterStats.get(r.cluster);
+                      const st = {
+                        missing: ["Sayfa yok", "bg-danger/10 text-danger"],
+                        cannibal: ["Yamyamlık riski", "bg-warn/10 text-warn"],
+                        draft: ["Taslakta", "bg-sky-50 text-sky-700"],
+                        covered: ["Sayfa var", "bg-seo/10 text-seo"],
+                      }[r.status];
+                      return (
+                        <tr key={r.cluster} className="align-top">
+                          <td className="py-3 pl-5 pr-3">
+                            <div className="font-medium">{r.cluster}</div>
+                            <div className="text-[11px] text-sub">
+                              {cs?.keywords.length ?? 0} kelime{cs?.volume ? ` · ${cs.volume.toLocaleString("tr-TR")} aylık arama` : ""}
+                            </div>
+                          </td>
+                          <td className="py-3 pr-3">
+                            <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st[1]}`}>{st[0]}</span>
+                          </td>
+                          <td className="hidden max-w-[320px] py-3 pr-3 md:table-cell">
+                            {r.pages.length ? (
+                              r.pages.slice(0, r.status === "cannibal" ? 3 : 1).map((p) => (
+                                <a key={p.url} href={p.url} target="_blank" rel="noreferrer" className="block truncate text-ink/80 hover:text-accent">
+                                  {p.title || p.url.replace(/^https?:\/\/[^/]+/, "")}
+                                  <span className="ml-1 text-[11px] text-sub">{p.url.replace(/^https?:\/\/[^/]+/, "") || "/"}</span>
+                                </a>
+                              ))
+                            ) : r.drafts.length ? (
+                              <span className="text-sub">Taslak: {r.drafts[0].title}</span>
+                            ) : (
+                              <span className="text-sub">—</span>
+                            )}
+                          </td>
+                          <td className="hidden py-3 pr-3 text-right tabular-nums lg:table-cell">{r.ranking ? (r.ranking.position ? `${r.ranking.position}.` : "100+") : <span className="text-sub">—</span>}</td>
+                          <td className="py-3 pr-5 text-right">
+                            {r.status === "missing" && (
+                              <Link href={editorLink(r.cluster)} className="text-xs font-medium text-accent hover:underline">
+                                Yazı yaz
+                              </Link>
+                            )}
+                            {r.status === "draft" && (
+                              <Link href={`/editor?draftId=${r.drafts[0].id}`} className="text-xs font-medium text-accent hover:underline">
+                                Taslağı bitir
+                              </Link>
+                            )}
+                            {r.status === "cannibal" && <span className="text-xs text-sub">Birini ana sayfa yap, diğerlerini birleştir</span>}
+                            {r.status === "covered" &&
+                              (r.ranking && (r.ranking.position == null || r.ranking.position > 10) ? (
+                                <Link href="/calendar?tab=refresh" className="text-xs font-medium text-accent hover:underline">
+                                  Sayfayı yenile
+                                </Link>
+                              ) : !r.ranking ? (
+                                <span className="text-xs text-sub">Sıralama takibine ekle</span>
+                              ) : (
+                                <span className="text-xs text-seo">İyi durumda</span>
+                              ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            )}
           </div>
         </>
       )}
