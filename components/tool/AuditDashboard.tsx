@@ -12,6 +12,7 @@ import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import type { PageSpeedResult } from "@/lib/pagespeed";
 import type { AiFixResult } from "@/app/api/audit/ai-fix/route";
+import { insightFor, potentialScore, quickWins, scoreBreakdown, type IssueInsight } from "@/lib/audit-insights";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -37,6 +38,7 @@ const SEV: Record<IssueSeverity, { label: string; dot: string; chip: string; ran
   info: { label: "Bilgi", dot: "bg-sky-500", chip: "bg-sky-50 text-sky-700", rank: 2 },
   pass: { label: "Geçti", dot: "bg-seo", chip: "bg-seo/10 text-seo", rank: 3 },
 };
+const EFFORT_CLS: Record<string, string> = { Kolay: "bg-seo/10 text-seo", Orta: "bg-warn/10 text-warn", Zor: "bg-danger/10 text-danger" };
 const ROLE: Record<string, string> = { citation: "AI cevaplarında alıntı", fetch: "Kullanıcı isteğiyle açma", training: "Model eğitimi" };
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -105,6 +107,12 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const bots = result.meta.aiBotAccess;
   const allowed = bots.filter((b) => b.allowed).length;
   const prev = history.length >= 2 ? history[history.length - 2] : null;
+  const ins = useMemo(() => new Map(result.issues.map((i) => [i, insightFor(i, result)] as const)), [result]);
+  const I = (i: SeoIssueResult) => ins.get(i) ?? insightFor(i, result);
+  const wins = useMemo(() => quickWins(result, 5), [result]);
+  const breakdown = useMemo(() => scoreBreakdown(result), [result]);
+  const potential = potentialScore(result);
+  const oi: IssueInsight | null = open ? I(open) : null;
 
   const kpis = [
     { label: "Teknik SEO", value: `${result.score}`, suffix: "/100", cls: scoreColor(result.score), d: prev ? result.score - prev.score : null, spark: history.map((h) => h.score) },
@@ -166,6 +174,59 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
         ))}
       </div>
 
+      {/* Önce bunları düzelt + puan dökümü */}
+      {wins.length > 0 && (
+        <div className="grid gap-3 lg:grid-cols-[1.45fr_1fr]">
+          <Card className="overflow-hidden">
+            <div className="px-5 pt-4">
+              <h3 className="text-sm font-semibold">Önce bunları düzelt</h3>
+              <p className="text-xs text-sub">Etkisi en yüksek, eforu en düşük {wins.length} madde. Çoğunun hazır kodu var.</p>
+            </div>
+            <div className="mt-2">
+              {wins.map((w, n) => (
+                <button key={n} type="button" onClick={() => setOpen(w.issue)} className="flex w-full items-center gap-3 border-t border-border px-5 py-3 text-left first:border-t-0 hover:bg-[#fafafa]">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">{n + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-medium">{w.title}</div>
+                    <div className="truncate text-xs text-sub">{w.why || w.recommendation}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {w.geo && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">AI görünürlüğü</span>}
+                    <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[w.effort]}`}>{w.effort}</span>
+                    {w.gain > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo">+{w.gain} puan</span>}
+                    {w.snippet && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">Hazır kod</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Card>
+          <Card>
+            <div className="px-5 pt-4">
+              <h3 className="text-sm font-semibold">Puanın neden {result.score}?</h3>
+              <p className="text-xs text-sub">Başlangıç 70 · geçen her kontrol +4 · kritik −20 · uyarı −8 · bilgi −2</p>
+            </div>
+            <div className="space-y-2.5 px-5 pb-4 pt-3">
+              {breakdown.filter((b) => b.lost > 0).slice(0, 6).map((b) => (
+                <div key={b.category}>
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span>{CATEGORY_LABEL[b.category as IssueCategory] ?? b.category}</span>
+                    <span className="tabular-nums text-danger">−{b.lost}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-danger/70" style={{ width: `${Math.min(100, (b.lost / Math.max(...breakdown.map((x) => x.lost), 1)) * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+              {breakdown.every((b) => b.lost === 0) && <p className="text-[13px] text-sub">Puan kaybettiren teknik sorun yok.</p>}
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-seo/5 px-3 py-2.5 text-[13px]">
+                <span>Hepsi düzelirse tahmini puan</span>
+                <span className="text-lg font-semibold tabular-nums text-seo">{potential}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       <div className="grid gap-3 lg:grid-cols-[1.45fr_1fr]">
         {/* Sorunlar */}
         <Card className="overflow-hidden">
@@ -202,6 +263,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                 <tr className="border-y border-border bg-[#fafafa] text-left text-xs text-sub">
                   <th className="py-2 pl-5 font-medium">Önem</th>
                   <th className="py-2 font-medium">Sorun</th>
+                  <th className="hidden py-2 pr-3 font-medium md:table-cell">Efor</th>
                   <th className="hidden py-2 pr-5 font-medium sm:table-cell">Kategori</th>
                 </tr>
               </thead>
@@ -212,8 +274,14 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                       <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${SEV[i.severity].chip}`}>{SEV[i.severity].label}</span>
                     </td>
                     <td className="py-3 pr-3">
-                      <div className="font-medium text-ink">{i.title}</div>
-                      {i.recommendation && <div className="mt-0.5 line-clamp-1 text-xs text-sub">{i.recommendation}</div>}
+                      <div className="font-medium text-ink">
+                        {I(i).title}
+                        {I(i).geo && <span className="ml-1.5 rounded bg-violet-50 px-1 py-px align-middle text-[10px] font-medium text-violet-700">AI</span>}
+                      </div>
+                      {I(i).recommendation && <div className="mt-0.5 line-clamp-1 text-xs text-sub">{I(i).recommendation}</div>}
+                    </td>
+                    <td className="hidden py-3 pr-3 align-top md:table-cell">
+                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${EFFORT_CLS[I(i).effort]}`}>{I(i).effort}</span>
                     </td>
                     <td className="hidden py-3 pr-5 align-top sm:table-cell">
                       <span className="whitespace-nowrap rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">{CATEGORY_LABEL[i.category] ?? i.category}</span>
@@ -433,24 +501,45 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
       </details>
 
       {open && (
-        <Drawer isOpen onClose={() => setOpen(null)} eyebrow={CATEGORY_LABEL[open.category] ?? open.category} title={open.title} size="md">
+        <Drawer isOpen onClose={() => setOpen(null)} eyebrow={CATEGORY_LABEL[open.category] ?? open.category} title={oi!.title} size="lg">
           <div className="space-y-5 text-sm">
-            <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${SEV[open.severity].chip}`}>{SEV[open.severity].label}</span>
-            {open.detail && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${SEV[open.severity].chip}`}>{SEV[open.severity].label}</span>
+              <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${EFFORT_CLS[oi!.effort]}`}>Efor: {oi!.effort}</span>
+              <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Etki: {["", "Düşük", "Orta", "Yüksek"][oi!.impact]}</span>
+              {oi!.geo && <span className="inline-block rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">AI görünürlüğünü etkiler</span>}
+              {oi!.gain > 0 && <span className="inline-block rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo">Düzeltince ~+{oi!.gain} puan</span>}
+            </div>
+            {oi!.detail && (
               <div>
                 <div className="mb-1 text-xs font-medium text-sub">Ne bulundu?</div>
-                <p className="leading-6">{open.detail}</p>
+                <p className="whitespace-pre-line break-words leading-6">{oi!.detail}</p>
               </div>
             )}
-            {open.recommendation && (
+            {oi!.why && (
+              <div>
+                <div className="mb-1 text-xs font-medium text-sub">Neden önemli?</div>
+                <p className="leading-6">{oi!.why}</p>
+              </div>
+            )}
+            {oi!.recommendation && (
               <div>
                 <div className="mb-1 text-xs font-medium text-sub">Nasıl düzeltilir?</div>
-                <div className="rounded-xl bg-accent/5 px-4 py-3 leading-6 text-ink">{open.recommendation}</div>
+                <div className="rounded-xl bg-accent/5 px-4 py-3 leading-6 text-ink">{oi!.recommendation}</div>
+              </div>
+            )}
+            {oi!.snippet && (
+              <div>
+                <div className="mb-1 text-xs font-medium text-sub">Hazır kod: {oi!.snippet.label}</div>
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-3 text-[11px] leading-4">{oi!.snippet.code}</pre>
+                <button type="button" onClick={() => copy(oi!.snippet!.code, "snip")} className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white">
+                  {copied === "snip" ? "Kopyalandı ✓" : "Kodu kopyala"}
+                </button>
               </div>
             )}
             {(() => {
               const fix = result.fixes.find(
-                (f) => (open.category === "meta" && f.kind === "meta-description") || (open.category === "schema" && (f.kind === "organization-schema" || f.kind === "faq-schema"))
+                (f) => (oi!.key === "meta-missing" && f.kind === "meta-description") || (oi!.key === "schema-missing" && f.kind === "organization-schema") || (oi!.key === "faq-schema" && f.kind === "faq-schema")
               );
               return fix ? (
                 <div>

@@ -1,0 +1,241 @@
+import type { SeoAuditResult, SeoIssueResult } from "@/types";
+
+/**
+ * Site Denetimi sonuçlarını kullanıcıya anlaşılır hale getirir (AI'sız, istemci tarafında çalışır):
+ *  - Türkçe başlık / açıklama / düzeltme talimatı (eski kayıtlar dahil)
+ *  - Neden önemli, etki ve efor, düzeltince kazanılacak puan
+ *  - Kopyalanıp yapıştırılabilir hazır kod (robots.txt, llms.txt, canonical, lang, şema iskeleti…)
+ *  - "Önce bunları düzelt" sıralaması ve puan dökümü
+ */
+
+export type Effort = "Kolay" | "Orta" | "Zor";
+export interface IssueInsight {
+  key: string;
+  title: string;
+  detail: string;
+  recommendation: string;
+  why: string;
+  impact: 1 | 2 | 3;
+  effort: Effort;
+  /** Yapay zekâ görünürlüğünü (GEO/AXO) doğrudan etkiler mi? */
+  geo: boolean;
+  /** Düzeltince Teknik SEO puanına tahmini katkı. */
+  gain: number;
+  snippet: { label: string; lang: string; code: string } | null;
+}
+
+interface Rule {
+  re: RegExp;
+  key: string;
+  title: (m: RegExpMatchArray) => string;
+  rec: string;
+  why: string;
+  impact: 1 | 2 | 3;
+  effort: Effort;
+  geo?: boolean;
+}
+
+const RULES: Rule[] = [
+  { re: /^Page returned HTTP (\d+)/, key: "http", title: (m) => `Sayfa HTTP ${m[1]} döndürüyor`, rec: "Adresin hem kullanıcılara hem tarayıcılara 200 (OK) döndürdüğünden emin ol; yönlendirme varsa son adrese doğrudan link ver.", why: "200 dönmeyen sayfa ne Google'da sıralanır ne de AI motorlarında kaynak olarak kullanılır.", impact: 3, effort: "Orta", geo: true },
+  { re: /^Page could not be fetched/, key: "fetch", title: () => "Sayfa açılamadı", rec: "Alan adının erişilebilir olduğunu, güvenlik duvarının/WAF'ın botları engellemediğini ve DNS'in herkese açık çözüldüğünü kontrol et.", why: "Açılamayan sayfayı hiçbir arama ya da AI tarayıcısı okuyamaz.", impact: 3, effort: "Orta", geo: true },
+  { re: /^Missing <title> tag/, key: "title-missing", title: () => "Title etiketi yok", rec: "50–60 karakterlik, ana kelimeyle başlayan, sayfaya özgü bir <title> ekle.", why: "Title, hem Google'ın hem AI motorlarının sayfayı özetlerken kullandığı en güçlü sinyaldir.", impact: 3, effort: "Kolay", geo: true },
+  { re: /^Title tag is long/, key: "title-long", title: () => "Title çok uzun", rec: "Title'ı 60 karakterin altına indir; önemli kelimeleri başa al.", why: "Uzun title arama sonuçlarında kesilir, tıklama oranı düşer.", impact: 1, effort: "Kolay" },
+  { re: /^Missing meta description/, key: "meta-missing", title: () => "Meta açıklama yok", rec: "140–160 karakterlik, sayfanın faydasını anlatan ve çağrı içeren bir meta açıklama yaz.", why: "Sayfada daha net bir özet yoksa AI motorları ve Google bu metni doğrudan kullanır.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^No canonical tag/, key: "canonical", title: () => "Canonical etiketi yok", rec: "Sayfanın kendisini gösteren bir canonical etiketi ekle.", why: "Aynı içeriğin farklı adreslerde (parametreli, www'li/www'siz) görünmesinden doğan kopya içerik karışıklığını önler.", impact: 1, effort: "Kolay" },
+  { re: /^No H1 found/, key: "h1-missing", title: () => "H1 başlığı yok", rec: "Sayfanın ana konusunu söyleyen tek ve net bir H1 ekle.", why: "Google ve LLM'ler sayfanın konusunu ilk olarak H1'den anlar.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^Multiple H1 tags \((\d+)\)/, key: "h1-multi", title: (m) => `Birden fazla H1 var (${m[1]})`, rec: "Sayfada tek H1 bırak; diğer başlıkları H2/H3 yap.", why: "Birden fazla H1, sayfanın ana konusunu bulanıklaştırır.", impact: 1, effort: "Kolay" },
+  { re: /^Thin content/, key: "thin", title: () => "İçerik zayıf (az metin)", rec: "Konuyu eksiksiz cevaplayan metin ekle: tanım, nasıl yapılır, karşılaştırma, SSS. İçeriğin JavaScript ile sonradan yüklenmediğinden emin ol.", why: "AI motorları soruyu tek başına cevaplayan, yeterince derin sayfaları alıntılar.", impact: 3, effort: "Zor", geo: true },
+  { re: /^Content may not lead with a direct answer/, key: "answer-first", title: () => "Sayfa doğrudan cevapla başlamıyor", rec: "Sayfanın en üstüne konuyu 1–2 cümlede doğrudan cevaplayan bir paragraf koy, ayrıntıyı sonra ver.", why: "ChatGPT, Gemini ve Google AI Overviews en çok sayfanın başındaki net cevap paragrafını alıntılar.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^No structured data \(JSON-LD\) found/, key: "schema-missing", title: () => "Yapısal veri (JSON-LD) yok", rec: "Sayfa türüne uygun Organization / Article / Product / LocalBusiness / FAQPage şeması ekle.", why: "Yapısal veri, AI tarayıcılarının ve Google'ın bilgiyi (fiyat, adres, yazar, tarih) güvenle çıkarmasının en net yoludur.", impact: 3, effort: "Orta", geo: true },
+  { re: /^No FAQPage schema/, key: "faq-schema", title: () => "FAQPage şeması yok", rec: "Sayfa sık sorulan soruları cevaplıyorsa onları FAQPage şemasıyla işaretle.", why: "Soru-cevap yapısı AI cevaplarında doğrudan alıntılanmaya en uygun formattır.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^No <html lang> attribute/, key: "lang", title: () => "Sayfa dili belirtilmemiş", rec: "<html> etiketine dil ekle (Türkçe için lang=\"tr\").", why: "Arama motorları ve AI tarayıcıları içeriği doğru dil/ülke kitlesine bununla yönlendirir; hreflang da buna dayanır.", impact: 1, effort: "Kolay" },
+  { re: /^Turkish page with no hreflang alternates/, key: "hreflang", title: () => "Türkçe sayfada hreflang yok", rec: "Site başka dillerde de yayın yapıyorsa her dil için hreflang ve x-default ekle.", why: "Dil sürümleri birbirinin kopyası sanılmaz, Türk kullanıcıya doğru sayfa gösterilir.", impact: 1, effort: "Orta" },
+  { re: /^No robots\.txt found/, key: "robots-missing", title: () => "robots.txt yok", rec: "Hangi arama ve AI botlarının siteye girebileceğini açıkça belirleyen bir robots.txt ekle.", why: "robots.txt yoksa AI botlarına izin verip vermediğini kontrol edemezsin; sitemap'i de buradan bildirirsin.", impact: 1, effort: "Kolay", geo: true },
+  { re: /^(\d+) AI search\/citation crawler\(s\) blocked/, key: "ai-blocked", title: (m) => `${m[1]} AI arama/alıntı botu robots.txt ile engelli`, rec: "ChatGPT, Claude, Perplexity ve Google AI Overviews'da kaynak olarak görünmek istiyorsan bu botların Disallow kuralını kaldır.", why: "Bu botlar engelliyse sayfan AI cevaplarında hiç kaynak gösterilemez; GEO'nun ilk şartı budur.", impact: 3, effort: "Kolay", geo: true },
+  { re: /^(\d+) AI training crawler\(s\) blocked/, key: "ai-training", title: (m) => `${m[1]} AI eğitim botu engelli`, rec: "Bu yalnızca model eğitimini engeller; alıntılanmanı etkilemez. Bilinçli bir tercihse dokunma.", why: "Eğitim botları (GPTBot, Google-Extended vb.) cevaplarda kaynak göstermez; engellemek görünürlüğü doğrudan düşürmez.", impact: 1, effort: "Kolay", geo: true },
+  { re: /^(\d+) JSON-LD block\(s\) could not be parsed/, key: "schema-broken", title: (m) => `${m[1]} JSON-LD bloğu bozuk`, rec: "Bloğu validator.schema.org ya da Google Zengin Sonuç Testi'nde doğrula, sözdizimi hatasını düzelt.", why: "Bozuk JSON-LD'nin tamamı arama ve AI tarayıcıları tarafından yok sayılır.", impact: 3, effort: "Kolay", geo: true },
+  { re: /^Structured data is incomplete \((\d+)\)/, key: "schema-incomplete", title: (m) => `Yapısal veri eksik (${m[1]} alan)`, rec: "Eksik özellikleri doldur (fiyat, yazar, tarih, adres, görsel…).", why: "Eksik şema zengin sonuç alamaz; AI motorları alıntılayacağı bilgiyi bulamaz.", impact: 2, effort: "Orta", geo: true },
+  { re: /^(\d+) of (\d+) images have no alt attribute/, key: "img-alt", title: (m) => `${m[2]} görselden ${m[1]} tanesinde alt metin yok`, rec: "İçerik görsellerine kısa, açıklayıcı alt metin ekle (süs görsellerinde alt=\"\").", why: "Arama ve AI motorları görselleri alt metinle anlar; erişilebilirlik için de zorunludur.", impact: 1, effort: "Kolay" },
+  { re: /^(\d+) images without width\/height/, key: "img-size", title: (m) => `${m[1]} görselde genişlik/yükseklik yok`, rec: "Görsellere width ve height (ya da CSS aspect-ratio) ver.", why: "Boyutsuz görseller yüklenirken sayfayı kaydırır (CLS), Core Web Vitals puanını düşürür.", impact: 1, effort: "Kolay" },
+  { re: /^No lazy-loaded images/, key: "img-lazy", title: () => "Görseller geç yüklenmiyor (lazy yok)", rec: "Ekranın altındaki görsellere loading=\"lazy\" ekle (üstteki ana görsel hariç).", why: "Ana içerik daha hızlı yüklenir; hız hem sıralamayı hem kullanıcıyı etkiler.", impact: 1, effort: "Kolay" },
+  { re: /^No internal links on the page/, key: "no-internal", title: () => "Sayfada iç link yok", rec: "İlgili sayfalara açıklayıcı bağlantı metniyle link ver.", why: "İç linkler tarayıcıların sayfaları bulmasını ve otoritenin dağılmasını sağlar; AI motorları da bağlamı linklerden kurar.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^(\d+) broken internal link\(s\)/, key: "broken-links", title: (m) => `${m[1]} kırık iç link`, rec: "4xx/5xx dönen linkleri düzelt ya da kaldır.", why: "Kırık linkler tarama bütçesini harcar, kullanıcıyı ve AI tarayıcılarını çıkmaza sokar.", impact: 2, effort: "Kolay" },
+  { re: /^(\d+) internal links point to redirects/, key: "redirect-links", title: (m) => `${m[1]} iç link yönlendirmeye gidiyor`, rec: "Linkleri doğrudan son adrese güncelle.", why: "Her yönlendirme kullanıcı ve tarayıcı için ekstra adım ve hız kaybıdır.", impact: 1, effort: "Kolay" },
+  { re: /^(\d+) links have no anchor text/, key: "empty-anchor", title: (m) => `${m[1]} linkte bağlantı metni yok`, rec: "Her linke görünür metin ya da aria-label ver.", why: "Tarayıcılar ve ekran okuyucular linkin nereye gittiğini metinden anlar.", impact: 1, effort: "Kolay" },
+  { re: /^No sitemap\.xml found/, key: "sitemap-missing", title: () => "sitemap.xml bulunamadı", rec: "XML site haritası yayınla ve robots.txt'ye ekle.", why: "Site haritası, arama ve AI tarayıcılarının tüm sayfalarını bulmasını kolaylaştırır.", impact: 2, effort: "Orta", geo: true },
+  { re: /^Sitemap is empty/, key: "sitemap-empty", title: () => "Site haritası boş", rec: "Site haritasının indekslenebilir tüm sayfaları listelediğinden emin ol.", why: "Boş site haritası tarayıcılara hiçbir sayfa bildirmez.", impact: 2, effort: "Orta" },
+  { re: /^Sitemap contains broken URLs \((\d+) of (\d+)/, key: "sitemap-broken", title: (m) => `Site haritasında kırık adres var (${m[2]} örnekten ${m[1]})`, rec: "Silinen sayfaları site haritasından çıkar; yalnızca 200 dönen adresler kalsın.", why: "Kırık adresler tarayıcıların site haritasına güvenini azaltır.", impact: 2, effort: "Kolay" },
+  { re: /^Sitemap contains redirecting URLs \((\d+) of (\d+)/, key: "sitemap-redirect", title: (m) => `Site haritasında yönlenen adres var (${m[2]} örnekten ${m[1]})`, rec: "Yönlenen adresleri hedef adresleriyle değiştir.", why: "Site haritası yalnızca son, indekslenebilir adresleri içermeli.", impact: 1, effort: "Kolay" },
+  { re: /^Sitemap not referenced in robots\.txt/, key: "sitemap-robots", title: () => "Site haritası robots.txt'de yok", rec: "robots.txt'ye Sitemap satırı ekle.", why: "Search Console kullanmayan AI tarayıcıları site haritasını robots.txt'den bulur.", impact: 1, effort: "Kolay", geo: true },
+  { re: /^No llms\.txt file/, key: "llms", title: () => "llms.txt dosyası yok", rec: "Markanın kısa özetini ve en önemli sayfaların linklerini içeren bir llms.txt ekle.", why: "LLM'lere sitenin temiz bir haritasını veren, yükselen bir standarttır; GEO için ucuz bir kazanım.", impact: 1, effort: "Kolay", geo: true },
+  { re: /^No author shown/, key: "author", title: () => "Yazar bilgisi yok", rec: "Gerçek bir yazar adı, kısa biyografi ve yazar sayfası linki göster; Article şemasına author ekle.", why: "Deneyim ve uzmanlık (E-E-A-T) sinyalleri hem Google sıralamasını hem AI motorlarının kaynağa güvenini etkiler.", impact: 2, effort: "Orta", geo: true },
+  { re: /^No published\/updated date/, key: "date", title: () => "Yayın / güncelleme tarihi yok", rec: "Görünür yayın ve son güncelleme tarihi göster; şemaya datePublished/dateModified ekle.", why: "AI motorları zamana duyarlı sorularda güncel kaynakları tercih eder.", impact: 2, effort: "Kolay", geo: true },
+  { re: /^No sources cited in the content/, key: "citations", title: () => "İçerikte kaynak gösterilmemiş", rec: "Önemli iddialar için 2–3 güvenilir kaynağa (araştırma, resmi veri) link ver.", why: "Kaynaklı istatistik içeren sayfalar AI cevaplarında belirgin şekilde daha sık alıntılanır.", impact: 2, effort: "Orta", geo: true },
+  { re: /^No About\/Contact link found/, key: "about", title: () => "Hakkımızda / İletişim linki yok", rec: "Footer'a Hakkımızda ve İletişim sayfalarının linkini ekle.", why: "Açık sahiplik ve iletişim bilgisi arama ve AI motorları için temel güven sinyalidir.", impact: 1, effort: "Kolay", geo: true },
+];
+
+const DETAIL_TR: [RegExp, string][] = [
+  [/^Fetching (.+) did not return a 200 OK response\.$/, "$1 adresi 200 (OK) yanıtı vermedi."],
+  [/^No <title> element was found in the page <head>\.$/, "Sayfanın <head> bölümünde <title> bulunamadı."],
+  [/^Title is (\d+) characters: (.*)$/, "Title $1 karakter: $2"],
+  [/^No <meta name="description"> tag found\.$/, "<meta name=\"description\"> etiketi bulunamadı."],
+  [/^No <link rel="canonical"> found\.$/, "<link rel=\"canonical\"> bulunamadı."],
+  [/^The page has zero <h1> elements\.$/, "Sayfada hiç <h1> yok."],
+  [/^More than one <h1> can dilute topical clarity\.$/, "Birden fazla <h1> sayfanın ana konusunu bulanıklaştırır."],
+  [/^Approx\. (\d+) words of visible text\.$/, "Görünür metin yaklaşık $1 kelime."],
+  [/^The opening ~150 words don't show an obvious definitional\/answer pattern\.$/, "Sayfanın ilk ~150 kelimesinde net bir tanım/cevap cümlesi görünmüyor."],
+  [/^No <script type="application\/ld\+json"> blocks detected\.$/, "Sayfada <script type=\"application/ld+json\"> bloğu yok."],
+  [/^FAQPage structured data was not detected\.$/, "FAQPage yapısal verisi bulunamadı."],
+  [/^The page doesn't declare a language via <html lang="\.\.\.">\.$/, "Sayfa <html lang=\"...\"> ile dil belirtmiyor."],
+  [/^lang="tr" is declared but no <link rel="alternate" hreflang="\.\.\."> tags were found\.$/, "lang=\"tr\" var ama hreflang alternatifi yok."],
+  [/^A missing robots\.txt is not an error.*$/, "robots.txt olmaması hata değildir ama AI botlarına açıkça izin verip engelleyemezsin."],
+  [/^The JSON inside .*$/, "JSON-LD içindeki JSON geçersiz (fazla virgül, kaçışsız tırnak, içinde HTML vb.). Tarayıcılar bloğun tamamını yok sayar."],
+  [/^Images without explicit dimensions shift the layout while loading\.$/, "Boyutu belirtilmemiş görseller yüklenirken sayfa düzenini kaydırır."],
+  [/^(\d+) images, none with loading="lazy"\.$/, "$1 görsel var, hiçbirinde loading=\"lazy\" yok."],
+  [/^The page doesn't link to any other page on the same site\.$/, "Sayfa aynı sitedeki başka hiçbir sayfaya link vermiyor."],
+  [/^Some internal links go through a 3xx redirect before reaching the final page\.$/, "Bazı iç linkler son sayfaya ulaşmadan önce 3xx yönlendirmeden geçiyor."],
+  [/^Links with no visible text, aria-label or image alt\.$/, "Görünür metni, aria-label'ı ya da görsel alt metni olmayan linkler."],
+  [/^Checked (.+)\.$/, "Kontrol edilen adresler: $1."],
+  [/^robots\.txt has no Sitemap: line\.$/, "robots.txt'de Sitemap: satırı yok."],
+  [/^(.+)\/llms\.txt was not found\.$/, "$1/llms.txt bulunamadı."],
+  [/^No author byline, meta author or schema author found on this article-like page\.$/, "Makale benzeri bu sayfada yazar adı, meta author ya da şemada author bulunamadı."],
+  [/^No <time datetime>, article:published_time or schema datePublished found\.$/, "<time datetime>, article:published_time ya da şemada datePublished bulunamadı."],
+  [/^The main content area has no links to external sources\.$/, "Ana içerikte dış kaynaklara hiç link yok."],
+  [/^The page doesn't link to an About or Contact page\.$/, "Sayfa Hakkımızda ya da İletişim sayfasına link vermiyor."],
+];
+
+const trDetail = (d: string) => {
+  for (const [re, to] of DETAIL_TR) if (re.test(d)) return d.replace(re, to);
+  return d.replace(/\(training\)/g, "(eğitim)").replace(/, training\)/g, ", eğitim)");
+};
+
+const LOST: Record<string, number> = { critical: 20, warning: 8, info: 2, pass: 0 };
+const SEO_CATS = new Set(["meta", "headings", "schema", "crawlability", "content", "performance", "images", "links"]);
+
+const origin = (u: string) => {
+  try {
+    return new URL(u).origin;
+  } catch {
+    return "https://example.com";
+  }
+};
+
+function snippetFor(key: string, r: SeoAuditResult): IssueInsight["snippet"] {
+  const o = origin(r.url);
+  const host = o.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  const brand = host.split(".")[0].replace(/^./, (c) => c.toLocaleUpperCase("tr"));
+  switch (key) {
+    case "ai-blocked":
+    case "robots-missing": {
+      const blocked = r.meta.aiBotAccess.filter((b) => !b.allowed && b.role !== "training").map((b) => b.bot);
+      const bots = blocked.length ? blocked : ["OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "ClaudeBot", "Google-Extended"];
+      return {
+        label: key === "ai-blocked" ? "robots.txt — AI alıntı botlarına izin ver (bu satırları Disallow kurallarının ÜSTÜNE ekle)" : "Örnek robots.txt",
+        lang: "txt",
+        code: `${bots.map((b) => `User-agent: ${b}\nAllow: /`).join("\n\n")}\n\nUser-agent: *\nAllow: /\n\nSitemap: ${r.meta.sitemap?.url ?? `${o}/sitemap.xml`}`,
+      };
+    }
+    case "sitemap-robots":
+      return { label: "robots.txt'nin en altına ekle", lang: "txt", code: `Sitemap: ${r.meta.sitemap?.url ?? `${o}/sitemap.xml`}` };
+    case "llms":
+      return {
+        label: `${o}/llms.txt olarak yayınla (köşeli parantezleri doldur)`,
+        lang: "md",
+        code: `# ${brand}\n\n> ${r.meta.description ?? `[${brand} ne yapar? 1–2 cümlelik net özet]`}\n\n## Önemli sayfalar\n\n- [Ana sayfa](${o}/): ${r.meta.title ?? brand}\n- [Hizmetler](${o}/[hizmetler]): [kısa açıklama]\n- [Hakkımızda](${o}/[hakkimizda]): [kim olduğunuz, deneyim]\n- [İletişim](${o}/[iletisim]): [adres, telefon]\n\n## Sık sorulanlar\n\n- [Blog / SSS](${o}/[blog]): [en çok sorulan konular]`,
+      };
+    case "canonical":
+      return { label: "<head> içine ekle", lang: "html", code: `<link rel="canonical" href="${r.url.replace(/[?#].*$/, "")}" />` };
+    case "lang":
+      return { label: "<html> etiketini şöyle değiştir", lang: "html", code: `<html lang="tr">` };
+    case "hreflang":
+      return { label: "<head> içine, her dil sürümü için", lang: "html", code: `<link rel="alternate" hreflang="tr" href="${r.url}" />\n<link rel="alternate" hreflang="en" href="${o}/en/[sayfa]" />\n<link rel="alternate" hreflang="x-default" href="${r.url}" />` };
+    case "title-missing":
+    case "title-long":
+      return { label: "<head> içine (köşeli parantezi doldur, 50–60 karakter)", lang: "html", code: `<title>[Ana kelime] – [fayda / ayırt edici bilgi] | ${brand}</title>` };
+    case "h1-missing":
+      return { label: "Sayfanın ana başlığı", lang: "html", code: `<h1>${r.meta.title?.split(/[|–-]/)[0].trim() ?? "[Sayfanın ana konusu]"}</h1>` };
+    case "img-lazy":
+      return { label: "Ekranın altındaki görseller için", lang: "html", code: `<img src="gorsel.jpg" alt="[açıklama]" width="800" height="450" loading="lazy" decoding="async" />` };
+    case "img-size":
+      return { label: "Her görsele gerçek boyutunu ver", lang: "html", code: `<img src="gorsel.jpg" alt="[açıklama]" width="1200" height="675" />\n\n/* ya da CSS ile */\nimg { aspect-ratio: 16 / 9; height: auto; }` };
+    case "author":
+    case "date":
+      return {
+        label: "Article şeması — <head> içine (köşeli parantezleri doldur)",
+        lang: "html",
+        code: `<script type="application/ld+json">\n${JSON.stringify(
+          {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: r.meta.title ?? "[Başlık]",
+            author: { "@type": "Person", name: "[Yazar adı]", url: `${o}/[yazar-sayfasi]` },
+            publisher: { "@type": "Organization", name: brand, url: o },
+            datePublished: "[YYYY-MM-DD]",
+            dateModified: new Date().toISOString().slice(0, 10),
+            mainEntityOfPage: r.url,
+          },
+          null,
+          2
+        )}\n</script>`,
+      };
+    case "sitemap-missing":
+      return { label: `${o}/sitemap.xml (çoğu CMS bunu otomatik üretir; WordPress'te Yoast/Rank Math)`, lang: "xml", code: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${o}/</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></url>\n  <url><loc>${o}/[sayfa]</loc></url>\n</urlset>` };
+    case "answer-first":
+      return { label: "Sayfanın en üstüne konacak cevap paragrafı kalıbı", lang: "txt", code: `[Konu], [kime/ne için] [ne işe yarayan] bir [hizmet/ürün/yöntem]dir. ${brand} olarak [somut fayda + kanıt: süre, sayı, kapsam] sağlıyoruz. [1 cümle: nasıl başlanır / sonraki adım].` };
+    default:
+      return null;
+  }
+}
+
+export function insightFor(issue: SeoIssueResult, r: SeoAuditResult): IssueInsight {
+  const rule = RULES.find((x) => x.re.test(issue.title));
+  const m = rule ? issue.title.match(rule.re)! : null;
+  const key = rule?.key ?? "other";
+  const lost = SEO_CATS.has(issue.category) ? LOST[issue.severity] ?? 0 : 0;
+  return {
+    key,
+    title: rule && m ? rule.title(m) : issue.title,
+    detail: trDetail(issue.detail),
+    recommendation: rule?.rec ?? issue.recommendation,
+    why: rule?.why ?? "",
+    impact: rule?.impact ?? (issue.severity === "critical" ? 3 : issue.severity === "warning" ? 2 : 1),
+    effort: rule?.effort ?? "Orta",
+    geo: rule?.geo ?? issue.category === "ai-crawlability",
+    gain: Math.round(lost + (lost ? 4 : 0)),
+    snippet: snippetFor(key, r),
+  };
+}
+
+/** "Önce bunları düzelt": etki × (puan kazancı + GEO bonusu) / efor. */
+export function quickWins(r: SeoAuditResult, n = 5): (IssueInsight & { issue: SeoIssueResult })[] {
+  const eff = { Kolay: 1, Orta: 2, Zor: 3 } as const;
+  return r.issues
+    .filter((i) => i.severity !== "pass")
+    .map((i) => ({ ...insightFor(i, r), issue: i }))
+    .map((x) => ({ x, s: (x.impact * 10 + x.gain + (x.geo ? 8 : 0)) / eff[x.effort] }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, n)
+    .map((y) => y.x);
+}
+
+/** Teknik SEO puanının kategori bazlı dökümü (başlangıç 70; geçen kontrol +4, kritik −20, uyarı −8, bilgi −2). */
+export function scoreBreakdown(r: SeoAuditResult): { category: string; lost: number; gained: number; issues: number }[] {
+  const by = new Map<string, { lost: number; gained: number; issues: number }>();
+  for (const i of r.issues) {
+    if (!SEO_CATS.has(i.category)) continue;
+    const e = by.get(i.category) ?? { lost: 0, gained: 0, issues: 0 };
+    if (i.severity === "pass") e.gained += 4;
+    else {
+      e.lost += LOST[i.severity];
+      e.issues++;
+    }
+    by.set(i.category, e);
+  }
+  return [...by.entries()].map(([category, v]) => ({ category, ...v })).sort((a, b) => b.lost - a.lost);
+}
+
+/** Düzeltilebilir tüm sorunlar giderilirse tahmini Teknik SEO puanı. */
+export function potentialScore(r: SeoAuditResult): number {
+  const fixable = r.issues.filter((i) => SEO_CATS.has(i.category) && i.severity !== "pass");
+  return Math.min(100, r.score + fixable.reduce((s, i) => s + LOST[i.severity] + 4, 0));
+}
