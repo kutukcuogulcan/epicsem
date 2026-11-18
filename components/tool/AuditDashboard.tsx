@@ -12,7 +12,7 @@ import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import type { PageSpeedResult } from "@/lib/pagespeed";
 import type { AiFixResult } from "@/app/api/audit/ai-fix/route";
-import { insightFor, potentialScore, quickWins, scoreBreakdown, type IssueInsight } from "@/lib/audit-insights";
+import { insightFor, pillarScores, potentialScore, quickWins, scoreBreakdown, type IssueInsight, type Pillar } from "@/lib/audit-insights";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -58,6 +58,34 @@ function Spark({ data, color }: { data: number[]; color: string }) {
   );
 }
 const scoreColor = (n: number) => (n >= 80 ? "text-seo" : n >= 50 ? "text-warn" : "text-danger");
+const scoreHex = (n: number) => (n >= 80 ? "#12b76a" : n >= 50 ? "#f59e0b" : "#f04438");
+const scoreWord = (n: number) => (n >= 80 ? "İyi" : n >= 50 ? "Geliştirilmeli" : "Zayıf");
+
+function ScoreRing({ value, size = 112 }: { value: number; size?: number }) {
+  const r = size / 2 - 9;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Genel puan ${value}/100`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f3" strokeWidth={9} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={scoreHex(value)}
+        strokeWidth={9}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c - (c * value) / 100}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset .6s ease" }}
+      />
+      <text x="50%" y="50%" dy="0.1em" textAnchor="middle" dominantBaseline="middle" fontSize={size * 0.27} fontWeight={700} fill="#0f172a">
+        {value}
+      </text>
+    </svg>
+  );
+}
 
 export default function AuditDashboard({ result, history }: { result: SeoAuditResult; history: AuditHistoryPoint[] }) {
   const [sev, setSev] = useState<"all" | IssueSeverity>("all");
@@ -113,6 +141,11 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const breakdown = useMemo(() => scoreBreakdown(result), [result]);
   const potential = potentialScore(result);
   const oi: IssueInsight | null = open ? I(open) : null;
+  const pillars = useMemo(() => pillarScores(result), [result]);
+  const [pillarOpen, setPillarOpen] = useState<Pillar | null>(null);
+  const top = wins[0] ?? null;
+  /** Kontrol listesindeki maddeden ilgili sorunun ayrıntısına git. */
+  const issueByKey = (key?: string) => (key ? issues.find((i) => I(i).key === key) ?? null : null);
 
   const kpis = [
     { label: "Teknik SEO", value: `${result.score}`, suffix: "/100", cls: scoreColor(result.score), d: prev ? result.score - prev.score : null, spark: history.map((h) => h.score) },
@@ -159,6 +192,102 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
 
   return (
     <div className="space-y-3">
+      {/* Özet bandı: genel puan + 4 katman + önce bunu yap */}
+      <Card className="p-4 md:p-5">
+        <div className="grid gap-4 lg:grid-cols-[auto_1fr_300px] lg:items-center">
+          <div className="flex items-center gap-4">
+            <ScoreRing value={pillars.overall} />
+            <div>
+              <div className="text-xs font-medium text-sub">Genel puan</div>
+              <div className={`text-lg font-semibold ${scoreColor(pillars.overall)}`}>{scoreWord(pillars.overall)}</div>
+              <div className="mt-0.5 text-xs text-sub">
+                {counts.critical} kritik · {counts.warning} uyarı · {counts.info} bilgi
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+            {pillars.pillars.map((p) => {
+              const failing = p.checks.filter((c) => c.score != null && c.score < 1).length;
+              return (
+                <button key={p.key} type="button" onClick={() => setPillarOpen(p)} className="rounded-xl border border-border px-3 py-3 text-left transition-colors hover:border-[#BDB4FF] hover:bg-accent/[0.03]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-sub">{p.label}</span>
+                    <span className="text-[11px] text-sub">{p.short}</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className={`text-[24px] font-semibold tabular-nums ${scoreColor(p.score)}`}>{p.score}</span>
+                    <span className="text-xs text-sub">/100</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: scoreHex(p.score) }} />
+                  </div>
+                  <div className="mt-1.5 text-[11px] text-sub">{failing ? `${failing} eksik madde · listeyi aç` : "Tüm maddeler tamam"}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="rounded-xl bg-accent/[0.06] p-3.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            {top ? (
+              <>
+                <div className="mt-1 text-[13px] font-semibold leading-snug">{top.title}</div>
+                <p className="mt-1 line-clamp-2 text-xs text-sub">{top.why || top.recommendation}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[top.effort]}`}>{top.effort}</span>
+                  {top.gain > 0 && <span className="text-[11px] font-semibold text-seo">+{top.gain} puan</span>}
+                  <button type="button" onClick={() => setOpen(top.issue)} className="ml-auto rounded-lg bg-accent px-2.5 py-1 text-[12px] font-medium text-white hover:opacity-90">
+                    {top.snippet ? "Hazır kodu al" : "Nasıl düzeltilir"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="mt-1 text-xs text-sub">Açık sorun yok. Sıradaki adım: GEO testiyle markanın AI cevaplarında görünüp görünmediğini ölç.</p>
+            )}
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] text-sub">
+          Puanlar bu taramanın gerçek sinyallerinden hesaplanır. GEO hazırlığı ölçülmüş AI görünürlüğü değildir; onu GEO testi ölçer.
+        </p>
+      </Card>
+
+      <Drawer isOpen={!!pillarOpen} onClose={() => setPillarOpen(null)} eyebrow={pillarOpen ? `${pillarOpen.label} · ${pillarOpen.short}` : ""} title={pillarOpen ? `${pillarOpen.score}/100` : ""} subtitle={pillarOpen?.description} size="md">
+        {pillarOpen && (
+          <div className="space-y-3 text-sm">
+            {pillarOpen.note && <div className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-ink/70">{pillarOpen.note}</div>}
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {[...pillarOpen.checks]
+                .sort((a, b) => (a.score ?? 2) - (b.score ?? 2) || b.weight - a.weight)
+                .map((c) => {
+                  const iss = c.score != null && c.score < 1 ? issueByKey(c.issueKey) : null;
+                  const mark = c.score == null ? { t: "–", cls: "bg-muted text-sub" } : c.score >= 1 ? { t: "✓", cls: "bg-seo/10 text-seo" } : c.score > 0 ? { t: "!", cls: "bg-warn/10 text-warn" } : { t: "✕", cls: "bg-danger/10 text-danger" };
+                  return (
+                    <li key={c.label} className="flex items-center gap-3 px-3 py-2.5">
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${mark.cls}`}>{mark.t}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium">{c.label}</div>
+                        <div className="text-xs text-sub">{c.found}</div>
+                      </div>
+                      {iss && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPillarOpen(null);
+                            setOpen(iss);
+                          }}
+                          className="shrink-0 rounded-lg border border-border px-2 py-1 text-[12px] font-medium text-accent hover:border-accent"
+                        >
+                          Düzelt
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+            </ul>
+            <p className="text-xs text-sub">&quot;–&quot; işaretli maddeler bu taramada ölçülmedi ve puana katılmadı. Yeniden tarayınca ölçülür.</p>
+          </div>
+        )}
+      </Drawer>
+
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {kpis.map((k) => (

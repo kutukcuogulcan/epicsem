@@ -239,3 +239,171 @@ export function potentialScore(r: SeoAuditResult): number {
   const fixable = r.issues.filter((i) => SEO_CATS.has(i.category) && i.severity !== "pass");
   return Math.min(100, r.score + fixable.reduce((s, i) => s + LOST[i.severity] + 4, 0));
 }
+
+/* ------------------------------------------------------------------ */
+/* Katman puanları: SEO · AXO · AEO · GEO hazırlığı                    */
+/* ------------------------------------------------------------------ */
+
+export type PillarKey = "seo" | "axo" | "aeo" | "geo";
+
+export interface PillarCheck {
+  label: string;
+  /** 0–1 arası (kısmi puan), null = bu taramada ölçülmedi (eski kayıt) — puana katılmaz. */
+  score: number | null;
+  weight: number;
+  /** Ne bulundu (kısa, kullanıcıya gösterilir). */
+  found: string;
+  /** İlgili sorunun anahtarı (insightFor key) — çekmeceden sorunun ayrıntısına gitmek için. */
+  issueKey?: string;
+}
+
+export interface Pillar {
+  key: PillarKey;
+  label: string;
+  short: string;
+  description: string;
+  score: number;
+  checks: PillarCheck[];
+  /** Ölçülmüş AI görünürlüğü olmadığını vb. açıkça söyleyen not. */
+  note?: string;
+}
+
+export interface PillarSummary {
+  overall: number;
+  pillars: Pillar[];
+}
+
+const PILLAR_WEIGHT: Record<PillarKey, number> = { seo: 0.3, axo: 0.2, aeo: 0.25, geo: 0.25 };
+
+function pillarScore(checks: PillarCheck[]): number {
+  const measured = checks.filter((c) => c.score != null);
+  const w = measured.reduce((s, c) => s + c.weight, 0);
+  if (!w) return 0;
+  return Math.round((measured.reduce((s, c) => s + c.weight * (c.score as number), 0) / w) * 100);
+}
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+/**
+ * Site Denetimi özet bandı için 4 katman puanı. Hepsi bu taramanın gerçek sinyallerinden
+ * (meta, robots.txt, şema, E-E-A-T, link ve görsel kontrolleri) hesaplanır; AI'sız ve ücretsizdir.
+ * GEO hazırlığı, AI motorlarının bu sayfayı kaynak gösterebilmesi için gereken sinyallerdir —
+ * ölçülmüş AI görünürlüğü DEĞİLDİR (onu GEO testi ölçer).
+ */
+export function pillarScores(r: SeoAuditResult): PillarSummary {
+  const m = r.meta;
+  const open = r.issues.filter((i) => i.severity !== "pass");
+  const keys = new Set(open.map((i) => insightFor(i, r).key));
+  const has = (k: string) => keys.has(k);
+  const pageDown = has("http") || has("fetch");
+  const types = (m.schemaTypes ?? []).map((t) => t.toLowerCase());
+  const hasType = (...t: string[]) => types.some((x) => t.includes(x));
+
+  const citeBots = m.aiBotAccess.filter((b) => b.role !== "training");
+  const citeAllowed = citeBots.filter((b) => b.allowed).length;
+  const botRatio = citeBots.length ? citeAllowed / citeBots.length : 1;
+
+  const titleLen = m.title?.length ?? 0;
+  const descLen = m.description?.length ?? 0;
+  const words = m.wordCount ?? 0;
+
+  /* SEO — Google'ın sayfayı bulup doğru anlaması */
+  const seo: PillarCheck[] = [
+    { label: "Sayfa açılıyor (200 OK)", weight: 3, score: pageDown ? 0 : 1, found: pageDown ? "Açılmadı ya da 200 dönmedi" : "200 OK", issueKey: has("fetch") ? "fetch" : "http" },
+    { label: "Title (50–60 karakter)", weight: 3, score: !titleLen ? 0 : titleLen <= 60 ? 1 : 0.6, found: titleLen ? `${titleLen} karakter` : "Yok", issueKey: titleLen ? "title-long" : "title-missing" },
+    { label: "Meta açıklama", weight: 2, score: descLen ? 1 : 0, found: descLen ? `${descLen} karakter` : "Yok", issueKey: "meta-missing" },
+    { label: "Tek H1 başlığı", weight: 2, score: m.h1Count === 1 ? 1 : m.h1Count > 1 ? 0.5 : 0, found: `${m.h1Count} adet`, issueKey: m.h1Count ? "h1-multi" : "h1-missing" },
+    { label: "Canonical etiketi", weight: 1, score: m.canonical ? 1 : 0, found: m.canonical ? "Var" : "Yok", issueKey: "canonical" },
+    { label: "Sayfa dili (html lang)", weight: 1, score: m.htmlLang ? 1 : 0, found: m.htmlLang ?? "Belirtilmemiş", issueKey: "lang" },
+    {
+      label: "Site haritası",
+      weight: 2,
+      score: m.sitemap ? (m.sitemap.url ? (m.sitemap.broken.length ? 0.5 : 1) : 0) : m.sitemapFound ? 1 : 0,
+      found: m.sitemap ? (m.sitemap.url ? `${m.sitemap.urls} URL${m.sitemap.broken.length ? `, ${m.sitemap.broken.length} kırık` : ""}` : "Bulunamadı") : m.sitemapFound ? "Bulundu" : "Bulunamadı",
+      issueKey: m.sitemap?.broken.length ? "sitemap-broken" : "sitemap-missing",
+    },
+    {
+      label: "Kırık iç link yok",
+      weight: 2,
+      score: m.links ? (m.links.broken.length ? 0 : 1) : null,
+      found: m.links ? (m.links.broken.length ? `${m.links.broken.length} kırık` : `${m.links.checked} link kontrol edildi`) : "Ölçülmedi",
+      issueKey: "broken-links",
+    },
+    { label: "İç linkler", weight: 2, score: m.links ? (m.links.internal > 0 ? 1 : 0) : has("no-internal") ? 0 : null, found: m.links ? `${m.links.internal} iç link` : "Ölçülmedi", issueKey: "no-internal" },
+    {
+      label: "Görsellerde alt metin",
+      weight: 1,
+      score: m.images ? (m.images.total ? clamp01(1 - m.images.noAlt / m.images.total) : 1) : null,
+      found: m.images ? (m.images.total ? `${m.images.total - m.images.noAlt}/${m.images.total} görselde var` : "Görsel yok") : "Ölçülmedi",
+      issueKey: "img-alt",
+    },
+    {
+      label: "Görsel boyutları (CLS)",
+      weight: 1,
+      score: m.images ? (m.images.total ? clamp01(1 - m.images.noSize / m.images.total) : 1) : null,
+      found: m.images ? (m.images.total ? `${m.images.noSize} görselde boyut yok` : "Görsel yok") : "Ölçülmedi",
+      issueKey: "img-size",
+    },
+  ];
+
+  /* AXO — AI tarayıcıları ve ajanlar sayfaya erişip okuyabiliyor mu */
+  const axo: PillarCheck[] = [
+    {
+      label: "AI alıntı botlarına izin",
+      weight: 4,
+      score: pageDown ? 0 : botRatio,
+      found: citeBots.length ? `${citeAllowed}/${citeBots.length} bot izinli` : "robots.txt kuralı yok",
+      issueKey: "ai-blocked",
+    },
+    { label: "robots.txt", weight: 1, score: m.robotsTxtFound ? 1 : 0, found: m.robotsTxtFound ? "Bulundu" : "Bulunamadı", issueKey: "robots-missing" },
+    { label: "Site haritası robots.txt'de", weight: 1, score: m.sitemap ? (m.sitemap.inRobots ? 1 : 0) : null, found: m.sitemap ? (m.sitemap.inRobots ? "Var" : "Yok") : "Ölçülmedi", issueKey: "sitemap-robots" },
+    { label: "llms.txt", weight: 1, score: m.llmsTxt === undefined ? null : m.llmsTxt ? 1 : 0, found: m.llmsTxt === undefined ? "Ölçülmedi" : m.llmsTxt ? "Bulundu" : "Yok", issueKey: "llms" },
+    { label: "Yapısal veri (JSON-LD)", weight: 2, score: m.hasSchema ? 1 : 0, found: m.hasSchema ? m.schemaTypes.join(", ") || "Var" : "Yok", issueKey: "schema-missing" },
+    { label: "JSON-LD hatasız", weight: 2, score: !m.hasSchema ? 0 : has("schema-broken") ? 0 : has("schema-incomplete") ? 0.6 : 1, found: has("schema-broken") ? "Bozuk blok var" : has("schema-incomplete") ? "Eksik alanlar var" : m.hasSchema ? "Geçerli" : "Şema yok", issueKey: has("schema-broken") ? "schema-broken" : "schema-incomplete" },
+    { label: "Metin HTML'de (JS'siz okunuyor)", weight: 2, score: pageDown ? 0 : words >= 300 ? 1 : words >= 120 ? 0.5 : 0, found: `~${words} kelime`, issueKey: "thin" },
+  ];
+
+  /* AEO — sayfa bir soruyu doğrudan cevaplamaya hazır mı */
+  const aeo: PillarCheck[] = [
+    { label: "Cevap-önce giriş paragrafı", weight: 3, score: pageDown ? 0 : has("answer-first") ? 0 : 1, found: has("answer-first") ? "İlk 150 kelimede net cevap yok" : "Var", issueKey: "answer-first" },
+    { label: "FAQPage şeması", weight: 2, score: hasType("faqpage") ? 1 : 0, found: hasType("faqpage") ? "Var" : "Yok", issueKey: "faq-schema" },
+    { label: "İçerik derinliği", weight: 2, score: words >= 800 ? 1 : words >= 300 ? 0.6 : words >= 120 ? 0.3 : 0, found: `~${words} kelime`, issueKey: "thin" },
+    { label: "Net konu başlığı (H1)", weight: 1, score: m.h1Count >= 1 ? 1 : 0, found: `${m.h1Count} adet`, issueKey: "h1-missing" },
+    { label: "Özet metni (meta açıklama)", weight: 1, score: descLen ? 1 : 0, found: descLen ? "Var" : "Yok", issueKey: "meta-missing" },
+  ];
+
+  /* GEO hazırlığı — AI motorlarının bu kaynağa güvenip alıntılaması için gereken sinyaller */
+  const cit = m.eeat?.citations ?? m.links?.outboundCitations;
+  const geo: PillarCheck[] = [
+    { label: "Yazar bilgisi", weight: 2, score: m.eeat ? (m.eeat.author ? 1 : 0) : null, found: m.eeat ? (m.eeat.author ? "Var" : "Yok") : "Ölçülmedi", issueKey: "author" },
+    { label: "Yayın / güncelleme tarihi", weight: 2, score: m.eeat ? (m.eeat.date ? 1 : 0) : null, found: m.eeat ? (m.eeat.date ? "Var" : "Yok") : "Ölçülmedi", issueKey: "date" },
+    { label: "Kaynak gösterimi", weight: 2, score: cit == null ? null : cit >= 2 ? 1 : cit === 1 ? 0.5 : 0, found: cit == null ? "Ölçülmedi" : `${cit} dış kaynak linki`, issueKey: "citations" },
+    { label: "Hakkımızda / İletişim", weight: 1, score: m.eeat ? (m.eeat.about ? 1 : 0) : null, found: m.eeat ? (m.eeat.about ? "Link var" : "Link yok") : "Ölçülmedi", issueKey: "about" },
+    {
+      label: "Kurum / içerik şeması",
+      weight: 2,
+      score: hasType("organization", "localbusiness", "corporation") ? 1 : hasType("article", "blogposting", "newsarticle", "product", "service", "webpage") ? 0.6 : 0,
+      found: m.hasSchema ? m.schemaTypes.join(", ") || "Var" : "Yok",
+      issueKey: "schema-missing",
+    },
+    { label: "AI alıntı botları açık", weight: 2, score: pageDown ? 0 : botRatio, found: citeBots.length ? `${citeAllowed}/${citeBots.length} izinli` : "Kural yok (izinli)", issueKey: "ai-blocked" },
+    { label: "llms.txt", weight: 1, score: m.llmsTxt === undefined ? null : m.llmsTxt ? 1 : 0, found: m.llmsTxt === undefined ? "Ölçülmedi" : m.llmsTxt ? "Bulundu" : "Yok", issueKey: "llms" },
+  ];
+
+  const pillars: Pillar[] = [
+    { key: "seo", label: "SEO", short: "Teknik SEO", description: "Google sayfayı bulup doğru anlayabiliyor mu: title, meta, H1, canonical, site haritası, linkler, görseller.", score: pillarScore(seo), checks: seo },
+    { key: "axo", label: "AXO", short: "AI erişimi", description: "AI tarayıcıları ve ajanlar sayfaya girip okuyabiliyor mu: robots.txt, llms.txt, JSON-LD, sunucuda hazır metin.", score: pillarScore(axo), checks: axo },
+    { key: "aeo", label: "AEO", short: "Cevap hazırlığı", description: "Sayfa bir soruyu doğrudan cevaplıyor mu: cevap-önce giriş, SSS şeması, yeterli derinlik.", score: pillarScore(aeo), checks: aeo },
+    {
+      key: "geo",
+      label: "GEO",
+      short: "GEO hazırlığı",
+      description: "AI motorlarının bu sayfaya güvenip kaynak göstermesi için gereken sinyaller: yazar, tarih, kaynaklar, kurum şeması.",
+      score: pillarScore(geo),
+      checks: geo,
+      note: "Bu bir hazırlık puanıdır, ölçülmüş AI görünürlüğü değildir. Markanın ChatGPT, Gemini, Claude ve Perplexity cevaplarında gerçekten geçip geçmediğini GEO testi ölçer.",
+    },
+  ];
+  const overall = Math.round(pillars.reduce((s, p) => s + p.score * PILLAR_WEIGHT[p.key], 0));
+  return { overall, pillars };
+}

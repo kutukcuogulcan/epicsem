@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import type { GapRow, GeoVisibilitySummary, SeoAuditResult } from "@/types";
 import type { ContentBrief } from "./content-brief";
+import { pillarScores, type PillarSummary } from "./audit-insights";
 
 /**
  * White-label PDF export — the "agency workflow" differentiator. Epicsem-branded
@@ -91,6 +92,34 @@ export function buildReportPdf(input: ReportInput): PDFKit.PDFDocument {
     resetX();
     doc.moveDown(0.8);
     resetX();
+
+    // 4 katman puanı (PDF standart fontu Türkçe karakter basamadığı için etiketler İngilizce).
+    let ps: PillarSummary | null = null;
+    try {
+      ps = pillarScores(a);
+    } catch {
+      ps = null;
+    }
+    if (ps) {
+      const cols: [string, number][] = [
+        ["Overall", ps.overall],
+        ["SEO", ps.pillars[0].score],
+        ["AXO (AI access)", ps.pillars[1].score],
+        ["AEO (answer-ready)", ps.pillars[2].score],
+        ["GEO readiness", ps.pillars[3].score],
+      ];
+      const y0 = doc.y;
+      cols.forEach(([name, val], i) => {
+        const x = LEFT + i * 100;
+        doc.fillColor(scoreColor(val)).font("Helvetica-Bold").fontSize(18).text(String(val), x, y0, { width: 95, lineBreak: false });
+        doc.fillColor(MUTED).font("Helvetica").fontSize(8.5).text(name, x, y0 + 22, { width: 95, lineBreak: false });
+      });
+      doc.y = y0 + 36;
+      resetX();
+      doc.fillColor(MUTED).font("Helvetica").fontSize(8).text("Calculated from this crawl's real signals. GEO readiness is not measured AI visibility; the GEO test measures that.", LEFT, doc.y, { width: 500 });
+      doc.moveDown(0.8);
+      resetX();
+    }
 
     const blocked = a.meta.aiBotAccess.filter((b) => !b.allowed);
     doc.fillColor(INK).font("Helvetica").fontSize(10);
