@@ -14,6 +14,8 @@ import { brandMentioned, trLower } from "@/lib/text-match";
 import { findOpportunities } from "@/lib/geo-insights";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import PromptResults, { groupRuns } from "@/components/tool/PromptResults";
+import GeoHeatmap from "@/components/tool/GeoHeatmap";
+import { analyzeRun, isDemoRun, writeGapHref } from "@/lib/geo-loss";
 
 interface BrandRef {
   name: string;
@@ -66,6 +68,22 @@ function Spark({ data, color }: { data: number[]; color: string }) {
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="mt-2 h-7 w-full">
       <path d={`M${pts.join(" L")}`} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+const ringHex = (n: number) => (n >= 0.5 ? "#12b76a" : n >= 0.2 ? "#f59e0b" : "#f04438");
+function Ring({ value }: { value: number }) {
+  const size = 112,
+    r = size / 2 - 9,
+    c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Görünürlük %${Math.round(value * 100)}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f3" strokeWidth={9} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={ringHex(value)} strokeWidth={9} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - c * value} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
+      <text x="50%" y="50%" dy="0.1em" textAnchor="middle" dominantBaseline="middle" fontSize={26} fontWeight={700} fill="#0f172a">
+        %{Math.round(value * 100)}
+      </text>
     </svg>
   );
 }
@@ -277,6 +295,58 @@ export default function GeoDashboard({
     return out.slice(0, 3);
   }, [fr, brand.name, own, comps, compDomains, sources, weakest, weakestSources, engineStats, onTab]);
 
+  // ---- Özet bandı (tüm motorlar, son test) ----
+  const band = useMemo(() => {
+    const ownRef = { name: brand.name, domain: own };
+    const an = runs.map((r) => analyzeRun(r, ownRef, comps));
+    const n = runs.length || 1;
+    const hits = new Map<string, number>([[brand.name, runs.filter((r) => r.mentioned).length]]);
+    for (const a of an) for (const rv of a.rivals) hits.set(rv.name, (hits.get(rv.name) ?? 0) + 1);
+    const totalHits = [...hits.values()].reduce((x, y) => x + y, 0);
+    const ranked = [...hits.entries()].sort((a, b) => b[1] - a[1]);
+    const rank = ranked.findIndex(([nm]) => nm === brand.name) + 1;
+    const leader = ranked[0] && ranked[0][0] !== brand.name ? { name: ranked[0][0], vis: ranked[0][1] / n } : null;
+    const sent = runs.filter((r) => r.mentioned && r.sentiment != null).map((r) => r.sentiment as number);
+    const src = new Map<string, Set<number>>();
+    runs.forEach((r, i) => r.citations.forEach((c) => {
+      const d = clean(c.domain || c.url);
+      if (d) src.set(d, (src.get(d) ?? new Set()).add(i));
+    }));
+    const topSrc = [...src.entries()].sort((a, b) => b[1].size - a[1].size)[0];
+    const lost = an.filter((a) => a.status === "lost").length;
+    const empty = an.filter((a) => a.status === "empty").length;
+    // Önce bunu yap: en çok cevabın kaybedildiği soru (eşitlikte rakibin daha çok önerildiği).
+    type PromptGroup = { prompt: string; n: number; lost: number; ours: number; rivals: Map<string, number>; an: ReturnType<typeof analyzeRun>[] };
+    const byPrompt = new Map<string, PromptGroup>();
+    runs.forEach((r, i) => {
+      const g: PromptGroup = byPrompt.get(r.promptText) ?? { prompt: r.promptText, n: 0, lost: 0, ours: 0, rivals: new Map(), an: [] };
+      g.n++;
+      g.an.push(an[i]);
+      if (an[i].status === "lost" || an[i].status === "empty") g.lost++;
+      if (r.mentioned) g.ours++;
+      for (const rv of an[i].rivals) g.rivals.set(rv.name, (g.rivals.get(rv.name) ?? 0) + 1);
+      byPrompt.set(r.promptText, g);
+    });
+    const worst = [...byPrompt.values()].filter((g) => g.lost > 0).sort((a, b) => b.lost / b.n - a.lost / a.n || b.rivals.size - a.rivals.size || b.n - a.n)[0];
+    const leaderName = worst ? [...worst.rivals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null : null;
+    const first = worst ? { prompt: worst.prompt, leader: leaderName, ourRate: worst.ours / worst.n, lost: worst.lost, n: worst.n } : null;
+    const firstHref = worst ? writeGapHref(worst.prompt, ownRef, worst.an) : null;
+    return {
+      visibility: runs.filter((r) => r.mentioned).length / n,
+      sov: totalHits ? (hits.get(brand.name) ?? 0) / totalHits : 0,
+      rank,
+      brands: ranked.length,
+      leader,
+      sentiment: sent.length ? Math.round(sent.reduce((a, b) => a + b, 0) / sent.length) : null,
+      topSrc: topSrc ? { domain: topSrc[0], share: topSrc[1].size / n } : null,
+      lost,
+      empty,
+      first,
+      firstHref,
+      demo: runs.some(isDemoRun),
+    };
+  }, [runs, brand.name, own, comps]);
+
   // ---- Trend grafiği (SVG) ----
   const trendBrands = (series[series.length - 1]?.all ?? []).slice(0, 6);
   const trend = useMemo(() => {
@@ -317,6 +387,66 @@ export default function GeoDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Özet bandı */}
+      <Card className="p-4 md:p-5">
+        <div className="grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center">
+          <div className="flex items-center gap-4">
+            <Ring value={band.visibility} />
+            <div>
+              <div className="text-xs font-medium text-sub">AI görünürlüğü</div>
+              <div className="text-sm font-semibold">
+                {runs.length} cevabın {runs.filter((r) => r.mentioned).length} tanesinde
+              </div>
+              <div className="mt-0.5 text-xs text-sub">
+                {engines.length} motor · {new Set(runs.map((r) => r.promptText)).size} prompt
+              </div>
+              {band.demo && <span className="mt-1 inline-block rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn">[DEMO] Bazı cevaplar simüle</span>}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="rounded-xl border border-border px-3 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Rakiplere göre</div>
+              <div className="mt-1 text-[22px] font-semibold tabular-nums">{comps.length ? `${band.rank}. / ${band.brands}` : "—"}</div>
+              <div className="text-[11px] text-sub">{comps.length ? `Ses payı ${pct(band.sov)}${band.leader ? ` · lider ${band.leader.name}` : " · lidersin"}` : "Rakip ekleyince görünür"}</div>
+            </div>
+            <div className="rounded-xl border border-border px-3 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Kaybedilen cevap</div>
+              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.lost ? "text-danger" : "text-ink"}`}>{band.lost}</div>
+              <div className="text-[11px] text-sub">rakip önerildi · {band.empty} cevapta kimse yok</div>
+            </div>
+            <div className="rounded-xl border border-border px-3 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Duygu</div>
+              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.sentiment == null ? "text-ink" : band.sentiment >= 65 ? "text-seo" : band.sentiment >= 50 ? "text-warn" : "text-danger"}`}>{band.sentiment ?? "—"}</div>
+              <div className="text-[11px] text-sub">{band.sentiment == null ? "Anılmadığın için ölçülmedi" : "Anıldığın cevaplarda, 0-100"}</div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-border px-3 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">En çok alıntılanan</div>
+              <div className="mt-1 truncate text-[15px] font-semibold leading-8" title={band.topSrc?.domain}>{band.topSrc?.domain ?? "—"}</div>
+              <div className="text-[11px] text-sub">{band.topSrc ? `Cevapların ${pct(band.topSrc.share)}'inde` : "Motorlar kaynak göstermedi"}</div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-accent/[0.06] p-3.5 lg:col-span-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            {band.first && band.firstHref ? (
+              <>
+                <div className="mt-1 text-[13px] font-semibold leading-snug">&ldquo;{band.first.prompt}&rdquo;</div>
+                <p className="mt-1 text-xs text-sub">
+                  {band.first.n} motorun {band.first.lost} tanesinde kaybediyorsun
+                  {band.first.leader ? `; ${band.first.leader} öneriliyor.` : "; kimse önerilmiyor, ilk net cevabı veren kazanır."}
+                </p>
+                <Link href={band.firstHref} className="mt-2 inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-[12px] font-medium text-white hover:opacity-90">
+                  Bu boşluğu kapatacak yazıyı yaz
+                </Link>
+              </>
+            ) : (
+              <p className="mt-1 text-xs text-sub">Test edilen tüm sorularda anılıyorsun. Konumunu korumak için yeni sorular ekleyip düzenli test et.</p>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <GeoHeatmap runs={runs} own={{ name: brand.name, domain: own }} rivals={comps} />
+
       {/* Motor filtresi */}
       <div className="flex flex-wrap items-center gap-2 pb-1">
         <button type="button" onClick={() => setEngine("all")} className={chip(engine === "all")}>

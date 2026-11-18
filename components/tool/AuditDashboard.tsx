@@ -194,7 +194,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
     <div className="space-y-3">
       {/* Özet bandı: genel puan + 4 katman + önce bunu yap */}
       <Card className="p-4 md:p-5">
-        <div className="grid gap-4 lg:grid-cols-[auto_1fr_300px] lg:items-center">
+        <div className="grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center">
           <div className="flex items-center gap-4">
             <ScoreRing value={pillars.overall} />
             <div>
@@ -205,7 +205,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             {pillars.pillars.map((p) => {
               const failing = p.checks.filter((c) => c.score != null && c.score < 1).length;
               return (
@@ -226,7 +226,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               );
             })}
           </div>
-          <div className="rounded-xl bg-accent/[0.06] p-3.5">
+          <div className="rounded-xl bg-accent/[0.06] p-3.5 lg:col-span-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
             {top ? (
               <>
