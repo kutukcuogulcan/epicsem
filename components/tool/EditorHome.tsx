@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
@@ -52,6 +52,15 @@ export default function EditorHome({
   const [filter, setFilter] = useState<"all" | "weak" | "site" | "published">("all");
   const [limit, setLimit] = useState(12);
   const [newOpen, setNewOpen] = useState(false);
+  const [preset, setPreset] = useState<{ keyword: string; title?: string; note?: string } | null>(null);
+  // ?write=1&kw=…&title=…&note=… (Link planı, GEO aksiyonları vb.) → sihirbaz hazır açılır
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("write") !== "1" || !qs.get("kw")) return;
+    setPreset({ keyword: qs.get("kw")!.slice(0, 100), title: qs.get("title")?.slice(0, 200) || undefined, note: qs.get("note")?.slice(0, 700) || undefined });
+    setNewOpen(true);
+    window.history.replaceState(null, "", "/editor");
+  }, []);
   const [impOpen, setImpOpen] = useState(false);
 
   const rows = useMemo(
@@ -162,7 +171,7 @@ export default function EditorHome({
         title={empty ? "İlk yazını oluştur" : "Yazıların AI'da alıntılanmaya hazır mı?"}
         description={
           empty
-            ? "Anahtar kelimeyi yaz, plan seç; SEO ve GEO'ya uygun makale yazılsın. Puanı canlı gör, paragrafları tek tıkla yeniden yazdır."
+            ? "Anahtar kelimeyi yaz, plan seç; SEO ve GEO'ya uygun makale yazılsın. Konu ve plan ücretsiz, yazı 1 kota kullanır."
             : `${kpi.n} yazı · ortalama GEO ${kpi.avg ?? "—"} · ${kpi.pub} yayında · son 30 günde ${kpi.month} yeni yazı`
         }
         actions={
@@ -343,7 +352,7 @@ export default function EditorHome({
       )}
 
       <Drawer isOpen={newOpen} onClose={() => setNewOpen(false)} eyebrow="AI SEO Editör" title="Yeni yazı" subtitle="Anahtar kelimeyi yaz, plan seç; SEO ve GEO'ya uygun makale yazılsın. Konu ve plan ücretsiz, yazı 1 kota kullanır." size="2xl">
-        {newOpen && <WriteWizard onDone={(id) => { setNewOpen(false); onOpen(id); }} />}
+        {newOpen && <WriteWizard preset={preset} onDone={(id) => { setNewOpen(false); setPreset(null); onOpen(id); }} />}
         <div className="mt-4 border-t border-border pt-3 text-xs text-sub">
           Kendin yazmak istersen{" "}
           <button type="button" onClick={() => { setNewOpen(false); onBlank(); }} className="font-medium text-accent hover:underline">

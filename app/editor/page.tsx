@@ -690,7 +690,7 @@ export default function EditorPage() {
                 <MetaPanel title={title} meta={meta} sourceUrl={sourceUrl} onTitle={(v) => { setTitle(v); setDirty(true); }} onMeta={(v) => { setMeta(v); setDirty(true); }} onAi={() => ai("meta")} busy={busy === "meta"} />
               )}
 
-              {tab === "links" && <LinksPanel blocks={blocks} sourceUrl={sourceUrl} activeId={active} onApply={commit} />}
+              {tab === "links" && <LinksPanel blocks={blocks} sourceUrl={sourceUrl} activeId={active} onApply={commit} site={project?.domain ?? ""} brand={project?.name ?? ""} keyword={keyword} title={title} />}
 
               {tab === "kb" && <KnowledgeBase compact />}
 
@@ -751,8 +751,26 @@ function MetaPanel({ title, meta, sourceUrl, onTitle, onMeta, onAi, busy }: { ti
   );
 }
 
-function LinksPanel({ blocks, sourceUrl, activeId, onApply }: { blocks: Block[]; sourceUrl: string; activeId: string | null; onApply: (b: Block[]) => void }) {
-  const [domain, setDomain] = useState(hostOf(sourceUrl));
+const fold = (s: string) => s.toLocaleLowerCase("tr").replace(/[^\p{L}\p{N}\s]/gu, " ");
+const toks = (s: string) => fold(s).split(/\s+/).filter((w) => w.length > 2 && !["ve", "ile", "için", "bir", "nedir", "nasıl", "the", "and", "for"].includes(w));
+
+function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword, title }: { blocks: Block[]; sourceUrl: string; activeId: string | null; onApply: (b: Block[]) => void; site: string; brand: string; keyword: string; title: string }) {
+  const [domain, setDomain] = useState(hostOf(sourceUrl) || site);
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (t: string) => navigator.clipboard?.writeText(t).then(() => {
+    setCopied(t);
+    setTimeout(() => setCopied(null), 1200);
+  });
+  const kw = (keyword || title).trim();
+  // Dış linkler için anchor planı (basit SEO dağılımı) — AI'sız
+  const anchorPlan = useMemo(() => {
+    if (!kw) return null;
+    const h2 = blocks.filter((b) => b.type === "h2").map((b) => b.text.replace(/\?$/, "").trim());
+    const kt = toks(kw);
+    const partial = [...new Set([...h2.filter((h) => kt.some((t) => fold(h).includes(t)) && fold(h) !== fold(kw)).slice(0, 2), `${kw} rehberi`, `${kw} hakkında bilmeniz gerekenler`])].slice(0, 3);
+    const b = brand || (site ? site.split(".")[0] : "");
+    return { exact: kw, partial, branded: [b, b && `${b} ${kw}`].filter(Boolean) as string[], generic: ["bu rehber", "detaylı bilgi için", "buradan okuyabilirsiniz"] };
+  }, [kw, blocks, brand, site]);
   const [pages, setPages] = useState<{ url: string; title: string | null; h1: string | null }[] | null>(null);
   const [loading, setLoading] = useState(false);
   const load = async () => {
@@ -796,6 +814,22 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply }: { blocks: Block[];
     return out.sort((a, b) => Number(!!b.phrase) - Number(!!a.phrase)).slice(0, 25);
   }, [pages, blocks, sourceUrl]);
 
+  // Gelen iç linkler: sitende bu yazının konusuna en yakın sayfalar → buralardan bu yazıya link ver
+  const incoming = useMemo(() => {
+    if (!pages || !kw) return [];
+    const need = toks(`${kw} ${title}`);
+    return pages
+      .map((p) => {
+        const have = toks(`${p.title ?? ""} ${p.h1 ?? ""} ${decodeURIComponent(p.url).replace(/[-_/]/g, " ")}`);
+        const hit = need.filter((w) => have.some((h) => h === w || (w.length > 4 && h.length > 4 && h.slice(0, 5) === w.slice(0, 5)))).length;
+        return { url: p.url, label: (p.h1 || p.title || p.url).split(/[|\-–]/)[0].trim(), score: need.length ? hit / need.length : 0 };
+      })
+      // Yazının kendisi (aynı başlıklı yayındaki sayfa) öneri olmasın
+      .filter((p) => p.score >= 0.34 && p.url !== sourceUrl && fold(p.label).trim() !== fold(title.split(/[|\-–]/)[0]).trim())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+  }, [pages, kw, title, sourceUrl]);
+
   function add(s: { url: string; label: string; phrase: string | null }) {
     if (s.phrase) {
       const re = new RegExp(`(?<!\\[)(${s.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})(?![^\\[]*\\])`, "i");
@@ -812,9 +846,56 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply }: { blocks: Block[];
     onApply(blocks.map((b) => (b.id === target.id ? { ...b, text: `${b.text} Ayrıca bakınız: [${s.label}](${s.url}).` } : b)));
   }
 
+  const Anchor = ({ a }: { a: string }) => (
+    <button type="button" onClick={() => copy(a)} title="Kopyala" className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-ink/75 hover:bg-accent/10 hover:text-accent">
+      {copied === a ? "✓ kopyalandı" : `“${a}”`}
+    </button>
+  );
+
   return (
-    <div className="space-y-3">
-      <p className="text-[11px] leading-relaxed text-ink/50">Öneriler, bu sitenin son <b>Site Taraması</b> sayfalarından gelir (AI kullanmaz). Metinde geçen ifade bulunursa link o kelimelere eklenir.</p>
+    <div className="space-y-4">
+      {anchorPlan && (
+        <div className="rounded-xl border border-[#BDB4FF] bg-accent/[0.04] p-3">
+          <div className="text-xs font-semibold">Anchor text planı</div>
+          <p className="mt-0.5 text-[10px] leading-relaxed text-ink/50">Başka sitelerden bu yazıya link isterken hangi metinle linklenmesini isteyeceğin. Tıkla → kopyala. Hepsi aynı metinle olmasın; dağılım doğal görünmeli.</p>
+          <div className="mt-2 space-y-1.5 text-[10px]">
+            {([
+              ["Tam eşleşme · ~%10", [anchorPlan.exact]],
+              ["Kısmi eşleşme · ~%40", anchorPlan.partial],
+              ["Markalı · ~%35", anchorPlan.branded],
+              ["Genel · ~%15", anchorPlan.generic],
+            ] as const).map(([l, list]) => (
+              <div key={l}>
+                <div className="mb-0.5 text-ink/45">{l}</div>
+                <div className="flex flex-wrap gap-1">{list.map((a) => <Anchor key={a} a={a} />)}</div>
+              </div>
+            ))}
+          </div>
+          <Link href="/backlinks?mode=plan" className="mt-2 inline-block text-[10px] font-medium text-accent hover:underline">Link isteyeceğin siteler → Link planı</Link>
+        </div>
+      )}
+      {incoming.length > 0 && (
+        <div>
+          <div className="mb-1 text-xs font-semibold">Bu yazıya sitenden link ver</div>
+          <p className="mb-1.5 text-[10px] leading-relaxed text-ink/50">Konusu en yakın sayfaların. Yazıyı yayınlayınca bu sayfalara, önerilen metinle bu yazının linkini ekle.</p>
+          <div className="space-y-1.5">
+            {incoming.map((p, i) => {
+              const a = anchorPlan ? [anchorPlan.partial[i % anchorPlan.partial.length], anchorPlan.exact][i === 0 ? 1 : 0] : kw;
+              return (
+                <div key={p.url} className="rounded-lg border border-border p-2.5">
+                  <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-xs font-medium hover:text-accent">{p.label}</a>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="truncate text-[10px] text-ink/45">{p.url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+                    <Anchor a={a} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <div className="text-xs font-semibold">Bu yazıdan sitene link ver</div>
+      <p className="text-[11px] leading-relaxed text-ink/50">Öneriler, bu sitenin son <b>Site Taraması</b> ya da sitemap sayfalarından gelir (AI kullanmaz). Metinde geçen ifade bulunursa link o kelimelere eklenir.</p>
       <div className="flex gap-2">
         <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siteniz.com" className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs outline-none focus:border-accent" />
         <button type="button" onClick={load} className="rounded-lg border border-border px-3 text-xs font-medium text-ink/60">{loading ? "…" : "Getir"}</button>

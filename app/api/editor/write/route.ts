@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
   };
   const brief: string[] = [`Target length: ${WORDS[b.length] ?? WORDS.medium} in bodyMarkdown.`, `Tone: ${TONE[b.tone] ?? TONE.professional}.`];
   if (!faqOn) brief.push("Do NOT add an FAQ section.");
+  if (typeof b.note === "string" && b.note.trim()) brief.push(`EDITOR NOTE: ${b.note.trim().slice(0, 700)}`);
   if (b.table) brief.push("Include at least one useful markdown table (comparison, checklist or summary) where it genuinely helps.");
   if (b.cta && site) brief.push(`End with a short, non-pushy call to action paragraph that invites the reader to ${brand.name} (https://${site}).`);
   if (b.internalLinks && site) {

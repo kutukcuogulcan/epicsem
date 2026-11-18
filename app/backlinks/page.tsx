@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import CitationTab from "@/components/tool/CitationTab";
+import LinkPlanTab from "@/components/tool/LinkPlanTab";
 import { UnderlineTabs, ErrorBlock, TableSkeleton, EmptyBlock, PageHeader, Drawer } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
@@ -80,9 +81,9 @@ export default function BacklinksPage() {
   const [mf, setMf] = useState<"all" | "unlinked" | "linked">("all");
   const [imp, setImp] = useState<{ busy: boolean; msg: string | null; err: boolean }>({ busy: false, msg: null, err: false });
   const modeParam = useSearchParams().get("mode");
-  const [mode, setMode] = useState<"analysis" | "citations">(modeParam === "citations" ? "citations" : "analysis");
+  const [mode, setMode] = useState<"analysis" | "citations" | "plan">(modeParam === "citations" ? "citations" : modeParam === "plan" ? "plan" : "analysis");
   useEffect(() => {
-    setMode(modeParam === "citations" ? "citations" : "analysis");
+    setMode(modeParam === "citations" ? "citations" : modeParam === "plan" ? "plan" : "analysis");
   }, [modeParam]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
@@ -285,13 +286,14 @@ export default function BacklinksPage() {
     });
 
   const TABS = [
+    ["plan", "Link planı", null],
     ["domains", "Link veren siteler", domains.length],
     ["mentions", "Bahsetmeler", mentions.length],
     ["pages", "En çok link alan sayfalar", data?.pages?.length ?? 0],
     ["gap", "Rakip fırsatları", null],
     ["citations", "Kayıt listesi", null],
   ] as const;
-  const activeTab = mode === "citations" ? "citations" : tab;
+  const activeTab = mode === "citations" ? "citations" : mode === "plan" ? "plan" : tab;
 
   return (
     <div className="space-y-6">
@@ -363,6 +365,7 @@ export default function BacklinksPage() {
         onChange={(i) => {
           const k = TABS[i][0];
           if (k === "citations") setMode("citations");
+          else if (k === "plan") setMode("plan");
           else {
             setMode("analysis");
             setTab(k);
@@ -372,6 +375,7 @@ export default function BacklinksPage() {
       />
 
       {activeTab === "citations" && <CitationTab site={site.trim()} />}
+      {activeTab === "plan" && <LinkPlanTab site={(data?.site ?? site).trim()} onPitch={(d) => draftMail("gap", { domain: d })} />}
 
       {mode === "analysis" && !data?.site && !loading && (
         <div className={`${card} px-6 py-10 text-center`}>

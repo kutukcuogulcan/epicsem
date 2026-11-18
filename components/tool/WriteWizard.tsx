@@ -32,7 +32,7 @@ const INTENT_TONE: Record<string, string> = {
   liste: "bg-rose-50 text-rose-700",
 };
 
-export default function WriteWizard({ onDone }: { onDone: (id: number) => void }) {
+export default function WriteWizard({ onDone, preset }: { onDone: (id: number) => void; preset?: { keyword: string; title?: string; note?: string } | null }) {
   const { project } = useProject();
   useEffect(() => {
     if (!project) return;
@@ -71,6 +71,17 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
     const t = setInterval(() => setTick((x) => x + 1), 6000);
     return () => clearInterval(t);
   }, [busy]);
+
+  // Link planı / başka sayfalardan gelindiyse: kelime ve başlık hazır, doğrudan konu adımı.
+  useEffect(() => {
+    if (!preset?.keyword) return;
+    setKeyword(preset.keyword);
+    if (preset.title) {
+      setCustom(preset.title);
+      setStep(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset?.keyword, preset?.title]);
 
   const title = custom.trim() || (pick !== null && topics ? topics[pick].title : "");
 
@@ -125,7 +136,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
     setErr(null);
     try {
       const d = await post(
-        { topic: keyword, keyword, title, site, language: lang, format, outline, faqQuestions: questions, length, tone, ...opts },
+        { topic: keyword, keyword, title, site, language: lang, format, outline, faqQuestions: questions, length, tone, ...opts, note: preset?.note },
         "/api/editor/write"
       );
       window.dispatchEvent(new Event("epicsem:usage-changed"));
