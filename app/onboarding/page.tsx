@@ -93,8 +93,12 @@ export default function OnboardingPage() {
 
   // ?s= ile kaldığı yerden devam
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("s");
+    const qs = new URLSearchParams(window.location.search);
+    const q = qs.get("s");
     if (q && Number.isInteger(Number(q))) setSid(Number(q));
+    // Ücretsiz AI testinden gelindiyse site adresini önceden doldur.
+    const pre = qs.get("url");
+    if (pre && !q) setUrl(pre.slice(0, 200));
   }, []);
 
   // Oturumu yokla

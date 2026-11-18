@@ -19,6 +19,7 @@ const TOOL_PAGES = [
 ];
 
 const FEATURE_PAGES = [
+  "/ai-gorunurluk-testi",
   "/features/seo-axo-audit",
   "/features/geo-visibility",
   "/features/gap-analysis",
