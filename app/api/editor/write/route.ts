@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);
     let quality = qualityReport(article, keyword, { hasSources: !!research?.facts.length });
     let revised = false;
-    if (!demo && b.quality !== false && needsRevision(quality)) {
+    if (!demo && b.quality !== false && !article.incomplete && needsRevision(quality)) {
       const q = await checkQuota(user.id, "engineQueries", 1);
       if (q.allowed) {
         const better = await reviseArticle(article, quality.issues, { keyword, language, knowledge: (await projectContextBlock(user.id, site || null)).trim() });
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     }
     article.bodyMarkdown = finalizeArticleBody(article.title, article.bodyMarkdown);
     const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
-    return NextResponse.json({ id: draft.id, demo: article.demoMode, quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised } });
+    return NextResponse.json({ id: draft.id, demo: article.demoMode, incomplete: Boolean(article.incomplete), quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Yazı yazılamadı, tekrar dene." }, { status: 500 });
   }

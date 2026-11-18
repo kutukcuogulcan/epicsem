@@ -12,7 +12,7 @@ import EditorHome from "@/components/tool/EditorHome";
 interface DraftItem {
   id: number;
   sourceUrl: string;
-  article: { title: string; metaDescription: string; bodyMarkdown: string };
+  article: { title: string; metaDescription: string; bodyMarkdown: string; incomplete?: boolean };
   status?: string;
   publishedPostUrl?: string | null;
   createdAt: string;
@@ -30,7 +30,25 @@ const AI_ACTIONS: { key: string; label: string; title: string }[] = [
   { key: "shorten", label: "Kısalt", title: "Anlamı koruyarak kısalt" },
   { key: "keyword", label: "Anahtar kelime", title: "Hedef kelimeyi doğal şekilde yerleştir" },
   { key: "answer", label: "Cevap-önce", title: "İlk cümleyi doğrudan cevap yap (AI alıntısı için)" },
+  { key: "list", label: "Listeye çevir", title: "Paragrafı taranabilir maddelere çevir" },
+  { key: "table", label: "Tablo yap", title: "Bilgileri karşılaştırma tablosuna çevir" },
 ];
+
+/** Kesilen yazının devamını ekler; model son kısmı tekrar ettiyse üst üste binen kısmı atar. */
+function joinContinuation(body: string, cont: string): string {
+  let c = cont;
+  const tail = body.slice(-400);
+  for (let n = Math.min(tail.length, c.length); n >= 40; n--) {
+    if (tail.endsWith(c.slice(0, n))) {
+      c = c.slice(n);
+      break;
+    }
+  }
+  const b = body.replace(/\s+$/, "");
+  if (/^\s/.test(c)) return b + c;
+  const midWord = /[\p{L}\p{N}]$/u.test(b) && /^[\p{Ll}\p{N}]/u.test(c);
+  return b + (midWord ? "" : /^(#|[-*] |\d+\. |\|)/.test(c) ? "\n\n" : " ") + c;
+}
 
 const TYPE_LABEL: Record<BlockType, string> = { h1: "H1", h2: "H2", h3: "H3", p: "Paragraf", ul: "Liste", ol: "Numaralı", quote: "Alıntı", img: "Görsel", table: "Tablo" };
 
@@ -141,6 +159,8 @@ export default function EditorPage() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [draftId, setDraftId] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
+  /** Yazı üretimde token sınırına takılıp yarım kaldı mı (taslaktan gelir, "Sonunu tamamla" ile kapanır). */
+  const [incomplete, setIncomplete] = useState(false);
   const [pubOpen, setPubOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -169,7 +189,7 @@ export default function EditorPage() {
     [blocks]
   );
 
-  function openDoc(d: { title: string; metaDescription: string; markdown: string; keyword?: string; sourceUrl?: string; id?: number | null }) {
+  function openDoc(d: { title: string; metaDescription: string; markdown: string; keyword?: string; sourceUrl?: string; id?: number | null; incomplete?: boolean }) {
     const bs = mdToBlocks(d.markdown);
     // Eski taslaklarda gövdede H1 yok: başlığı H1 olarak ekle (yayında zaten atılır, editör puanı doğru hesaplansın).
     if (d.title && !bs.some((b) => b.type === "h1")) bs.unshift({ id: uid(), type: "h1", text: d.title });
@@ -179,6 +199,7 @@ export default function EditorPage() {
     if (d.keyword !== undefined) setKeyword(d.keyword);
     setSourceUrl(d.sourceUrl ?? "");
     setDraftId(d.id ?? null);
+    setIncomplete(Boolean(d.incomplete));
     setHistory([]);
     setDirty(false);
     setPending(null);
@@ -190,7 +211,7 @@ export default function EditorPage() {
       const r = await fetch(`/api/content?id=${id}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Taslak açılamadı");
-      openDoc({ title: d.draft.article.title, metaDescription: d.draft.article.metaDescription, markdown: d.draft.article.bodyMarkdown, sourceUrl: d.draft.sourceUrl, id: d.draft.id, keyword: String(d.draft.sourceUrl ?? "").startsWith("keyword:") ? String(d.draft.sourceUrl).slice(8) : "" });
+      openDoc({ title: d.draft.article.title, metaDescription: d.draft.article.metaDescription, markdown: d.draft.article.bodyMarkdown, sourceUrl: d.draft.sourceUrl, id: d.draft.id, incomplete: Boolean(d.draft.article.incomplete), keyword: String(d.draft.sourceUrl ?? "").startsWith("keyword:") ? String(d.draft.sourceUrl).slice(8) : "" });
       window.history.replaceState(null, "", `/editor?draftId=${id}`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "Taslak açılamadı", true);
@@ -398,6 +419,10 @@ export default function EditorPage() {
       } else if (action === "faq") {
         commit([...blocks, ...mdToBlocks(d.text)]);
         flash("SSS bölümü sona eklendi.");
+      } else if (action === "continue") {
+        commit(mdToBlocks(joinContinuation(blocksToMd(blocks), String(d.text ?? ""))));
+        setIncomplete(!d.finished);
+        flash(d.finished ? "Yazının sonu tamamlandı. Kontrol edip kaydet." : "Bir bölüm daha eklendi; yazı hâlâ bitmedi, bir kez daha tamamla.");
       } else if (action === "assistant") {
         setPending({ blockId: "__doc__", text: d.text, action });
       } else if (block) {
@@ -435,7 +460,7 @@ export default function EditorPage() {
       const r = await fetch("/api/editor/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: draftId, sourceUrl: sourceUrl || "editor", title: title || blocks.find((b) => b.type === "h1")?.text || "", metaDescription: meta, markdown: blocksToMd(blocks) }),
+        body: JSON.stringify({ id: draftId, sourceUrl: sourceUrl || "editor", title: title || blocks.find((b) => b.type === "h1")?.text || "", metaDescription: meta, markdown: blocksToMd(blocks), incomplete }),
       });
       if (r.status === 401) { window.location.href = `/login?next=${encodeURIComponent("/editor")}`; return null; }
       const d = await r.json();
@@ -515,6 +540,18 @@ export default function EditorPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* ---------------- yazı alanı ---------------- */}
         <div className="min-w-0 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] px-6 py-8 md:px-12">
+          {incomplete && (
+            <div className="mb-6 rounded-xl border border-warn/40 bg-warn/10 p-4">
+              <div className="text-sm font-semibold text-ink">Bu yazı yarıda kesildi</div>
+              <p className="mt-1 text-xs text-ink/60">Yapay zekâ yazıyı bitiremeden çıktı sınırına ulaştı; son bölümler ya da SSS eksik olabilir. Yayınlamadan önce sonunu tamamla.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => ai("continue")} disabled={!!busy} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
+                  {busy === "continue" ? "Tamamlanıyor…" : "Sonunu tamamla"}
+                </button>
+                <button type="button" onClick={() => { setIncomplete(false); setDirty(true); }} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink/60">Yazı tamam, uyarıyı kapat</button>
+              </div>
+            </div>
+          )}
           {pending?.blockId === "__doc__" && (
             <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-4">
               <div className="text-sm font-medium">Asistan tüm yazıyı güncelledi</div>

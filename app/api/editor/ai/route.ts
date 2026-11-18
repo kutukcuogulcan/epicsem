@@ -15,6 +15,8 @@ const ACTIONS: Record<string, string> = {
   keyword: "Hedef anahtar kelimeyi (ve doğal varyasyonlarını) metne 1-2 kez doğal biçimde yerleştir; anahtar kelime doldurma yapma.",
   answer: "Metnin ilk cümlesini, başlıktaki soruya doğrudan ve tek cümlelik (6-30 kelime) bir cevap olacak şekilde yeniden düzenle; kalanını destekleyici açıklama olarak koru. (AI motorlarının alıntılayacağı 'cevap-önce' yapı.)",
   tone: "Metni markanın samimi ama profesyonel tonuyla yeniden yaz.",
+  list: "Metni taranabilir bir markdown listesine çevir: varsa 1 cümlelik giriş, ardından her biri tek fikir taşıyan 3-8 madde. Adım sırası önemliyse numaralı liste (1.), değilse madde işareti (-) kullan. Maddeler kısa olsun; önemli terimi **kalın** yazabilirsin. Bilgi ekleme, bilgi atma.",
+  table: "Metindeki bilgileri bir markdown tablosuna çevir: önce 1 cümlelik giriş, sonra başlık satırı ve | --- | ayırıcı satırı olan bir tablo (2-4 sütun, en az 2 satır). Sütunları karşılaştırılan özelliklere göre seç. Tabloda olmayan bilgiyi uydurma; boş hücreye \"—\" yaz.",
 };
 
 /**
@@ -24,6 +26,7 @@ const ACTIONS: Record<string, string> = {
  *  - faq → { text } (markdown SSS bölümü)
  *  - meta → { title, metaDescription }
  *  - assistant → { text } (tüm belge, markdown)
+ *  - continue → { text, finished } (yarıda kesilen yazının devamı; yalnızca eklenecek kısım)
  */
 export async function POST(req: NextRequest) {
   const user = await requireUser();
@@ -45,6 +48,10 @@ export async function POST(req: NextRequest) {
     prompt = `Aşağıdaki yazı için SEO title (50-60 karakter, anahtar kelime başta) ve meta açıklama (140-160 karakter, fayda + çağrı) yaz. Hedef anahtar kelime: "${keyword || "(yok)"}". Yalnızca şu JSON'u döndür: {"title":"…","metaDescription":"…"}\n\nYAZI:\n${doc.slice(0, 8000)}`;
   } else if (action === "faq") {
     prompt = `Aşağıdaki yazıya eklenecek bir "Sık Sorulan Sorular" bölümü yaz: "## Sık Sorulan Sorular" başlığı, ardından 4-6 soru "### Soru?" ve her birinin altında 1-3 cümlelik doğrudan cevap. Sorular kullanıcıların ChatGPT/Google'a soracağı gibi olsun ve cevaplar SADECE yazıdaki bilgilere dayansın. Hedef anahtar kelime: "${keyword}". ${rules}\n\nYAZI:\n${doc.slice(0, 12000)}`;
+  } else if (action === "continue") {
+    if (!doc.trim()) return NextResponse.json({ error: "Yazı boş." }, { status: 400 });
+    const tail = doc.length > 9000 ? doc.slice(doc.length - 9000) : doc;
+    prompt = `Aşağıdaki makale yarıda kesildi. Makaleyi TAM kaldığı yerden devam ettirerek bitir (gerekirse yarım kalan cümleyi tamamlayarak başla). Daha önce yazılanı tekrar etme, baştan başlama, başlık ekleme. Eksik kalan bölümleri, henüz yoksa "Sık sorulan sorular" bölümünü (3-5 soru, ### soru başlıkları) ve kısa bir "ne yapmalı" özetini yaz. Bittiğinde son satıra yalnızca ===END=== yaz. Hedef anahtar kelime: "${keyword || "(yok)"}". Makale başlığı: "${title}". ${rules}\n\nMAKALENİN ŞU ANA KADARKİ ${tail === doc ? "TAMAMI" : "SON KISMI"}:\n${tail}`;
   } else if (action === "assistant") {
     if (!instruction) return NextResponse.json({ error: "Talimat yazın." }, { status: 400 });
     prompt = `Sen bir SEO/GEO editörüsün. Aşağıdaki makaleye şu talimatı uygula: "${instruction}". Hedef anahtar kelime: "${keyword}". Makalenin TAMAMINI güncellenmiş haliyle döndür. ${rules}\n\nMAKALE:\n${doc}`;
@@ -58,6 +65,14 @@ export async function POST(req: NextRequest) {
   prompt += await projectContextBlock(user.id);
   const r = await runFast(prompt, 0.5).catch(() => null);
   if (!r?.text) return NextResponse.json({ error: "AI şu an yanıt vermedi (API anahtarı tanımlı mı?)." }, { status: 503 });
+  if (action === "continue") {
+    // Baştaki boşluk korunur: kelime sınırını o gösterir.
+    const raw = r.text.replace(/^\s*```(?:markdown|md)?[ \t]*\n/i, "").replace(/\n?```\s*$/, "");
+    const end = raw.match(/^\s*===\s*END\s*===\s*$/m);
+    const text = (end && end.index != null ? raw.slice(0, end.index) : raw).replace(/\s+$/, "");
+    if (!text.trim()) return NextResponse.json({ error: "AI devam metni üretmedi, tekrar deneyin." }, { status: 502 });
+    return NextResponse.json({ text, finished: Boolean(end) && !r.truncated, model: r.model });
+  }
   const clean = r.text.replace(/^```(?:markdown|md)?\s*/i, "").replace(/```\s*$/, "").trim();
   if (action === "meta") {
     try {

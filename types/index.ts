@@ -356,6 +356,8 @@ export interface GeneratedArticle {
   openPlaceholders: string[];
   /** Yazarın önerdiği İngilizce görsel arama ifadeleri (Openverse için). */
   imageQueries?: string[];
+  /** Model token sınırına takıldı ve 2 devam denemesinden sonra da yazı bitmedi. Editör "Sonunu tamamla" önerir. */
+  incomplete?: boolean;
   demoMode: boolean;
   model: string;
 }

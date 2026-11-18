@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { claimDraftSite, saveContentDraft, updateContentDraftArticle } from "@/lib/db";
 import { getActiveProject } from "@/lib/project-context";
 
-/** POST /api/editor/save { id?, sourceUrl, title, metaDescription, markdown } → taslağı kaydet/güncelle. */
+/** POST /api/editor/save { id?, sourceUrl, title, metaDescription, markdown, incomplete? } → taslağı kaydet/güncelle. */
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
     metaDescription: String(b.metaDescription ?? "").slice(0, 400),
     bodyMarkdown: String(b.markdown ?? ""),
     openPlaceholders: [...String(b.markdown ?? "").matchAll(/\[NEEDS:[^\]]+\]/g)].map((m) => m[0]).slice(0, 20),
+    // Kullanıcı "Sonunu tamamla" demeden kaydederse yarım işareti korunur.
+    ...(b.incomplete ? { incomplete: true } : {}),
     demoMode: false,
     model: "AI SEO Editör",
   };

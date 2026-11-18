@@ -201,7 +201,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);
         if (!demoMode && campaign.options.quality !== false) {
           const qr = qualityReport(article, t.label, { hasSources: !!research?.facts.length });
-          if (needsRevision(qr) && (await checkQuota(campaign.userId, "engineQueries", 1)).allowed) {
+          if (!article.incomplete && needsRevision(qr) && (await checkQuota(campaign.userId, "engineQueries", 1)).allowed) {
             const better = await reviseArticle(article, qr.issues, { keyword: t.label, language: campaign.options.language ?? "tr", knowledge }).catch(() => null);
             if (better) {
               await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});

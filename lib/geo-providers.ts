@@ -3,6 +3,8 @@ import type { EngineId } from "@/types";
 export interface ProviderResponse {
   text: string;
   model: string;
+  /** Model çıktı token sınırına takıldı (OpenAI finish_reason=length, Claude stop_reason=max_tokens, Gemini MAX_TOKENS). */
+  truncated?: boolean;
 }
 
 /** Optional per-call overrides — used by generation-only call sites (topic/prompt
@@ -62,7 +64,7 @@ class OpenAiProvider implements LlmProvider {
     });
     if (!res.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", res.status, await res.text()));
     const data = await res.json();
-    return { text: data.choices?.[0]?.message?.content ?? "", model };
+    return { text: data.choices?.[0]?.message?.content ?? "", model, truncated: data.choices?.[0]?.finish_reason === "length" };
   }
 }
 
@@ -151,7 +153,7 @@ class AnthropicProvider implements LlmProvider {
     if (!res.ok) throw new Error(friendlyApiError("Claude", res.status, await res.text()));
     const data = await res.json();
     const text = Array.isArray(data.content) ? data.content.map((c: { text?: string }) => c.text ?? "").join("") : "";
-    return { text, model };
+    return { text, model, truncated: data.stop_reason === "max_tokens" };
   }
 }
 
@@ -182,7 +184,7 @@ class GoogleProvider implements LlmProvider {
     if (!res.ok) throw new Error(`Google AI API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-    return { text, model };
+    return { text, model, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
   }
 }
 
@@ -238,7 +240,7 @@ class DeepSeekProvider implements LlmProvider {
     });
     if (!res.ok) throw new Error(`DeepSeek API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
-    return { text: data.choices?.[0]?.message?.content ?? "", model: this.defaultModel };
+    return { text: data.choices?.[0]?.message?.content ?? "", model: this.defaultModel, truncated: data.choices?.[0]?.finish_reason === "length" };
   }
 }
 
@@ -264,7 +266,7 @@ class XaiProvider implements LlmProvider {
     });
     if (!res.ok) throw new Error(`xAI API error: ${res.status} ${await res.text()}`);
     const data = await res.json();
-    return { text: data.choices?.[0]?.message?.content ?? "", model: this.defaultModel };
+    return { text: data.choices?.[0]?.message?.content ?? "", model: this.defaultModel, truncated: data.choices?.[0]?.finish_reason === "length" };
   }
 }
 
