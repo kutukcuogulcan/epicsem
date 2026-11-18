@@ -1,5 +1,5 @@
 import { generateArticleFromBrief, generateArticleFromTopic, reviseArticle, styleInstructions } from "./content-generator";
-import { polishMarkdown, qualityReport } from "./article-quality";
+import { finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "./article-quality";
 import { fetchPageSummary } from "./content-fetch";
 import {
   getFeed,
@@ -201,7 +201,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);
         if (!demoMode && campaign.options.quality !== false) {
           const qr = qualityReport(article, t.label, { hasSources: !!research?.facts.length });
-          if (qr.overall < 70 && qr.issues.length && (await checkQuota(campaign.userId, "engineQueries", 1)).allowed) {
+          if (needsRevision(qr) && (await checkQuota(campaign.userId, "engineQueries", 1)).allowed) {
             const better = await reviseArticle(article, qr.issues, { keyword: t.label, language: campaign.options.language ?? "tr", knowledge }).catch(() => null);
             if (better) {
               await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
@@ -211,10 +211,11 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
           }
         }
         if (!demoMode && campaign.options.media !== false) {
-          const images = await findImages([...(research?.imageQueries ?? []), t.label], 2).catch(() => []);
+          const images = await findImages([...(research?.imageQueries ?? []), ...(article.imageQueries ?? []), t.label], 2).catch(() => []);
           article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language: campaign.options.language ?? "tr" });
         }
         if (campaign.options.toc) article.bodyMarkdown = addTableOfContents(article.bodyMarkdown, campaign.options.language ?? "tr");
+        article.bodyMarkdown = finalizeArticleBody(article.title, article.bodyMarkdown);
         const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id, campaign.brandDomain);
         made.push({ id: draft.id, label: t.label });
         const cit = citabilityOfMarkdown(article.bodyMarkdown, t.label);

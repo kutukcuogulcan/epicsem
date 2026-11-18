@@ -49,7 +49,7 @@ const SOURCES: { id: Source; title: string; body: string; icon: string }[] = [
 ];
 const SOURCE_LABEL: Record<Source, string> = { gap: "Rakip Boşluğu", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
 const MODES: { id: Mode; title: string; body: string; steps: [string, boolean][] }[] = [
-  { id: "review", title: "Onaylı otomasyon", body: "Yazılar Content Studio'da onayını bekler. Sen yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", false]] },
+  { id: "review", title: "Onaylı otomasyon", body: "Yazılar Takvim ve Onay kuyruğunda onayını bekler. Sen yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", false]] },
   { id: "cms-draft", title: "Sitede taslak", body: "Yazılar sitene taslak olarak gider. Sitende tek tıkla yayınlarsın.", steps: [["Besleme", true], ["Üret", true], ["Sitede taslak", true]] },
   { id: "publish", title: "Tam otomasyon", body: "Yazılar sitende doğrudan yayınlanır. Kontrol etmeden yayına çıkar.", steps: [["Besleme", true], ["Üret", true], ["Yayınla", true]] },
 ];
@@ -325,7 +325,7 @@ export default function CampaignsPage() {
   }
 
   async function removeCampaign(c: Campaign) {
-    if (!window.confirm(`"${c.brandName}" autoblog'u silinsin mi? Üretilmiş taslaklar Content Studio'da kalır.`)) return;
+    if (!window.confirm(`"${c.brandName}" autoblog'u silinsin mi? Üretilmiş taslaklar Tüm Yazılar'da kalır.`)) return;
     setBusy(`remove-${c.id}`);
     try {
       const res = await fetch("/api/campaigns", {
@@ -676,7 +676,7 @@ export default function CampaignsPage() {
                   <div className="space-y-1.5 pt-1">
                     {connections.length === 0 ? (
                       <p className="rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
-                        Henüz site bağlantın yok — <Link href="/content" className="font-medium underline">Content Studio</Link>&apos;dan WordPress, Shopify ya da webhook bağla.
+                        Henüz site bağlantın yok — <Link href="/content" className="font-medium underline">Yayın Hedefleri</Link>&apos;nden WordPress, Shopify ya da webhook bağla.
                       </p>
                     ) : (
                       <select value={form.connectionId || ""} onChange={(e) => set("connectionId", Number(e.target.value))} className={input}>
@@ -690,7 +690,7 @@ export default function CampaignsPage() {
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
                       <span>
                         <span className="block text-sm font-medium">Kalite kapısı</span>
-                        <span className="block text-[11px] text-ink/50">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, Content Studio&apos;da beklet (AI&apos;sız, ücretsiz)</span>
+                        <span className="block text-[11px] text-ink/50">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, onay kuyruğunda beklet (AI&apos;sız, ücretsiz)</span>
                       </span>
                       <select value={form.minCitability} onChange={(e) => set("minCitability", Number(e.target.value))} className="rounded-lg border border-border bg-muted px-2 py-1.5 text-sm">
                         {[0, 40, 50, 60, 70].map((v) => <option key={v} value={v}>{v === 0 ? "Kapalı" : `${v}/100`}</option>)}
@@ -739,7 +739,7 @@ export default function CampaignsPage() {
                     <label className="text-xs font-medium uppercase tracking-wide text-ink/45">Anahtar kelimeler · {keywordList.length}</label>
                     <button type="button" onClick={loadIdeas} className="text-xs font-medium text-accent hover:underline">Verilerimden öner (ücretsiz)</button>
                   </div>
-                  <textarea value={form.keywords} onChange={(e) => set("keywords", e.target.value)} rows={7} placeholder={"Her satıra bir anahtar kelime ya da soru\nör. abiye elbise nasıl seçilir\nkapalı abiye modelleri 2026"} className={`${input} font-mono text-[13px] leading-6`} />
+                  <textarea value={form.keywords} onChange={(e) => set("keywords", e.target.value)} rows={7} placeholder="Her satıra bir anahtar kelime ya da soru" className={`${input} font-mono text-[13px] leading-6`} />
                   <p className="text-[11px] text-ink/45">Sırayla yazılır, daha önce yazılanlar atlanır. Kuyruğa istediğin zaman ekleyebilirsin.</p>
                   {ideas && (
                     <div className="rounded-xl border border-border p-3">
@@ -774,7 +774,7 @@ export default function CampaignsPage() {
                       {feedBusy ? "Okunuyor…" : "Önizle"}
                     </button>
                   </div>
-                  <input value={form.rssFilter} onChange={(e) => set("rssFilter", e.target.value)} placeholder="Filtre (opsiyonel): virgülle kelimeler — ör. seo, google, yapay zeka" className={input} />
+                  <input value={form.rssFilter} onChange={(e) => set("rssFilter", e.target.value)} placeholder="Filtre (opsiyonel): virgülle ayrılmış kelimeler" className={input} />
                   <ErrorBlock message={feedError} />
                   {feed && (
                     <div className="rounded-xl border border-border">
@@ -874,7 +874,7 @@ export default function CampaignsPage() {
                   ["internalLinks", "İç linkler", "Sitenin sayfalarına 2–5 bağlam uygun link (ücretsiz)"],
                   ["media", "Görsel ve video", "Lisanslı 2 görsel (ücretsiz) + kaynak açıksa YouTube videosu"],
                   ["research", "Kaynaklı bilgiler", "Web aramasıyla rakiplerin işlediği konular, gerçek sorular ve doğrulanmış istatistikler · yazı başına +1 AI sorgusu"],
-                  ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; SEO/GEO puanı 70'in altındaysa yazı bir kez iyileştirilir · yalnızca gerekirse +1 AI sorgusu"],
+                  ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; puan 75'in altındaysa ya da kelime tekrarı, kısa metin, fazla [NEEDS] varsa yazı bir kez iyileştirilir · yalnızca gerekirse +1 AI sorgusu"],
                 ] as const).map(([k, l, d]) => (
                   <label key={k} className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
                     <span>

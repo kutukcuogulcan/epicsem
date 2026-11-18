@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const text = String(b.text ?? "").slice(0, 12000);
   const doc = String(b.doc ?? "").slice(0, 24000);
   const keyword = String(b.keyword ?? "").slice(0, 100);
-  const instruction = String(b.instruction ?? "").slice(0, 800);
+  const instruction = String(b.instruction ?? "").slice(0, 2500);
   const title = String(b.title ?? "").slice(0, 200);
 
   const rules = `Kurallar: Metnin dilinde yaz (Türkçe ise Türkçe). Uydurma bilgi, istatistik, fiyat, tarih ekleme. Markdown biçimini koru (başlık, liste, **kalın**, [link](url)). Linkleri ve görselleri silme. Sadece sonucu döndür; açıklama, giriş cümlesi, tırnak veya kod bloğu ekleme.`;

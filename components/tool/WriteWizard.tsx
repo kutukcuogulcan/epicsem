@@ -405,7 +405,7 @@ export default function WriteWizard({ onDone }: { onDone: (id: number) => void }
                     ["table", "Tablo", "Karşılaştırma ya da kontrol listesi"],
                     ["internalLinks", "İç linkler", "Sitenin sayfalarından 2-5 link (tarama ya da sitemap)"],
                     ["research", "Kaynaklı bilgiler", "Rakiplerin işlediği konular, gerçek sorular, doğrulanmış istatistikler · +1 AI sorgusu"],
-                    ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; puan 70'in altındaysa bir kez iyileştirilir · gerekirse +1 AI sorgusu"],
+                    ["quality", "Kalite kontrolü", "Dolgu cümleleri temizlenir; puan 75'in altındaysa ya da aşırı tekrar/kısa metin varsa bir kez iyileştirilir · gerekirse +1 AI sorgusu"],
                     ["media", "Görsel ve video", "Lisanslı 2 görsel (ücretsiz) + kaynak açıksa ilgili YouTube videosu"],
                     ["cta", "Harekete geçirici kapanış", "Sonda markana kısa davet"],
                   ] as const).map(([k, l, d]) => (

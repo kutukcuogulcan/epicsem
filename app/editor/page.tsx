@@ -72,7 +72,9 @@ function Ring({ value, label, color }: { value: number; label: string; color: st
 
 const ringColor = (n: number) => (n >= 80 ? "#16a34a" : n >= 50 ? "#f59e0b" : "#ef4444");
 
-function Checklist({ checks }: { checks: Check[] }) {
+type FixKind = { label: string; ai: boolean; run: () => void } | null;
+
+function Checklist({ checks, fixFor, busy }: { checks: Check[]; fixFor?: (c: Check) => FixKind; busy?: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <ul className="space-y-1">
@@ -82,9 +84,23 @@ function Checklist({ checks }: { checks: Check[] }) {
             <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-medium ${c.ok ? "bg-seo/15 text-seo" : (c.part ?? 0) > 0.4 ? "bg-warn/15 text-warn" : "bg-danger/10 text-danger"}`}>
               {c.ok ? "✓" : "!"}
             </span>
-            <span className={c.ok ? "text-ink/55" : "font-medium text-ink/85"}>{c.label}</span>
+            <span className={`flex-1 ${c.ok ? "text-ink/55" : "font-medium text-ink/85"}`}>{c.label}</span>
+            {!c.ok && fixFor?.(c) && <span className={`shrink-0 rounded px-1.5 py-px text-[10px] font-medium ${fixFor(c)!.ai ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo"}`}>{fixFor(c)!.ai ? "✦ düzelt" : "düzelt"}</span>}
           </button>
-          {open === c.key && !c.ok && <p className="ml-8 mb-1 rounded-lg bg-accent/5 px-3 py-2 text-[11px] leading-relaxed text-ink/70">{c.hint}</p>}
+          {open === c.key && !c.ok && (
+            <div className="ml-8 mb-1 rounded-lg bg-accent/5 px-3 py-2 text-[11px] leading-relaxed text-ink/70">
+              {c.hint}
+              {(() => {
+                const f = fixFor?.(c);
+                return f ? (
+                  <button type="button" disabled={busy} onClick={f.run} className="mt-1.5 block rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white hover:opacity-90 disabled:opacity-40">
+                    {f.ai ? "✦ " : ""}
+                    {f.label}
+                  </button>
+                ) : null;
+              })()}
+            </div>
+          )}
         </li>
       ))}
     </ul>
@@ -154,7 +170,10 @@ export default function EditorPage() {
   );
 
   function openDoc(d: { title: string; metaDescription: string; markdown: string; keyword?: string; sourceUrl?: string; id?: number | null }) {
-    setBlocks(mdToBlocks(d.markdown));
+    const bs = mdToBlocks(d.markdown);
+    // Eski taslaklarda gövdede H1 yok: başlığı H1 olarak ekle (yayında zaten atılır, editör puanı doğru hesaplansın).
+    if (d.title && !bs.some((b) => b.type === "h1")) bs.unshift({ id: uid(), type: "h1", text: d.title });
+    setBlocks(bs);
     setTitle(d.title ?? "");
     setMeta(d.metaDescription ?? "");
     if (d.keyword !== undefined) setKeyword(d.keyword);
@@ -246,6 +265,77 @@ export default function EditorPage() {
   }, [dirty]);
 
   const sc = useMemo(() => (blocks ? scoreDoc(blocks, { title, metaDescription: meta, keyword }) : null), [blocks, title, meta, keyword]);
+
+  /* ---------------- puan panelindeki "düzelt" eylemleri ---------------- */
+  function fixH1() {
+    if (!blocks) return;
+    const h1s = blocks.filter((b) => b.type === "h1");
+    if (!h1s.length) commit([{ id: uid(), type: "h1", text: title || keyword || "Başlık" }, ...blocks]);
+    else commit(blocks.map((b) => (b.type === "h1" && b.id !== h1s[0].id ? { ...b, type: "h2" as BlockType } : b)));
+    flash(h1s.length ? "Fazla H1'ler H2 yapıldı." : "Başlık H1 olarak eklendi.");
+  }
+  async function addImage() {
+    if (!blocks) return;
+    setBusy("img");
+    try {
+      const qs = [keyword, title].filter(Boolean).map((q) => `q=${encodeURIComponent(q)}`).join("&");
+      const r = await fetch(`/api/editor/images?${qs}`);
+      const d = await r.json();
+      const img = d.images?.[0];
+      if (!img) throw new Error("Uygun lisanslı görsel bulunamadı; görsel bloğunu elle ekleyebilirsin.");
+      const firstH2 = blocks.findIndex((b) => b.type === "h2");
+      const at = firstH2 >= 0 ? Math.min(blocks.length, firstH2 + 2) : Math.min(blocks.length, 2);
+      const alt = `${keyword || title}`.slice(0, 120);
+      const next = [...blocks];
+      next.splice(at, 0, { id: uid(), type: "img", text: `${alt}|${img.url}` }, { id: uid(), type: "p", text: `*Görsel: ${img.creator || "Openverse"}, ${img.license} · [Openverse](${img.landing})*` });
+      commit(next);
+      flash("Lisanslı görsel ve atıf satırı eklendi.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "Görsel bulunamadı", true);
+    } finally {
+      setBusy(null);
+    }
+  }
+  const year = new Date().getFullYear();
+  const AI_FIX: Record<string, (c: Check) => string> = {
+    density: (c) =>
+      sc && sc.stats.density > 2.5
+        ? `"${keyword}" ifadesi çok sık tekrar ediyor (${c.label}). Tam ifadeyi yalnızca H1'de, ilk paragrafta, bir H2'de ve metin içinde en fazla 3 kez daha kullan; diğer yerlerde eş anlamlı, kısaltılmış ya da zamirli ifadeler kullan.`
+        : `"${keyword}" ifadesini metne 2-3 kez daha doğal biçimde yerleştir.`,
+    stuffing: (c) => `${c.label}: bu kelimeyi daha az tekrarla; eş anlamlılar, zamirler ve daha kısa ifadeler kullan. Cümlelerin anlamını ve bilgileri koru.`,
+    len: () => "Yazıyı en az 1200 kelimeye genişlet: mevcut bölümleri somut adımlar, örnekler, kriterler ve bir karşılaştırma tablosuyla derinleştir. Bilgi tekrarı ve uydurma rakam ekleme.",
+    depth: () => "Yazıyı en az 1200 kelimeye genişlet: mevcut bölümleri somut adımlar, örnekler, kriterler ve bir karşılaştırma tablosuyla derinleştir. Bilgi tekrarı ve uydurma rakam ekleme.",
+    answer: () => "Her ## bölümü, başlığındaki soruya 1-2 cümlelik doğrudan cevapla başlasın; ayrıntılar sonra gelsin.",
+    lead: () => "Yazının ilk paragrafını 2-3 cümlede konuyu tanımlayan ve soruyu doğrudan cevaplayan bir 'cevap kapsülü' yap.",
+    kwh1: () => `H1 başlığına "${keyword}" ifadesini doğal biçimde ekle.`,
+    kwfirst: () => `İlk paragrafta "${keyword}" ifadesini doğal biçimde kullan.`,
+    kwh2: () => `Ara başlıklardan birinde "${keyword}" ifadesini ya da yakın bir varyasyonunu kullan.`,
+    fresh: () => `Metinde ${year} yılını bir kez, doğru olduğu bir yerde doğal biçimde belirt (ör. "${year} itibarıyla").`,
+    placeholders: () => "Metindeki [NEEDS: ...] yer tutucularını en fazla 2 taneye indir: yalnızca markaya özgü ve gerçekten gerekli olanları bırak, diğer cümleleri eksik bilgiye ihtiyaç duymayan genel ama faydalı tavsiyelere çevir. Asla bilgi uydurma.",
+    h2: () => "Metni en az 3 tane soru biçimli ## ara başlıkla bölümlere ayır.",
+    paras: () => "120 kelimeden uzun paragrafları böl, cümleleri ortalama 20 kelimenin altında tut.",
+  };
+  const NO_FIX = new Set(["kw", "quotes", "stats", "cite", "stat-source"]);
+  const fixFor = (c: Check): FixKind => {
+    if (c.ok || NO_FIX.has(c.key)) return null;
+    if (c.key === "h1") return { label: "Düzelt (ücretsiz)", ai: false, run: fixH1 };
+    if (c.key === "img") return { label: "Lisanslı görsel ekle (ücretsiz)", ai: false, run: addImage };
+    if (c.key === "links") return { label: "İç link önerilerini aç (ücretsiz)", ai: false, run: () => setTab("links") };
+    if (c.key === "faq") return { label: "SSS bölümü ekle", ai: true, run: () => ai("faq") };
+    if (c.key === "title" || c.key === "meta" || c.key === "kwtitle") return { label: "Title ve meta yaz", ai: true, run: () => ai("meta") };
+    const ins = AI_FIX[c.key]?.(c) ?? (c.hint ? `${c.label}: ${c.hint}` : null);
+    return ins ? { label: "AI ile düzelt", ai: true, run: () => ai("assistant", { instruction: ins }) } : null;
+  };
+  const failing = sc ? [...sc.seoChecks, ...sc.geoChecks].filter((c) => !c.ok && (c.part ?? 0) < 0.85) : [];
+  const freeFixes = failing.filter((c) => c.key === "h1" || c.key === "img" || c.key === "links");
+  const aiFixes = failing.filter((c) => {
+    const f = fixFor(c);
+    return f?.ai && !["faq", "title", "meta", "kwtitle"].includes(c.key);
+  });
+  function fixAll() {
+    const ins = aiFixes.map((c) => `- ${AI_FIX[c.key]?.(c) ?? `${c.label}: ${c.hint}`}`).join("\n");
+    ai("assistant", { instruction: `Aşağıdaki sorunların HEPSİNİ tek seferde düzelt; bilgileri, linkleri, görselleri ve kaynakları koru, rakam uydurma:\n${ins}` });
+  }
 
   /* ---------------- blok işlemleri ---------------- */
   const setText = (id: string, text: string) => {
@@ -553,15 +643,36 @@ export default function EditorPage() {
                       </div>
                     ))}
                   </div>
+                  {failing.length > 0 && (
+                    <div className="rounded-xl border border-[#BDB4FF] bg-accent/[0.04] p-3">
+                      <div className="text-xs font-semibold">{failing.length} madde iyileştirilebilir</div>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-ink/55">
+                        {freeFixes.length ? `${freeFixes.length} tanesi tek tıkla ücretsiz, ` : ""}
+                        {aiFixes.length ? `${aiFixes.length} tanesi AI ile tek seferde düzeltilir (1 AI isteği; önce önizleme gösterilir).` : "kalanlar için maddeye tıkla."}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {freeFixes.map((c) => (
+                          <button key={c.key} type="button" disabled={!!busy} onClick={fixFor(c)!.run} className="rounded-lg border border-seo/40 bg-panel px-2 py-1 text-[11px] font-medium text-seo hover:bg-seo/5 disabled:opacity-40">
+                            {c.key === "h1" ? "H1'i düzelt" : c.key === "links" ? "İç link ekle" : busy === "img" ? "Görsel aranıyor…" : "Görsel ekle"}
+                          </button>
+                        ))}
+                        {aiFixes.length > 0 && (
+                          <button type="button" disabled={!!busy} onClick={fixAll} className="rounded-lg bg-accent px-2 py-1 text-[11px] font-medium text-white hover:opacity-90 disabled:opacity-40">
+                            {busy === "assistant" ? "Düzeltiliyor…" : `✦ ${aiFixes.length} maddeyi AI ile düzelt`}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <div className="mb-1 text-xs font-medium text-ink/50">SEO kontrolleri</div>
-                    <Checklist checks={sc.seoChecks} />
+                    <Checklist checks={sc.seoChecks} fixFor={fixFor} busy={!!busy} />
                   </div>
                   <div>
                     <div className="mb-1 flex items-center justify-between text-xs font-medium text-ink/50">
                       <span>GEO / AI alıntılanabilirlik</span>
                     </div>
-                    <Checklist checks={sc.geoChecks} />
+                    <Checklist checks={sc.geoChecks} fixFor={fixFor} busy={!!busy} />
                     <div className="mt-3 rounded-xl border border-border p-2.5">
                       <div className="mb-1.5 text-xs font-medium text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
                       <PassageList report={sc.passages} compact />

@@ -63,6 +63,8 @@ function buildGenerationPrompt(brief: ContentBrief, brand: BrandRef, format: "ar
   }
 
   lines.push("");
+  lines.push(EDITORIAL_RULES);
+  lines.push("");
   lines.push(
     "CRITICAL constraint: do not invent facts, statistics, pricing, dates, customer counts, awards, or any claim about the brand that isn't general, safely-known information. Where the article needs a specific fact you don't have (a price, a stat, a proof point), write a placeholder in the exact form [NEEDS: short description of the missing fact] instead of making one up. This placeholder convention is required, not optional."
   );
@@ -72,7 +74,7 @@ function buildGenerationPrompt(brief: ContentBrief, brand: BrandRef, format: "ar
 {
   "title": "50-60 character SEO title",
   "metaDescription": "140-160 character meta description",
-  "bodyMarkdown": "the full article in markdown, using ## / ### headings, answer-first paragraphs, and bullet lists where useful — 500-900 words",
+  "bodyMarkdown": "the full article in markdown, using ## / ### headings, answer-first paragraphs, and bullet lists where useful — 1000-1500 words",
   "openPlaceholders": ["each distinct [NEEDS: ...] placeholder used in bodyMarkdown, verbatim, as its own array entry — empty array if none were needed"]
 }`
   );
@@ -169,6 +171,7 @@ function parseArticleResponse(text: string, model: string): GeneratedArticle {
     metaDescription: String(parsed.metaDescription ?? ""),
     bodyMarkdown: String(parsed.bodyMarkdown),
     openPlaceholders: Array.isArray(parsed.openPlaceholders) ? parsed.openPlaceholders.map(String) : [],
+    imageQueries: (Array.isArray(parsed.imageQueries) ? parsed.imageQueries : []).map((q: unknown) => String(q).trim().slice(0, 60)).filter(Boolean).slice(0, 2),
     demoMode: false,
     model,
   };
@@ -183,17 +186,21 @@ export const EDITORIAL_RULES = `EDITORIAL QUALITY RULES (follow all of them):
 2. Be specific, not generic: concrete steps, real examples, criteria, numbers from the verified sources, common mistakes and how to avoid them, who it is / isn't for. Each section must teach something a reader could act on today. No paragraph that could be pasted into any other article.
 3. Structure for scanning: ## headings phrased as the questions people ask; short paragraphs (max 3-4 sentences, under 90 words); numbered lists for processes, bullet lists for options; at least one markdown table (comparison, checklist, or summary) when the topic allows.
 4. Cover the topic completely: include definitions of key terms, the "how", the "why", alternatives/comparisons, and practical tips. Prefer depth over repetition.
-5. Keyword: use the main keyword naturally in the title, in the first 100 words and in at least one ## heading; use natural variations and related terms instead of repeating it.
+5. Keyword: use the exact main keyword in the title, in the first 100 words and in at least one ## heading — and otherwise only 3-6 more times in the whole article (keyword density 0.5-2%). Everywhere else use synonyms, pronouns, shorter forms and related terms. No single word (other than function words) may make up more than 3% of the text — e.g. do not repeat "kredi" or the brand name in every sentence.
 6. Forbidden filler (never use these or similar): "Günümüzde", "Bu yazımızda / bu yazıda ... ele alacağız", "Sonuç olarak" as an empty wrap-up, "unutmamak gerekir ki", "son derece önemlidir", "hayati önem taşır", "In today's world", "In this article we will", "It is important to note", "In conclusion", "delve", "landscape", "game-changer". No rhetorical questions as openers. No empty superlatives.
 7. Brand: mention the brand where it genuinely helps the reader (a relevant service, method or example) — 2-4 times in total, never as an advert in every section, and never claim things about the brand that are not in the provided material.
-8. End with a short practical summary (checklist or 3-5 bullet "what to do next"), not a generic conclusion paragraph.`;
+8. End with a short practical summary (checklist or 3-5 bullet "what to do next"), not a generic conclusion paragraph.
+9. Freshness: mention the current year (${new Date().getFullYear()}) naturally once (e.g. "${new Date().getFullYear()} itibarıyla"), only where it is true.
+10. Placeholders: use at most 2 [NEEDS: ...] placeholders, only for brand-specific facts that are essential. Otherwise rewrite the sentence so it gives useful general guidance without needing the missing fact (e.g. "faiz oranları bankaya ve vadeye göre değişir; güncel oranı resmi sitesinden kontrol et").
+11. Do NOT put a # (H1) title in bodyMarkdown — the title is added separately. Start with the answer paragraph.`;
 
 const RESPONSE_SHAPE_INSTRUCTIONS = `Respond with ONLY a single JSON object, no markdown fences, no commentary, matching exactly this shape:
 {
   "title": "50-60 character SEO title",
   "metaDescription": "140-160 character meta description",
-  "bodyMarkdown": "the full article in markdown, using ## / ### headings, answer-first paragraphs, and bullet lists where useful — 500-900 words",
-  "openPlaceholders": ["each distinct [NEEDS: ...] placeholder used in bodyMarkdown, verbatim, as its own array entry — empty array if none were needed"]
+  "bodyMarkdown": "the full article in markdown, using ## / ### headings, answer-first paragraphs, and bullet lists where useful — 1200-1600 words unless ADDITIONAL REQUIREMENTS give another length",
+  "openPlaceholders": ["each distinct [NEEDS: ...] placeholder used in bodyMarkdown, verbatim, as its own array entry — empty array if none were needed"],
+  "imageQueries": ["two short ENGLISH stock-photo search queries (2-3 concrete visual words, e.g. 'credit card payment', 'family budget planning') that illustrate this article"]
 }`;
 
 const NO_FABRICATION_RULE =
@@ -400,7 +407,7 @@ export async function reviseArticle(
 ): Promise<GeneratedArticle | null> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) return null;
-  const prompt = `You are a senior editor. Improve the article below so it fixes every issue in the list. Keep the language (${opts.language ? LANG_NAMES[opts.language] ?? opts.language : "same as the article"}), the topic, the main structure, every factual statement, every markdown link (sources and internal links), every image line (![...](...)), every standalone YouTube URL line and every [NEEDS: ...] placeholder exactly. Do NOT invent new statistics, prices, dates or brand claims. Do not shorten the article; expand thin sections instead.
+  const prompt = `You are a senior editor. Improve the article below so it fixes every issue in the list. Keep the language (${opts.language ? LANG_NAMES[opts.language] ?? opts.language : "same as the article"}), the topic, the main structure, every factual statement, every markdown link (sources and internal links), every image line (![...](...)), every standalone YouTube URL line and every [NEEDS: ...] placeholder exactly (unless an issue below explicitly asks you to reduce the placeholders). Do NOT invent new statistics, prices, dates or brand claims. Do not shorten the article; expand thin sections instead.
 Main keyword: "${opts.keyword}"
 
 ISSUES TO FIX:
@@ -414,7 +421,7 @@ CURRENT ARTICLE (markdown):
 ${article.bodyMarkdown}
 ${knowledgeBlock(opts.knowledge)}
 
-${RESPONSE_SHAPE_INSTRUCTIONS.replace("500-900 words", "at least as long as the current article")}`;
+${RESPONSE_SHAPE_INSTRUCTIONS.replace("1200-1600 words unless ADDITIONAL REQUIREMENTS give another length", "at least as long as the current article")}`;
   try {
     const r = await provider.run(prompt, { json: true, maxTokens: 9000 });
     const out = parseArticleResponse(r.text, r.model);

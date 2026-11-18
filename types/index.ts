@@ -354,6 +354,8 @@ export interface GeneratedArticle {
   bodyMarkdown: string;
   /** Facts the model couldn't ground and left as [NEEDS: ...] placeholders instead of inventing. */
   openPlaceholders: string[];
+  /** Yazarın önerdiği İngilizce görsel arama ifadeleri (Openverse için). */
+  imageQueries?: string[];
   demoMode: boolean;
   model: string;
 }

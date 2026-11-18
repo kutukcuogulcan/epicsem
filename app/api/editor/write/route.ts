@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromTopic, reviseArticle } from "@/lib/content-generator";
-import { polishMarkdown, qualityReport } from "@/lib/article-quality";
+import { finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "@/lib/article-quality";
 import { listKnownSites, saveContentDraft } from "@/lib/db";
 import { projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);
     let quality = qualityReport(article, keyword, { hasSources: !!research?.facts.length });
     let revised = false;
-    if (!demo && b.quality !== false && quality.overall < 70 && quality.issues.length) {
+    if (!demo && b.quality !== false && needsRevision(quality)) {
       const q = await checkQuota(user.id, "engineQueries", 1);
       if (q.allowed) {
         const better = await reviseArticle(article, quality.issues, { keyword, language, knowledge: (await projectContextBlock(user.id, site || null)).trim() });
@@ -110,9 +110,10 @@ export async function POST(req: NextRequest) {
     }
     // Görseller (Openverse, ücretsiz) + video
     if (!demo && b.media !== false) {
-      const images = await findImages([...(research?.imageQueries ?? []), keyword], 2).catch(() => []);
+      const images = await findImages([...(research?.imageQueries ?? []), ...(article.imageQueries ?? []), keyword], 2).catch(() => []);
       article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language });
     }
+    article.bodyMarkdown = finalizeArticleBody(article.title, article.bodyMarkdown);
     const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
     return NextResponse.json({ id: draft.id, demo: article.demoMode, quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised } });
   } catch (e) {
