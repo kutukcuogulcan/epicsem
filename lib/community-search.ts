@@ -59,7 +59,7 @@ async function resolveRedirect(u: string): Promise<string | null> {
 }
 
 /** URL'den okunabilir başlık (slug); YouTube için oEmbed başlığı. */
-async function titleFor(url: string, site: CommunitySiteId): Promise<string> {
+export async function titleFor(url: string, site: CommunitySiteId | "other"): Promise<string> {
   if (site === "youtube") {
     try {
       const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(6000) });
@@ -88,11 +88,17 @@ async function titleFor(url: string, site: CommunitySiteId): Promise<string> {
   return (slug.charAt(0).toLocaleUpperCase("tr") + slug.slice(1)).slice(0, 200);
 }
 
-/** Bir markanın topluluk sitelerindeki bahsetmeleri (en fazla ~20). Hata ya da anahtar yoksa boş liste. */
-export async function communityMentions(brand: string, ownDomain?: string): Promise<CommunityMention[]> {
-  if (!communitySearchAvailable() || !brand.trim()) return [];
-  const sites = COMMUNITY_SITES.map((s) => s.host).join(", ");
-  const prompt = `Search Google for discussions, questions, reviews, complaints and videos about "${brand}"${ownDomain ? ` (${ownDomain})` : ""} on these sites only: ${sites}. Run a separate search per site using site:... . Then list the pages you found.`;
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+const onHost = (h: string, host: string) => h === host || h.endsWith("." + host) || (host.startsWith("forum.") && (h === host.slice(6) || h.endsWith("." + host.slice(6))));
+
+/** Google yönlendirme bağlantılarını gerçek adrese çözer ve tekrarları atar. */
+async function groundedUrls(prompt: string): Promise<string[]> {
   let chunks: { web?: { uri?: string } }[] = [];
   try {
     const { data } = await geminiGenerate({ contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }, { signal: AbortSignal.timeout(60_000) });
@@ -101,6 +107,41 @@ export async function communityMentions(brand: string, ownDomain?: string): Prom
     return [];
   }
   const urls = await Promise.all(chunks.slice(0, 30).map((c) => resolveRedirect(String(c.web?.uri ?? ""))));
+  return [...new Set(urls.filter((u): u is string => Boolean(u)))];
+}
+
+export interface SiteMention {
+  host: string;
+  url: string;
+}
+
+/**
+ * Bir markanın verilen sitelerde geçtiği sayfalar (Google araması, tek sorgu). Yalnızca
+ * Google'ın döndürdüğü gerçek adresler; adres listedeki bir siteye ait değilse atılır.
+ */
+export async function siteMentions(brand: string, hosts: string[], ownDomain?: string): Promise<SiteMention[]> {
+  if (!communitySearchAvailable() || !brand.trim() || !hosts.length) return [];
+  const prompt = `Search Google for pages that mention "${brand}"${ownDomain ? ` (${ownDomain})` : ""} on these sites only: ${hosts.join(", ")}. Run a separate search per site using site:... . Then list the pages you found.`;
+  const out: SiteMention[] = [];
+  const seen = new Set<string>();
+  for (const u of await groundedUrls(prompt)) {
+    const h = hostOf(u);
+    const host = hosts.find((x) => onHost(h, x));
+    if (!host) continue;
+    const clean = u.replace(/#.*$/, "");
+    if (seen.has(clean)) continue;
+    seen.add(clean);
+    out.push({ host, url: clean });
+  }
+  return out;
+}
+
+/** Bir markanın topluluk sitelerindeki bahsetmeleri (en fazla ~20). Hata ya da anahtar yoksa boş liste. */
+export async function communityMentions(brand: string, ownDomain?: string): Promise<CommunityMention[]> {
+  if (!communitySearchAvailable() || !brand.trim()) return [];
+  const sites = COMMUNITY_SITES.map((s) => s.host).join(", ");
+  const prompt = `Search Google for discussions, questions, reviews, complaints and videos about "${brand}"${ownDomain ? ` (${ownDomain})` : ""} on these sites only: ${sites}. Run a separate search per site using site:... . Then list the pages you found.`;
+  const urls = await groundedUrls(prompt);
   const seen = new Set<string>();
   const picked: { url: string; site: CommunitySiteId }[] = [];
   for (const u of urls) {

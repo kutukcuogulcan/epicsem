@@ -2991,6 +2991,8 @@ export interface ProjectSettings {
   cta?: string;
   /** Proje bazlı bilgi bankası (eskiden kullanıcı başına tekti). */
   knowledge?: string;
+  /** Sektör (lib/sector-sources.ts id'si) — Backlinkler → Sektör kaynak haritası. */
+  sector?: string;
 }
 
 async function ensureClientSettings() {

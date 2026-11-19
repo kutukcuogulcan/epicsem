@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import CitationTab from "@/components/tool/CitationTab";
 import LinkPlanTab from "@/components/tool/LinkPlanTab";
+import SectorSourcesTab from "@/components/tool/SectorSourcesTab";
 import { UnderlineTabs, ErrorBlock, TableSkeleton, EmptyBlock, PageHeader, Drawer } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 
@@ -81,9 +82,10 @@ export default function BacklinksPage() {
   const [mf, setMf] = useState<"all" | "unlinked" | "linked">("all");
   const [imp, setImp] = useState<{ busy: boolean; msg: string | null; err: boolean }>({ busy: false, msg: null, err: false });
   const modeParam = useSearchParams().get("mode");
-  const [mode, setMode] = useState<"analysis" | "citations" | "plan">(modeParam === "citations" ? "citations" : modeParam === "plan" ? "plan" : "analysis");
+  const modeOf = (m: string | null) => (m === "citations" || m === "plan" || m === "sector" ? m : "analysis");
+  const [mode, setMode] = useState<"analysis" | "citations" | "plan" | "sector">(modeOf(modeParam));
   useEffect(() => {
-    setMode(modeParam === "citations" ? "citations" : modeParam === "plan" ? "plan" : "analysis");
+    setMode(modeOf(modeParam));
   }, [modeParam]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "live" | "lost" | "high">("all");
@@ -287,13 +289,14 @@ export default function BacklinksPage() {
 
   const TABS = [
     ["plan", "Link planı", null],
+    ["sector", "Sektör kaynakları", null],
     ["domains", "Link veren siteler", domains.length],
     ["mentions", "Bahsetmeler", mentions.length],
     ["pages", "En çok link alan sayfalar", data?.pages?.length ?? 0],
     ["gap", "Rakip fırsatları", null],
     ["citations", "Kayıt listesi", null],
   ] as const;
-  const activeTab = mode === "citations" ? "citations" : mode === "plan" ? "plan" : tab;
+  const activeTab = mode === "analysis" ? tab : mode;
 
   return (
     <div className="space-y-6">
@@ -364,8 +367,7 @@ export default function BacklinksPage() {
         value={TABS.findIndex(([k]) => k === activeTab)}
         onChange={(i) => {
           const k = TABS[i][0];
-          if (k === "citations") setMode("citations");
-          else if (k === "plan") setMode("plan");
+          if (k === "citations" || k === "plan" || k === "sector") setMode(k);
           else {
             setMode("analysis");
             setTab(k);
@@ -375,6 +377,7 @@ export default function BacklinksPage() {
       />
 
       {activeTab === "citations" && <CitationTab site={site.trim()} />}
+      {activeTab === "sector" && <SectorSourcesTab onPitch={(d, comps) => draftMail("gap", { domain: d }, { competitors: comps })} />}
       {activeTab === "plan" && <LinkPlanTab site={(data?.site ?? site).trim()} ownLinkers={data?.site ? live.map((d) => d.domain) : null} onPitch={(d, o) => draftMail("gap", { domain: d, url: o?.url }, { offer: o?.offer, competitors: o?.competitors })} />}
 
       {mode === "analysis" && !data?.site && !loading && (

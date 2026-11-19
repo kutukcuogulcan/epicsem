@@ -35,6 +35,7 @@ const schema = z.object({
     usps: str(1500),
     cta: str(300),
     knowledge: str(20000),
+    sector: str(40),
   }),
 });
 
@@ -51,7 +52,8 @@ export async function PUT(req: NextRequest) {
   }
   try {
     if (b.name || b.domain || b.competitors) await updateClient(user.id, p.id, { name: b.name, domain: b.domain, competitors: b.competitors });
-    await saveClientSettings(user.id, p.id, b.settings);
+    // Ayarlar sayfası göndermediği alanları (ör. Backlinkler'de seçilen sektör) silmesin.
+    await saveClientSettings(user.id, p.id, { ...b.settings, sector: b.settings.sector ?? p.settings?.sector });
     return NextResponse.json({ project: await getActiveProject(user.id) });
   } catch (e) {
     console.error("[api/project/settings] PUT failed:", e);
