@@ -705,7 +705,7 @@ export default function GeoPage() {
         ) : (
           <EmptyBlock title="Önce bir marka seç" description="Sol alttan proje seç ya da yeni test başlat." />
         ))}
-      {!summaries && !loading && !["overview", "library", "entity"].includes(resultsTab) && (
+      {!summaries && !loading && !["overview", "library", "entity", "impact"].includes(resultsTab) && (
         <Card>
           <EmptyBlock
             title="Bu proje için test sonucu yok"
@@ -719,7 +719,7 @@ export default function GeoPage() {
         </Card>
       )}
 
-      {restoredAt && summaries && !["overview", "library", "entity"].includes(resultsTab) && (
+      {restoredAt && summaries && !["overview", "library", "entity", "impact"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/45">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
