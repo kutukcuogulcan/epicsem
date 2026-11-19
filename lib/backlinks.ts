@@ -30,7 +30,7 @@ export interface RefDomain {
   targets: string[];
   source: "bing" | "ahrefs" | "wikipedia" | "hn" | "reddit" | "news" | "csv";
   /** Link veren sayfalar (ücretsiz kaynaklar ve CSV). */
-  from?: { url: string; title: string; date?: string | null; score?: number }[];
+  from?: { url: string; title: string; date?: string | null; score?: number; target?: string }[];
 }
 
 // ---------------- Bing Webmaster ----------------

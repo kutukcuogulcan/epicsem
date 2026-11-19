@@ -23,6 +23,9 @@ const TYPE_CLS: Partial<Record<AssetType, string>> = {
 };
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
 const host = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+/** Bu kaynaklar site bazında değil konu bazında değerlendirilir (Topluluk fırsatları bölümü). */
+const isCommunity = (d: string) => d === "reddit.com" || d === "news.ycombinator.com" || d.endsWith("wikipedia.org");
+const COMMUNITY_CLS: Record<string, string> = { reddit: "bg-[#ff4500]/10 text-[#d93a00]", hn: "bg-[#ff6600]/10 text-[#cc5200]", wikipedia: "bg-muted text-ink/70" };
 const SRC_LABEL: Record<string, string> = { wikipedia: "Wikipedia", reddit: "Reddit", hn: "Hacker News", ahrefs: "Ahrefs", bing: "Bing", news: "Haber", csv: "CSV" };
 
 export interface PitchOptions {
@@ -61,7 +64,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
     for (const c of plan.competitors)
       for (const r of c.refDomains) {
         const d = host(r.domain);
-        if (!d || d === me || own.has(d) || compHosts.has(d)) continue;
+        if (!d || d === me || own.has(d) || compHosts.has(d) || isCommunity(d)) continue;
         const o = m.get(d) ?? { domain: d, dr: null, sources: [], competitors: [], targets: [], idea: null, score: 0 };
         if (r.dr != null) o.dr = Math.max(o.dr ?? 0, r.dr);
         if (!o.sources.includes(r.source)) o.sources.push(r.source);
@@ -78,6 +81,25 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
     }
     return [...m.values()].sort((a, b) => b.score - a.score);
   }, [plan, ownLinkers]);
+  // Topluluk fırsatları: rakibin linklendiği Reddit / HN konuları ve Wikipedia maddeleri (konu bazında).
+  const [cSrc, setCSrc] = useState<"all" | "reddit" | "hn" | "wikipedia">("all");
+  const [cAll, setCAll] = useState(false);
+  const community = useMemo(() => {
+    if (!plan) return { rows: [], legacy: false };
+    const m = new Map<string, { source: "reddit" | "hn" | "wikipedia"; url: string; title: string; where: string | null; date: string | null; score: number | null; targets: string[]; competitors: string[]; idea: LinkIdea | null }>();
+    for (const c of plan.competitors)
+      for (const t of c.community ?? []) {
+        const row = m.get(t.url) ?? { ...t, targets: [], competitors: [], idea: null };
+        if (!row.competitors.includes(c.domain)) row.competitors.push(c.domain);
+        if (t.target && !row.targets.includes(t.target)) row.targets.push(t.target);
+        m.set(t.url, row);
+      }
+    const ORDER = { reddit: 0, hn: 1, wikipedia: 2 } as const;
+    const rows = [...m.values()]
+      .map((r) => ({ ...r, idea: plan.ideas.find((i) => r.targets.some((t) => assetType(t) === i.type)) ?? null }))
+      .sort((a, b) => ORDER[a.source] - ORDER[b.source] || b.competitors.length - a.competitors.length || (b.score ?? 0) - (a.score ?? 0));
+    return { rows, legacy: plan.competitors.every((c) => c.community === undefined) };
+  }, [plan]);
   const pitch = (o: Opportunity) =>
     onPitch(o.domain, { url: o.targets[0], competitors: o.competitors, offer: o.idea ? { title: o.idea.title, why: o.idea.why.slice(0, 300) } : undefined });
 
@@ -161,7 +183,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
           {([
             ["Sana link veren site", ownLinkers ? String(ownLinkers.length) : "—", ownLinkers ? "Link veren siteler sekmesindeki canlı liste" : "Önce backlink verisini yükle"],
             ["Rakiplere link veren", String(totalLinkers), `${plan.competitors.length} rakip · ${plan.competitors.map((c) => c.domain).join(", ")}`],
-            ["Rakip farkı", String(opps.length), "rakibe link verip sana vermeyen site"],
+            ["Rakip farkı", String(opps.length), `rakibe link verip sana vermeyen site${community.rows.length ? ` · +${community.rows.length} topluluk konusu` : ""}`],
             ["Eksik içerik türü", String(missing.length), missing.map((m) => ASSET_LABEL[m]).join(", ") || "rakiplerde olup sende olmayan tür yok"],
           ] as const).map(([l, v, h]) => (
             <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
@@ -235,6 +257,93 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
         <p className="mt-3 text-[11px] text-sub">
           Rakip linkleri ücretsiz kaynaklardan (Wikipedia, Reddit, Hacker News{plan.competitors.some((c) => c.refDomains.some((r) => r.source === "ahrefs")) ? ", Ahrefs" : ""}) geliyor; gerçek profilin bir kısmıdır. Ahrefs bağlarsan liste büyür.
         </p>
+      </div>
+
+      {/* Topluluk fırsatları: Reddit, Hacker News, Wikipedia (konu bazında) */}
+      <div className={`${CARD} overflow-hidden`}>
+        <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
+          <div>
+            <h3 className="text-sm font-semibold">Topluluk fırsatları: Reddit, Hacker News, Wikipedia</h3>
+            <p className="text-xs text-sub">Rakiplerinin konuşulduğu ve linklendiği konular. AI motorları bu konuları sık kaynak gösteriyor.</p>
+          </div>
+          {community.rows.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {([
+                ["all", "Tümü"],
+                ["reddit", "Reddit"],
+                ["hn", "Hacker News"],
+                ["wikipedia", "Wikipedia"],
+              ] as const).map(([k, l]) => {
+                const n = k === "all" ? community.rows.length : community.rows.filter((r) => r.source === k).length;
+                return (
+                  <button key={k} type="button" onClick={() => setCSrc(k)} disabled={!n} className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium disabled:opacity-40 ${cSrc === k ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`}>
+                    {l} <span className="tabular-nums text-sub">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {community.legacy ? (
+          <p className="px-5 pb-5 pt-3 text-[13px] text-sub">
+            Bu plan topluluk konuları eklenmeden önce çıkarıldı. Reddit, Hacker News ve Wikipedia konularını görmek için sağ üstteki <b>Yenile</b>&apos;ye bas.
+          </p>
+        ) : community.rows.length === 0 ? (
+          <p className="px-5 pb-5 pt-3 text-[13px] text-sub">Rakiplerinin sitesi Reddit, Hacker News ya da Wikipedia&apos;da linklenmemiş.</p>
+        ) : (
+          <>
+            <div className="mx-5 mt-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-ink/70">
+              {cSrc === "wikipedia"
+                ? "Wikipedia: kaynağı eksik bir cümleye güvenilir bir kaynak olarak ekleyebilirsin. Kendi siteni eklemek çıkar çatışması sayılır; araştırma/istatistik içeriğin varsa tartışma sayfasında öner."
+                : "Reddit ve Hacker News: link bırakıp çıkma, konuya gerçek bir cevapla katıl. Yazın yayınlanınca ilgili soruya kaynak olarak paylaş; subreddit kurallarına uy."}
+            </div>
+            <ul className="mt-2 divide-y divide-border border-t border-border">
+              {(cAll ? community.rows : community.rows.filter((r) => cSrc === "all" || r.source === cSrc).slice(0, 10))
+                .filter((r) => cSrc === "all" || r.source === cSrc)
+                .map((r) => (
+                  <li key={r.url} className="flex flex-wrap items-start gap-3 px-5 py-3">
+                    <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${COMMUNITY_CLS[r.source]}`}>{r.where ?? SRC_LABEL[r.source]}</span>
+                    <div className="min-w-0 flex-1">
+                      <a href={r.url} target="_blank" rel="noreferrer" className="line-clamp-2 text-[13px] font-medium hover:text-accent">
+                        {r.title}
+                      </a>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-sub">
+                        {r.competitors.map((c) => (
+                          <span key={c} className="rounded bg-danger/10 px-1 font-medium text-danger">
+                            {c}
+                          </span>
+                        ))}
+                        {r.targets[0] && <span className="max-w-[260px] truncate">{short(r.targets[0])}</span>}
+                        {r.score != null && r.source !== "wikipedia" && <span>{r.score} puan</span>}
+                        {r.date && <span>{new Date(r.date).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}</span>}
+                      </div>
+                      {r.idea && (
+                        <div className="mt-1 text-xs">
+                          <span className="text-sub">Paylaşacağın yazı: </span>
+                          {r.idea.title}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-1.5">
+                      <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex h-7 items-center rounded-lg px-2.5 text-xs font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
+                        {r.source === "wikipedia" ? "Maddeyi aç ↗" : "Konuyu aç ↗"}
+                      </a>
+                      {r.idea && (
+                        <Link href={writeHref(r.idea)} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
+                          Yazıyı yaz
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                ))}
+            </ul>
+            {community.rows.filter((r) => cSrc === "all" || r.source === cSrc).length > 10 && (
+              <button type="button" onClick={() => setCAll((v) => !v)} className="w-full border-t border-border py-2.5 text-xs font-medium text-accent hover:bg-muted/40">
+                {cAll ? "Daha az göster" : "Tümünü göster"}
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       <div className="flex items-end justify-between">

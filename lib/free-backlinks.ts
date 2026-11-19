@@ -60,7 +60,7 @@ export async function wikipediaLinks(host: string): Promise<RefDomain[]> {
             seen.add(`${title}|${target}`);
             d.links++;
             const page = `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
-            if (!d.from!.some((f) => f.url === page) && d.from!.length < 30) d.from!.push({ url: page, title });
+            if (!d.from!.some((f) => f.url === page) && d.from!.length < 30) d.from!.push({ url: page, title, target: target || undefined });
             if (target && !d.targets.includes(target) && d.targets.length < 5) d.targets.push(target);
           }
         } catch {
@@ -84,7 +84,7 @@ export async function hackerNewsLinks(host: string): Promise<RefDomain[]> {
   for (const h of j?.hits ?? []) {
     if (!h.url || !own(String(h.url), host)) continue;
     d.links++;
-    if (d.from!.length < 30) d.from!.push({ url: `https://news.ycombinator.com/item?id=${h.objectID}`, title: String(h.title ?? h.url), date: h.created_at ?? null, score: Number(h.points ?? 0) });
+    if (d.from!.length < 30) d.from!.push({ url: `https://news.ycombinator.com/item?id=${h.objectID}`, title: String(h.title ?? h.url), date: h.created_at ?? null, score: Number(h.points ?? 0), target: String(h.url) });
     if (!d.targets.includes(h.url) && d.targets.length < 5) d.targets.push(String(h.url));
     if (h.created_at && (!d.firstSeen || h.created_at < d.firstSeen)) d.firstSeen = h.created_at;
   }
@@ -102,7 +102,7 @@ export async function redditLinks(host: string): Promise<RefDomain[]> {
     if (!p?.url || !own(String(p.url), host)) continue;
     d.links++;
     const date = p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null;
-    if (d.from!.length < 30) d.from!.push({ url: `https://www.reddit.com${p.permalink}`, title: `r/${p.subreddit} · ${p.title}`, date, score: Number(p.score ?? 0) });
+    if (d.from!.length < 30) d.from!.push({ url: `https://www.reddit.com${p.permalink}`, title: `r/${p.subreddit} · ${p.title}`, date, score: Number(p.score ?? 0), target: String(p.url) });
     if (!d.targets.includes(p.url) && d.targets.length < 5) d.targets.push(String(p.url));
     if (date && (!d.firstSeen || date < d.firstSeen)) d.firstSeen = date;
   }

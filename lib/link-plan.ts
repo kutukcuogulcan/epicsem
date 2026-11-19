@@ -22,6 +22,20 @@ export interface CompetitorLinkProfile {
   refDomains: { domain: string; source: string; target: string | null; dr: number | null }[];
   topPages: { url: string; type: AssetType; linkers: string[] }[];
   samplePages: { url: string; title: string; type: AssetType }[];
+  /** Rakibin linklendiği topluluk konuları (Reddit, Hacker News) ve Wikipedia maddeleri — site bazında değil, konu bazında. Eski önbellekte yok. */
+  community?: CommunityThread[];
+}
+
+export interface CommunityThread {
+  source: "reddit" | "hn" | "wikipedia";
+  url: string;
+  title: string;
+  /** Reddit: r/alt, HN/Wikipedia: boş. */
+  where: string | null;
+  date: string | null;
+  score: number | null;
+  /** Rakibin linklenen sayfası (bilindiğinde). */
+  target: string | null;
 }
 
 const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race([p.catch(() => fallback), new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
@@ -54,6 +68,13 @@ export async function competitorProfile(userId: number, domain: string, ahrefsKe
     .map(([url, s]) => ({ url, type: assetType(url), linkers: [...s].slice(0, 8) }))
     .sort((a, b) => b.linkers.length - a.linkers.length)
     .slice(0, 10);
-  return { domain: host, pages: pages.length, types, refDomains, topPages, samplePages: samplePages.filter((p) => p.type !== "other").slice(0, 40) };
+  const community: CommunityThread[] = [...wiki, ...reddit, ...hn].flatMap((r) =>
+    (r.from ?? []).map((f) => {
+      const src = r.source as CommunityThread["source"];
+      const m = src === "reddit" ? f.title.match(/^r\/([^\s·]+)\s*·\s*(.*)$/) : null;
+      return { source: src, url: f.url, title: m ? m[2] : f.title, where: m ? `r/${m[1]}` : null, date: f.date ?? null, score: f.score ?? null, target: f.target ?? r.targets?.[0] ?? null };
+    })
+  );
+  return { domain: host, pages: pages.length, types, refDomains, topPages, samplePages: samplePages.filter((p) => p.type !== "other").slice(0, 40), community: community.slice(0, 60) };
 }
 
