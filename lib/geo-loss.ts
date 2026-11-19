@@ -1,5 +1,5 @@
 import type { GeoRunResult } from "@/types";
-import { brandMentioned, trLower } from "@/lib/text-match";
+import { rankTrackedBrands } from "@/lib/text-match";
 
 /**
  * GEO sonucu — "neden kaybettik?" analizi (AI'sız, ücretsiz, istemcide çalışır).
@@ -49,24 +49,12 @@ const isIn = (d: string, list: string[]) => list.some((u) => d === u || d.endsWi
 
 export const isDemoRun = (r: GeoRunResult) => /\[DEMO DATA/i.test(r.responseText) || /demo/i.test(r.model);
 
-/** Cevapta takip edilen markaların sırası (metinde ilk geçiş yerine göre). */
+/** Cevapta takip edilen markaların sırası — GEO özeti ve panosuyla aynı hesap (lib/text-match). */
 export function rankBrands(r: GeoRunResult, own: BrandRef, rivals: BrandRef[]): { ownRank: number | null; rivals: { name: string; rank: number }[] } {
-  const t = trLower(r.responseText);
-  const found: { name: string; at: number; own: boolean }[] = [];
-  if (r.mentioned) {
-    const at = t.indexOf(trLower(own.name));
-    found.push({ name: own.name, at: at < 0 ? (r.position != null ? r.position * 1e6 : Number.MAX_SAFE_INTEGER) : at, own: true });
-  }
-  for (const c of rivals) {
-    if (!c.name || !brandMentioned(r.responseText, { name: c.name })) continue;
-    const at = t.indexOf(trLower(c.name));
-    found.push({ name: c.name, at: at < 0 ? Number.MAX_SAFE_INTEGER : at, own: false });
-  }
-  found.sort((a, b) => a.at - b.at);
-  const ownIdx = found.findIndex((f) => f.own);
+  const ranks = rankTrackedBrands(r.responseText, [own, ...rivals.filter((c) => c.name)], r.mentioned);
   return {
-    ownRank: ownIdx >= 0 ? ownIdx + 1 : null,
-    rivals: found.map((f, i) => ({ name: f.name, rank: i + 1, own: f.own })).filter((f) => !f.own).map(({ name, rank }) => ({ name, rank })),
+    ownRank: ranks.get(own.name) ?? null,
+    rivals: rivals.filter((c) => ranks.has(c.name)).map((c) => ({ name: c.name, rank: ranks.get(c.name)! })).sort((a, b) => a.rank - b.rank),
   };
 }
 

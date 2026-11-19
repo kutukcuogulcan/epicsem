@@ -407,3 +407,36 @@ export function pillarScores(r: SeoAuditResult): PillarSummary {
   const overall = Math.round(pillars.reduce((s, p) => s + p.score * PILLAR_WEIGHT[p.key], 0));
   return { overall, pillars };
 }
+
+export interface OverallLoss {
+  pillar: PillarKey;
+  pillarLabel: string;
+  label: string;
+  issueKey?: string;
+  /** Genel puandan kaybettirdiği puan (0-100 ölçeğinde). */
+  lost: number;
+}
+
+/**
+ * Genel puanın nereden düştüğü: her eksik kontrolün genel puana etkisi
+ * (katman ağırlığı × katman içindeki payı × eksik oranı). "Puanın neden …?" paneli ve
+ * "+N puan" kazançları bu tek ölçeği kullanır; böylece ekrandaki sayılar birbirini tutar.
+ */
+export function overallLosses(s: PillarSummary): OverallLoss[] {
+  const out: OverallLoss[] = [];
+  for (const p of s.pillars) {
+    const measured = p.checks.filter((c) => c.score != null);
+    const W = measured.reduce((a, c) => a + c.weight, 0);
+    if (!W) continue;
+    for (const c of measured) {
+      const lost = PILLAR_WEIGHT[p.key] * (c.weight / W) * (1 - (c.score as number)) * 100;
+      if (lost > 0.05) out.push({ pillar: p.key, pillarLabel: p.label, label: c.label, issueKey: c.issueKey, lost });
+    }
+  }
+  return out.sort((a, b) => b.lost - a.lost);
+}
+
+/** Bir sorunu düzeltince genel puana tahmini katkı (aynı sorun birden çok katmanı etkileyebilir). */
+export function overallGainFor(losses: OverallLoss[], issueKey: string): number {
+  return Math.round(losses.filter((l) => l.issueKey === issueKey).reduce((a, l) => a + l.lost, 0));
+}

@@ -11,7 +11,7 @@ import type {
 import { PROVIDERS, isDemoMode } from "./geo-providers";
 import { simulateResponse } from "./geo-demo";
 import { analyzeResponse } from "./geo-analyze";
-import { brandMentioned } from "./text-match";
+import { brandMentioned, rankTrackedBrands } from "./text-match";
 
 export interface BrandInput {
   name: string;
@@ -113,17 +113,25 @@ export function summarizeByTopic(runs: GeoRunResult[]): TopicVisibility[] {
 }
 
 /** Aggregates a set of GeoRunResults (across prompts/engines) into per-brand visibility metrics. */
+/**
+ * Marka bazında görünürlük özeti. `brands[0]` projenin kendi markasıdır.
+ * - Kendi marka: analizden gelen `mentioned` bayrağı (takma adlar dahil).
+ * - Rakipler: cevap metninde adın geçmesi (eskiden yanlışlıkla "rakip VE sen anıldın" sayılıyordu).
+ * - Pozisyon: cevapta takip edilen markalar arasındaki sıra (rankTrackedBrands) — GEO panosuyla aynı.
+ * - Duygu yalnızca kendi marka için ölçülür; rakiplerde null.
+ */
 export function summarizeVisibility(
   runs: GeoRunResult[],
   brands: BrandInput[]
 ): GeoVisibilitySummary[] {
   const totalRuns = runs.length || 1;
+  const ranks = runs.map((r) => rankTrackedBrands(r.responseText, brands, r.mentioned));
 
-  return brands.map((brand) => {
-    const brandRuns = runs.filter((r) => brandMentioned(r.responseText, brand));
-    const mentionedRuns = brandRuns.filter((r) => r.mentioned);
-    const positions = mentionedRuns.map((r) => r.position).filter((p): p is number => p != null);
-    const sentiments = mentionedRuns.map((r) => r.sentiment).filter((s): s is number => s != null);
+  return brands.map((brand, bi) => {
+    const isOwn = bi === 0;
+    const hitIdx = runs.map((_, i) => i).filter((i) => ranks[i].has(brand.name));
+    const positions = hitIdx.map((i) => ranks[i].get(brand.name)!);
+    const sentiments = isOwn ? hitIdx.map((i) => runs[i].sentiment).filter((s): s is number => s != null) : [];
     const citationCount = runs.reduce(
       (sum, r) => sum + r.citations.filter((c) => c.domain === brand.domain.replace(/^www\./, "")).length,
       0
@@ -132,7 +140,7 @@ export function summarizeVisibility(
     return {
       brand: brand.name,
       domain: brand.domain,
-      visibility: mentionedRuns.length / totalRuns,
+      visibility: hitIdx.length / totalRuns,
       shareOfVoice: 0, // filled in by computeShareOfVoice once all brands are known
       avgPosition: positions.length ? positions.reduce((a, b) => a + b, 0) / positions.length : null,
       avgSentiment: sentiments.length ? Math.round(sentiments.reduce((a, b) => a + b, 0) / sentiments.length) : null,

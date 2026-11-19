@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { GeoRunResult, GeoVisibilitySummary } from "@/types";
-import { brandMentioned, trLower } from "@/lib/text-match";
+import { brandMentioned, rankTrackedBrands, trLower } from "@/lib/text-match";
 import { findOpportunities } from "@/lib/geo-insights";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import PromptResults, { groupRuns } from "@/components/tool/PromptResults";
@@ -43,20 +43,8 @@ function domainType(d: string, own: string, comps: string[]): { label: string; c
   return { label: "Kurumsal", cls: "bg-muted text-sub" };
 }
 
-/** Bir cevapta takip edilen markaların sırası (metinde ilk geçiş yerine göre). */
-function rankIn(text: string, brands: BrandRef[], ownMentioned: boolean): Map<string, number> {
-  const t = trLower(text);
-  const found: { name: string; at: number }[] = [];
-  brands.forEach((b, i) => {
-    const isOwn = i === 0;
-    const hit = isOwn ? ownMentioned : brandMentioned(text, { name: b.name });
-    if (!hit) return;
-    const at = t.indexOf(trLower(b.name));
-    found.push({ name: b.name, at: at < 0 ? Number.MAX_SAFE_INTEGER : at });
-  });
-  found.sort((a, b) => a.at - b.at);
-  return new Map(found.map((f, i) => [f.name, i + 1]));
-}
+/** Bir cevapta takip edilen markaların sırası — kaydedilen GEO özetiyle aynı hesap (lib/text-match). */
+const rankIn = (text: string, brands: BrandRef[], ownMentioned: boolean) => rankTrackedBrands(text, brands, ownMentioned);
 
 function Spark({ data, color }: { data: number[]; color: string }) {
   if (data.length < 2) return <div className="h-7" />;
@@ -300,7 +288,8 @@ export default function GeoDashboard({
     const ownRef = { name: brand.name, domain: own };
     const an = runs.map((r) => analyzeRun(r, ownRef, comps));
     const n = runs.length || 1;
-    const hits = new Map<string, number>([[brand.name, runs.filter((r) => r.mentioned).length]]);
+    // Hiç anılmayan rakipler de sıralamada sayılır (aksi halde "1./3" 4 markalı tablonun yanında çelişir).
+    const hits = new Map<string, number>([[brand.name, runs.filter((r) => r.mentioned).length], ...comps.map((c) => [c.name, 0] as [string, number])]);
     for (const a of an) for (const rv of a.rivals) hits.set(rv.name, (hits.get(rv.name) ?? 0) + 1);
     const totalHits = [...hits.values()].reduce((x, y) => x + y, 0);
     const ranked = [...hits.entries()].sort((a, b) => b[1] - a[1]);

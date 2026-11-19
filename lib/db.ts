@@ -81,8 +81,39 @@ let schemaReady: Promise<void> | null = null;
 
 /** Every exported function calls this first — cheap after the first call (cached promise). */
 function ensureSchema(): Promise<void> {
-  if (!schemaReady) schemaReady = initSchema();
+  if (!schemaReady) schemaReady = initSchema().then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)));
   return schemaReady;
+}
+
+/**
+ * Bir kerelik: eski GEO testlerinin marka özetlerini kayıtlı ham cevaplardan yeniden hesaplar.
+ * Eski özette rakip görünürlüğü yanlıştı ("rakip VE sen anıldın" sayılıyordu, pozisyon olarak
+ * senin pozisyonun yazılıyordu); Genel Bakış ile GEO sayfası bu yüzden farklı sayı gösteriyordu.
+ */
+async function migrateGeoSummariesV2(): Promise<void> {
+  const done = await one<{ v: string }>(`SELECT v FROM _meta WHERE k = 'geo_summaries_v2'`);
+  if (done) return;
+  const { summarizeVisibility, computeShareOfVoice } = await import("./geo-engine");
+  const rows = await many<any>(`SELECT id, brand_name, brand_domain, summaries_json, runs_json, competitors_json FROM geo_runs WHERE runs_json IS NOT NULL`);
+  let n = 0;
+  for (const r of rows) {
+    try {
+      const runs = JSON.parse(r.runs_json || "[]");
+      if (!Array.isArray(runs) || !runs.length) continue;
+      const old: GeoVisibilitySummary[] = JSON.parse(r.summaries_json || "[]");
+      const norm = (d: string) => String(d || "").replace(/^www\./, "").toLowerCase();
+      let comps: { name: string; domain: string }[] = r.competitors_json ? JSON.parse(r.competitors_json) : [];
+      if (!comps.length) comps = old.filter((s) => norm(s.domain) !== norm(r.brand_domain)).map((s) => ({ name: s.brand, domain: s.domain }));
+      const summaries = computeShareOfVoice(summarizeVisibility(runs, [{ name: r.brand_name, domain: r.brand_domain }, ...comps]))
+        .sort((a, b) => b.visibility - a.visibility)
+        .map((x, i) => ({ ...x, rank: i + 1 }));
+      await exec(`UPDATE geo_runs SET summaries_json = $1 WHERE id = $2`, [JSON.stringify(summaries), r.id]);
+      n++;
+    } catch {
+      /* bozuk satır: eski özet kalır */
+    }
+  }
+  await exec(`INSERT INTO _meta (k, v) VALUES ('geo_summaries_v2', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(n)]);
 }
 
 async function initSchema(): Promise<void> {

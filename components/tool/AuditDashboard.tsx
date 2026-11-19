@@ -12,7 +12,7 @@ import PromptBlock from "@/components/PromptBlock";
 import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import type { PageSpeedResult } from "@/lib/pagespeed";
 import type { AiFixResult } from "@/app/api/audit/ai-fix/route";
-import { insightFor, pillarScores, potentialScore, quickWins, scoreBreakdown, type IssueInsight, type Pillar } from "@/lib/audit-insights";
+import { insightFor, overallGainFor, overallLosses, pillarScores, quickWins, type IssueInsight, type Pillar } from "@/lib/audit-insights";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -138,18 +138,18 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const ins = useMemo(() => new Map(result.issues.map((i) => [i, insightFor(i, result)] as const)), [result]);
   const I = (i: SeoIssueResult) => ins.get(i) ?? insightFor(i, result);
   const wins = useMemo(() => quickWins(result, 5), [result]);
-  const breakdown = useMemo(() => scoreBreakdown(result), [result]);
-  const potential = potentialScore(result);
+
   const oi: IssueInsight | null = open ? I(open) : null;
   const pillars = useMemo(() => pillarScores(result), [result]);
+  // Genel puanın tek ölçeği: döküm paneli ve "+N puan" kazançları bundan hesaplanır.
+  const losses = useMemo(() => overallLosses(pillars), [pillars]);
+  const gainOf = (key: string) => overallGainFor(losses, key);
   const [pillarOpen, setPillarOpen] = useState<Pillar | null>(null);
   const top = wins[0] ?? null;
   /** Kontrol listesindeki maddeden ilgili sorunun ayrıntısına git. */
   const issueByKey = (key?: string) => (key ? issues.find((i) => I(i).key === key) ?? null : null);
 
   const kpis = [
-    { label: "Teknik SEO", value: `${result.score}`, suffix: "/100", cls: scoreColor(result.score), d: prev ? result.score - prev.score : null, spark: history.map((h) => h.score) },
-    { label: "AI erişimi (AXO)", value: `${result.aiCrawlScore}`, suffix: "/100", cls: scoreColor(result.aiCrawlScore), d: prev ? result.aiCrawlScore - prev.aiCrawlScore : null, spark: history.map((h) => h.aiCrawlScore) },
     { label: "Kritik sorun", value: String(counts.critical), suffix: "", cls: counts.critical ? "text-danger" : "text-ink", d: null, spark: [] },
     { label: "Uyarı", value: String(counts.warning), suffix: "", cls: counts.warning ? "text-warn" : "text-ink", d: null, spark: [] },
     { label: "İzinli AI botu", value: `${allowed}`, suffix: `/${bots.length}`, cls: allowed === bots.length ? "text-seo" : "text-danger", d: null, spark: [] },
@@ -234,7 +234,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                 <p className="mt-1 line-clamp-2 text-xs text-sub">{top.why || top.recommendation}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[top.effort]}`}>{top.effort}</span>
-                  {top.gain > 0 && <span className="text-[11px] font-semibold text-seo">+{top.gain} puan</span>}
+                  {gainOf(top.key) > 0 && <span className="text-[11px] font-semibold text-seo">+{gainOf(top.key)} puan</span>}
                   <button type="button" onClick={() => setOpen(top.issue)} className="ml-auto rounded-lg bg-accent px-2.5 py-1 text-[12px] font-medium text-white hover:opacity-90">
                     {top.snippet ? "Hazır kodu al" : "Nasıl düzeltilir"}
                   </button>
@@ -289,7 +289,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
       </Drawer>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-3 gap-3">
         {kpis.map((k) => (
           <Card key={k.label} className="px-4 py-4">
             <div className="text-xs font-medium text-sub">{k.label}</div>
@@ -322,7 +322,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                   <div className="flex shrink-0 items-center gap-1.5">
                     {w.geo && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">AI görünürlüğü</span>}
                     <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[w.effort]}`}>{w.effort}</span>
-                    {w.gain > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo">+{w.gain} puan</span>}
+                    {gainOf(w.key) > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo">+{gainOf(w.key)} puan</span>}
                     {w.snippet && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">Hazır kod</span>}
                   </div>
                 </button>
@@ -331,26 +331,30 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           </Card>
           <Card>
             <div className="px-5 pt-4">
-              <h3 className="text-sm font-semibold">Puanın neden {result.score}?</h3>
-              <p className="text-xs text-sub">Başlangıç 70 · geçen her kontrol +4 · kritik −20 · uyarı −8 · bilgi −2</p>
+              <h3 className="text-sm font-semibold">Genel puan neden {pillars.overall}?</h3>
+              <p className="text-xs text-sub">SEO %30 · AXO %20 · AEO %25 · GEO hazırlığı %25 ağırlıklı ortalama. En çok puan kaybettiren eksikler:</p>
             </div>
             <div className="space-y-2.5 px-5 pb-4 pt-3">
-              {breakdown.filter((b) => b.lost > 0).slice(0, 6).map((b) => (
-                <div key={b.category}>
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span>{CATEGORY_LABEL[b.category as IssueCategory] ?? b.category}</span>
-                    <span className="tabular-nums text-danger">−{b.lost}</span>
+              {losses.slice(0, 6).map((l) => (
+                <div key={l.pillar + l.label}>
+                  <div className="flex items-center justify-between gap-2 text-[13px]">
+                    <span className="min-w-0 truncate">
+                      {l.label} <span className="text-xs text-sub">· {l.pillarLabel}</span>
+                    </span>
+                    <span className="shrink-0 tabular-nums text-danger">−{l.lost < 1 ? "<1" : Math.round(l.lost)}</span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-danger/70" style={{ width: `${Math.min(100, (b.lost / Math.max(...breakdown.map((x) => x.lost), 1)) * 100)}%` }} />
+                    <div className="h-full rounded-full bg-danger/70" style={{ width: `${Math.min(100, (l.lost / (losses[0]?.lost || 1)) * 100)}%` }} />
                   </div>
                 </div>
               ))}
-              {breakdown.every((b) => b.lost === 0) && <p className="text-[13px] text-sub">Puan kaybettiren teknik sorun yok.</p>}
-              <div className="mt-3 flex items-center justify-between rounded-xl bg-seo/5 px-3 py-2.5 text-[13px]">
-                <span>Hepsi düzelirse tahmini puan</span>
-                <span className="text-lg font-semibold tabular-nums text-seo">{potential}</span>
-              </div>
+              {!losses.length && <p className="text-[13px] text-sub">Puan kaybettiren eksik yok.</p>}
+              {losses.length > 0 && (
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-seo/5 px-3 py-2.5 text-[13px]">
+                  <span>İlk {Math.min(3, losses.length)} eksik düzelirse</span>
+                  <span className="text-lg font-semibold tabular-nums text-seo">{Math.min(100, Math.round(pillars.overall + losses.slice(0, 3).reduce((a, l) => a + l.lost, 0)))}</span>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -637,7 +641,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${EFFORT_CLS[oi!.effort]}`}>Efor: {oi!.effort}</span>
               <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Etki: {["", "Düşük", "Orta", "Yüksek"][oi!.impact]}</span>
               {oi!.geo && <span className="inline-block rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">AI görünürlüğünü etkiler</span>}
-              {oi!.gain > 0 && <span className="inline-block rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo">Düzeltince ~+{oi!.gain} puan</span>}
+              {gainOf(oi!.key) > 0 && <span className="inline-block rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo">Düzeltince genel puana ~+{gainOf(oi!.key)}</span>}
             </div>
             {oi!.detail && (
               <div>

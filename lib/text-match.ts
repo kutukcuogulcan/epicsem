@@ -57,3 +57,23 @@ export function findBrandIndex(orderedNames: string[], brand: BrandNames): numbe
     return regexes.some((re) => re.test(folded));
   });
 }
+
+/**
+ * Bir AI cevabında takip edilen markaların sırası (metinde ilk geçiş yerine göre, 1'den başlar).
+ * `brands[0]` projenin kendi markasıdır; onun anılıp anılmadığı analizden gelir (`ownMentioned`,
+ * takma adlar dahil). Rakipler ad eşleşmesiyle bulunur. GEO özeti, GEO panosu ve Genel Bakış
+ * aynı sayıyı göstersin diye tek yerde hesaplanır.
+ */
+export function rankTrackedBrands(text: string, brands: { name: string; aliases?: string[] }[], ownMentioned: boolean): Map<string, number> {
+  const t = trLower(text);
+  const found: { name: string; at: number }[] = [];
+  brands.forEach((b, i) => {
+    const hit = i === 0 ? ownMentioned : brandMentioned(text, b);
+    if (!hit) return;
+    const names = [b.name, ...(b.aliases ?? [])].map(trLower);
+    const pos = names.map((n) => t.indexOf(n)).filter((x) => x >= 0);
+    found.push({ name: b.name, at: pos.length ? Math.min(...pos) : Number.MAX_SAFE_INTEGER });
+  });
+  found.sort((a, b) => a.at - b.at);
+  return new Map(found.map((f, i) => [f.name, i + 1]));
+}
