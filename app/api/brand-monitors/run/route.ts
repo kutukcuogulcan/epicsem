@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { getLatestGeoRunFull, listDueMonitorSchedules, markMonitorRun } from "@/lib/db";
+import { getLatestGeoRunFull, listDueImpactTracks, listDueMonitorSchedules, markMonitorRun, updateImpactTrack } from "@/lib/db";
+import { getActiveProject } from "@/lib/project-context";
+import { measureImpact } from "@/lib/impact";
+import { rootHost } from "@/lib/backlinks";
 import { executeGeoRun } from "@/lib/geo-run";
 import type { EngineId } from "@/types";
 
@@ -44,7 +47,26 @@ export async function POST(req: NextRequest) {
         results.push({ ok: false, domain: s.brandDomain, error: msg });
       }
     }
-    return NextResponse.json({ checked: due.length, results });
+    // Etki ölçümleri: işi tamamlanmış takipleri 3 gün arayla en fazla 3 kez yeniden ölç.
+    const impacts = [];
+    for (const t of (await listDueImpactTracks().catch(() => [])).slice(0, 10)) {
+      try {
+        const p = await getActiveProject(t.userId, t.domain);
+        if (!p) continue;
+        const check = await measureImpact(t.userId, {
+          prompts: t.prompts,
+          engines: t.engines,
+          brand: { name: p.name || t.domain.split(".")[0], domain: t.domain },
+          competitors: (p.competitors ?? []).slice(0, 5).map((c) => ({ name: c.name, domain: rootHost(c.domain) })),
+        });
+        await updateImpactTrack(t.userId, t.id, { checks: [...t.checks, check].slice(-6) });
+        impacts.push({ ok: true, id: t.id });
+      } catch (e) {
+        console.error(`[brand-monitors/run] impact ${t.id}:`, e instanceof Error ? e.message : e);
+        impacts.push({ ok: false, id: t.id });
+      }
+    }
+    return NextResponse.json({ checked: due.length, results, impacts });
   }
 
   const user = await requireUser();

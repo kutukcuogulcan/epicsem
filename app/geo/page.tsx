@@ -27,6 +27,7 @@ import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 import GeoActionsTab from "@/components/tool/GeoActions";
+import ImpactTab from "@/components/tool/ImpactTab";
 import EntityPresence from "@/components/tool/EntityPresence";
 import PromptResults, { RunProgress, groupRuns } from "@/components/tool/PromptResults";
 
@@ -158,7 +159,11 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"overview" | "actions" | "visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities" | "library" | "entity">("overview");
+  const [resultsTab, setResultsTab] = useState<"overview" | "actions" | "impact" | "visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities" | "library" | "entity">("overview");
+  // /geo?tab=impact&… (GEO çekmecesi, editör yayını) → Etki sekmesi hazır açılır.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "impact") setResultsTab("impact");
+  }, []);
   const [testOpen, setTestOpen] = useState(false);
   // Hazırlık bitip asıl test başlayınca çekmece kapanır; ilerleme sayfada görünür.
   useEffect(() => {
@@ -666,6 +671,7 @@ export default function GeoPage() {
         const T = [
           { key: "overview", label: "Genel bakış" },
           { key: "actions", label: "Aksiyon planı" },
+          { key: "impact", label: "Etki" },
           { key: "prompts", label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null },
           { key: "visibility", label: "Görünürlük" },
           { key: "sentiment", label: "Duygu" },
@@ -717,6 +723,7 @@ export default function GeoPage() {
         <p className="-mt-2 text-xs text-ink/45">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
+      {resultsTab === "impact" && <ImpactTab />}
       {resultsTab === "actions" && runs && <GeoActionsTab runs={runs} own={ownRef} competitors={competitorRefs} onTab={(t) => setResultsTab(t)} />}
       {resultsTab === "opportunities" && runs && <OpportunitiesTab runs={runs} own={ownRef} competitors={competitorRefs} />}
 

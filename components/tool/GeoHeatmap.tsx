@@ -190,7 +190,13 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                   >
                     Bu boşluğu kapatacak yazıyı yaz
                   </Link>
-                  <p className="mt-2 text-xs text-sub">Yazı sihirbazı bu soru, rakipler ve kaynaklarla hazır açılır. Yayınladıktan sonra testi yeniden çalıştırıp sonucu karşılaştır.</p>
+                  <p className="mt-2 text-xs text-sub">
+                    Yazı sihirbazı bu soru, rakipler ve kaynaklarla hazır açılır.{" "}
+                    <Link href={`/geo?tab=impact&kind=article&target=${encodeURIComponent(open.run.promptText)}&title=${encodeURIComponent(open.run.promptText)}`} className="font-medium text-accent hover:underline">
+                      Yazmadan önce etkisini takibe al →
+                    </Link>{" "}
+                    (şimdiki durum ölçülür; yayınlayınca önce/sonra karşılaştırılır)
+                  </p>
                 </>
               )}
             </section>

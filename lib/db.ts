@@ -3014,3 +3014,115 @@ export async function saveClientSettings(userId: number, clientId: number, s: Pr
   await ensureClientSettings();
   await exec(`UPDATE clients SET settings_json = $1 WHERE id = $2 AND user_id = $3`, [JSON.stringify(s), clientId, userId]);
 }
+
+/* ------------------------------------------------------------------ */
+/* Etki ölçümü (Impact): yayınlanan yazı / off-page işinin bağlantılı soru setinde önce-sonra ölçümü */
+/* ------------------------------------------------------------------ */
+
+export interface ImpactResult {
+  prompt: string;
+  engine: string;
+  mentioned: boolean;
+  position: number | null;
+  /** Cevapta anılan rakipler. */
+  rivals: string[];
+  /** Cevapta kaynak gösterilen alan adları. */
+  sources: string[];
+}
+export interface ImpactCheck {
+  at: string;
+  results: ImpactResult[];
+}
+export interface ImpactTrack {
+  id: number;
+  domain: string;
+  kind: "article" | "offpage";
+  title: string;
+  /** Yazı için taslak id'si, off-page için site/URL. */
+  ref: string | null;
+  targetPrompt: string;
+  prompts: { text: string; intent: string; source: "target" | "generated" | "library" }[];
+  engines: string[];
+  baseline: ImpactCheck | null;
+  checks: ImpactCheck[];
+  doneAt: string | null;
+  createdAt: string;
+}
+
+async function ensureImpact() {
+  await ensureSchema();
+  await exec(`CREATE TABLE IF NOT EXISTS impact_tracks (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    domain TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    ref TEXT,
+    target_prompt TEXT NOT NULL,
+    prompts_json TEXT NOT NULL,
+    engines_json TEXT NOT NULL,
+    baseline_json TEXT,
+    checks_json TEXT NOT NULL DEFAULT '[]',
+    done_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`, []);
+  await exec(`CREATE INDEX IF NOT EXISTS idx_impact_user_domain ON impact_tracks(user_id, domain)`, []);
+}
+
+const rowToImpact = (r: any): ImpactTrack => ({
+  id: r.id,
+  domain: r.domain,
+  kind: r.kind,
+  title: r.title,
+  ref: r.ref ?? null,
+  targetPrompt: r.target_prompt,
+  prompts: parseJsonOrNull(r.prompts_json) ?? [],
+  engines: parseJsonOrNull(r.engines_json) ?? [],
+  baseline: parseJsonOrNull(r.baseline_json),
+  checks: parseJsonOrNull(r.checks_json) ?? [],
+  doneAt: r.done_at ? toIso(r.done_at) : null,
+  createdAt: toIso(r.created_at),
+});
+
+export async function createImpactTrack(userId: number, t: Omit<ImpactTrack, "id" | "checks" | "doneAt" | "createdAt"> & { doneAt?: string | null }): Promise<ImpactTrack> {
+  await ensureImpact();
+  const row = await one<any>(
+    `INSERT INTO impact_tracks (user_id, domain, kind, title, ref, target_prompt, prompts_json, engines_json, baseline_json, done_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    [userId, t.domain, t.kind, t.title, t.ref, t.targetPrompt, JSON.stringify(t.prompts), JSON.stringify(t.engines), t.baseline ? JSON.stringify(t.baseline) : null, t.doneAt ?? null]
+  );
+  return rowToImpact(row);
+}
+
+export async function listImpactTracks(userId: number, domain: string): Promise<ImpactTrack[]> {
+  await ensureImpact();
+  return (await many<any>(`SELECT * FROM impact_tracks WHERE user_id = $1 AND domain = $2 ORDER BY id DESC LIMIT 100`, [userId, domain])).map(rowToImpact);
+}
+
+export async function getImpactTrack(userId: number, id: number): Promise<ImpactTrack | null> {
+  await ensureImpact();
+  const r = await one<any>(`SELECT * FROM impact_tracks WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return r ? rowToImpact(r) : null;
+}
+
+export async function updateImpactTrack(userId: number, id: number, p: { doneAt?: string | null; checks?: ImpactCheck[]; baseline?: ImpactCheck }): Promise<void> {
+  await ensureImpact();
+  if (p.doneAt !== undefined) await exec(`UPDATE impact_tracks SET done_at = $1 WHERE id = $2 AND user_id = $3`, [p.doneAt, id, userId]);
+  if (p.checks) await exec(`UPDATE impact_tracks SET checks_json = $1 WHERE id = $2 AND user_id = $3`, [JSON.stringify(p.checks), id, userId]);
+  if (p.baseline) await exec(`UPDATE impact_tracks SET baseline_json = $1 WHERE id = $2 AND user_id = $3`, [JSON.stringify(p.baseline), id, userId]);
+}
+
+export async function deleteImpactTrack(userId: number, id: number): Promise<void> {
+  await ensureImpact();
+  await exec(`DELETE FROM impact_tracks WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+/** Zamanlayıcı için: işi tamamlanmış, en az 3 gün geçmiş, 3'ten az ölçümü olan ve son ölçümü 3 günden eski takipler. */
+export async function listDueImpactTracks(): Promise<(ImpactTrack & { userId: number })[]> {
+  await ensureImpact();
+  const rows = await many<any>(`SELECT * FROM impact_tracks WHERE done_at IS NOT NULL AND done_at < now() - interval '3 days' ORDER BY id LIMIT 200`, []);
+  const now = Date.now();
+  return rows
+    .map((r) => ({ ...rowToImpact(r), userId: r.user_id as number }))
+    .filter((t) => t.checks.length < 3 && (!t.checks.length || now - new Date(t.checks[t.checks.length - 1].at).getTime() > 3 * 86400_000));
+}

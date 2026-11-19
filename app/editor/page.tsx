@@ -534,6 +534,7 @@ export default function EditorPage() {
         title={title || blocks.find((b) => b.type === "h1")?.text || ""}
         markdown={blocksToMd(blocks)}
         metaDescription={meta}
+        keyword={keyword}
       />
       {msg && <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg ${msg.bad ? "bg-danger text-white" : "bg-ink text-white"}`}>{msg.t}</div>}
 

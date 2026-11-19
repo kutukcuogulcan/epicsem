@@ -34,6 +34,7 @@ export default function PublishDrawer({
   markdown,
   metaDescription,
   onDone,
+  keyword,
 }: {
   open: boolean;
   onClose: () => void;
@@ -42,6 +43,8 @@ export default function PublishDrawer({
   markdown: string;
   metaDescription: string;
   onDone?: (r: { state: string; postUrl: string; editUrl: string }) => void;
+  /** Yazının hedef anahtar kelimesi — yayından sonra "Etkisini ölç" bağlantısı için. */
+  keyword?: string;
 }) {
   const [conns, setConns] = useState<Conn[] | null>(null);
   const [connId, setConnId] = useState<number | null>(null);
@@ -156,6 +159,18 @@ export default function PublishDrawer({
               </a>
             )}
           </div>
+          {done.state === "published" && (
+            <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+              <div className="font-medium">Bu yazı AI görünürlüğünü değiştirecek mi?</div>
+              <p className="mt-0.5 text-xs text-sub">Hedef soru ve bağlantılı sorular şimdi ölçülür, 3 gün arayla yeniden ölçülüp karşılaştırılır.</p>
+              <Link
+                href={`/geo?tab=impact&kind=article&done=1&title=${encodeURIComponent(title)}&target=${encodeURIComponent(keyword || title)}&kw=${encodeURIComponent(keyword ?? "")}&ref=${encodeURIComponent(done.postUrl || (draftId ? `draft:${draftId}` : ""))}`}
+                className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white"
+              >
+                Etkisini ölç →
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-5 text-sm">
