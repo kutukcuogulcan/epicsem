@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Drawer } from "@/components/ui";
-import { ASSET_LABEL, type AssetType, type LinkIdea } from "@/lib/link-plan-types";
+import { ASSET_LABEL, assetType, type AssetType, type LinkIdea } from "@/lib/link-plan-types";
 import type { LinkPlan } from "@/app/api/backlinks/plan/route";
 
 /** Backlinkler → "Link planı": rakipler hangi içeriklerle link alıyor, sen hangi yazıyı hangi anchor ile yazmalısın. */
@@ -22,14 +22,64 @@ const TYPE_CLS: Partial<Record<AssetType, string>> = {
   case: "bg-muted text-ink/70",
 };
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+const host = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const SRC_LABEL: Record<string, string> = { wikipedia: "Wikipedia", reddit: "Reddit", hn: "Hacker News", ahrefs: "Ahrefs", bing: "Bing", news: "Haber", csv: "CSV" };
 
-export default function LinkPlanTab({ site, onPitch }: { site: string; onPitch: (domain: string, url?: string) => void }) {
+export interface PitchOptions {
+  url?: string;
+  offer?: { title: string; why?: string };
+  competitors?: string[];
+}
+
+/** Rakiplere link verip sana vermeyen site — fırsat tablosunun bir satırı. */
+interface Opportunity {
+  domain: string;
+  dr: number | null;
+  sources: string[];
+  competitors: string[];
+  targets: string[];
+  idea: LinkIdea | null;
+  score: number;
+}
+
+export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: string; ownLinkers: string[] | null; onPitch: (domain: string, opts?: PitchOptions) => void }) {
   const [plan, setPlan] = useState<LinkPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ text: string; needsCompetitors?: boolean } | null>(null);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const [open, setOpen] = useState<LinkIdea | null>(null);
   const [first, setFirst] = useState(true);
+  const [oppAll, setOppAll] = useState(false);
+
+  // Fırsatlar: rakiplere link veren ama sana vermeyen siteler (eşleşen yazı önerisiyle).
+  const opps = useMemo<Opportunity[]>(() => {
+    if (!plan) return [];
+    const own = new Set((ownLinkers ?? []).map(host));
+    const compHosts = new Set(plan.competitors.map((c) => host(c.domain)));
+    const me = host(plan.site);
+    const m = new Map<string, Opportunity>();
+    for (const c of plan.competitors)
+      for (const r of c.refDomains) {
+        const d = host(r.domain);
+        if (!d || d === me || own.has(d) || compHosts.has(d)) continue;
+        const o = m.get(d) ?? { domain: d, dr: null, sources: [], competitors: [], targets: [], idea: null, score: 0 };
+        if (r.dr != null) o.dr = Math.max(o.dr ?? 0, r.dr);
+        if (!o.sources.includes(r.source)) o.sources.push(r.source);
+        if (!o.competitors.includes(c.domain)) o.competitors.push(c.domain);
+        if (r.target && !o.targets.includes(r.target)) o.targets.push(r.target);
+        m.set(d, o);
+      }
+    for (const o of m.values()) {
+      o.idea =
+        plan.ideas.find((i) => i.pitchTo.map(host).includes(o.domain)) ??
+        plan.ideas.find((i) => o.targets.some((t) => assetType(t) === i.type)) ??
+        null;
+      o.score = o.competitors.length * 10 + (o.dr ?? 0) / 10 + (o.idea ? 2 : 0);
+    }
+    return [...m.values()].sort((a, b) => b.score - a.score);
+  }, [plan, ownLinkers]);
+  const pitch = (o: Opportunity) =>
+    onPitch(o.domain, { url: o.targets[0], competitors: o.competitors, offer: o.idea ? { title: o.idea.title, why: o.idea.why.slice(0, 300) } : undefined });
 
   const run = useCallback(
     async (refresh = false, onlyCache = false) => {
@@ -105,21 +155,86 @@ export default function LinkPlanTab({ site, onPitch }: { site: string; onPitch: 
   return (
     <div className="space-y-4">
       {plan.demo && <div className="rounded-xl border border-warn/30 bg-warn/5 px-4 py-2.5 text-[13px] text-ink/70">Demo mod: öneriler örnek; gerçek anahtar tanımlanınca rakip verisinden siteye özel yazılır.</div>}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {([
-          ["İncelenen rakip", String(plan.competitors.length), plan.competitors.map((c) => c.domain).join(", ")],
-          ["Rakiplere link veren site", String(totalLinkers), "Wikipedia, Reddit, HN" + (plan.competitors.some((c) => c.refDomains.some((r) => r.source === "ahrefs")) ? ", Ahrefs" : "")],
-          ["Sende olmayan içerik türü", String(missing.length), missing.map((m) => ASSET_LABEL[m]).join(", ") || "eksik tür yok"],
-          ["Önerilen yazı", String(plan.ideas.length), "link kazandıracak içerik"],
-        ] as const).map(([l, v, h]) => (
-          <div key={l} className={`${CARD} px-4 py-4`}>
-            <div className="text-xs font-medium text-sub">{l}</div>
-            <div className="mt-1.5 text-[26px] font-semibold leading-8 tabular-nums">{v}</div>
-            <div className="mt-1 h-4 truncate text-[11px] text-sub" title={h}>
-              {h}
+      {/* Özet bandı */}
+      <div className={`${CARD} p-4 md:p-5`}>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {([
+            ["Sana link veren site", ownLinkers ? String(ownLinkers.length) : "—", ownLinkers ? "Link veren siteler sekmesindeki canlı liste" : "Önce backlink verisini yükle"],
+            ["Rakiplere link veren", String(totalLinkers), `${plan.competitors.length} rakip · ${plan.competitors.map((c) => c.domain).join(", ")}`],
+            ["Rakip farkı", String(opps.length), "rakibe link verip sana vermeyen site"],
+            ["Eksik içerik türü", String(missing.length), missing.map((m) => ASSET_LABEL[m]).join(", ") || "rakiplerde olup sende olmayan tür yok"],
+          ] as const).map(([l, v, h]) => (
+            <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
+              <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Rakip farkı" && opps.length ? "text-danger" : ""}`}>{v}</div>
+              <div className="truncate text-[11px] text-sub" title={h}>
+                {h}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {opps.length > 0 && (
+          <div className="mt-4">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">En iyi 3 fırsat</div>
+            <div className="mt-2 grid gap-2 md:grid-cols-3">
+              {opps.slice(0, 3).map((o) => (
+                <div key={o.domain} className="flex flex-col rounded-xl border border-border p-3">
+                  <div className="flex items-center gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`https://www.google.com/s2/favicons?domain=${o.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{o.domain}</span>
+                    {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
+                  </div>
+                  <p className="mt-1 text-xs text-sub">
+                    {o.competitors.length > 1 ? `${o.competitors.length} rakibine` : `${o.competitors[0]} sitesine`} link veriyor, sana vermiyor.
+                  </p>
+                  {o.idea && (
+                    <p className="mt-1 line-clamp-2 text-xs">
+                      <span className="text-sub">Önereceğin yazı: </span>
+                      {o.idea.title}
+                    </p>
+                  )}
+                  <div className="mt-auto flex gap-1.5 pt-2.5">
+                    <button type="button" onClick={() => pitch(o)} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90" title="1 AI sorgusu">
+                      E-posta taslağı
+                    </button>
+                    {o.idea && (
+                      <Link href={writeHref(o.idea)} className="inline-flex h-7 items-center rounded-lg px-2.5 text-xs font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
+                        Yazıyı yaz
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {plan.ideas[0] && (
+          <div className="mt-4 rounded-xl bg-accent/[0.06] p-3.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            {(() => {
+              const top = opps.find((o) => o.idea)?.idea ?? plan.ideas[0];
+              const askers = opps.filter((o) => o.idea === top).slice(0, 3).map((o) => o.domain);
+              return (
+                <>
+                  <div className="mt-1 text-[13px] font-semibold leading-snug">&ldquo;{top.title}&rdquo; yazısını yaz</div>
+                  <p className="mt-1 text-xs text-sub">
+                    {ASSET_LABEL[top.type]} · hedef kelime &ldquo;{top.targetKeyword}&rdquo;
+                    {askers.length ? `. Yayınlayınca ${askers.join(", ")} sitelerinden link iste.` : top.pitchTo.length ? `. Yayınlayınca ${top.pitchTo.slice(0, 3).join(", ")} sitelerinden link iste.` : "."}
+                  </p>
+                  <Link href={writeHref(top)} className="mt-2 inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-[12px] font-medium text-white hover:opacity-90">
+                    Link çekecek yazıyı yaz
+                  </Link>
+                </>
+              );
+            })()}
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-sub">
+          Rakip linkleri ücretsiz kaynaklardan (Wikipedia, Reddit, Hacker News{plan.competitors.some((c) => c.refDomains.some((r) => r.source === "ahrefs")) ? ", Ahrefs" : ""}) geliyor; gerçek profilin bir kısmıdır. Ahrefs bağlarsan liste büyür.
+        </p>
       </div>
 
       <div className="flex items-end justify-between">
@@ -164,6 +279,87 @@ export default function LinkPlanTab({ site, onPitch }: { site: string; onPitch: 
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={`${CARD} overflow-hidden`}>
+        <div className="px-5 pt-4">
+          <h3 className="text-sm font-semibold">Fırsat tablosu</h3>
+          <p className="text-xs text-sub">Rakiplerine link veren ama sana vermeyen siteler · en çok rakibe link verenler üstte</p>
+        </div>
+        {opps.length === 0 ? (
+          <p className="px-5 pb-5 pt-3 text-[13px] text-sub">
+            {totalLinkers ? "Rakiplerine link veren sitelerin hepsi zaten sana da link veriyor." : "Ücretsiz kaynaklarda rakiplerine link veren site bulunamadı. Ahrefs bağlarsan ya da rakibin backlink CSV'sini yüklersen tablo dolar."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="mt-3 w-full min-w-[640px] text-[13px]">
+              <thead className="border-y border-border bg-[#fafafa] text-left text-xs text-sub">
+                <tr>
+                  <th className="py-2 pl-5 font-medium">Site</th>
+                  <th className="py-2 pr-3 font-medium">Link verdiği rakip</th>
+                  <th className="py-2 pr-3 font-medium">Önereceğin yazı</th>
+                  <th className="py-2 pr-5 text-right font-medium">Aksiyon</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {(oppAll ? opps : opps.slice(0, 12)).map((o) => (
+                  <tr key={o.domain} className="align-top">
+                    <td className="py-2.5 pl-5 pr-3">
+                      <div className="flex items-center gap-2 font-medium">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`https://www.google.com/s2/favicons?domain=${o.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
+                        {o.domain}
+                        {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
+                      </div>
+                      <div className="pl-6 text-[11px] text-sub">{o.sources.map((x) => SRC_LABEL[x] ?? x).join(", ")}</div>
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <div className="flex flex-wrap gap-1">
+                        {o.competitors.map((c) => (
+                          <span key={c} className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                      {o.targets[0] && (
+                        <a href={o.targets[0]} target="_blank" rel="noreferrer" className="mt-0.5 block max-w-[220px] truncate text-[11px] text-sub hover:text-accent">
+                          {short(o.targets[0])}
+                        </a>
+                      )}
+                    </td>
+                    <td className="max-w-[260px] py-2.5 pr-3">
+                      {o.idea ? (
+                        <>
+                          <div className="line-clamp-2">{o.idea.title}</div>
+                          <span className={`mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium ${TYPE_CLS[o.idea.type] ?? "bg-muted"}`}>{ASSET_LABEL[o.idea.type]}</span>
+                        </>
+                      ) : (
+                        <span className="text-sub">Rakibin linklenen sayfasına benzer bir içerik</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-5 text-right">
+                      <div className="flex justify-end gap-1.5">
+                        <button type="button" onClick={() => pitch(o)} className="inline-flex h-7 items-center whitespace-nowrap rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90" title="1 AI sorgusu">
+                          E-posta
+                        </button>
+                        {o.idea && (
+                          <Link href={writeHref(o.idea)} className="inline-flex h-7 items-center whitespace-nowrap rounded-lg px-2.5 text-xs font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
+                            Yazıyı yaz
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {opps.length > 12 && (
+          <button type="button" onClick={() => setOppAll((v) => !v)} className="w-full border-t border-border py-2.5 text-xs font-medium text-accent hover:bg-muted/40">
+            {oppAll ? "Daha az göster" : `Tüm ${opps.length} siteyi göster`}
+          </button>
+        )}
       </div>
 
       <div className={`${CARD} overflow-hidden`}>
@@ -268,7 +464,7 @@ export default function LinkPlanTab({ site, onPitch }: { site: string; onPitch: 
                   {open.pitchTo.map((d) => (
                     <div key={d} className="flex items-center justify-between px-3 py-2">
                       <span className="font-medium">{d}</span>
-                      <button type="button" onClick={() => onPitch(d)} className="text-xs font-medium text-accent hover:underline" title="1 AI sorgusu">
+                      <button type="button" onClick={() => onPitch(d, { offer: { title: open.title, why: open.why.slice(0, 300) }, competitors: opps.find((o) => o.domain === host(d))?.competitors })} className="text-xs font-medium text-accent hover:underline" title="1 AI sorgusu">
                         E-posta taslağı
                       </button>
                     </div>

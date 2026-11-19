@@ -10,6 +10,9 @@ const bodySchema = z.object({
   site: z.string().min(3).max(200),
   kind: z.enum(["unlinked", "lost", "gap"]),
   target: z.object({ domain: z.string().min(3).max(200), url: z.string().max(500).optional(), title: z.string().max(300).optional() }),
+  /** gap: alıcıya önereceğimiz kendi içeriğimiz (link planındaki yazı) ve alıcının link verdiği rakipler. */
+  offer: z.object({ title: z.string().max(300), why: z.string().max(600).optional() }).optional(),
+  competitors: z.array(z.string().max(120)).max(4).optional(),
 });
 
 /**
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
   const prompt = `Bir link isteme e-postası TASLAĞI yaz. Türkçe, kısa (en fazla 120 kelime), samimi ama profesyonel; spam gibi durmasın, abartılı iltifat ve uydurma bilgi olmasın. Alıcının adını bilmiyoruz ("Merhaba," ile başla).
 ${ctx}
 Bizim site: ${body.site}
-Alıcı site: ${body.target.domain}${body.target.title ? `\nİlgili yazı: "${body.target.title}"` : ""}${body.target.url ? ` (${body.target.url})` : ""}
+Alıcı site: ${body.target.domain}${body.target.title ? `\nİlgili yazı: "${body.target.title}"` : ""}${body.target.url ? ` (${body.target.url})` : ""}${body.competitors?.length ? `\nAlıcının link verdiği rakiplerimiz: ${body.competitors.join(", ")} (e-postada rakip adı verme, sadece benzer kaynaklara link verdiklerini bil)` : ""}${body.offer ? `\nÖnereceğimiz içerik: "${body.offer.title}"${body.offer.why ? ` — ${body.offer.why}` : ""}. Bu içeriğin okuyucularına neden faydalı olacağını tek cümleyle söyle; içerik henüz yayında değilse "hazırlıyoruz, yayınlanınca paylaşabilir miyim?" diye sor.` : ""}
 Amaç: ${goal}
 Yalnızca şu JSON'u döndür: {"subject":"en fazla 60 karakter konu","body":"e-posta metni, \\n ile satırlar, sonda [Adınız] imza yeri"}`;
   try {

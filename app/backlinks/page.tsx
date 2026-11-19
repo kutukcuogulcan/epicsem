@@ -91,11 +91,11 @@ export default function BacklinksPage() {
   const [srcOpen, setSrcOpen] = useState(false);
   const [mail, setMail] = useState<{ busy: boolean; err: string | null; to: string; subject: string; body: string; demo?: boolean } | null>(null);
   const [mailCopied, setMailCopied] = useState(false);
-  async function draftMail(kind: "unlinked" | "lost" | "gap", target: { domain: string; url?: string; title?: string }) {
+  async function draftMail(kind: "unlinked" | "lost" | "gap", target: { domain: string; url?: string; title?: string }, extra?: { offer?: { title: string; why?: string }; competitors?: string[] }) {
     setMail({ busy: true, err: null, to: target.domain, subject: "", body: "" });
     setMailCopied(false);
     try {
-      const r = await fetch("/api/backlinks/outreach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site: data?.site ?? site, kind, target }) });
+      const r = await fetch("/api/backlinks/outreach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site: data?.site ?? site, kind, target, ...extra }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Taslak yazılamadı");
       setMail({ busy: false, err: null, to: target.domain, subject: d.result.subject, body: d.result.body, demo: !!d.demo });
@@ -375,7 +375,7 @@ export default function BacklinksPage() {
       />
 
       {activeTab === "citations" && <CitationTab site={site.trim()} />}
-      {activeTab === "plan" && <LinkPlanTab site={(data?.site ?? site).trim()} onPitch={(d) => draftMail("gap", { domain: d })} />}
+      {activeTab === "plan" && <LinkPlanTab site={(data?.site ?? site).trim()} ownLinkers={data?.site ? live.map((d) => d.domain) : null} onPitch={(d, o) => draftMail("gap", { domain: d, url: o?.url }, { offer: o?.offer, competitors: o?.competitors })} />}
 
       {mode === "analysis" && !data?.site && !loading && (
         <div className={`${card} px-6 py-10 text-center`}>
