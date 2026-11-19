@@ -1,6 +1,7 @@
 import { sitePagesForLinks } from "./article-enrich";
 import { ahrefsRefDomains, rootHost, type RefDomain } from "./backlinks";
 import { hackerNewsLinks, redditLinks, wikipediaLinks } from "./free-backlinks";
+import { communityMentions, type CommunitySiteId } from "./community-search";
 
 /**
  * Link kazanma planı — rakiplerin hangi içeriklerle link aldığını çıkarır (çoğu ücretsiz kaynak):
@@ -27,7 +28,8 @@ export interface CompetitorLinkProfile {
 }
 
 export interface CommunityThread {
-  source: "reddit" | "hn" | "wikipedia";
+  /** reddit/hn/wikipedia: rakibe link veren konu. Diğerleri: rakibin konuşulduğu sayfa (Google araması, link şart değil). */
+  source: "reddit" | "hn" | "wikipedia" | CommunitySiteId;
   url: string;
   title: string;
   /** Reddit: r/alt, HN/Wikipedia: boş. */
@@ -40,14 +42,16 @@ export interface CommunityThread {
 
 const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race([p.catch(() => fallback), new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
 
-export async function competitorProfile(userId: number, domain: string, ahrefsKey?: string | null): Promise<CompetitorLinkProfile> {
+export async function competitorProfile(userId: number, domain: string, ahrefsKey?: string | null, brandName?: string): Promise<CompetitorLinkProfile> {
   const host = rootHost(domain);
-  const [pages, wiki, reddit, hn, ah] = await Promise.all([
+  const name = brandName?.trim() || host.split(".")[0];
+  const [pages, wiki, reddit, hn, ah, mentions] = await Promise.all([
     withTimeout(sitePagesForLinks(userId, host, 300), 15000, [] as { title: string; url: string }[]),
     withTimeout(wikipediaLinks(host), 12000, [] as RefDomain[]),
     withTimeout(redditLinks(host), 12000, [] as RefDomain[]),
     withTimeout(hackerNewsLinks(host), 12000, [] as RefDomain[]),
     ahrefsKey ? withTimeout(ahrefsRefDomains(ahrefsKey, host, 60), 20000, [] as RefDomain[]) : Promise.resolve([] as RefDomain[]),
+    withTimeout(communityMentions(name, host), 75000, []),
   ]);
   const types: Partial<Record<AssetType, number>> = {};
   const samplePages = pages.map((p) => ({ url: p.url, title: p.title, type: assetType(`${p.url} ${p.title}`) }));
@@ -75,6 +79,7 @@ export async function competitorProfile(userId: number, domain: string, ahrefsKe
       return { source: src, url: f.url, title: m ? m[2] : f.title, where: m ? `r/${m[1]}` : null, date: f.date ?? null, score: f.score ?? null, target: f.target ?? r.targets?.[0] ?? null };
     })
   );
-  return { domain: host, pages: pages.length, types, refDomains, topPages, samplePages: samplePages.filter((p) => p.type !== "other").slice(0, 40), community: community.slice(0, 60) };
+  for (const m of mentions) community.push({ source: m.site, url: m.url, title: m.title, where: null, date: null, score: null, target: null });
+  return { domain: host, pages: pages.length, types, refDomains, topPages, samplePages: samplePages.filter((p) => p.type !== "other").slice(0, 40), community: community.slice(0, 80) };
 }
 

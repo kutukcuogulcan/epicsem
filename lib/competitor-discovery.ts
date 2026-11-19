@@ -1,3 +1,4 @@
+import { geminiGenerate } from "@/lib/gemini";
 import { PROVIDERS, isDemoMode, resolveAnthropicModel } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 
@@ -137,15 +138,7 @@ const WEB_SEARCH_CALLERS: WebSearchCaller[] = [
     id: "google",
     configured: () => Boolean(process.env.GOOGLE_AI_API_KEY),
     run: async (prompt) => {
-      const model = "gemini-2.5-flash";
-      const data = await fetchJson(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }),
-        }
-      );
+      const { data, model } = await geminiGenerate({ contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }, { preferred: "gemini-2.5-flash" });
       const text = (data.candidates?.[0]?.content?.parts ?? []).map((p: any) => p?.text ?? "").join("");
       return { text, model: `google:${model}` };
     },

@@ -1,4 +1,5 @@
 import type { EngineId } from "@/types";
+import { geminiGenerate } from "@/lib/gemini";
 
 export interface ProviderResponse {
   text: string;
@@ -165,24 +166,18 @@ class GoogleProvider implements LlmProvider {
     return Boolean(process.env.GOOGLE_AI_API_KEY);
   }
   async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
-    const model = options?.model ?? this.defaultModel;
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
+    // Model Google tarafında kapatıldıysa (404) güncel modele geçer (lib/gemini.ts).
+    const { data, model } = await geminiGenerate(
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            ...(options?.temperature != null ? { temperature: options.temperature } : {}),
-            ...(options?.json ? { responseMimeType: "application/json" } : {}),
-            ...(options?.maxTokens ? { maxOutputTokens: options.maxTokens } : {}),
-          },
-        }),
-      }
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          ...(options?.temperature != null ? { temperature: options.temperature } : {}),
+          ...(options?.json ? { responseMimeType: "application/json" } : {}),
+          ...(options?.maxTokens ? { maxOutputTokens: options.maxTokens } : {}),
+        },
+      },
+      { preferred: options?.model ?? this.defaultModel }
     );
-    if (!res.ok) throw new Error(`Google AI API error: ${res.status} ${await res.text()}`);
-    const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
     return { text, model, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
   }

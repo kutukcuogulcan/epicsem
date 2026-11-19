@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const ahrefsKey = (await getIntegration(user.id, "ahrefs").catch(() => null))?.secrets.apiKey ?? null;
   const [profiles, own] = await Promise.all([
-    Promise.all(comps.map((c) => competitorProfile(user.id, c, ahrefsKey))),
+    Promise.all(comps.map((c) => competitorProfile(user.id, c, ahrefsKey, project?.competitors?.find((x) => rootHost(x.domain) === c)?.name))),
     sitePagesForLinks(user.id, site, 200).catch(() => [] as { title: string; url: string }[]),
   ]);
   const ownTypes: Partial<Record<AssetType, number>> = {};

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Drawer } from "@/components/ui";
 import { ASSET_LABEL, assetType, type AssetType, type LinkIdea } from "@/lib/link-plan-types";
 import type { LinkPlan } from "@/app/api/backlinks/plan/route";
+import type { CommunityThread } from "@/lib/link-plan";
 
 /** Backlinkler → "Link planı": rakipler hangi içeriklerle link alıyor, sen hangi yazıyı hangi anchor ile yazmalısın. */
 
@@ -25,7 +26,19 @@ const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/
 const host = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
 /** Bu kaynaklar site bazında değil konu bazında değerlendirilir (Topluluk fırsatları bölümü). */
 const isCommunity = (d: string) => d === "reddit.com" || d === "news.ycombinator.com" || d.endsWith("wikipedia.org");
-const COMMUNITY_CLS: Record<string, string> = { reddit: "bg-[#ff4500]/10 text-[#d93a00]", hn: "bg-[#ff6600]/10 text-[#cc5200]", wikipedia: "bg-muted text-ink/70" };
+type CSource = CommunityThread["source"];
+const COMMUNITY: Record<CSource, { label: string; cls: string; open: string; tip: string }> = {
+  reddit: { label: "Reddit", cls: "bg-[#ff4500]/10 text-[#d93a00]", open: "Konuyu aç ↗", tip: "Reddit: link bırakıp çıkma, konuya gerçek bir cevapla katıl. Yazın yayınlanınca ilgili soruya kaynak olarak paylaş; subreddit kurallarına uy." },
+  hn: { label: "Hacker News", cls: "bg-[#ff6600]/10 text-[#cc5200]", open: "Konuyu aç ↗", tip: "Hacker News: tanıtım değil, teknik ve dürüst bir yorumla katıl." },
+  wikipedia: { label: "Wikipedia", cls: "bg-muted text-ink/70", open: "Maddeyi aç ↗", tip: "Wikipedia: kaynağı eksik bir cümleye güvenilir bir kaynak olarak ekleyebilirsin. Kendi siteni eklemek çıkar çatışması sayılır; araştırma/istatistik içeriğin varsa tartışma sayfasında öner." },
+  donanimhaber: { label: "Donanımhaber", cls: "bg-sky-50 text-sky-700", open: "Konuyu aç ↗", tip: "Donanımhaber forumu: rakibinin konuşulduğu konuya deneyimini anlatan bir cevap yaz; reklam gibi durursa silinir. Uygunsa yazını kaynak olarak ver." },
+  sikayetvar: { label: "ŞikayetVar", cls: "bg-emerald-50 text-emerald-700", open: "Sayfayı aç ↗", tip: "ŞikayetVar: rakiple ilgili şikâyetler müşterinin ne aradığını gösterir. Bu sorunları çözdüğünü anlatan bir karşılaştırma yazısı yaz; şikâyet sayfalarına yorum bırakma." },
+  quora: { label: "Quora", cls: "bg-[#b92b27]/10 text-[#b92b27]", open: "Soruyu aç ↗", tip: "Quora: soruya tam ve tarafsız bir cevap yaz, markanı açıkça belirt; yazın varsa cevabın sonunda kaynak olarak ver." },
+  youtube: { label: "YouTube", cls: "bg-danger/10 text-danger", open: "Videoyu aç ↗", tip: "YouTube: rakibini inceleyen kanallar senin için de inceleme yapabilir. Kanal sahibine ulaş; videonun açıklamasına link istemek yerine ürününü denemeyi öner." },
+  medium: { label: "Medium", cls: "bg-ink/10 text-ink", open: "Yazıyı aç ↗", tip: "Medium: rakibini anlatan yazarlara karşılaştırma ya da araştırma içeriğini öner; Medium'da kendi yazını da yayınlayabilirsin." },
+};
+/** Link verenler (konuya link var) ve bahsetmeler (Google'da rakibin konuşulduğu sayfa). */
+const LINKED: CSource[] = ["reddit", "hn", "wikipedia"];
 const SRC_LABEL: Record<string, string> = { wikipedia: "Wikipedia", reddit: "Reddit", hn: "Hacker News", ahrefs: "Ahrefs", bing: "Bing", news: "Haber", csv: "CSV" };
 
 export interface PitchOptions {
@@ -82,11 +95,11 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
     return [...m.values()].sort((a, b) => b.score - a.score);
   }, [plan, ownLinkers]);
   // Topluluk fırsatları: rakibin linklendiği Reddit / HN konuları ve Wikipedia maddeleri (konu bazında).
-  const [cSrc, setCSrc] = useState<"all" | "reddit" | "hn" | "wikipedia">("all");
+  const [cSrc, setCSrc] = useState<"all" | CSource>("all");
   const [cAll, setCAll] = useState(false);
   const community = useMemo(() => {
     if (!plan) return { rows: [], legacy: false };
-    const m = new Map<string, { source: "reddit" | "hn" | "wikipedia"; url: string; title: string; where: string | null; date: string | null; score: number | null; targets: string[]; competitors: string[]; idea: LinkIdea | null }>();
+    const m = new Map<string, { source: CSource; url: string; title: string; where: string | null; date: string | null; score: number | null; targets: string[]; competitors: string[]; idea: LinkIdea | null }>();
     for (const c of plan.competitors)
       for (const t of c.community ?? []) {
         const row = m.get(t.url) ?? { ...t, targets: [], competitors: [], idea: null };
@@ -94,9 +107,15 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
         if (t.target && !row.targets.includes(t.target)) row.targets.push(t.target);
         m.set(t.url, row);
       }
-    const ORDER = { reddit: 0, hn: 1, wikipedia: 2 } as const;
+    const ORDER: Record<CSource, number> = { reddit: 0, donanimhaber: 1, sikayetvar: 2, quora: 3, youtube: 4, medium: 5, hn: 6, wikipedia: 7 };
     const rows = [...m.values()]
-      .map((r) => ({ ...r, idea: plan.ideas.find((i) => r.targets.some((t) => assetType(t) === i.type)) ?? null }))
+      .map((r) => ({
+        ...r,
+        idea:
+          plan.ideas.find((i) => r.targets.some((t) => assetType(t) === i.type)) ??
+          // Bahsetmelerde (link yok) rakiple kıyaslayan yazı en uygun cevap.
+          (LINKED.includes(r.source) ? null : plan.ideas.find((i) => i.type === "comparison") ?? plan.ideas[0] ?? null),
+      }))
       .sort((a, b) => ORDER[a.source] - ORDER[b.source] || b.competitors.length - a.competitors.length || (b.score ?? 0) - (a.score ?? 0));
     return { rows, legacy: plan.competitors.every((c) => c.community === undefined) };
   }, [plan]);
@@ -263,17 +282,13 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
       <div className={`${CARD} overflow-hidden`}>
         <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
           <div>
-            <h3 className="text-sm font-semibold">Topluluk fırsatları: Reddit, Hacker News, Wikipedia</h3>
-            <p className="text-xs text-sub">Rakiplerinin konuşulduğu ve linklendiği konular. AI motorları bu konuları sık kaynak gösteriyor.</p>
+            <h3 className="text-sm font-semibold">Topluluk fırsatları</h3>
+            <p className="text-xs text-sub">Rakiplerinin konuşulduğu ve linklendiği konular: Reddit, Donanımhaber, ŞikayetVar, Quora, YouTube, Medium, Hacker News, Wikipedia. AI motorları bu sayfaları sık kaynak gösteriyor.</p>
           </div>
           {community.rows.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {([
-                ["all", "Tümü"],
-                ["reddit", "Reddit"],
-                ["hn", "Hacker News"],
-                ["wikipedia", "Wikipedia"],
-              ] as const).map(([k, l]) => {
+              {(["all", ...(Object.keys(COMMUNITY) as CSource[]).filter((k) => community.rows.some((r) => r.source === k))] as ("all" | CSource)[]).map((k) => {
+                const l = k === "all" ? "Tümü" : COMMUNITY[k].label;
                 const n = k === "all" ? community.rows.length : community.rows.filter((r) => r.source === k).length;
                 return (
                   <button key={k} type="button" onClick={() => setCSrc(k)} disabled={!n} className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium disabled:opacity-40 ${cSrc === k ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`}>
@@ -286,23 +301,21 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
         </div>
         {community.legacy ? (
           <p className="px-5 pb-5 pt-3 text-[13px] text-sub">
-            Bu plan topluluk konuları eklenmeden önce çıkarıldı. Reddit, Hacker News ve Wikipedia konularını görmek için sağ üstteki <b>Yenile</b>&apos;ye bas.
+            Bu plan topluluk konuları eklenmeden önce çıkarıldı. Reddit, Donanımhaber, ŞikayetVar, Quora, YouTube ve Medium konularını görmek için aşağıdaki <b>Yenile</b>&apos;ye bas.
           </p>
         ) : community.rows.length === 0 ? (
-          <p className="px-5 pb-5 pt-3 text-[13px] text-sub">Rakiplerinin sitesi Reddit, Hacker News ya da Wikipedia&apos;da linklenmemiş.</p>
+          <p className="px-5 pb-5 pt-3 text-[13px] text-sub">Topluluk sitelerinde rakiplerinle ilgili konu bulunamadı.</p>
         ) : (
           <>
             <div className="mx-5 mt-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-ink/70">
-              {cSrc === "wikipedia"
-                ? "Wikipedia: kaynağı eksik bir cümleye güvenilir bir kaynak olarak ekleyebilirsin. Kendi siteni eklemek çıkar çatışması sayılır; araştırma/istatistik içeriğin varsa tartışma sayfasında öner."
-                : "Reddit ve Hacker News: link bırakıp çıkma, konuya gerçek bir cevapla katıl. Yazın yayınlanınca ilgili soruya kaynak olarak paylaş; subreddit kurallarına uy."}
+              {cSrc === "all" ? "Link bırakıp çıkma: her sitede konuya gerçek bir katkıyla gir. Bir kaynağı seçince o siteye özel ipucu çıkar. Reddit, Hacker News ve Wikipedia satırları rakibe link veren konulardır; diğerleri rakibin konuşulduğu, Google'da bulunan sayfalardır." : COMMUNITY[cSrc].tip}
             </div>
             <ul className="mt-2 divide-y divide-border border-t border-border">
               {(cAll ? community.rows : community.rows.filter((r) => cSrc === "all" || r.source === cSrc).slice(0, 10))
                 .filter((r) => cSrc === "all" || r.source === cSrc)
                 .map((r) => (
                   <li key={r.url} className="flex flex-wrap items-start gap-3 px-5 py-3">
-                    <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${COMMUNITY_CLS[r.source]}`}>{r.where ?? SRC_LABEL[r.source]}</span>
+                    <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${COMMUNITY[r.source].cls}`}>{r.where ?? COMMUNITY[r.source].label}</span>
                     <div className="min-w-0 flex-1">
                       <a href={r.url} target="_blank" rel="noreferrer" className="line-clamp-2 text-[13px] font-medium hover:text-accent">
                         {r.title}
@@ -314,6 +327,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                           </span>
                         ))}
                         {r.targets[0] && <span className="max-w-[260px] truncate">{short(r.targets[0])}</span>}
+                        {!LINKED.includes(r.source) && <span>rakip konuşuluyor</span>}
                         {r.score != null && r.source !== "wikipedia" && <span>{r.score} puan</span>}
                         {r.date && <span>{new Date(r.date).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}</span>}
                       </div>
@@ -326,7 +340,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                     </div>
                     <div className="flex shrink-0 gap-1.5">
                       <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex h-7 items-center rounded-lg px-2.5 text-xs font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
-                        {r.source === "wikipedia" ? "Maddeyi aç ↗" : "Konuyu aç ↗"}
+                        {COMMUNITY[r.source].open}
                       </a>
                       {r.idea && (
                         <Link href={writeHref(r.idea)} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
