@@ -7,3 +7,6 @@ dev.db-journal
 data/
 *.log
 *.tsbuildinfo
+
+# Claude Code yerel ayarları (Impeccable hook'u dahil)
+.claude/settings.local.json
