@@ -131,11 +131,13 @@ export function UnderlineTabs({ tabs, value, onChange, className = "" }: { tabs:
   const content = tabs[active]?.content;
   return (
     <div className={className}>
-      <div className="flex gap-8 overflow-x-auto border-b border-border">
+      <div role="tablist" className="flex gap-8 overflow-x-auto border-b border-border">
         {tabs.map((tab, idx) => (
           <button
             key={tab.key ?? idx}
             type="button"
+            role="tab"
+            aria-selected={active === idx}
             onClick={() => set(idx)}
             className={`relative flex items-center gap-1.5 whitespace-nowrap pb-3 text-sm font-medium transition-colors ${active === idx ? "text-accent" : "text-sub hover:text-ink"}`}
           >

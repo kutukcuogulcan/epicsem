@@ -36,7 +36,8 @@ body {
    prefers-reduced-motion'da her şey statik kalır.
    ------------------------------------------------------------------------------------ */
 html { scroll-behavior: smooth; }
-body { overflow-x: hidden; }
+/* hidden mobilde yatay kaydırmaya izin veriyordu (süs lekeleri, kayan şerit); clip kaydırma alanı da açmaz. */
+html, body { overflow-x: clip; }
 
 .full-bleed {
   width: 100vw;

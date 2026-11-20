@@ -15,6 +15,17 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
+    title: "Analiz",
+    items: [
+      { href: "/brand-monitors", label: "Marka Monitörleri", icon: "brandmon", badge: "YENİ" },
+      { href: "/geo", label: "GEO Görünürlük", icon: "geo" },
+      { href: "/gap", label: "Rakip Boşluğu", icon: "gap" },
+      { href: "/rankings", label: "Sıralama Takibi", icon: "rankings" },
+      { href: "/import", label: "Site Gezgini", icon: "import" },
+      { href: "/monitor", label: "Sayfa İzleme", icon: "monitor" },
+    ],
+  },
+  {
     title: "İçerik",
     items: [
       { href: "/editor", label: "Tüm Yazılar", icon: "editor" },
@@ -39,20 +50,9 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Otorite",
     items: [
       { href: "/backlinks", label: "Backlinkler", icon: "backlinks" },
-      { href: "/audit", label: "Site Optimizasyonu", icon: "audit" },
+      { href: "/audit", label: "Site Denetimi", icon: "audit" },
       { href: "/indexing", label: "URL İndeksleme", icon: "indexing", badge: "YENİ" },
       { href: "/bing", label: "Bing Webmaster", icon: "bing" },
-    ],
-  },
-  {
-    title: "Analiz",
-    items: [
-      { href: "/brand-monitors", label: "Marka Monitörleri", icon: "brandmon", badge: "YENİ" },
-      { href: "/geo", label: "GEO Görünürlük", icon: "geo" },
-      { href: "/gap", label: "Rakip Boşluğu", icon: "gap" },
-      { href: "/rankings", label: "Sıralama Takibi", icon: "rankings" },
-      { href: "/import", label: "Site Gezgini", icon: "import" },
-      { href: "/monitor", label: "Sayfa İzleme", icon: "monitor" },
     ],
   },
   {

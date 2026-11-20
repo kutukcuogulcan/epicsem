@@ -668,21 +668,36 @@ export default function GeoPage() {
       {loading && <RunProgress prompts={prompts.map((p) => p.text)} engines={engines} />}
 
       {(() => {
-        const T = [
-          { key: "overview", label: "Genel bakış" },
-          { key: "actions", label: "Aksiyon planı" },
-          { key: "impact", label: "Etki" },
-          { key: "prompts", label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null },
-          { key: "visibility", label: "Görünürlük" },
-          { key: "sentiment", label: "Duygu" },
-          { key: "sources", label: "Kaynaklar" },
-          { key: "urls", label: "URL'ler" },
-          { key: "rivals", label: "Rakipler", count: competitorRefs.length || null },
-          { key: "opportunities", label: "Fırsatlar" },
-          { key: "library", label: "Prompt kütüphanesi" },
-          { key: "entity", label: "Bilgi grafı" },
+        // 12 sekme 5 gruba indirildi (impeccable critique): grup sekmesi + gerekirse alt seçim.
+        const GROUPS = [
+          { label: "Özet", subs: [["overview", "Özet"]] },
+          { label: "Aksiyonlar", subs: [["actions", "Aksiyon planı"], ["opportunities", "Fırsatlar"], ["impact", "Etki"]] },
+          { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["library", "Prompt kütüphanesi"]] },
+          { label: "Rakipler ve kaynaklar", count: competitorRefs.length || null, subs: [["rivals", "Rakipler"], ["sources", "Kaynaklar"], ["urls", "URL'ler"]] },
+          { label: "Diğer", subs: [["visibility", "Görünürlük"], ["sentiment", "Duygu"], ["entity", "Bilgi grafı"]] },
         ] as const;
-        return <UnderlineTabs value={T.findIndex((t) => t.key === resultsTab)} onChange={(i) => setResultsTab(T[i].key)} tabs={T.map((t) => ({ label: t.label, count: "count" in t ? t.count : null }))} />;
+        const g = Math.max(0, GROUPS.findIndex((x) => x.subs.some(([k]) => k === resultsTab)));
+        return (
+          <>
+            <UnderlineTabs value={g} onChange={(i) => setResultsTab(GROUPS[i].subs[0][0])} tabs={GROUPS.map((x) => ({ label: x.label, count: "count" in x ? x.count : null }))} />
+            {GROUPS[g].subs.length > 1 && (
+              <div role="tablist" className="flex flex-wrap gap-1.5">
+                {GROUPS[g].subs.map(([k, l]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="tab"
+                    aria-selected={resultsTab === k}
+                    onClick={() => setResultsTab(k)}
+                    className={`h-8 rounded-[9px] px-3 text-[13px] font-medium ${resultsTab === k ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        );
       })()}
 
       {resultsTab === "overview" &&

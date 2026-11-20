@@ -22,6 +22,8 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
 
   useEffect(() => {
     setSearch(window.location.search);
+    // Aktif sayfa uzun menüde ekran dışında kalmasın.
+    requestAnimationFrame(() => document.querySelector('aside nav [aria-current="page"]')?.scrollIntoView({ block: "nearest" }));
   }, [pathname]);
   useEffect(() => {
     try {
@@ -60,7 +62,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
   const content = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-4 py-4 shrink-0">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-medium">
             E
           </span>
@@ -105,6 +107,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
                         setSearch(item.href.includes("?") ? `?${item.href.split("?")[1]}` : "");
                       }}
                       className={linkClass(active)}
+                      aria-current={active ? "page" : undefined}
                     >
                       <span className={active ? "text-ink" : "text-ink/55"}>{TOOL_ICONS[item.icon]}</span>
                       <span className="truncate">{item.label}</span>
@@ -153,7 +156,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
   return (
     <>
       <div className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-panel/90 backdrop-blur px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white text-sm font-medium">
             E
           </span>
