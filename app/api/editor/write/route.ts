@@ -8,7 +8,7 @@ import { getActiveProject, projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { rootHost } from "@/lib/backlinks";
-import { checkLinks, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "@/lib/article-enrich";
+import { checkLinks, comparisonBrief, wantsComparison, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "@/lib/article-enrich";
 
 export const maxDuration = 180;
 
@@ -65,16 +65,22 @@ export async function POST(req: NextRequest) {
   }
   // Kaynak araştırması (web araması, +1 AI sorgusu): doğrulanmış istatistikler + ilgili YouTube videosu.
   let research: ResearchResult | null = null;
+  const project = demo ? null : await getActiveProject(user.id, site).catch(() => null);
   if (!demo && b.research !== false) {
     const q = await checkQuota(user.id, "engineQueries", 1);
     if (q.allowed) {
-      research = await researchTopic(String(b.title ?? "").trim() || topic, language, { brand: brand.name, competitors: (await getActiveProject(user.id, site).catch(() => null))?.competitors ?? [] }).catch(() => null);
+      research = await researchTopic(String(b.title ?? "").trim() || topic, language, { brand: brand.name, competitors: project?.competitors ?? [] }).catch(() => null);
       if (research) {
         await consumeQuota(user.id, "engineQueries", 1).catch(() => {});
         const rb = researchBrief(research, language);
         if (rb) brief.push(rb);
       }
     }
+  }
+  // "Nasıl seçilir / en iyi / X mi Y mi" konularında rakiplerin kendi sitelerinden karşılaştırma tablosu.
+  if (!demo && wantsComparison(topic, research?.intent)) {
+    const cb = await comparisonBrief(brand, project?.competitors ?? [], language).catch(() => "");
+    if (cb) brief.push(cb);
   }
 
   try {

@@ -1,6 +1,8 @@
 import { runWebSearchPrompt } from "./competitor-discovery";
 import { extractJsonObject } from "./llm-json";
 import { statusOf } from "./audit-extra";
+import { fetchPageSummary } from "./content-fetch";
+import * as cheerio from "cheerio";
 import { getLatestCrawlPages } from "./db";
 import { safeFetch } from "@/lib/safe-fetch";
 import { appendSources, planLinks, relink, unlink } from "@/lib/link-check";
@@ -277,4 +279,79 @@ export async function checkLinks(md: string, opts: { known: string[]; labels?: R
     }
   });
   return { markdown: appendSources(out, opts.ownHost ?? "", opts.language, opts.labels), replaced, removed };
+}
+
+// ---- rakip karşılaştırma tablosu ----
+
+/** Okurun "hangisini seçeyim" diye sorduğu konular: karşılaştırma tablosu burada işe yarar. */
+export function wantsComparison(topic: string, intent?: string | null): boolean {
+  return /nasıl seçilir|en iyi|hangisi|karşılaştır|alternatif|\bvs\.?\b|\bmi\b.*\bmi\b|fiyat|best|compar|alternative|versus/i.test(topic) || /compar|commercial/i.test(intent ?? "");
+}
+
+/**
+ * Marka + rakiplerin KENDİ sitelerinden (ana sayfa ve varsa fiyat sayfası) okunan metinle karşılaştırma
+ * tablosu talimatı. Sitede yazmayan hücre "—" kalır; tablo altına tarih ve kaynak linkleri gelir.
+ */
+export async function comparisonBrief(brand: { name: string; domain: string }, competitors: { name: string; domain: string }[], language = "tr"): Promise<string> {
+  const firms = [brand, ...competitors.filter((c) => c.name && c.domain).slice(0, 3)];
+  if (firms.length < 2) return "";
+  const read = async (u: string) => {
+    try {
+      const p = await fetchPageSummary(u);
+      return p.bodyText ? p : null;
+    } catch {
+      return null;
+    }
+  };
+  // Fiyat sayfası: ana sayfadaki "Fiyatlar / Paketler" linki (adres siteden siteye değişiyor: /on-muhasebe-fiyatlari, /fiyat-listesi/…).
+  const pricingUrl = async (domain: string): Promise<string | null> => {
+    try {
+      const html = await (await safeFetch(`https://${domain}`, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemBot/1.0)" } }, { timeoutMs: 12_000 })).text();
+      const $ = cheerio.load(html);
+      for (const a of $("a[href]").toArray()) {
+        const href = $(a).attr("href") ?? "";
+        if (/fiyat|pricing|paket|ucret|ücret/i.test(`${href} ${$(a).text()}`)) {
+          const u = new URL(href, `https://${domain}`);
+          if (u.hostname.replace(/^www\./, "") === domain.replace(/^www\./, "")) return u.toString();
+        }
+      }
+    } catch {
+      /* ana sayfa okunamadı */
+    }
+    return null;
+  };
+  // Uzun sayfalarda fiyatlar kırpılan kısımda kalmasın: para birimi geçen bölümler önce.
+  const priceText = (t: string) => {
+    const parts: string[] = [];
+    for (const m of t.matchAll(/[^.]{0,120}(?:₺|\bTL\b|\$|€)[^.]{0,80}/g)) {
+      if (parts.join(" ").length > 1500) break;
+      if (!parts.includes(m[0].trim())) parts.push(m[0].trim());
+    }
+    return parts.length ? parts.join(" … ") : t.slice(0, 1500);
+  };
+  const pages = await Promise.all(
+    firms.map(async (f) => {
+      const [home, pUrl] = await Promise.all([read(`https://${f.domain}`), pricingUrl(f.domain)]);
+      let price = pUrl ? await read(pUrl) : null;
+      // Menüsü JavaScript ile gelen sitelerde link HTML'de yok: yaygın adresleri dene.
+      for (const path of ["/fiyatlar", "/fiyatlandirma", "/fiyat-listesi", "/paketler", "/pricing"]) {
+        if (price) break;
+        price = await read(`https://${f.domain}${path}`);
+      }
+      return { f, home, price };
+    })
+  );
+  const usable = pages.filter((p) => p.home || p.price);
+  if (usable.length < 2) return "";
+  const date = new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", { month: "long", year: "numeric" });
+  const blocks = usable.map(({ f, home, price }) =>
+    [`### ${f.name} (${f.domain})`, home ? `Home page (${home.url}): ${home.bodyText.slice(0, 1200)}` : "", price ? `Pricing page (${price.url}): ${priceText(price.bodyText)}` : ""].filter(Boolean).join("\n")
+  );
+  const links = usable.map(({ f, home, price }) => `[${f.name}](${(price ?? home)!.url})`).join(", ");
+  return `COMPARISON TABLE (required for this topic): in the section where the reader weighs the options, add ONE markdown table comparing ${usable.map((u) => u.f.name).join(", ")} on 4–6 criteria that matter for this topic (features, free trial, starting price…). First column = criterion, then one column per company with ${brand.name} first.
+- Fill every cell ONLY from that company's own page text below. If the text does not state it, write "—". Never guess a price, plan name or feature; copy prices exactly as written (with currency and period).
+- Be fair: do not mark a competitor worse than its page shows.
+- Directly under the table add this single italic line: "*${language === "tr" ? `Bilgiler ${date} itibarıyla firmaların kendi sitelerinden alınmıştır` : `Information taken from each company's own website as of ${date}`}: ${links}.*"
+COMPANY PAGES:
+${blocks.join("\n\n")}`;
 }

@@ -15,7 +15,7 @@ import { feedIsStale, refreshFeed } from "./feeds";
 import { addTableOfContents } from "./article-post";
 import { citabilityOfMarkdown } from "./citability";
 import { aiCover, brandedCover } from "./covers";
-import { checkLinks, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
+import { checkLinks, comparisonBrief, wantsComparison, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
 import { publishDraftToConnection } from "./publish-draft";
 import { isDemoMode } from "./geo-providers";
 import { fetchFeed, matchesFilter } from "./rss";
@@ -188,17 +188,19 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
         }
       }
       try {
+        const rivals = demoMode ? [] : ((await getActiveProject(campaign.userId, campaign.brandDomain).catch(() => null))?.competitors ?? []);
         // Kaynak araştırması (isteğe bağlı, +1 AI sorgusu): doğrulanmış istatistikler bilgi bloğuna eklenir.
         let research: ResearchResult | null = null;
         if (!demoMode && campaign.options.research) {
           const rq = await checkQuota(campaign.userId, "engineQueries", 1);
           if (rq.allowed) {
-            research = await researchTopic(t.label, campaign.options.language ?? "tr", { brand: campaign.brandName, competitors: (await getActiveProject(campaign.userId, campaign.brandDomain).catch(() => null))?.competitors ?? [] }).catch(() => null);
+            research = await researchTopic(t.label, campaign.options.language ?? "tr", { brand: campaign.brandName, competitors: rivals }).catch(() => null);
             if (research) await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
           }
         }
         const rb = researchBrief(research, campaign.options.language ?? "tr");
-        const article = await t.write(rb ? `${knowledge}\n\n${rb}` : knowledge);
+        const cb = !demoMode && wantsComparison(t.label, research?.intent) ? await comparisonBrief({ name: campaign.brandName, domain: campaign.brandDomain }, rivals, campaign.options.language ?? "tr").catch(() => "") : "";
+        const article = await t.write([knowledge, rb, cb].filter(Boolean).join("\n\n"));
         if (!demoMode) await consumeQuota(campaign.userId, "contentGenerations", 1);
         // Kalite kapısı: dolgu temizliği (ücretsiz) + puan düşükse bir kez AI düzeltmesi (yalnızca gerekirse +1 AI sorgusu).
         article.bodyMarkdown = polishMarkdown(article.bodyMarkdown);

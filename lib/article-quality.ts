@@ -54,7 +54,8 @@ export const needsRevision = (q: QualityReport) => q.issues.length > 0 && (q.ove
 export function finalizeArticleBody(title: string, md: string): string {
   const body = md
     .replace(/^\s*#\s+[^\n]*\n+/, "")
-    .replace(/^#\s+(?!#)/gm, "## ");
+    .replace(/^#\s+(?!#)/gm, "## ")
+    .replace(/^(\|.*\|)[ \t]*\n(?=[^|\s])/gm, "$1\n\n"); // tablo altındaki satır tabloya karışmasın
   return `# ${title.trim()}\n\n${body.trim()}`;
 }
 
