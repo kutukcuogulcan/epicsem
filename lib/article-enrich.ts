@@ -2,6 +2,7 @@ import { runWebSearchPrompt } from "./competitor-discovery";
 import { extractJsonObject } from "./llm-json";
 import { statusOf } from "./audit-extra";
 import { getLatestCrawlPages } from "./db";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Yazıyı "yayına hazır sayfa" yapan zenginleştirmeler (Arvow / Outrank / SEObot seviyesi):
@@ -198,7 +199,7 @@ export async function sitePagesForLinks(userId: number, site: string, max = 40):
   const origin = `https://${site.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}`;
   const locs = async (u: string) => {
     try {
-      const r = await fetch(u, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "EpicsemBot/1.0" } });
+      const r = await safeFetch(u, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "EpicsemBot/1.0" } });
       if (!r.ok) return [] as string[];
       return Array.from((await r.text()).matchAll(/<loc>\s*(?:<!\[CDATA\[)?\s*([^<\]\s]+)/gi)).map((m) => m[1]);
     } catch {

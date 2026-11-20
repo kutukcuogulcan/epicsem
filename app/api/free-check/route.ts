@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import { z } from "zod";
 import { runSeoAudit } from "@/lib/seo-audit";
+import { privateIp } from "@/lib/safe-fetch";
 import { getClientIp, rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { insightFor } from "@/lib/audit-insights";
 import type { SeoAuditResult } from "@/types";
@@ -35,11 +35,6 @@ export interface FreeCheckResult {
 
 const cache = new Map<string, { at: number; r: FreeCheckResult }>();
 
-function privateIp(ip: string): boolean {
-  if (isIP(ip) === 6) return ip === "::1" || /^f[cd]/i.test(ip) || /^fe80/i.test(ip) || ip.startsWith("::ffff:") && privateIp(ip.slice(7));
-  const [a, b] = ip.split(".").map(Number);
-  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
-}
 
 function summarize(host: string, r: SeoAuditResult): FreeCheckResult {
   const find = (re: RegExp) => r.issues.find((i) => re.test(i.title));

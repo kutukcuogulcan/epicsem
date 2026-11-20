@@ -10,6 +10,7 @@
  *    link listeleri.
  */
 import { rootHost, type RefDomain } from "@/lib/backlinks";
+import { safeFetch } from "@/lib/safe-fetch";
 
 const UA = "Mozilla/5.0 (compatible; EpicsemBacklinks/1.0; +https://epicsem.com)";
 const T = (ms: number) => AbortSignal.timeout(ms);
@@ -139,7 +140,7 @@ const isPublicHttp = (u: string) => {
 export async function pageLinksTo(url: string, host: string): Promise<boolean | null> {
   if (!isPublicHttp(url)) return null;
   try {
-    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "tr,en;q=0.8" }, redirect: "follow", signal: T(10_000) });
+    const r = await safeFetch(url, { headers: { "User-Agent": UA, "Accept-Language": "tr,en;q=0.8" }, redirect: "follow", signal: T(10_000) });
     if (!r.ok) return null;
     const html = (await r.text()).slice(0, 2_000_000).toLowerCase();
     if (html.length < 500) return null;

@@ -5,6 +5,7 @@ import {
   getFeed,
   getLatestGapRunBriefs,
   listUsedContentUrls,
+  claimCampaignRun,
   markCampaignRun,
   saveContentDraft,
   saveDraftCover,
@@ -50,7 +51,7 @@ export function isCampaignDue(campaign: Campaign): boolean {
 
 export interface CampaignRunResult {
   campaignId: number;
-  status: "generated" | "skipped-no-topic" | "skipped-quota" | "error";
+  status: "generated" | "skipped-no-topic" | "skipped-quota" | "skipped-busy" | "error";
   message: string;
   draftId?: number;
   url?: string;
@@ -155,12 +156,14 @@ async function nextTopics(campaign: Campaign, used: Set<string>, count: number):
   };
 }
 
-export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult> {
+export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } = {}): Promise<CampaignRunResult> {
   try {
+    const nextRun = computeNextRun(campaign);
+    if (!(await claimCampaignRun(campaign.id, nextRun, !!opts.cron)))
+      return { campaignId: campaign.id, status: "skipped-busy", message: "Bu autoblog şu an çalışıyor ya da az önce çalıştı. Birkaç dakika sonra tekrar dene." };
     const used = await listUsedContentUrls(campaign.userId);
     const want = Math.max(1, Math.min(3, campaign.postsPerRun || 1));
     const { topics, emptyReason } = await nextTopics(campaign, used, want);
-    const nextRun = computeNextRun(campaign);
     if (topics.length === 0) {
       await markCampaignRun(campaign.id, emptyReason, nextRun);
       return { campaignId: campaign.id, status: "skipped-no-topic", message: emptyReason };
@@ -224,7 +227,7 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
         const coverKind = campaign.options.cover ?? "none";
         if (coverKind !== "none") {
           try {
-            const ai = coverKind === "ai" ? await aiCover(article.title, campaign.brandName) : null;
+            const ai = coverKind === "ai" && (demoMode || (await checkQuota(campaign.userId, "contentGenerations", 1)).allowed) ? await aiCover(article.title, campaign.brandName) : null;
             if (ai) {
               await saveDraftCover(campaign.userId, draft.id, "ai", ai.mime, ai.data);
               if (!demoMode) await consumeQuota(campaign.userId, "contentGenerations", 1);

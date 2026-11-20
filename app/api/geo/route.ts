@@ -16,7 +16,7 @@ import { getPreviousGeoRun, listGeoRunHistory, saveGeoRun } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -65,18 +65,24 @@ export async function POST(req: NextRequest) {
   // nothing, so it isn't metered. See lib/plans.ts for why there's no payment step here.
   const plannedQueries = prompts.length * configuredEngines(engines as EngineId[]).length;
   if (!demoMode) {
-    const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
+    const quota = await reserveQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, plannedQueries) }, { status: 402 });
     }
   }
 
-  const allRuns = (
-    await Promise.all(
-      prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines as EngineId[], p.topic))
-    )
-  ).flat();
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
+  let allRuns: Awaited<ReturnType<typeof runPromptAcrossEngines>>;
+  try {
+    allRuns = (
+      await Promise.all(
+        prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines as EngineId[], p.topic))
+      )
+    ).flat();
+  } catch (e) {
+    if (!demoMode) await refundQuota(user.id, "engineQueries", plannedQueries);
+    throw e;
+  }
+  if (!demoMode) await refundQuota(user.id, "engineQueries", plannedQueries - allRuns.length); // sadece gerçekten cevap gelen sorgular sayılır
 
   // Hangi motorlar çalışmadı? (anahtar yok ya da sağlayıcı hata/kredi bitti) — kullanıcıya açıkça söylenir.
   const ENGINE_NAMES: Record<string, string> = { openai: "ChatGPT", anthropic: "Claude", google: "Gemini", perplexity: "Perplexity", deepseek: "DeepSeek", xai: "Grok", meta: "Meta AI", microsoft: "Copilot" };

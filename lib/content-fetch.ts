@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Small shared "fetch a real page, extract just enough text to ground a prompt" helper
@@ -53,7 +54,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number = FETCH_TIMEOUT_M
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, {
+    return await safeFetch(url, {
       signal: controller.signal,
       redirect: "follow",
       headers: { "User-Agent": "Mozilla/5.0 (compatible; GeoSeoContentHubBot/0.1; +https://example.com/bot)" },

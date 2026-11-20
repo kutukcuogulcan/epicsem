@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /** GET /api/indexing/sitemap?url= — site haritasındaki URL'leri okur (sitemap index'leri bir seviye açılır). */
 export async function GET(req: NextRequest) {
@@ -17,11 +18,11 @@ export async function GET(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Geçersiz adres." }, { status: 400 });
   }
-  if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.)/.test(u.hostname) || !u.hostname.includes(".")) return NextResponse.json({ error: "Geçersiz adres." }, { status: 400 });
+  if (!u.hostname.includes(".")) return NextResponse.json({ error: "Geçersiz adres." }, { status: 400 });
   const start = /\.xml(\.gz)?$/i.test(u.pathname) ? u.toString() : `${u.origin}/sitemap.xml`;
 
   const get = async (url: string) => {
-    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemIndexer/1.0)" }, signal: AbortSignal.timeout(15_000), redirect: "follow" });
+    const r = await safeFetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemIndexer/1.0)" }, signal: AbortSignal.timeout(15_000), redirect: "follow" });
     if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
     return r.text();
   };

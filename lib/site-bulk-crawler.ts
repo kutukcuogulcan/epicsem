@@ -4,6 +4,7 @@ import { parseRobotsTxt, isBotAllowed } from "./robots";
 import { AI_BOTS } from "./ai-bots";
 import type { BulkCrawlAssets, BulkImportResult, BulkPageMetrics } from "@/types";
 import { buildBulkResult, type RawBulkRow } from "@/lib/bulk-analysis";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Epicsem'in kendi tüm-site tarayıcısı — harici bir masaüstü crawler'ı (CSV dışa aktarımı)
@@ -30,7 +31,7 @@ async function get(url: string, timeoutMs = PAGE_TIMEOUT_MS, redirect: RequestRe
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), timeoutMs);
   try {
-    return await fetch(url, { signal: c.signal, redirect, headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" } });
+    return await safeFetch(url, { signal: c.signal, redirect, headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" } });
   } finally {
     clearTimeout(t);
   }
@@ -547,7 +548,7 @@ async function headStatus(u: string): Promise<{ status: number; kb: number | nul
     const c = new AbortController();
     const t = setTimeout(() => c.abort(), 6000);
     try {
-      const r = await fetch(u, { method, signal: c.signal, redirect: "follow", headers: { "User-Agent": UA } });
+      const r = await safeFetch(u, { method, signal: c.signal, redirect: "follow", headers: { "User-Agent": UA } });
       const len = Number(r.headers.get("content-length"));
       if (method === "GET") r.body?.cancel().catch(() => {});
       return { status: r.status, kb: Number.isFinite(len) && len > 0 ? Math.round(len / 102.4) / 10 : null };

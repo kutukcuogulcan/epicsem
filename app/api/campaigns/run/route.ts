@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   const results = [];
   for (const campaign of campaigns) {
-    results.push(await runCampaign(campaign));
+    results.push(await runCampaign(campaign, { cron: isCron }));
   }
 
   return NextResponse.json({ results });

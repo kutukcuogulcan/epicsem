@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { runFast } from "@/lib/geo-providers";
 import { runForJsonObject } from "@/lib/llm-json";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 /**
  * Küçük, tek seferlik AI çağrıları için ortak koruma: giriş, saatlik sınır, kota kontrolü
@@ -18,15 +18,19 @@ export async function guardSmallAi(key: string, perHour = 20): Promise<{ userId:
 }
 
 export async function runSmallAiJson(userId: number, prompt: string): Promise<Record<string, any>> {
-  const quota = await checkQuota(userId, "engineQueries", 1);
+  const quota = await reserveQuota(userId, "engineQueries", 1);
   if (!quota.allowed) throw new QuotaError(quotaExceededMessage("engineQueries", quota, 1));
-  const { parsed } = await runForJsonObject(async (extra) => {
-    const r = await runFast(prompt + extra, 0.4);
-    if (!r) throw new Error("Yapay zekâ sağlayıcısı bağlı değil.");
-    return r;
-  });
-  await consumeQuota(userId, "engineQueries", 1);
-  return parsed;
+  try {
+    const { parsed } = await runForJsonObject(async (extra) => {
+      const r = await runFast(prompt + extra, 0.4);
+      if (!r) throw new Error("Yapay zekâ sağlayıcısı bağlı değil.");
+      return r;
+    });
+    return parsed;
+  } catch (e) {
+    await refundQuota(userId, "engineQueries", 1);
+    throw e;
+  }
 }
 
 export class QuotaError extends Error {}

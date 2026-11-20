@@ -1,7 +1,7 @@
 import type { EngineId } from "@/types";
 import { runPromptAcrossEngines } from "@/lib/geo-engine";
 import { configuredEngines, isDemoMode } from "@/lib/geo-providers";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 import { runSmallAiJson } from "@/lib/ai-small";
 import { brandMentioned, trLower } from "@/lib/text-match";
 import type { ImpactCheck, ImpactResult, ImpactTrack } from "@/lib/db";
@@ -99,14 +99,20 @@ export async function measureImpact(
     e.status = 400;
     throw e;
   }
-  const quota = await checkQuota(userId, "engineQueries", planned);
+  const quota = await reserveQuota(userId, "engineQueries", planned);
   if (!quota.allowed) {
     const e = new Error(quotaExceededMessage("engineQueries", quota, planned)) as Error & { status?: number };
     e.status = 402;
     throw e;
   }
-  const runs = (await Promise.all(t.prompts.map((p) => runPromptAcrossEngines(p.text, t.brand, t.competitors, engines)))).flat();
-  await consumeQuota(userId, "engineQueries", runs.length);
+  let runs: Awaited<ReturnType<typeof runPromptAcrossEngines>>;
+  try {
+    runs = (await Promise.all(t.prompts.map((p) => runPromptAcrossEngines(p.text, t.brand, t.competitors, engines)))).flat();
+  } catch (e) {
+    await refundQuota(userId, "engineQueries", planned);
+    throw e;
+  }
+  await refundQuota(userId, "engineQueries", planned - runs.length);
   const results: ImpactResult[] = runs.map((r) => ({
     prompt: r.promptText,
     engine: r.engine,

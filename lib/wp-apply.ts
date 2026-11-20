@@ -1,4 +1,5 @@
 import { brandedCover } from "./covers";
+import { safeFetch } from "@/lib/safe-fetch";
 /**
  * Site Taraması → "WordPress'e uygula". AI kullanmaz; sadece WordPress REST API'ye yazar.
  *  - Sayfa/yazı başlığı (H1)  → çekirdek: title
@@ -26,7 +27,7 @@ const auth = (u: string, p: string) => "Basic " + Buffer.from(`${u}:${p}`).toStr
 const norm = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/[?#].*$/, "").replace(/\/+$/, "").toLowerCase();
 
 async function wp(base: string, a: string, path: string, init: RequestInit = {}) {
-  const res = await fetch(`${base}/wp-json${path}`, {
+  const res = await safeFetch(`${base}/wp-json${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", Authorization: a, ...(init.headers ?? {}) },
     signal: AbortSignal.timeout(20_000),
@@ -41,7 +42,7 @@ async function wp(base: string, a: string, path: string, init: RequestInit = {})
 
 export async function wpPluginInstalled(siteUrl: string): Promise<boolean> {
   try {
-    const r = await fetch(`${siteUrl.replace(/\/+$/, "")}/wp-json/epicsem/v1/ping`, { signal: AbortSignal.timeout(10_000) });
+    const r = await safeFetch(`${siteUrl.replace(/\/+$/, "")}/wp-json/epicsem/v1/ping`, { signal: AbortSignal.timeout(10_000) });
     return r.ok && !!(await r.json())?.ok;
   } catch {
     return false;
@@ -120,7 +121,7 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
   if (item && f.ogImage) {
     try {
       const png = await (f.renderOg ?? brandedCover)(f.ogImage.title, f.ogImage.brand, f.ogImage.domain);
-      const up = await fetch(`${base}/wp-json/wp/v2/media`, {
+      const up = await safeFetch(`${base}/wp-json/wp/v2/media`, {
         method: "POST",
         headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="paylasim-${item.id}.png"`, Authorization: a },
         body: new Uint8Array(png),
@@ -170,7 +171,7 @@ export async function applyFixesToWordpress(params: { siteUrl: string; username:
 export async function wpIndexNowKey(siteUrl: string, username: string, appPassword: string): Promise<string | null> {
   try {
     const base = siteUrl.trim().replace(/\/+$/, "");
-    const r = await fetch(`${base}/wp-json/epicsem/v1/indexnow`, { headers: { Authorization: auth(username, appPassword) }, signal: AbortSignal.timeout(10_000) });
+    const r = await safeFetch(`${base}/wp-json/epicsem/v1/indexnow`, { headers: { Authorization: auth(username, appPassword) }, signal: AbortSignal.timeout(10_000) });
     if (!r.ok) return null;
     const j = await r.json().catch(() => null);
     return typeof j?.key === "string" && /^[a-zA-Z0-9-]{8,128}$/.test(j.key) ? j.key : null;

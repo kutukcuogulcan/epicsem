@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { listCitationStatus, setCitationStatus } from "@/lib/db";
 import { rootHost } from "@/lib/backlinks";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * POST { site, dirId? } — profil sayfasında sitene link var mı? Sayfayı çekip site adresini arar.
@@ -13,7 +14,7 @@ const NOT_VERIFIABLE = new Set(["facebook", "instagram", "linkedin", "x", "googl
 
 async function hasLink(listingUrl: string, host: string): Promise<boolean | null> {
   try {
-    const r = await fetch(listingUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemLinkCheck/1.0)", "Accept-Language": "tr,en;q=0.8" }, redirect: "follow", signal: AbortSignal.timeout(15_000) });
+    const r = await safeFetch(listingUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemLinkCheck/1.0)", "Accept-Language": "tr,en;q=0.8" }, redirect: "follow", signal: AbortSignal.timeout(15_000) });
     if (!r.ok) return null;
     const html = (await r.text()).toLowerCase();
     if (html.length < 200) return null;

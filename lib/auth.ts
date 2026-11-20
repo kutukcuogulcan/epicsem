@@ -88,6 +88,8 @@ export async function signup(email: string, password: string, name?: string): Pr
 
 export async function login(email: string, password: string): Promise<AuthUser> {
   const normalized = email.trim().toLowerCase();
+  // Demo şifresi kodda açık; açık erişim kapalıyken demo hesabına girilemesin.
+  if (normalized === DEMO_EMAIL && !isOpenAccessEnabled()) throw new Error("E-posta veya şifre hatalı");
   const user = await findUserByEmail(normalized);
   if (!user || !verifyPassword(password, user.passwordHash)) {
     throw new Error("E-posta veya şifre hatalı");

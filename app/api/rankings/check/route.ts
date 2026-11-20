@@ -17,7 +17,11 @@ export async function POST(req: NextRequest) {
   let list: RankKeyword[];
   if (isCron) {
     const cutoff = Date.now() - 20 * 3600e3;
-    list = (await listAllRankKeywords()).filter((k) => !k.lastCheckedAt || new Date(k.lastCheckedAt).getTime() < cutoff).slice(0, 400);
+    // Önce taranamayacakları (SerpBear, anahtarsız kullanıcı) ele, sonra kırp: aksi halde onlar ilk 400'ü kalıcı olarak doldurur.
+    const stale = (await listAllRankKeywords()).filter((k) => k.source !== "serpbear" && (!k.lastCheckedAt || new Date(k.lastCheckedAt).getTime() < cutoff));
+    const hasKey = new Map<number, boolean>();
+    for (const uid of new Set(stale.map((k) => k.userId))) hasKey.set(uid, Boolean(await serpKeyFor(uid)));
+    list = stale.filter((k) => hasKey.get(k.userId)).slice(0, 400);
   } else {
     const user = await requireUser();
     if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });

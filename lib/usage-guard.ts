@@ -1,4 +1,4 @@
-import { getUsageCount, getUserPlan, incrementUsage } from "@/lib/db";
+import { getUsageCount, getUserPlan, incrementUsage, tryIncrementUsage } from "@/lib/db";
 import { limitsForPlan, type UsageMetric } from "@/lib/plans";
 
 /**
@@ -25,6 +25,22 @@ export async function checkQuota(userId: number, metric: UsageMetric, amount: nu
 
 export async function consumeQuota(userId: number, metric: UsageMetric, amount: number) {
   await incrementUsage(userId, metric, amount);
+}
+
+/**
+ * İşten ÖNCE kotayı ayırır (atomik). Paralel istekler birlikte limiti aşamaz.
+ * Kullanılmayan kısım refundQuota ile geri verilir; ayrıca consumeQuota çağrılmaz.
+ */
+export async function reserveQuota(userId: number, metric: UsageMetric, amount: number): Promise<QuotaCheck> {
+  const plan = await getUserPlan(userId);
+  const limit = limitsForPlan(plan)[metric];
+  const after = await tryIncrementUsage(userId, metric, amount, limit);
+  if (after != null) return { allowed: true, used: after - amount, limit, plan };
+  return { allowed: false, used: await getUsageCount(userId, metric), limit, plan };
+}
+
+export async function refundQuota(userId: number, metric: UsageMetric, amount: number) {
+  if (amount > 0) await incrementUsage(userId, metric, -amount);
 }
 
 const METRIC_LABEL: Record<UsageMetric, string> = {

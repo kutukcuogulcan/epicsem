@@ -1,5 +1,6 @@
 import type { CheerioAPI } from "cheerio";
 import type { SeoIssueResult } from "@/types";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Site Denetimi ek kontrolleri — tamamı kural tabanlı, yapay zekâ kullanmaz:
@@ -10,7 +11,7 @@ import type { SeoIssueResult } from "@/types";
 const UA = "Mozilla/5.0 (compatible; GeoSeoAuditBot/0.1; +https://example.com/bot)";
 
 async function fetchT(url: string, ms: number, init?: RequestInit) {
-  return fetch(url, { redirect: "manual", ...init, signal: AbortSignal.timeout(ms), headers: { "User-Agent": UA, ...(init?.headers ?? {}) } });
+  return safeFetch(url, { redirect: "manual", ...init, signal: AbortSignal.timeout(ms), headers: { "User-Agent": UA, ...(init?.headers ?? {}) } });
 }
 
 /** URL'nin durum kodunu döndürür (HEAD, desteklenmezse GET). Ağ hatasında 0. */
@@ -270,7 +271,7 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
   let xml = "";
   for (const c of candidates.slice(0, 4)) {
     try {
-      const r = await fetch(c, { signal: AbortSignal.timeout(10000), headers: { "User-Agent": UA } });
+      const r = await safeFetch(c, { signal: AbortSignal.timeout(10000), headers: { "User-Agent": UA } });
       if (r.ok) {
         const t = await r.text();
         if (/<(urlset|sitemapindex)/i.test(t)) {
@@ -309,7 +310,7 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
       .slice(0, 3);
     for (const c of children) {
       try {
-        const r = await fetch(c, { signal: AbortSignal.timeout(10000), headers: { "User-Agent": UA } });
+        const r = await safeFetch(c, { signal: AbortSignal.timeout(10000), headers: { "User-Agent": UA } });
         if (r.ok) urls.push(...locs(await r.text()));
       } catch {
         /* geç */
@@ -363,7 +364,7 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
 
 export async function auditLlmsTxt(origin: string): Promise<{ issues: SeoIssueResult[]; found: boolean }> {
   try {
-    const r = await fetch(`${origin}/llms.txt`, { signal: AbortSignal.timeout(7000), headers: { "User-Agent": UA } });
+    const r = await safeFetch(`${origin}/llms.txt`, { signal: AbortSignal.timeout(7000), headers: { "User-Agent": UA } });
     const t = r.ok ? await r.text() : "";
     const found = r.ok && t.trim().length > 20 && !/<html/i.test(t.slice(0, 500));
     return {

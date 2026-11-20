@@ -4,6 +4,7 @@ import { isBotAllowed, parseRobotsTxt } from "./robots";
 import { generateFaqSchema, generateMetaDescription, generateOrganizationSchema } from "./fix-generator";
 import { auditEeat, auditImages, auditLinks, auditLlmsTxt, auditSitemap, validateSchema } from "./audit-extra";
 import type { AiBotAccess, GeneratedFix, IssueCategory, IssueSeverity, SeoAuditResult, SeoIssueResult } from "@/types";
+import { safeFetch } from "@/lib/safe-fetch";
 
 const FETCH_TIMEOUT_MS = 12000;
 
@@ -11,7 +12,7 @@ async function fetchWithTimeout(url: string, init?: RequestInit) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, {
+    return await safeFetch(url, {
       ...init,
       signal: controller.signal,
       headers: {

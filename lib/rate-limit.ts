@@ -64,7 +64,8 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
  */
 export function getClientIp(req: NextRequest): string {
   const forwardedFor = req.headers.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  // Son değer, Render'ın proxy'sinin eklediği gerçek IP; ilk değerleri istemci istediği gibi yazabilir.
+  if (forwardedFor) return forwardedFor.split(",").at(-1)!.trim();
   const realIp = req.headers.get("x-real-ip");
   if (realIp) return realIp;
   return "unknown";

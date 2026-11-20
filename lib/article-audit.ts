@@ -3,6 +3,7 @@ import * as cheerio from "cheerio";
 import { analyzePassages, citInputFromHtml, passagesFromHtml, scoreCitability, type CitabilityResult, type PassageReport } from "./citability";
 import type { ArticleAuditResult } from "@/types";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Article Writer's engine. Two strict steps, never mixed:
@@ -31,7 +32,7 @@ async function fetchWithTimeout(url: string) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, {
+    return await safeFetch(url, {
       signal: controller.signal,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; GeoSeoArticleWriterBot/0.1; +https://example.com/bot)" },
     });

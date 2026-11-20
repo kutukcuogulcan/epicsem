@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { normalizeUrl } from "@/lib/content-fetch";
 import { domainFromUrl } from "@/lib/brand-discovery";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Kart: Hızlı ve kapsamlı tarama.
@@ -71,7 +72,7 @@ async function fetchRaw(url: string, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { signal: controller.signal, redirect: "follow", headers: { "User-Agent": CRAWLER_UA } });
+    return await safeFetch(url, { signal: controller.signal, redirect: "follow", headers: { "User-Agent": CRAWLER_UA } });
   } finally {
     clearTimeout(timer);
   }

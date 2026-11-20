@@ -30,10 +30,7 @@ import { citabilityOfMarkdown } from "@/lib/citability";
  * is safe to query without a user id in hand.
  */
 
-// Bumping this drops and recreates every table — safe pre-launch (no real customer
-// data yet) and much simpler than hand-rolling ALTER TABLE migrations for a schema
-// that's still moving. Once there's real customer data, migrations need to become
-// additive (ALTER TABLE ADD COLUMN) instead of this reset.
+// Yalnızca bilgi amaçlı kaydedilir; artırmak artık hiçbir tabloyu silmez.
 const SCHEMA_VERSION = 6;
 
 let pool: Pool | null = null;
@@ -81,7 +78,13 @@ let schemaReady: Promise<void> | null = null;
 
 /** Every exported function calls this first — cheap after the first call (cached promise). */
 function ensureSchema(): Promise<void> {
-  if (!schemaReady) schemaReady = initSchema().then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)));
+  if (!schemaReady)
+    schemaReady = initSchema()
+      .then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)))
+      .catch((e) => {
+        schemaReady = null; // bir sonraki istek yeniden denesin; geçici bir bağlantı hatası siteyi restart'a kadar düşürmesin
+        throw e;
+      });
   return schemaReady;
 }
 
@@ -119,26 +122,8 @@ async function migrateGeoSummariesV2(): Promise<void> {
 async function initSchema(): Promise<void> {
   const p = getPool();
   await p.query(`CREATE TABLE IF NOT EXISTS _meta (k TEXT PRIMARY KEY, v TEXT)`);
-  const versionRow = await one<{ v: string }>(`SELECT v FROM _meta WHERE k = 'schema_version'`);
-  const currentVersion = versionRow ? Number(versionRow.v) : 0;
 
-  if (currentVersion < SCHEMA_VERSION) {
-    await p.query(`
-      DROP TABLE IF EXISTS alerts;
-      DROP TABLE IF EXISTS monitor_checks;
-      DROP TABLE IF EXISTS monitored_pages;
-      DROP TABLE IF EXISTS gap_runs;
-      DROP TABLE IF EXISTS geo_runs;
-      DROP TABLE IF EXISTS audit_runs;
-      DROP TABLE IF EXISTS import_runs;
-      DROP TABLE IF EXISTS cms_connections;
-      DROP TABLE IF EXISTS content_drafts;
-      DROP TABLE IF EXISTS usage_counters;
-      DROP TABLE IF EXISTS clients;
-      DROP TABLE IF EXISTS sessions;
-      DROP TABLE IF EXISTS users;
-    `);
-  }
+  // Gerçek kullanıcı verisi var: tablolar asla silinmez. Şema değişikliği yalnızca ekleyerek yapılır (ADD COLUMN IF NOT EXISTS).
 
   await p.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -1798,6 +1783,22 @@ export async function incrementUsage(userId: number, metric: string, amount: num
   );
 }
 
+/**
+ * Atomik ayırma: sayaç + amount <= limit ise ekler ve yeni değeri döndürür, değilse null.
+ * Satır kilidi sayesinde aynı anda gelen istekler limiti birlikte aşamaz.
+ */
+export async function tryIncrementUsage(userId: number, metric: string, amount: number, limit: number, period: string = currentUsagePeriod()): Promise<number | null> {
+  await ensureSchema();
+  const row = await one<{ count: number }>(
+    `INSERT INTO usage_counters (user_id, period, metric, count) SELECT $1::int, $2::text, $3::text, $4::int WHERE $4::int <= $5::int
+     ON CONFLICT (user_id, period, metric) DO UPDATE SET count = usage_counters.count + excluded.count, updated_at = now()
+     WHERE usage_counters.count + excluded.count <= $5::int
+     RETURNING count`,
+    [userId, period, metric, amount, limit]
+  );
+  return row ? row.count : null;
+}
+
 // ---------------- billing (Stripe) ----------------
 
 export interface BillingInfo {
@@ -2052,6 +2053,23 @@ export async function setCampaignStatus(userId: number, id: number, status: Camp
 export async function deleteCampaign(userId: number, id: number): Promise<void> {
   await ensureSchema();
   await exec(`DELETE FROM campaigns WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+/**
+ * Çalıştırmadan önce autoblog'u atomik olarak "aldım" diye işaretler; başka bir çalışma (çift tık,
+ * cron + manuel) aynı anda giremez. Zaman başta yazıldığı için yarıda kalan çalışma (deploy) tekrar
+ * aynı yazıları üretmez. cron=true iken güncel next_run_at ile vaktinin gelip gelmediğine de bakar.
+ */
+export async function claimCampaignRun(id: number, nextRunAt: Date, cron: boolean): Promise<boolean> {
+  await ensureSchema();
+  const row = await one<{ id: number }>(
+    `UPDATE campaigns SET last_run_at = now(), next_run_at = $2
+     WHERE id = $1 AND (last_run_at IS NULL OR last_run_at < now() - interval '10 minutes')
+       AND (NOT $3::boolean OR next_run_at IS NULL OR next_run_at <= now() + interval '30 minutes')
+     RETURNING id`,
+    [id, nextRunAt, cron]
+  );
+  return !!row;
 }
 
 export async function markCampaignRun(id: number, note: string, nextRunAt?: Date | null): Promise<void> {

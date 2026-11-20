@@ -1,4 +1,5 @@
 import { runSeoAudit } from "./seo-audit";
+import { safeFetch } from "@/lib/safe-fetch";
 import {
   createAlert,
   getLatestMonitorCheck,
@@ -65,7 +66,7 @@ async function sendSlackAlert(pageWebhook: string | null, message: string) {
   const webhookUrl = pageWebhook || process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) return;
   try {
-    await fetch(webhookUrl, {
+    await safeFetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: `Epicsem AXO alert — ${message}` }),

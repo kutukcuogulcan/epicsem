@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { runFast } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
 import { knowledgeBlock } from "@/lib/knowledge-prompt";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Site Taraması'ndaki tek bir sayfa için somut düzeltme önerisi: sayfanın GERÇEK içeriğinden
@@ -35,7 +36,7 @@ export async function suggestPageFix(url: string, issues: string[], knowledge = 
   const t = setTimeout(() => c.abort(), 12000);
   let html: string;
   try {
-    const res = await fetch(url, { signal: c.signal, redirect: "follow", headers: { "User-Agent": UA } });
+    const res = await safeFetch(url, { signal: c.signal, redirect: "follow", headers: { "User-Agent": UA } });
     if (!res.ok) throw new Error(`Sayfa ${res.status} döndürdü`);
     html = await res.text();
   } catch (e) {

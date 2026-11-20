@@ -1,4 +1,5 @@
 import { slugify } from "./article-post";
+import { safeFetch } from "@/lib/safe-fetch";
 /**
  * WordPress REST API integration — the one CMS target for now (by far the most common
  * one agencies' clients run). Publishing ALWAYS creates a `status: "draft"` post, never
@@ -30,7 +31,7 @@ export interface WpTestResult {
 export async function testWpConnection(siteUrl: string, username: string, appPassword: string): Promise<WpTestResult> {
   const base = normalizeBase(siteUrl);
   try {
-    const res = await fetch(`${base}/wp-json/wp/v2/users/me`, {
+    const res = await safeFetch(`${base}/wp-json/wp/v2/users/me`, {
       headers: { Authorization: authHeader(username, appPassword) },
       signal: AbortSignal.timeout(15_000),
     });
@@ -167,7 +168,7 @@ export async function publishDraftToWordpress(params: {
   if (params.cover) {
     try {
       const ext = params.cover.mime.includes("png") ? "png" : "jpg";
-      const m = await fetch(`${base}/wp-json/wp/v2/media`, {
+      const m = await safeFetch(`${base}/wp-json/wp/v2/media`, {
         method: "POST",
         headers: {
           "Content-Type": params.cover.mime,
@@ -182,7 +183,7 @@ export async function publishDraftToWordpress(params: {
       /* kapak yüklenemezse yazıyı kapaksız gönder */
     }
   }
-  const res = await fetch(`${base}/wp-json/wp/v2/posts`, {
+  const res = await safeFetch(`${base}/wp-json/wp/v2/posts`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

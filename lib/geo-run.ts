@@ -2,7 +2,7 @@ import type { EngineId } from "@/types";
 import { computeShareOfVoice, computeSourceDistribution, computeUrlStats, runPromptAcrossEngines, summarizeByTopic, summarizeVisibility } from "@/lib/geo-engine";
 import { isDemoMode, configuredEngines } from "@/lib/geo-providers";
 import { saveGeoRun } from "@/lib/db";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 export interface GeoRunInput {
   brand: { name: string; domain: string };
@@ -20,15 +20,21 @@ export async function executeGeoRun(userId: number, input: GeoRunInput) {
   const demoMode = isDemoMode();
   const planned = prompts.length * configuredEngines(engines).length;
   if (!demoMode) {
-    const quota = await checkQuota(userId, "engineQueries", planned);
+    const quota = await reserveQuota(userId, "engineQueries", planned);
     if (!quota.allowed) {
       const err = new Error(quotaExceededMessage("engineQueries", quota, planned)) as Error & { status?: number };
       err.status = 402;
       throw err;
     }
   }
-  const allRuns = (await Promise.all(prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines, p.topic)))).flat();
-  if (!demoMode) await consumeQuota(userId, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
+  let allRuns: Awaited<ReturnType<typeof runPromptAcrossEngines>>;
+  try {
+    allRuns = (await Promise.all(prompts.map((p) => runPromptAcrossEngines(p.text, brand, competitors, engines, p.topic)))).flat();
+  } catch (e) {
+    if (!demoMode) await refundQuota(userId, "engineQueries", planned);
+    throw e;
+  }
+  if (!demoMode) await refundQuota(userId, "engineQueries", planned - allRuns.length); // sadece gerçekten cevap gelen sorgular sayılır
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))

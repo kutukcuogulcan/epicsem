@@ -1,3 +1,4 @@
+import { safeFetch } from "@/lib/safe-fetch";
 /**
  * Shopify Admin API integration — mirrors lib/wordpress.ts's shape and its central product
  * decision: publishing ALWAYS creates an unpublished (draft) blog article, never a live
@@ -31,7 +32,7 @@ export interface ShopifyTestResult {
 
 export async function testShopifyConnection(shopDomain: string, accessToken: string): Promise<ShopifyTestResult> {
   try {
-    const res = await fetch(`${apiBase(shopDomain)}/shop.json`, {
+    const res = await safeFetch(`${apiBase(shopDomain)}/shop.json`, {
       headers: { "X-Shopify-Access-Token": accessToken },
       signal: AbortSignal.timeout(15_000),
     });
@@ -105,12 +106,12 @@ interface ShopifyBlog {
  * first blog found, creating one named "Blog" if the store has none yet. */
 async function resolveBlogId(base: string, accessToken: string): Promise<ShopifyBlog> {
   const headers = { "X-Shopify-Access-Token": accessToken, "Content-Type": "application/json" };
-  const listRes = await fetch(`${base}/blogs.json?limit=1`, { headers, signal: AbortSignal.timeout(15_000) });
+  const listRes = await safeFetch(`${base}/blogs.json?limit=1`, { headers, signal: AbortSignal.timeout(15_000) });
   if (!listRes.ok) throw new Error(`Shopify blog listesi alınamadı: HTTP ${listRes.status}`);
   const listData = await listRes.json();
   if (Array.isArray(listData.blogs) && listData.blogs.length > 0) return listData.blogs[0];
 
-  const createRes = await fetch(`${base}/blogs.json`, {
+  const createRes = await safeFetch(`${base}/blogs.json`, {
     method: "POST",
     headers,
     body: JSON.stringify({ blog: { title: "Blog" } }),
@@ -145,7 +146,7 @@ export async function publishDraftToShopify(params: {
 
   const blog = await resolveBlogId(base, params.accessToken);
 
-  const res = await fetch(`${base}/blogs/${blog.id}/articles.json`, {
+  const res = await safeFetch(`${base}/blogs/${blog.id}/articles.json`, {
     method: "POST",
     headers,
     body: JSON.stringify({

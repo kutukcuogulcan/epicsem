@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * IndexNow — yeni/güncellenen URL'leri katılımcı arama motorlarına (Bing, Yandex, Seznam,
@@ -16,7 +17,7 @@ export async function verifyKeyFile(siteUrl: string, key: string): Promise<{ ok:
   const origin = new URL(siteUrl).origin;
   const url = `${origin}/${key}.txt`;
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(12_000), redirect: "follow", headers: { "User-Agent": "EpicsemIndexNow/1.0" } });
+    const r = await safeFetch(url, { signal: AbortSignal.timeout(12_000), redirect: "follow", headers: { "User-Agent": "EpicsemIndexNow/1.0" } });
     if (!r.ok) return { ok: false, url, detail: `Anahtar dosyası bulunamadı (HTTP ${r.status}).` };
     const t = (await r.text()).trim();
     return t.includes(key) ? { ok: true, url, detail: "Anahtar dosyası doğrulandı." } : { ok: false, url, detail: "Dosya var ama içinde anahtar yazmıyor." };

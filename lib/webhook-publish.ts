@@ -1,5 +1,6 @@
 import { createHmac } from "crypto";
 import { markdownToHtml } from "@/lib/wordpress";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * "Webhook / Zapier / Make" yayın bağlantısı — Wix, Webflow, Ghost, Framer, Squarespace,
@@ -32,7 +33,7 @@ async function send(url: string, secret: string, payload: WebhookPayload) {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), 15000);
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       method: "POST",
       signal: c.signal,
       headers: { "Content-Type": "application/json", "User-Agent": "Epicsem-Webhook/1.0", "X-Epicsem-Event": payload.event, "X-Epicsem-Signature": `sha256=${sig}` },

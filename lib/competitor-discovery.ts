@@ -1,6 +1,7 @@
 import { geminiGenerate } from "@/lib/gemini";
 import { PROVIDERS, isDemoMode, resolveAnthropicModel } from "@/lib/geo-providers";
 import { extractJsonObject } from "@/lib/llm-json";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Kart: Web aramalı rakip bulma + kodda doğrulama.
@@ -255,7 +256,7 @@ async function timedFetch(url: string, method: "HEAD" | "GET"): Promise<Response
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, { method, redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": UA, Accept: "text/html,*/*" } });
+    return await safeFetch(url, { method, redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": UA, Accept: "text/html,*/*" } });
   } finally {
     clearTimeout(t);
   }

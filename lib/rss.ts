@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { normalizeUrl } from "./content-fetch";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Autoblog'un RSS kaynağı — AI kullanmaz. RSS 2.0 ve Atom beslemelerini okur; kullanıcı
@@ -26,7 +27,7 @@ async function get(url: string, timeoutMs = 12000): Promise<{ ok: boolean; statu
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       signal: controller.signal,
       redirect: "follow",
       headers: { "User-Agent": UA, Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.8, */*;q=0.5" },

@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { citInputFromHtml, scoreCitability } from "./citability";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Google arama sonuçları (SERP) — SerpApi üzerinden. SERPAPI_API_KEY ortam değişkeni
@@ -97,7 +98,7 @@ const STOP = new Set("ve ile için en bir bu şu da de mi mı ne nasıl nedir ne
 async function analyzePage(r: SerpResult): Promise<CompetitorPage> {
   const base: CompetitorPage = { position: r.position, url: r.link, domain: r.domain, title: r.title, words: null, h2: [], hasFaq: false, hasTable: false, citability: null };
   try {
-    const res = await fetch(r.link, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(10_000) });
+    const res = await safeFetch(r.link, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(10_000) });
     if (!res.ok || !/html/i.test(res.headers.get("content-type") ?? "")) return base;
     const $ = cheerio.load(await res.text());
     $("script, style, noscript, svg, nav, footer, header").remove();

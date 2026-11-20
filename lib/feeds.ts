@@ -3,6 +3,7 @@ import { campaignKeywordIdeas, saveFeedItems, type Feed, type FeedEntry } from "
 import { fetchFeed, matchesFilter } from "./rss";
 import { normalizeUrl } from "./content-fetch";
 import { autocomplete } from "./keyword-research";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Beslemeler — Autoblog'un konu kaynakları. Hiçbiri AI kullanmaz:
@@ -34,7 +35,7 @@ async function getText(url: string, ms = 8000): Promise<string | null> {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
   try {
-    const r = await fetch(url, { signal: c.signal, headers: { "User-Agent": UA, "Accept-Language": "tr,en;q=0.8" } });
+    const r = await safeFetch(url, { signal: c.signal, headers: { "User-Agent": UA, "Accept-Language": "tr,en;q=0.8" } });
     return r.ok ? await r.text() : null;
   } catch {
     return null;

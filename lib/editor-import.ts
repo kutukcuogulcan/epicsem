@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /** Bir sayfanın ana içeriğini markdown'a çevirir (AI yok). Editöre "adresten aç" için. */
 export async function importPageAsMarkdown(url: string): Promise<{ title: string; metaDescription: string; markdown: string; keyword: string }> {
@@ -6,7 +7,7 @@ export async function importPageAsMarkdown(url: string): Promise<{ title: string
   const t = setTimeout(() => c.abort(), 12000);
   let html: string;
   try {
-    const res = await fetch(url, { signal: c.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemBot/1.0)" } });
+    const res = await safeFetch(url, { signal: c.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemBot/1.0)" } });
     if (!res.ok) throw new Error(`Sayfa ${res.status} döndürdü`);
     html = await res.text();
   } catch (e) {
