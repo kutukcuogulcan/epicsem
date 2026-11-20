@@ -279,6 +279,18 @@ ${tailOf(body)}`;
  * Editoryal kalite kuralları — "AI yazısı gibi" duran, dolgu cümleli, yüzeysel metni engeller.
  * Hem ilk yazımda hem kalite düzeltmesinde kullanılır.
  */
+/**
+ * Okuru ikna eden ürün yerleştirmesi (Arvow/Outrank bloglarındaki "aracımız burada nasıl yardım eder" karşılığı).
+ * Markanın yalnızca verilen bağlamda/sayfasında yazan özellikleri kullanılır; yoksa not eklenmez.
+ */
+export function productPlacementRules(brand: BrandRef): string {
+  return `PRODUCT PLACEMENT (the article is published on ${brand.name}'s site and must show the reader how ${brand.name} helps — honestly):
+- After the body of 2-4 main ## sections whose topic ${brand.name} really covers, add ONE single-line blockquote note: "> **${brand.name}'<locative suffix>:** <1-2 sentences on how ${brand.name} handles exactly this point>". Use the correct Turkish locative suffix for the brand name (e.g. Paraşüt'te, Logo'da); in other languages write "> **With ${brand.name}:** …".
+- Once, after the 2nd or 3rd main section, add ONE single-line product box: "> **${brand.name} ile <short topic phrase>:** <feature> · <feature> · <feature>. [<call to action>](https://${brand.domain})". Three features, separated by " · ".
+- Every feature or claim in these notes MUST come from the brand context / knowledge base or ${brand.name}'s own page text given below. If nothing there matches a section, add no note to that section. Never invent features, prices, trial lengths, integrations or numbers. Never add a note inside the FAQ.
+- Keep the rest of the article neutral and useful; these notes are the only promotional parts besides the closing call to action.`;
+}
+
 export const EDITORIAL_RULES = `EDITORIAL QUALITY RULES (follow all of them):
 1. Answer-first: the opening paragraph answers the topic directly in 2-3 sentences (40-60 words) that could be quoted on its own by an AI answer engine. Then EVERY ## section starts with a 1-2 sentence direct answer to its heading before expanding.
 2. Be specific, not generic: concrete steps, real examples, criteria, numbers from the verified sources, common mistakes and how to avoid them, who it is / isn't for. Each section must teach something a reader could act on today. No paragraph that could be pasted into any other article.
@@ -485,6 +497,11 @@ export async function generateArticleFromTopic(
   if (own) {
     lines.push("");
     lines.push(summarizeForPrompt(`${brand.name}'s own page`, own));
+  }
+  // Ürünü yazının içine yerleştir — yalnızca markanın gerçek bilgisi varsa (bilgi bankası/proje bağlamı ya da kendi sayfası).
+  if (own || (opts.knowledge ?? "").trim()) {
+    lines.push("");
+    lines.push(productPlacementRules(brand));
   }
   lines.push("");
   lines.push(NO_FABRICATION_RULE);
