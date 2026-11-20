@@ -1,5 +1,5 @@
 import { generateArticleFromBrief, generateArticleFromTopic, reviseArticle, styleInstructions } from "./content-generator";
-import { finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "./article-quality";
+import { appendAuthor, finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "./article-quality";
 import { fetchPageSummary } from "./content-fetch";
 import {
   getFeed,
@@ -188,7 +188,8 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
         }
       }
       try {
-        const rivals = demoMode ? [] : ((await getActiveProject(campaign.userId, campaign.brandDomain).catch(() => null))?.competitors ?? []);
+        const project = demoMode ? null : await getActiveProject(campaign.userId, campaign.brandDomain).catch(() => null);
+        const rivals = project?.competitors ?? [];
         // Kaynak araştırması (isteğe bağlı, +1 AI sorgusu): doğrulanmış istatistikler bilgi bloğuna eklenir.
         let research: ResearchResult | null = null;
         if (!demoMode && campaign.options.research) {
@@ -222,7 +223,7 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
           article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language: campaign.options.language ?? "tr" });
         }
         if (campaign.options.toc) article.bodyMarkdown = addTableOfContents(article.bodyMarkdown, campaign.options.language ?? "tr");
-        article.bodyMarkdown = finalizeArticleBody(article.title, article.bodyMarkdown);
+        article.bodyMarkdown = appendAuthor(finalizeArticleBody(article.title, article.bodyMarkdown), project?.settings.author, project?.settings.authorBio);
         const draft = await saveContentDraft(campaign.userId, t.key, article, campaign.id, campaign.brandDomain);
         made.push({ id: draft.id, label: t.label });
         const cit = citabilityOfMarkdown(article.bodyMarkdown, t.label);

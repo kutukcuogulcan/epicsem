@@ -61,6 +61,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
   const [questions, setQuestions] = useState<string[]>([]);
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [tone, setTone] = useState("professional");
+  const [experience, setExperience] = useState("");
   const [opts, setOpts] = useState({ takeaways: true, faq: true, table: true, internalLinks: true, cta: false, research: true, media: true, quality: true });
   const [busy, setBusy] = useState<null | "topics" | "outline" | "write">(null);
   const [err, setErr] = useState<string | null>(null);
@@ -136,7 +137,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
     setErr(null);
     try {
       const d = await post(
-        { topic: keyword, keyword, title, site, language: lang, format, outline, faqQuestions: questions, length, tone, ...opts, note: preset?.note },
+        { topic: keyword, keyword, title, site, language: lang, format, outline, faqQuestions: questions, length, tone, ...opts, note: preset?.note, experience },
         "/api/editor/write"
       );
       window.dispatchEvent(new Event("epicsem:usage-changed"));
@@ -430,6 +431,17 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   ))}
                 </div>
               </div>
+              <label className="block">
+                <span className="text-xs font-medium text-ink/60">Kendi deneyimin ya da müşteri örneği (isteğe bağlı)</span>
+                <textarea
+                  rows={3}
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  placeholder="ör. Geçen yıl 40 şubeli bir müşterimiz e-faturaya geçince ay sonu kapanışı 5 günden 2 güne indi."
+                  className="mt-1 w-full rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+                <span className="mt-1 block text-[11px] text-ink/60">Yazıya gerçek örnek olarak girer, rakamlar değiştirilmez. Yazmazsan örnek uydurulmaz. Sürekli kullanılacak hikâyeleri Proje ayarları&apos;na ekle.</span>
+              </label>
             </div>
 
             <div className="flex flex-col rounded-xl bg-muted/50 p-4">

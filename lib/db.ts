@@ -3038,6 +3038,11 @@ export interface ProjectSettings {
   products?: string;
   usps?: string;
   cta?: string;
+  /** Gerçek müşteri hikâyeleri / saha deneyimi — yazılarda örnek olarak kullanılır. */
+  stories?: string;
+  /** Yazar kutusu: "Ad Soyad, Unvan" ve kısa biyografi. */
+  author?: string;
+  authorBio?: string;
   /** Proje bazlı bilgi bankası (eskiden kullanıcı başına tekti). */
   knowledge?: string;
   /** Sektör (lib/sector-sources.ts id'si) — Backlinkler → Sektör kaynak haritası. */

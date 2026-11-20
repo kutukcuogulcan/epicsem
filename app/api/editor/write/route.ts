@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromTopic, reviseArticle } from "@/lib/content-generator";
-import { finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "@/lib/article-quality";
+import { appendAuthor, finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "@/lib/article-quality";
 import { listKnownSites, saveContentDraft } from "@/lib/db";
 import { getActiveProject, projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
   const brief: string[] = [`Target length: ${WORDS[b.length] ?? WORDS.medium} in bodyMarkdown.`, `Tone: ${TONE[b.tone] ?? TONE.professional}.`];
   if (!faqOn) brief.push("Do NOT add an FAQ section.");
   if (typeof b.note === "string" && b.note.trim()) brief.push(`EDITOR NOTE: ${b.note.trim().slice(0, 700)}`);
+  if (typeof b.experience === "string" && b.experience.trim())
+    brief.push(`FIRST-HAND EXPERIENCE from the brand team (real; use it in the article as a concrete example or short quote where it fits, keep every number and detail exactly, attribute it to the ${String(b.brandName ?? "brand").trim() || "brand"} team; do not invent more): ${b.experience.trim().slice(0, 1500)}`);
   if (b.table) brief.push("Include at least one useful markdown table (comparison, checklist or summary) where it genuinely helps.");
   if (b.cta && site) brief.push(`End with a short, non-pushy call to action paragraph that invites the reader to ${brand.name} (https://${site}).`);
   if (b.internalLinks && site) {
@@ -122,7 +124,7 @@ export async function POST(req: NextRequest) {
       const images = await findImages([...(research?.imageQueries ?? []), ...(article.imageQueries ?? []), keyword], 2).catch(() => []);
       article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language });
     }
-    article.bodyMarkdown = finalizeArticleBody(article.title, article.bodyMarkdown);
+    article.bodyMarkdown = appendAuthor(finalizeArticleBody(article.title, article.bodyMarkdown), project?.settings.author, project?.settings.authorBio);
     const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
     return NextResponse.json({ id: draft.id, demo: article.demoMode, incomplete: Boolean(article.incomplete), quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised } });
   } catch (e) {

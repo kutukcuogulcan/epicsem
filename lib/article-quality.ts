@@ -51,6 +51,12 @@ export const needsRevision = (q: QualityReport) => q.issues.length > 0 && (q.ove
  * Yayına hazır son biçim: gövdenin başına tek bir "# Başlık" (H1) koyar, gövdedeki diğer H1'leri H2 yapar.
  * (WordPress'e gönderirken baştaki H1 zaten atılır; editörde H1 kontrolü geçsin diye eklenir.)
  */
+/** Yazının sonuna yazar kutusu (E-E-A-T sinyali). Yazar boşsa dokunmaz. */
+export function appendAuthor(md: string, author?: string, bio?: string): string {
+  if (!author?.trim()) return md;
+  return `${md.trimEnd()}\n\n---\n\n**Yazar:** ${author.trim()}${bio?.trim() ? ` — ${bio.trim()}` : ""}\n`;
+}
+
 export function finalizeArticleBody(title: string, md: string): string {
   const body = md
     .replace(/^\s*#\s+[^\n]*\n+/, "")

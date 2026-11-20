@@ -18,6 +18,9 @@ interface Settings {
   products?: string;
   usps?: string;
   cta?: string;
+  stories?: string;
+  author?: string;
+  authorBio?: string;
   knowledge?: string;
 }
 interface Comp {
@@ -295,6 +298,17 @@ export default function ProjectSettingsPage() {
               <Field label="Çağrı (CTA)" hint="yazı sonunda okura ne yapmasını öneriyoruz">
                 <input value={s.cta ?? ""} onChange={(e) => set("cta", e.target.value)} placeholder="ör. Ücretsiz keşif için bize yazın" className={input} />
               </Field>
+              <Field label="Müşteri hikâyeleri / saha deneyimi" hint="yazılar uygun yerde gerçek örnek olarak kullanır; yazdığın rakamlar değiştirilmez">
+                <textarea rows={4} value={s.stories ?? ""} onChange={(e) => set("stories", e.target.value)} placeholder="ör. İzmir'deki bir kafe zinciri banka entegrasyonuyla mutabakat süresini haftada 6 saatten 1 saate indirdi." className={input} />
+              </Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Yazar" hint="yazı sonundaki yazar kutusu; boşsa eklenmez">
+                  <input value={s.author ?? ""} onChange={(e) => set("author", e.target.value)} placeholder="ör. Ayşe Yılmaz, Mali Müşavir" className={input} />
+                </Field>
+                <Field label="Yazar hakkında" hint="tek cümle">
+                  <input value={s.authorBio ?? ""} onChange={(e) => set("authorBio", e.target.value)} placeholder="ör. 12 yıldır KOBİ'lere ön muhasebe danışmanlığı veriyor." className={input} />
+                </Field>
+              </div>
             </div>
           </Card>
 

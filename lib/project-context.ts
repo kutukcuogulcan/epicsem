@@ -62,6 +62,7 @@ export async function projectContextBlock(userId: number, domain?: string | null
   if (s.products) lines.push(`Ürünler / hizmetler: ${s.products}`);
   if (s.usps) lines.push(`Öne çıkan avantajlar: ${s.usps}`);
   if (s.cta) lines.push(`Tercih edilen harekete geçirici mesaj: ${s.cta}`);
+  if (s.stories) lines.push(`Gerçek müşteri hikâyeleri / saha deneyimi (yazıda uygun bir yerde 1-2 tanesini somut örnek olarak kullan, her birini yalnızca bir kez; rakamları ve ayrıntıları aynen yaz, onlardan yüzde ya da yeni rakam türetme, yenisini uydurma):\n${s.stories}`);
   if (p.competitors.length) lines.push(`Rakipler (övme, karşılaştırmada adil ol): ${p.competitors.map((c) => c.name).join(", ")}`);
   const k = (s.knowledge ?? "").trim() || legacy.trim();
   return `\n\nMARKA BAĞLAMI (marka sahibinin verdiği, doğru kabul edilecek bilgiler — ürün, fiyat, adres, avantaj vb. için YALNIZCA bunları ve sayfadaki bilgileri kullan; burada olmayanı uydurma; ton ve hitaba uy):\n"""\n${lines.join("\n")}${k ? `\n\nBilgi bankası:\n${k.slice(0, 6000)}` : ""}\n"""\n`;
