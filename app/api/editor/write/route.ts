@@ -4,11 +4,11 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { generateArticleFromTopic, reviseArticle } from "@/lib/content-generator";
 import { finalizeArticleBody, needsRevision, polishMarkdown, qualityReport } from "@/lib/article-quality";
 import { listKnownSites, saveContentDraft } from "@/lib/db";
-import { projectContextBlock } from "@/lib/project-context";
+import { getActiveProject, projectContextBlock } from "@/lib/project-context";
 import { isDemoMode } from "@/lib/geo-providers";
 import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
 import { rootHost } from "@/lib/backlinks";
-import { findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "@/lib/article-enrich";
+import { checkLinks, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "@/lib/article-enrich";
 
 export const maxDuration = 180;
 
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   if (!demo && b.research !== false) {
     const q = await checkQuota(user.id, "engineQueries", 1);
     if (q.allowed) {
-      research = await researchTopic(String(b.title ?? "").trim() || topic, language).catch(() => null);
+      research = await researchTopic(String(b.title ?? "").trim() || topic, language, { brand: brand.name, competitors: (await getActiveProject(user.id, site).catch(() => null))?.competitors ?? [] }).catch(() => null);
       if (research) {
         await consumeQuota(user.id, "engineQueries", 1).catch(() => {});
         const rb = researchBrief(research, language);
@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+    // Bozuk/uydurma kaynak linklerini düzelt ya da kaldır, sona "Kaynaklar" listesi ekle (görseller eklenmeden önce).
+    if (!demo) article.bodyMarkdown = (await checkLinks(article.bodyMarkdown, { known: research?.facts.map((f) => f.url) ?? [], labels: Object.fromEntries((research?.facts ?? []).map((f) => [f.url, f.source])), ownHost: site, language }).catch(() => null))?.markdown ?? article.bodyMarkdown;
     // Görseller (Openverse, ücretsiz) + video
     if (!demo && b.media !== false) {
       const images = await findImages([...(research?.imageQueries ?? []), ...(article.imageQueries ?? []), keyword], 2).catch(() => []);

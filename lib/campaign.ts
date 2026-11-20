@@ -15,13 +15,13 @@ import { feedIsStale, refreshFeed } from "./feeds";
 import { addTableOfContents } from "./article-post";
 import { citabilityOfMarkdown } from "./citability";
 import { aiCover, brandedCover } from "./covers";
-import { findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
+import { checkLinks, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
 import { publishDraftToConnection } from "./publish-draft";
 import { isDemoMode } from "./geo-providers";
 import { fetchFeed, matchesFilter } from "./rss";
 import { checkQuota, consumeQuota } from "./usage-guard";
 import type { GeneratedArticle } from "@/types";
-import { projectContextBlock } from "@/lib/project-context";
+import { getActiveProject, projectContextBlock } from "@/lib/project-context";
 
 /**
  * Autoblog — "kur ve unut" içerik üretimi. Üç konu kaynağı:
@@ -193,7 +193,7 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
         if (!demoMode && campaign.options.research) {
           const rq = await checkQuota(campaign.userId, "engineQueries", 1);
           if (rq.allowed) {
-            research = await researchTopic(t.label, campaign.options.language ?? "tr").catch(() => null);
+            research = await researchTopic(t.label, campaign.options.language ?? "tr", { brand: campaign.brandName, competitors: (await getActiveProject(campaign.userId, campaign.brandDomain).catch(() => null))?.competitors ?? [] }).catch(() => null);
             if (research) await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
           }
         }
@@ -213,6 +213,8 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
             }
           }
         }
+        // Bozuk/uydurma kaynak linklerini düzelt ya da kaldır, sona "Kaynaklar" listesi ekle (görseller eklenmeden önce).
+        if (!demoMode) article.bodyMarkdown = (await checkLinks(article.bodyMarkdown, { known: research?.facts.map((f) => f.url) ?? [], labels: Object.fromEntries((research?.facts ?? []).map((f) => [f.url, f.source])), ownHost: campaign.brandDomain, language: campaign.options.language ?? "tr" }).catch(() => null))?.markdown ?? article.bodyMarkdown;
         if (!demoMode && campaign.options.media !== false) {
           const images = await findImages([...(research?.imageQueries ?? []), ...(article.imageQueries ?? []), t.label], 2).catch(() => []);
           article.bodyMarkdown = insertMedia(article.bodyMarkdown, { images, youtube: research?.youtube ?? null, alt: article.title, language: campaign.options.language ?? "tr" });

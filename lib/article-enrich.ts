@@ -3,6 +3,7 @@ import { extractJsonObject } from "./llm-json";
 import { statusOf } from "./audit-extra";
 import { getLatestCrawlPages } from "./db";
 import { safeFetch } from "@/lib/safe-fetch";
+import { appendSources, planLinks, relink, unlink } from "@/lib/link-check";
 
 /**
  * Yazıyı "yayına hazır sayfa" yapan zenginleştirmeler (Arvow / Outrank / SEObot seviyesi):
@@ -58,12 +59,23 @@ async function verifyYoutube(url: string): Promise<{ title: string; url: string;
 }
 
 /** Web aramasıyla kaynaklı bilgiler + video. Web aramalı sağlayıcı yoksa null (yazı kaynaksız yazılır). */
-export async function researchTopic(topic: string, language = "tr"): Promise<ResearchResult | null> {
+export async function researchTopic(topic: string, language = "tr", opts: { brand?: string; competitors?: { name: string; domain: string }[] } = {}): Promise<ResearchResult | null> {
   const tr = language === "tr";
+  const rivals = (opts.competitors ?? []).filter((c) => c.name || c.domain);
+  // Rakibin sitesinden kaynak ya da rakibin adı geçen video, markanın yazısında rakibi öne çıkarır.
+  const isRival = (url: string, text: string) => {
+    const h = (() => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })();
+    const t = text.toLocaleLowerCase("tr");
+    return rivals.some((c) => {
+      const d = c.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+      return (d && h && (h === d || h.endsWith("." + d))) || (c.name.length > 2 && t.includes(c.name.toLocaleLowerCase("tr")));
+    });
+  };
   const prompt = `SEARCH THE WEB. Topic: "${topic}"${tr ? " (Turkish audience; prefer Turkish or international authoritative sources)" : ""}.
+The article is published by ${opts.brand ? `the brand "${opts.brand}"` : "a business"}. Its sources must NOT be companies that sell products or services in this field (they are its competitors${rivals.length ? `, e.g. ${rivals.map((c) => c.name || c.domain).join(", ")}` : ""}). Prefer government and regulator sites, statistics institutes, universities, industry associations and news / trade publications.
 Find:
-1. 3–5 specific, recent facts or statistics about this topic, each from an authoritative source page (official stats, research, reputable publications). Use the exact page URL where the fact appears.
-2. ONE relevant, high-quality YouTube video that explains this topic (a real youtube.com/watch URL you actually found).
+1. 3–5 specific, recent facts or statistics about this topic, each from such a neutral, authoritative source page. Use the exact page URL where the fact appears.
+2. ONE relevant, high-quality YouTube video that explains this topic (a real youtube.com/watch URL you actually found)${opts.brand ? `, preferably from ${opts.brand}'s own channel; never one from or promoting a competing company` : ""}.
 3. What the top-ranking pages and AI answers for this topic cover: 5–8 short subtopics they all include (so a new article is not missing anything), the 4–6 questions people really ask about it (Google "People also ask", forums), and the search intent in 2–4 words (e.g. "informational how-to", "commercial comparison").
 4. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
 Never invent a URL or a number. If unsure, leave it out.
@@ -78,13 +90,14 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   }
   const raw: ResearchFact[] = (Array.isArray(parsed.facts) ? parsed.facts : [])
     .map((f: any) => ({ fact: String(f?.fact ?? "").trim().slice(0, 300), source: String(f?.source ?? "").trim().slice(0, 80), url: String(f?.url ?? "").trim() }))
-    .filter((f: ResearchFact) => f.fact && publicUrl(f.url))
+    .filter((f: ResearchFact) => f.fact && publicUrl(f.url) && !isRival(f.url, f.source))
     .slice(0, 6);
   // Kaynak sayfaları gerçekten açılıyor mu? (403/405 bazı siteler botlara kapalı; onları kabul et)
   const codes = await Promise.all(raw.map((f) => statusOf(f.url, 7000)));
   const facts = raw.filter((_, i) => (codes[i] >= 200 && codes[i] < 400) || codes[i] === 403).slice(0, 5);
   const ytUrl = String(parsed.youtube?.url ?? "");
-  const youtube = ytUrl ? await verifyYoutube(ytUrl) : null;
+  const yt = ytUrl ? await verifyYoutube(ytUrl) : null;
+  const youtube = yt && !isRival("", yt.title) ? yt : null;
   const imageQueries = (Array.isArray(parsed.imageQueries) ? parsed.imageQueries : []).map((q: unknown) => String(q).trim().slice(0, 60)).filter(Boolean).slice(0, 2);
   const list = (v: unknown, n: number, len: number) => (Array.isArray(v) ? v : []).map((x) => String(x ?? "").trim().slice(0, len)).filter((x) => x.length > 2).slice(0, n);
   const intent = String(parsed.intent ?? "").trim().slice(0, 60) || null;
@@ -234,4 +247,34 @@ export async function sitePagesForLinks(userId: number, site: string, max = 40):
 export function internalLinkBrief(pages: { title: string; url: string }[]): string {
   if (!pages.length) return "";
   return `Add 2-5 internal links as natural in-sentence markdown links, ONLY to relevant pages from this list (exact URLs; skip any that don't fit, never link the same URL twice):\n${pages.map((p) => `- ${p.title}: ${p.url}`).join("\n")}`;
+}
+
+// ---- link doğrulama (karar mantığı lib/link-check.ts'te, burada yalnızca ağ) ----
+
+/** 404/410 ya da var olmayan alan adı → kesin bozuk. Engelleme (403/429), zaman aşımı → bilinmiyor, kalır. */
+async function isBroken(url: string): Promise<boolean> {
+  try {
+    const r = await safeFetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemLinkCheck/1.0)" } }, { timeoutMs: 8000, maxBytes: 3_000_000 });
+    return r.status === 404 || r.status === 410;
+  } catch (e) {
+    return e instanceof Error && /Alan adı bulunamadı/.test(e.message);
+  }
+}
+
+export async function checkLinks(md: string, opts: { known: string[]; labels?: Record<string, string>; ownHost?: string; language?: string }): Promise<{ markdown: string; replaced: number; removed: number }> {
+  let out = md;
+  let replaced = 0;
+  let removed = 0;
+  const plan = planLinks(md, opts.known).slice(0, 30);
+  const broken = await Promise.all(plan.map((p) => (p.action === "probe" ? isBroken(p.url) : Promise.resolve(false))));
+  plan.forEach((p, i) => {
+    if (p.action === "replace" && p.to) {
+      out = relink(out, p.url, p.to);
+      replaced++;
+    } else if (broken[i]) {
+      out = unlink(out, p.url);
+      removed++;
+    }
+  });
+  return { markdown: appendSources(out, opts.ownHost ?? "", opts.language, opts.labels), replaced, removed };
 }
