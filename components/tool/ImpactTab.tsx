@@ -6,6 +6,7 @@
  * iş tamamlanınca 3 gün arayla yeniden ölçüm → önce/sonra karşılaştırması.
  */
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Drawer } from "@/components/ui";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import { INTENT_LABEL } from "@/lib/impact-labels";
@@ -53,7 +54,7 @@ export default function ImpactTab() {
     load();
     // Başka sayfalardan hazır açılış: /geo?tab=impact&target=…&title=…&kind=article&ref=…&done=1
     const qs = new URLSearchParams(window.location.search);
-    if (qs.get("tab") === "impact" && qs.get("target")) {
+    if (qs.get("target")) {
       setForm({
         kind: qs.get("kind") === "offpage" ? "offpage" : "article",
         title: (qs.get("title") ?? "").slice(0, 200),
@@ -102,7 +103,7 @@ export default function ImpactTab() {
               Bir yazı ya da off-page işi için hedef soruyu ve onunla bağlantılı soruları seç. Önce şimdiki durum ölçülür; işi tamamlayınca 3 gün arayla yeniden ölçülür ve önce/sonra karşılaştırılır.
             </p>
           </div>
-          <button type="button" onClick={() => setForm({ kind: "article", title: "", target: "", keyword: "", ref: "", done: false })} className={BTN1}>
+          <button type="button" disabled={!engines.length} onClick={() => setForm({ kind: "article", title: "", target: "", keyword: "", ref: "", done: false })} className={BTN1}>
             + Yeni etki ölçümü
           </button>
         </div>
@@ -120,7 +121,7 @@ export default function ImpactTab() {
             </div>
           ))}
         </div>
-        {!engines.length && tracks && <p className="mt-3 text-xs text-danger-ink">Ölçüm için en az bir AI motorunun anahtarı gerekli (Entegrasyonlar).</p>}
+        {!engines.length && tracks && <p className="mt-3 text-xs text-danger-ink">Ölçüm için en az bir AI motorunun anahtarı gerekli. <Link href="/integrations" className="font-medium underline">Entegrasyonlar&apos;dan ekle</Link></p>}
         {err && <p className="mt-3 text-xs text-danger-ink">{err}</p>}
       </div>
 

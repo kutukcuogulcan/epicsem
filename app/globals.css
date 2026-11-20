@@ -40,6 +40,8 @@ html { scroll-behavior: smooth; }
 html, body { overflow-x: clip; }
 /* Tarayıcının varsayılan ipucu grisi (#9ca3af) beyaz zeminde 2.5:1; bu ton 4.8:1. */
 ::placeholder { color: #6b7280; }
+/* Klavyeyle gezenler için her yerde aynı görünür odak (tarayıcı varsayılanı ekrana göre değişiyordu). */
+:focus-visible { outline: 2px solid #4f00ff; outline-offset: 2px; }
 
 .full-bleed {
   width: 100vw;

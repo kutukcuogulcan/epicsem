@@ -495,7 +495,7 @@ export default function GeoDashboard({
               </div>
             }
           />
-          {trend && (
+          {trend && series.length > 1 && (
             <div className="px-3 pb-2 pt-2">
               <svg viewBox={`0 0 ${trend.W} ${trend.H}`} className="h-[230px] w-full">
                 {trend.ticks.map((t, i) => (

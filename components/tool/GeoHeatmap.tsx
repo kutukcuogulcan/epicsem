@@ -69,6 +69,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
           ))}
         </div>
       </div>
+      <p className="px-5 pt-2 text-[11px] text-sub sm:hidden">Diğer motorlar için tabloyu yana kaydır →</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[560px] text-[13px]">
           <thead>

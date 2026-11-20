@@ -132,6 +132,9 @@ function parsePromptLine(line: string): PromptInput {
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
+const RESULTS_TABS = ["overview", "actions", "impact", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity"] as const;
+type ResultsTab = (typeof RESULTS_TABS)[number];
+
 export default function GeoPage() {
   const [brand, setBrand] = useState<BrandRow>({ name: "", domain: "" });
   const [competitors, setCompetitors] = useState<BrandRow[]>([{ name: "", domain: "" }]);
@@ -159,11 +162,19 @@ export default function GeoPage() {
   const [history, setHistory] = useState<GeoHistoryRun[] | null>(null);
   const [runResultsFilter, setRunResultsFilter] = useState("");
   const [runEngineFilter, setRunEngineFilter] = useState<EngineId | "all">("all");
-  const [resultsTab, setResultsTab] = useState<"overview" | "actions" | "impact" | "visibility" | "sentiment" | "prompts" | "sources" | "urls" | "rivals" | "opportunities" | "library" | "entity">("overview");
-  // /geo?tab=impact&… (GEO çekmecesi, editör yayını) → Etki sekmesi hazır açılır.
+  const [resultsTab, setResultsTab] = useState<ResultsTab>("overview");
+  // Sekme adres satırında (?tab=…): yenileyince ve paylaşılan linkte aynı sekme açılır.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "impact") setResultsTab("impact");
+    const t = new URLSearchParams(window.location.search).get("tab") as ResultsTab | null;
+    if (t && RESULTS_TABS.includes(t)) setResultsTab(t);
   }, []);
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    if ((u.searchParams.get("tab") ?? "overview") === resultsTab) return;
+    if (resultsTab === "overview") u.searchParams.delete("tab");
+    else u.searchParams.set("tab", resultsTab);
+    window.history.replaceState(null, "", u);
+  }, [resultsTab]);
   const [testOpen, setTestOpen] = useState(false);
   // Hazırlık bitip asıl test başlayınca çekmece kapanır; ilerleme sayfada görünür.
   useEffect(() => {

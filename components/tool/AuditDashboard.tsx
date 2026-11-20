@@ -522,7 +522,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
       {result.issues.some((i) => i.severity !== "pass") && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#BDB4FF] bg-accent/[0.04] px-5 py-4">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-base text-white">✦</span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[14rem] flex-1">
             <div className="text-sm font-semibold">Bu sayfaya özel düzeltmeleri yapay zekâ yazsın</div>
             <p className="text-[13px] text-sub">Yeni title, meta açıklama, H1, en üste konacak doğrudan cevap paragrafı, SSS ve her sorun için somut talimat. Sayfada olmayan bilgi uydurulmaz.</p>
           </div>
