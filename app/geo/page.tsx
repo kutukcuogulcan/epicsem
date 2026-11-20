@@ -28,6 +28,7 @@ import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 import GeoActionsTab from "@/components/tool/GeoActions";
 import ImpactTab from "@/components/tool/ImpactTab";
+import FactsTab from "@/components/tool/FactsTab";
 import EntityPresence from "@/components/tool/EntityPresence";
 import PromptResults, { RunProgress, groupRuns } from "@/components/tool/PromptResults";
 
@@ -132,7 +133,7 @@ function parsePromptLine(line: string): PromptInput {
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
-const RESULTS_TABS = ["overview", "actions", "impact", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity"] as const;
+const RESULTS_TABS = ["overview", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity"] as const;
 type ResultsTab = (typeof RESULTS_TABS)[number];
 
 export default function GeoPage() {
@@ -682,7 +683,7 @@ export default function GeoPage() {
         // 12 sekme 5 gruba indirildi (impeccable critique): grup sekmesi + gerekirse alt seçim.
         const GROUPS = [
           { label: "Özet", subs: [["overview", "Özet"]] },
-          { label: "Aksiyonlar", subs: [["actions", "Aksiyon planı"], ["opportunities", "Fırsatlar"], ["impact", "Etki"]] },
+          { label: "Aksiyonlar", subs: [["actions", "Aksiyon planı"], ["opportunities", "Fırsatlar"], ["facts", "Yanlış bilgi"], ["impact", "Etki"]] },
           { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["library", "Prompt kütüphanesi"]] },
           { label: "Rakipler ve kaynaklar", count: competitorRefs.length || null, subs: [["rivals", "Rakipler"], ["sources", "Kaynaklar"], ["urls", "URL'ler"]] },
           { label: "Diğer", subs: [["visibility", "Görünürlük"], ["sentiment", "Duygu"], ["entity", "Bilgi grafı"]] },
@@ -750,6 +751,7 @@ export default function GeoPage() {
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
       {resultsTab === "impact" && <ImpactTab />}
+      {resultsTab === "facts" && runs && <FactsTab runs={runs} brand={ownRef.name} />}
       {resultsTab === "actions" && runs && <GeoActionsTab runs={runs} own={ownRef} competitors={competitorRefs} onTab={(t) => setResultsTab(t)} />}
       {resultsTab === "opportunities" && runs && <OpportunitiesTab runs={runs} own={ownRef} competitors={competitorRefs} />}
 
