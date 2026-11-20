@@ -124,6 +124,17 @@ function HowItWorks() {
   );
 }
 
+/** Tablodaki "Ne oluyor?" cümlesi: kuyruk + takvim tek cümlede. */
+function whatsHappening(c: Campaign, running: boolean): { text: string; tone: "ok" | "warn" | "muted" } {
+  if (running) return { text: "Şu an yazı yazılıyor (1-2 dk)…", tone: "ok" };
+  if (c.status !== "active") return { text: "Duraklatıldı, yazı üretmiyor.", tone: "muted" };
+  const q = c.queue;
+  if (q && q.total > 0 && q.done >= q.total) return { text: `${q.total} konunun hepsi yazıldı. Yazacak konu kalmadı, kelime ekle.`, tone: "warn" };
+  const done = q ? `${q.done}/${q.total} konu yazıldı · ` : c.drafts ? `${c.drafts} yazı yazıldı · ` : "";
+  if (!c.lastRunAt) return { text: `${done}İlk yazı en geç 6 saat içinde gelir (beklemek istemezsen tıkla → Şimdi çalıştır).`, tone: "muted" };
+  return { text: `${done}Sıradaki yazı: ${nextRun(c)}`, tone: "ok" };
+}
+
 export default function CampaignsPage() {
   const { project } = useProject();
 
@@ -518,9 +529,8 @@ export default function CampaignsPage() {
                   <th className="hidden py-2 pr-3 font-medium md:table-cell">Kaynak</th>
                   <th className="py-2 pr-3 font-medium">Takvim</th>
                   <th className="hidden py-2 pr-3 font-medium lg:table-cell">Yayın</th>
-                  <th className="hidden py-2 pr-3 font-medium md:table-cell">Kuyruk</th>
+                  <th className="py-2 pr-3 font-medium">Ne oluyor?</th>
                   <th className="py-2 pr-3 text-right font-medium">Taslak</th>
-                  <th className="py-2 pr-3 font-medium">Sonraki</th>
                   <th className="py-2 pr-5 font-medium">Durum</th>
                 </tr>
               </thead>
@@ -540,22 +550,13 @@ export default function CampaignsPage() {
                     <td className="hidden py-2.5 pr-3 lg:table-cell">
                       <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.mode === "publish" ? "bg-danger/10 text-danger-ink" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-sub"}`}>{MODE_LABEL[c.mode ?? "review"]}</span>
                     </td>
-                    <td className="hidden py-2.5 pr-3 md:table-cell">
-                      {c.queue ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-accent" style={{ width: `${c.queue.total ? (c.queue.done / c.queue.total) * 100 : 0}%` }} />
-                          </div>
-                          <span className="text-[11px] tabular-nums text-sub">
-                            {c.queue.done}/{c.queue.total}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-sub">—</span>
-                      )}
+                    <td className="py-2.5 pr-3 text-xs">
+                      {(() => {
+                        const w = whatsHappening(c, busy === `run-${c.id}`);
+                        return <span className={w.tone === "warn" ? "font-medium text-danger-ink" : w.tone === "muted" ? "text-sub" : "text-ink"}>{w.text}</span>;
+                      })()}
                     </td>
                     <td className="py-2.5 pr-3 text-right tabular-nums">{c.drafts}</td>
-                    <td className="py-2.5 pr-3 text-xs text-sub">{nextRun(c)}</td>
                     <td className="py-2.5 pr-5">
                       <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
                     </td>
