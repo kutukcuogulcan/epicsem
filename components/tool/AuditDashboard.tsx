@@ -137,13 +137,14 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const prev = history.length >= 2 ? history[history.length - 2] : null;
   const ins = useMemo(() => new Map(result.issues.map((i) => [i, insightFor(i, result)] as const)), [result]);
   const I = (i: SeoIssueResult) => ins.get(i) ?? insightFor(i, result);
-  const wins = useMemo(() => quickWins(result, 5), [result]);
 
   const oi: IssueInsight | null = open ? I(open) : null;
   const pillars = useMemo(() => pillarScores(result), [result]);
   // Genel puanın tek ölçeği: döküm paneli ve "+N puan" kazançları bundan hesaplanır.
   const losses = useMemo(() => overallLosses(pillars), [pillars]);
   const gainOf = (key: string) => overallGainFor(losses, key);
+  // Gösterilen "+N puan" genel puana göre; sıra da ona göre olsun (eşitlerde etki/efor sırası kalır).
+  const wins = useMemo(() => quickWins(result, 12).sort((a, b) => overallGainFor(losses, b.key) - overallGainFor(losses, a.key)).slice(0, 5), [result, losses]);
   const [pillarOpen, setPillarOpen] = useState<Pillar | null>(null);
   const top = wins[0] ?? null;
   /** Kontrol listesindeki maddeden ilgili sorunun ayrıntısına git. */
