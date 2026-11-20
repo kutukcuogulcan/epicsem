@@ -99,8 +99,29 @@ function nextRun(c: Campaign) {
   if (c.status !== "active") return "Duraklatıldı";
   if (!c.lastRunAt) return "İlk çalışma 6 saat içinde";
   const t = c.nextRunAt ? new Date(c.nextRunAt).getTime() : new Date(c.lastRunAt).getTime() + FREQ_DAYS[c.frequency] * 864e5;
-  if (t <= Date.now()) return "Sırada";
+  if (t <= Date.now()) return "6 saat içinde"; // cron ~6 saatte bir döner
   return new Date(t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
+
+function HowItWorks() {
+  const steps = [
+    ["Konuları verirsin", "Anahtar kelime listesi, besleme ya da Rakip Boşluğu."],
+    ["Epicsem yazar", "Seçtiğin takvimde (ör. haftada 1) sıradaki konuyu SEO + GEO uyumlu yazıya çevirir."],
+    ["Sen onaylarsın", "Yazı Takvim ve Onay'a düşer; onaylayınca yayınlanır ya da sitene gider."],
+  ];
+  return (
+    <ol className="grid gap-3 rounded-2xl border border-border bg-panel p-4 md:grid-cols-3">
+      {steps.map(([t, b], i) => (
+        <li key={t} className="flex gap-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">{i + 1}</span>
+          <span>
+            <span className="block text-sm font-medium">{t}</span>
+            <span className="block text-[13px] text-sub">{b}</span>
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 export default function CampaignsPage() {
@@ -277,8 +298,9 @@ export default function CampaignsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Kaydedilemedi");
       setOpen(false);
-      setNotice(form.id ? "Autoblog güncellendi." : "Autoblog kuruldu — ilk taslak 6 saat içinde gelir. Beklemek istemezsen \"Şimdi çalıştır\"a bas.");
       await refresh();
+      if (form.id) setNotice("Autoblog güncellendi.");
+      else if (data.campaign?.id) await runNow(data.campaign.id); // ilk yazıyı beklemeden yaz
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Bir şeyler ters gitti");
     } finally {
@@ -304,7 +326,7 @@ export default function CampaignsPage() {
   async function runNow(id: number) {
     setBusy(`run-${id}`);
     setError(null);
-    setNotice(null);
+    setNotice("Yazı yazılıyor — 1-2 dakika sürer. Bitince Takvim ve Onay'a düşer.");
     try {
       const res = await fetch("/api/campaigns/run", {
         method: "POST",
@@ -428,6 +450,7 @@ export default function CampaignsPage() {
       {notice && <div className="rounded-xl bg-seo/10 px-4 py-2.5 text-sm text-seo-ink">{notice}</div>}
       <ErrorBlock message={error} />
 
+      {campaigns !== null && <HowItWorks />}
       {campaigns === null && <TableSkeleton rows={4} cols={4} />}
       {campaigns && list.length === 0 && (
         <div className={`${CARD} p-6`}>
@@ -456,7 +479,7 @@ export default function CampaignsPage() {
               ["Haftalık hedef", `~${Math.round(weekly)}`, "yazı", "aktif takvimlere göre"],
               ["Üretilen taslak", String(totalDrafts), "", "tüm autobloglar"],
               ["Kuyrukta konu", String(left), "", "yazılmayı bekleyen"],
-              ["Sıradaki çalışma", soon ? (soon.t <= Date.now() ? "Sırada" : new Date(soon.t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })) : "—", "", soon ? soon.c.brandName : "aktif autoblog yok"],
+              ["Sıradaki çalışma", soon ? (soon.t <= Date.now() ? "6 saat içinde" : new Date(soon.t).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })) : "—", "", soon ? soon.c.brandName : "aktif autoblog yok"],
             ] as const).map(([l, v, suf, hint]) => (
               <div key={l} className={`${CARD} px-4 py-4`}>
                 <div className="text-xs font-medium text-sub">{l}</div>
@@ -634,7 +657,7 @@ export default function CampaignsPage() {
         <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-xl flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw as="form" onSubmit={save} header={<div className="min-w-0">
               <div>
                 <div className="font-medium">{form.id ? "Autoblog'u düzenle" : "Yeni autoblog"}</div>
-                <div className="text-xs text-ink/60">Kaynak, takvim ve yazı ayarları.</div>
+                <div className="text-xs text-ink/60">Konuları ver, takvimi seç, gerisini Epicsem yazar.</div>
               </div>
 </div>}>
 
@@ -646,58 +669,6 @@ export default function CampaignsPage() {
                   <input value={form.brandDomain} onChange={(e) => { set("brandDomain", e.target.value); setIdeas(null); }} placeholder="siteniz.com" required list="autoblog-sites" className={input} />
                   <datalist id="autoblog-sites">{sites.map((s) => <option key={s} value={s} />)}</datalist>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-wide text-ink/60">Otomasyon modu</label>
-                <div className="space-y-2">
-                  {MODES.map((m) => (
-                    <button key={m.id} type="button" onClick={() => set("mode", m.id)} className={`w-full rounded-xl border p-3 text-left transition ${form.mode === m.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2.5">
-                          <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${form.mode === m.id ? "border-accent" : "border-ink/25"}`}>
-                            {form.mode === m.id && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-                          </span>
-                          <div>
-                            <div className="text-sm font-medium">{m.title}</div>
-                            <div className="text-[11px] leading-4 text-ink/60">{m.body}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex gap-1.5 pl-6">
-                        {m.steps.map(([label, on]) => (
-                          <span key={label} className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-border bg-panel text-ink/70" : "border-dashed border-border text-ink/45"}`}>{label}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                {form.mode !== "review" && (
-                  <div className="space-y-1.5 pt-1">
-                    {connections.length === 0 ? (
-                      <p className="rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn-ink">
-                        Henüz site bağlantın yok — <Link href="/content" className="font-medium underline">Yayın Hedefleri</Link>&apos;nden WordPress, Shopify ya da webhook bağla.
-                      </p>
-                    ) : (
-                      <select value={form.connectionId || ""} onChange={(e) => set("connectionId", Number(e.target.value))} className={input}>
-                        <option value="">Entegrasyon seç…</option>
-                        {connections.map((c) => (
-                          <option key={c.id} value={c.id}>{c.label} · {c.platform === "wordpress" ? "WordPress" : c.platform === "shopify" ? "Shopify" : "Webhook"}</option>
-                        ))}
-                      </select>
-                    )}
-                    {form.mode === "publish" && <p className="text-[11px] text-danger-ink">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
-                      <span>
-                        <span className="block text-sm font-medium">Kalite kapısı</span>
-                        <span className="block text-[11px] text-ink/60">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, onay kuyruğunda beklet (AI&apos;sız, ücretsiz)</span>
-                      </span>
-                      <select value={form.minCitability} onChange={(e) => set("minCitability", Number(e.target.value))} className="rounded-lg border border-border bg-muted px-2 py-1.5 text-sm">
-                        {[0, 40, 50, 60, 70].map((v) => <option key={v} value={v}>{v === 0 ? "Kapalı" : `${v}/100`}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -819,6 +790,61 @@ export default function CampaignsPage() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-xs font-medium uppercase tracking-wide text-ink/60">Yazı hazır olunca ne olsun?</label>
+                <div className="space-y-2">
+                  {MODES.map((m) => (
+                    <button key={m.id} type="button" onClick={() => set("mode", m.id)} className={`w-full rounded-xl border p-3 text-left transition ${form.mode === m.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${form.mode === m.id ? "border-accent" : "border-ink/25"}`}>
+                            {form.mode === m.id && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                          </span>
+                          <div>
+                            <div className="text-sm font-medium">{m.title}</div>
+                            <div className="text-[11px] leading-4 text-ink/60">{m.body}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-1.5 pl-6">
+                        {m.steps.map(([label, on]) => (
+                          <span key={label} className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-border bg-panel text-ink/70" : "border-dashed border-border text-ink/45"}`}>{label}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {form.mode !== "review" && (
+                  <div className="space-y-1.5 pt-1">
+                    {connections.length === 0 ? (
+                      <p className="rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn-ink">
+                        Henüz site bağlantın yok — <Link href="/content" className="font-medium underline">Yayın Hedefleri</Link>&apos;nden WordPress, Shopify ya da webhook bağla.
+                      </p>
+                    ) : (
+                      <select value={form.connectionId || ""} onChange={(e) => set("connectionId", Number(e.target.value))} className={input}>
+                        <option value="">Entegrasyon seç…</option>
+                        {connections.map((c) => (
+                          <option key={c.id} value={c.id}>{c.label} · {c.platform === "wordpress" ? "WordPress" : c.platform === "shopify" ? "Shopify" : "Webhook"}</option>
+                        ))}
+                      </select>
+                    )}
+                    {form.mode === "publish" && <p className="text-[11px] text-danger-ink">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
+                      <span>
+                        <span className="block text-sm font-medium">Kalite kapısı</span>
+                        <span className="block text-[11px] text-ink/60">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, onay kuyruğunda beklet (AI&apos;sız, ücretsiz)</span>
+                      </span>
+                      <select value={form.minCitability} onChange={(e) => set("minCitability", Number(e.target.value))} className="rounded-lg border border-border bg-muted px-2 py-1.5 text-sm">
+                        {[0, 40, 50, 60, 70].map((v) => <option key={v} value={v}>{v === 0 ? "Kapalı" : `${v}/100`}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <details className="group rounded-xl border border-border">
+                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium">Gelişmiş ayarlar <span className="font-normal text-sub">· yazı tipi, dil, kapak, içindekiler… varsayılanlar çoğu site için uygun</span></summary>
+                <div className="space-y-6 border-t border-border px-4 py-4">
+              <div className="space-y-2">
                 <label className="text-xs font-medium uppercase tracking-wide text-ink/60">Yazı tipi</label>
                 <div className="flex gap-2">
                   {(["article", "listicle"] as Format[]).map((f) => (
@@ -886,8 +912,11 @@ export default function CampaignsPage() {
                 ))}
               </div>
 
+                </div>
+              </details>
+
               <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-xs leading-5 text-ink/70">
-                Ayda yaklaşık <strong>{perMonth} makale</strong> → {credits} içerik üretim kredisi (AI). Beslemeler, konu seçimi, kapak (markalı), içindekiler ve zamanlama ücretsizdir.
+                <strong>Özet:</strong> {FREQ_LABEL[form.frequency].toLocaleLowerCase("tr")} {form.postsPerRun} yazı yazılır{form.id ? "" : ", ilki hemen"}. {form.mode === "review" ? "Yazılar Takvim ve Onay'da onayını bekler; sen onaylamadan hiçbir şey yayınlanmaz." : form.mode === "cms-draft" ? "Yazılar sitene taslak olarak gider; yayına sen alırsın." : "Yazılar sitende kontrol edilmeden yayınlanır."} Ayda ~{perMonth} yazı → {credits} içerik kredisi.
               </div>
               <ErrorBlock message={formError} />
             </div>

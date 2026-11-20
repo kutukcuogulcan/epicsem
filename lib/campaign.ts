@@ -261,14 +261,14 @@ export async function runCampaign(campaign: Campaign): Promise<CampaignRunResult
 
     const where =
       campaign.mode === "review"
-        ? "Content Studio'da inceleyip yayınlayabilirsin."
+        ? "Takvim ve Onay'da inceleyip yayınlayabilirsin."
         : sent.length
           ? campaign.mode === "publish"
             ? `${sent.length} tanesi sitede yayınlandı.`
             : `${sent.length} tanesi sitene taslak olarak gönderildi.`
-          : "Siteye gönderilemedi, Content Studio'da duruyor.";
+          : "Siteye gönderilemedi, Takvim ve Onay'da duruyor.";
     const parts = [`${made.length} yeni yazı: ${made.map((m) => `"${m.label}"`).join(", ")} — ${where}`];
-    if (held.length) parts.push(`Alıntılanabilirlik puanı eşiğin altında kaldığı için siteye gönderilmeyenler: ${held.join(", ")} — Content Studio'da bekliyor.`);
+    if (held.length) parts.push(`Alıntılanabilirlik puanı eşiğin altında kaldığı için siteye gönderilmeyenler: ${held.join(", ")} — Takvim ve Onay'da bekliyor.`);
     if (quotaHit) parts.push(quotaHit);
     if (errors.length) parts.push(`Hata: ${errors.join(" · ")}`);
     const message = parts.join(" ");
