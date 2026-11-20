@@ -21,7 +21,7 @@ interface DraftItem {
   createdAt: string;
 }
 
-const tone = (n: number) => (n >= 65 ? "bg-seo/10 text-seo" : n >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger");
+const tone = (n: number) => (n >= 65 ? "bg-seo/10 text-seo-ink" : n >= 45 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink");
 const source = (s: string) => (s.startsWith("keyword:") ? `Anahtar kelime · ${s.slice(8)}` : s === "editor" ? "Editörde yazıldı" : s.replace(/^https?:\/\/(www\.)?/, ""));
 
 /**
@@ -127,7 +127,7 @@ export default function EditorHome({
   if (failed.length)
     actions.push({
       kind: "Hata",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${failed.length} yazı yayınlanamadı`,
       body: `"${failed[0].article.title || "Başlıksız"}" siteye gönderilirken hata aldı. Aç, hatayı gör ve tekrar dene.`,
       cta: <button type="button" onClick={() => onOpen(failed[0].id)} className={BTN2}>Yazıyı aç</button>,
@@ -135,7 +135,7 @@ export default function EditorHome({
   if (ready.length)
     actions.push({
       kind: "Hazır",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: `${ready.length} yazı yayına hazır`,
       body: `GEO puanı 65 ve üstü ama henüz sitede değil. En iyisi: "${ready[0].article.title || "Başlıksız"}".`,
       cta: <button type="button" onClick={() => onOpen(ready[0].id)} className={BTN2}>Aç ve yayınla</button>,
@@ -143,7 +143,7 @@ export default function EditorHome({
   if (weak.length)
     actions.push({
       kind: "Zayıf",
-      color: "text-warn",
+      color: "text-warn-ink",
       title: `${weak.length} yazı AI'da alıntılanmaya hazır değil`,
       body: `"${weak[0].article.title || "Başlıksız"}" ${weak[0].geo} puanda. Editörde kısa cevap, soru başlıklar ve somut sayı ekle; puan canlı yükselir.`,
       cta: <button type="button" onClick={() => setFilter("weak")} className={BTN2}>Zayıfları göster</button>,
@@ -191,7 +191,7 @@ export default function EditorHome({
         }
       />
 
-      {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{msg.t}</div>}
+      {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger-ink" : "bg-seo/10 text-seo-ink"}`}>{msg.t}</div>}
 
       {empty ? (
         <div className={`${card} p-5`}>
@@ -209,7 +209,7 @@ export default function EditorHome({
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {([
               ["Toplam yazı", String(kpi.n), "", "taslak ve yayındakiler", ""],
-              ["Ortalama GEO puanı", kpi.avg !== null ? String(kpi.avg) : "—", "/100", "AI'da alıntılanabilirlik", kpi.avg === null ? "" : kpi.avg >= 65 ? "text-seo" : kpi.avg >= 45 ? "text-warn" : "text-danger"],
+              ["Ortalama GEO puanı", kpi.avg !== null ? String(kpi.avg) : "—", "/100", "AI'da alıntılanabilirlik", kpi.avg === null ? "" : kpi.avg >= 65 ? "text-seo-ink" : kpi.avg >= 45 ? "text-warn-ink" : "text-danger-ink"],
               ["Yayında", String(kpi.pub), "", kpi.n ? `yazıların %${Math.round((kpi.pub / kpi.n) * 100)}'i` : "", ""],
               ["Yayına hazır", String(ready.length), "", "GEO 65+ taslak", ""],
               ["Son 30 gün", String(kpi.month), "", `${kpi.words.toLocaleString("tr-TR")} kelime toplam`, ""],
@@ -374,7 +374,7 @@ export default function EditorHome({
           <button disabled={loading || !importUrl.trim()} className={BTN1}>
             {loading ? "Açılıyor…" : "Sayfayı aç →"}
           </button>
-          {msg?.bad && <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger">{msg.t}</p>}
+          {msg?.bad && <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger-ink">{msg.t}</p>}
         </form>
       </Drawer>
 

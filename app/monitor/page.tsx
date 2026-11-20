@@ -181,7 +181,7 @@ export default function MonitorPage() {
   const INPUT = "h-9 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]";
   const chip = (on: boolean) =>
     `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
-  const tone = (n: number) => (n >= 80 ? "bg-seo/10 text-seo" : n >= 60 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger");
+  const tone = (n: number) => (n >= 80 ? "bg-seo/10 text-seo-ink" : n >= 60 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink");
 
   const list = pages ?? [];
   const checked = list.filter((p) => p.latestCheck);
@@ -202,7 +202,7 @@ export default function MonitorPage() {
   if (blocked.length)
     actions.push({
       kind: "Kritik",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${blocked.length} sayfada AI botu engelli`,
       body: `${host(blocked[0].url)}: ${blocked[0].latestCheck!.blockedBots.slice(0, 3).join(", ")}. Bu sayfa ChatGPT/Claude cevaplarında kaynak olamaz; robots.txt ya da CDN kuralını kontrol et.`,
       cta: <button type="button" onClick={() => openPage(blocked[0].id)} className={BTN2}>Detayı aç</button>,
@@ -219,7 +219,7 @@ export default function MonitorPage() {
   if (list.length < 3)
     actions.push({
       kind: "Kapsam",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Kritik sayfalarını ekle",
       body: "Ana sayfa, en çok trafik alan blog yazısı ve fiyat/ürün sayfası. Engelleme genelde tüm siteyi değil bazı yolları etkiler.",
       cta: <button type="button" onClick={() => setAddOpen(true)} className={BTN2}>Sayfa ekle</button>,
@@ -227,7 +227,7 @@ export default function MonitorPage() {
   if (!actions.length)
     actions.push({
       kind: "İyi",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Tüm sayfalar AI botlarına açık",
       body: "Kontroller her gün otomatik çalışır. Bir bot engellenirse burada ve Slack'te uyarı görürsün.",
       cta: <button type="button" onClick={() => checkNow()} className={BTN2}>Şimdi kontrol et</button>,
@@ -292,10 +292,10 @@ export default function MonitorPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {([
               ["İzlenen sayfa", String(list.length), "", `${checked.length} kontrol edildi`, ""],
-              ["AI'ya kapalı", String(blocked.length), `/${checked.length || list.length}`, "en az bir bot engelli", blocked.length ? "text-danger" : "text-seo"],
+              ["AI'ya kapalı", String(blocked.length), `/${checked.length || list.length}`, "en az bir bot engelli", blocked.length ? "text-danger-ink" : "text-seo-ink"],
               ["Ort. AXO", avg("aiCrawlScore") !== null ? String(avg("aiCrawlScore")) : "—", "/100", "AI erişim puanı", ""],
               ["Ort. SEO", avg("score") !== null ? String(avg("score")) : "—", "/100", "teknik puan", ""],
-              ["Açık uyarı", String(openAlerts.length), "", "onaylanmamış", openAlerts.length ? "text-danger" : ""],
+              ["Açık uyarı", String(openAlerts.length), "", "onaylanmamış", openAlerts.length ? "text-danger-ink" : ""],
             ] as const).map(([l, v, suf, hint, col]) => (
               <div key={l} className={`${CARD} px-4 py-4`}>
                 <div className="text-xs font-medium text-sub">{l}</div>
@@ -359,9 +359,9 @@ export default function MonitorPage() {
                         {!c ? (
                           <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">Kontrol edilmedi</span>
                         ) : c.blockedBots.length ? (
-                          <span className="rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger">{c.blockedBots.length} bot engelli</span>
+                          <span className="rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger-ink">{c.blockedBots.length} bot engelli</span>
                         ) : (
-                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">AI&apos;ya açık</span>
+                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">AI&apos;ya açık</span>
                         )}
                       </td>
                       <td className="py-2.5 pr-3 text-right">{c ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(c.score)}`}>{c.score}</span> : "—"}</td>
@@ -412,7 +412,7 @@ export default function MonitorPage() {
                     <div className="mb-1.5 text-xs font-medium text-sub">Engellenen botlar</div>
                     <div className="flex flex-wrap gap-1.5">
                       {selPage.latestCheck.blockedBots.map((b) => (
-                        <span key={b} className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">
+                        <span key={b} className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">
                           {b}
                         </span>
                       ))}
@@ -458,7 +458,7 @@ export default function MonitorPage() {
                   removePage(selPage.id);
                   setSel(null);
                 }}
-                className="ml-auto text-xs font-medium text-danger/70 hover:text-danger"
+                className="ml-auto text-xs font-medium text-danger-ink hover:text-danger-ink"
               >
                 İzlemeyi bırak
               </button>

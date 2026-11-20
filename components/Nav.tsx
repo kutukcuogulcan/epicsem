@@ -22,7 +22,7 @@ export default async function Nav() {
             E
           </span>
           <span className="font-extrabold text-lg tracking-tight">Epicsem</span>
-          <span className="text-sm font-medium text-ink/40 hidden sm:inline">SEO + GEO/AEO</span>
+          <span className="text-sm font-medium text-ink/60 hidden sm:inline">SEO + GEO/AEO</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-ink/70">
@@ -79,12 +79,12 @@ export default async function Nav() {
         <div className="flex items-center gap-4 shrink-0">
           {isDemoFallback ? (
             <div className="hidden lg:flex items-center gap-3 text-xs">
-              <span className="text-warn font-medium">Demo modu · giriş şart değil</span>
+              <span className="text-warn-ink font-medium">Demo modu · giriş şart değil</span>
               <Link href="/login" className="text-accent hover:underline">Hesapla gir</Link>
             </div>
           ) : user ? (
             <div className="hidden lg:flex items-center gap-3 text-xs">
-              <span className="text-ink/50">{user.email}</span>
+              <span className="text-ink/60">{user.email}</span>
               <LogoutButton />
             </div>
           ) : (

@@ -18,13 +18,13 @@ export default function HeroUrlForm() {
       className="mx-auto flex w-full max-w-xl flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel/90 p-2 shadow-xl shadow-accent/10 backdrop-blur"
     >
       <div className="flex flex-1 items-center gap-2 px-3">
-        <span className="text-ink/30">🌐</span>
+        <span className="text-ink/45">🌐</span>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="siteniz.com"
           aria-label="Sitenizin adresi"
-          className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-ink/30"
+          className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-ink/45"
         />
       </div>
       <button

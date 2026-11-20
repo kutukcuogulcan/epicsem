@@ -41,9 +41,9 @@ const TYPE_LABEL: Record<InputType, string> = {
 const TYPE_BADGE_CLASS: Record<InputType, string> = {
   "seo-gap": "badge-info",
   listicle: "badge-info",
-  news: "bg-warn/10 text-warn",
-  comparison: "bg-seo/10 text-seo",
-  alternatives: "bg-seo/10 text-seo",
+  news: "bg-warn/10 text-warn-ink",
+  comparison: "bg-seo/10 text-seo-ink",
+  alternatives: "bg-seo/10 text-seo-ink",
 };
 
 // Quick-action cards. `direct: true` means clicking adds the input immediately
@@ -276,7 +276,7 @@ export default function ContentHub() {
       <div className="card space-y-3">
         <div>
           <h2 className="font-bold">İçerik kaynakları</h2>
-          <p className="text-xs text-ink/50 mt-0.5">
+          <p className="text-xs text-ink/60 mt-0.5">
             Her giriş gerçek bir kaynağa dayanır — ya en son Rakip Boşluğu bulgunuza, ya da sizin verdiğiniz gerçek
             bir URL&apos;ye. Hiçbir başlık veya sayı uydurulmaz.
           </p>
@@ -311,7 +311,7 @@ export default function ContentHub() {
                 <CardIcon type={c.type} />
               </span>
               <div className="mt-1.5 text-xs font-semibold leading-tight">{c.title}</div>
-              <div className="text-[10px] text-ink/40 mt-0.5">
+              <div className="text-[11px] text-ink/60 mt-0.5">
                 {addingType === c.type ? "Ekleniyor…" : c.hint}
               </div>
             </button>
@@ -338,7 +338,7 @@ export default function ContentHub() {
         )}
 
         <ErrorBlock message={error} />
-        {!hasBrand && <div className="text-xs text-ink/40">Kartlara tıklamak için önce marka adı ve alan adını girin.</div>}
+        {!hasBrand && <div className="text-xs text-ink/60">Kartlara tıklamak için önce marka adı ve alan adını girin.</div>}
       </div>
 
       <div className="card space-y-3">
@@ -346,21 +346,21 @@ export default function ContentHub() {
           <button
             type="button"
             onClick={() => setTab("inputs")}
-            className={`pb-2 -mb-px border-b-2 ${tab === "inputs" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
+            className={`pb-2 -mb-px border-b-2 ${tab === "inputs" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/60"}`}
           >
             Girişler {inputs ? `(${inputs.length})` : ""}
           </button>
           <button
             type="button"
             onClick={() => setTab("generations")}
-            className={`pb-2 -mb-px border-b-2 ${tab === "generations" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
+            className={`pb-2 -mb-px border-b-2 ${tab === "generations" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/60"}`}
           >
             Üretilenler ({generationsCount})
           </button>
           <button
             type="button"
             onClick={() => setTab("publications")}
-            className={`pb-2 -mb-px border-b-2 ${tab === "publications" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
+            className={`pb-2 -mb-px border-b-2 ${tab === "publications" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/60"}`}
           >
             Yayınlananlar ({publicationsCount})
           </button>
@@ -368,15 +368,15 @@ export default function ContentHub() {
 
         {tab === "inputs" && (
           <>
-            {!hasBrand && <div className="text-sm text-ink/40 text-center py-4">Önce markanızı girin.</div>}
+            {!hasBrand && <div className="text-sm text-ink/60 text-center py-4">Önce markanızı girin.</div>}
             {hasBrand && loading && <TableSkeleton rows={3} cols={3} />}
             {hasBrand && !loading && inputs && inputs.length === 0 && (
-              <div className="text-sm text-ink/40 text-center py-4">Kuyrukta henüz bir şey yok — yukarıdaki kartlardan ekleyin.</div>
+              <div className="text-sm text-ink/60 text-center py-4">Kuyrukta henüz bir şey yok — yukarıdaki kartlardan ekleyin.</div>
             )}
             {hasBrand && inputs && inputs.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-ink/40 text-left">
+                  <thead className="text-ink/60 text-left">
                     <tr>
                       <th className="py-2 pr-4">#</th>
                       <th className="py-2 pr-4">Input</th>
@@ -387,10 +387,10 @@ export default function ContentHub() {
                   <tbody>
                     {inputs.map((input, i) => (
                       <tr key={input.id} className="border-t border-border">
-                        <td className="py-2 pr-4 text-ink/40">{inputs.length - i}</td>
+                        <td className="py-2 pr-4 text-ink/60">{inputs.length - i}</td>
                         <td className="py-2 pr-4 max-w-md">
                           <div className="flex items-center gap-2">
-                            <span className="h-6 w-6 rounded bg-muted flex items-center justify-center text-ink/50 shrink-0">
+                            <span className="h-6 w-6 rounded bg-muted flex items-center justify-center text-ink/60 shrink-0">
                               <CardIcon type={input.type} />
                             </span>
                             <div className="min-w-0">
@@ -399,14 +399,14 @@ export default function ContentHub() {
                               </div>
                               <span className={`badge ${TYPE_BADGE_CLASS[input.type]} mt-0.5`}>{TYPE_LABEL[input.type]}</span>
                               {input.status === "failed" && input.error && (
-                                <div className="text-xs text-danger mt-0.5 truncate" title={input.error}>
+                                <div className="text-xs text-danger-ink mt-0.5 truncate" title={input.error}>
                                   {input.error}
                                 </div>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="py-2 pr-4 text-ink/50">{input.language.toUpperCase()}</td>
+                        <td className="py-2 pr-4 text-ink/60">{input.language.toUpperCase()}</td>
                         <td className="py-2 pr-4 text-right whitespace-nowrap">
                           {input.status === "drafted" ? (
                             <span className="badge badge-pass">Taslak hazır</span>
@@ -420,7 +420,7 @@ export default function ContentHub() {
                               {generatingId === input.id ? "Üretiliyor…" : input.status === "failed" ? "Tekrar dene" : "Generate Article"}
                             </button>
                           )}
-                          <button type="button" onClick={() => remove(input.id)} className="text-xs text-ink/30 hover:text-danger">
+                          <button type="button" onClick={() => remove(input.id)} className="text-xs text-ink/45 hover:text-danger-ink">
                             Sil
                           </button>
                         </td>
@@ -435,22 +435,22 @@ export default function ContentHub() {
 
         {tab === "generations" && (
           <div className="space-y-2">
-            {generationsCount === 0 && <div className="text-sm text-ink/40 text-center py-4">Henüz üretilen taslak yok.</div>}
+            {generationsCount === 0 && <div className="text-sm text-ink/60 text-center py-4">Henüz üretilen taslak yok.</div>}
             {drafts?.slice(0, 10).map((d) => (
               <div key={d.id} className="flex items-center justify-between gap-3 text-sm border-t border-border py-2 first:border-t-0">
                 <span className="truncate">{d.article.title}</span>
-                <span className="text-xs text-ink/40 shrink-0">{new Date(d.createdAt).toLocaleDateString()}</span>
+                <span className="text-xs text-ink/60 shrink-0">{new Date(d.createdAt).toLocaleDateString()}</span>
               </div>
             ))}
             {generationsCount > 0 && (
-              <p className="text-xs text-ink/30 pt-1">Aşağıdaki taslak listesinden içeriği görüntüleyip yayınlayabilirsiniz.</p>
+              <p className="text-xs text-ink/45 pt-1">Aşağıdaki taslak listesinden içeriği görüntüleyip yayınlayabilirsiniz.</p>
             )}
           </div>
         )}
 
         {tab === "publications" && (
           <div className="space-y-2">
-            {publicationsCount === 0 && <div className="text-sm text-ink/40 text-center py-4">Henüz yayınlanan yok.</div>}
+            {publicationsCount === 0 && <div className="text-sm text-ink/60 text-center py-4">Henüz yayınlanan yok.</div>}
             {drafts
               ?.filter((d) => d.status === "published-to-wp")
               .slice(0, 10)

@@ -118,11 +118,11 @@ export default function PrivacyPage() {
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Gizlilik Politikası" }]} />
         <h1 className="text-3xl font-extrabold tracking-tight">Gizlilik Politikası</h1>
-        <p className="text-ink/40 text-xs">Son güncelleme: bu sayfa {SITE_NAME} test aşamasındayken hazırlanmıştır.</p>
+        <p className="text-ink/60 text-xs">Son güncelleme: bu sayfa {SITE_NAME} test aşamasındayken hazırlanmıştır.</p>
       </div>
 
       <div className="card border-warn/40 text-sm text-ink/70">
-        <strong className="text-warn">Taslak metin.</strong> Bu sayfa {SITE_NAME}&apos;in gerçekte topladığı verileri
+        <strong className="text-warn-ink">Taslak metin.</strong> Bu sayfa {SITE_NAME}&apos;in gerçekte topladığı verileri
         ve kullanım amaçlarını dürüstçe anlatır, ancak bir hukuk danışmanı tarafından gözden geçirilmedi. Gerçek
         kullanıcılardan veri toplamaya başlamadan önce (özellikle KVKK/GDPR kapsamında) bir avukata gösterilmesi
         önerilir. İletişim e-postası da bir yer tutucudur — {CONTACT_EMAIL} gerçek bir destek adresiyle

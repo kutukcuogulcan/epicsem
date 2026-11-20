@@ -19,10 +19,11 @@ const config: Config = {
         border: "#e9eaeb",
         ink: "#0a0d12",
         accent: "#4f00ff",
-        seo: "#10b981",
+        // DEFAULT dolgu/çizgi içindir; yazı için -ink tonu (beyaz zeminde ≥4.5:1).
+        seo: { DEFAULT: "#10b981", ink: "#047857" },
         geo: "#a78bfa",
-        warn: "#f59e0b",
-        danger: "#ef4444",
+        warn: { DEFAULT: "#f59e0b", ink: "#b45309" },
+        danger: { DEFAULT: "#ef4444", ink: "#b91c1c" },
       },
       fontFamily: {
         // Eudoxus Sans (arvow.com's actual font, self-hosted via next/font/local — see

@@ -144,7 +144,7 @@ export default function ContentStudioPage() {
   if (!connections.length)
     actions.push({
       kind: "Kurulum",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: "Henüz bağlı site yok",
       body: "WordPress, Shopify ya da Webhook (Wix, Webflow, Ghost, Framer…) bağla; yazıları editörden tek tıkla sitene taslak olarak gönder ya da zamanla.",
       cta: <button type="button" onClick={() => setAddOpen(true)} className={BTN2}>Site bağla</button>,
@@ -152,7 +152,7 @@ export default function ContentStudioPage() {
   if (failed.length)
     actions.push({
       kind: "Hata",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${failed.length} yazı gönderilemedi`,
       body: `"${failed[0].article.title || "Başlıksız"}": ${failed[0].publishError ?? "gönderim hatası"}`,
       cta: <Link href={`/editor?draftId=${failed[0].id}`} className={BTN2}>Yazıyı aç</Link>,
@@ -168,7 +168,7 @@ export default function ContentStudioPage() {
   if (actions.length < 3)
     actions.push({
       kind: "Otomatik",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Yayını Autoblog'a bırak",
       body: "Autoblog, kelime listesinden ya da beslemeden yazıları düzenli üretip bağlı siteye taslak olarak gönderir.",
       cta: <Link href="/campaigns" className={BTN2}>Autoblog</Link>,
@@ -195,8 +195,8 @@ export default function ContentStudioPage() {
           ["Bağlı site", String(connections.length), connections.length ? Array.from(new Set(connections.map((c) => PL[c.platform] ?? c.platform))).join(", ") : "henüz yok", ""],
           ["Sitede taslak", String(drafts.filter((d) => publishLabel(d).key === "remote-draft").length), "onayını bekliyor", ""],
           ["Zamanlanmış", String(scheduled.length), "ileri tarihli", ""],
-          ["Yayında", String(published.length), "canlı yazı", published.length ? "text-seo" : ""],
-          ["Hata", String(failed.length), "gönderilemeyen", failed.length ? "text-danger" : ""],
+          ["Yayında", String(published.length), "canlı yazı", published.length ? "text-seo-ink" : ""],
+          ["Hata", String(failed.length), "gönderilemeyen", failed.length ? "text-danger-ink" : ""],
         ] as const).map(([l, v, hint, col]) => (
           <div key={l} className={`${CARD} px-4 py-4`}>
             <div className="text-xs font-medium text-sub">{l}</div>
@@ -236,7 +236,7 @@ export default function ContentStudioPage() {
             <ul className="divide-y divide-border border-t border-border">
               {connections.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 px-5 py-3 text-[13px]">
-                  <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">{PL[c.platform] ?? c.platform}</span>
+                  <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">{PL[c.platform] ?? c.platform}</span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{c.label}</div>
                     <div className="truncate text-[11px] text-sub">
@@ -244,7 +244,7 @@ export default function ContentStudioPage() {
                       {c.authIdentifier ? ` · ${c.authIdentifier}` : ""}
                     </div>
                   </div>
-                  <button type="button" onClick={() => deleteConnection(c.id)} className="text-xs font-medium text-danger/70 hover:text-danger">
+                  <button type="button" onClick={() => deleteConnection(c.id)} className="text-xs font-medium text-danger-ink hover:text-danger-ink">
                     Kaldır
                   </button>
                 </li>
@@ -370,7 +370,7 @@ export default function ContentStudioPage() {
                 ? "Shopify'da: Ayarlar → Uygulamalar ve satış kanalları → Uygulama geliştir → özel uygulama oluştur, Admin API'de write_content iznini aç, oluşan token'ı buraya yapıştır."
                 : "WordPress'te: Kullanıcılar → Profil → Uygulama Parolaları → yeni bir tane ekle. Gerçek giriş parolan değil."}
           </p>
-          {testResult && <p className={`rounded-lg px-3 py-2 text-xs ${testResult.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>{testResult.message}</p>}
+          {testResult && <p className={`rounded-lg px-3 py-2 text-xs ${testResult.ok ? "bg-seo/10 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>{testResult.message}</p>}
           <ErrorBlock message={connError} />
         </div>
       </Drawer>

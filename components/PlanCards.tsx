@@ -37,9 +37,9 @@ export default async function PlanCards({ currentPlan, signedIn }: { currentPlan
                 {isCurrent && <span className="pill-outline">Mevcut plan</span>}
                 {!isCurrent && highlight && <span className="badge badge-info">En popüler</span>}
               </div>
-              <p className="text-sm text-ink/50 mt-1">{meta.tagline}</p>
+              <p className="text-sm text-ink/60 mt-1">{meta.tagline}</p>
               <div className="mt-4 text-3xl font-extrabold tracking-tight">
-                {price ?? <span className="text-ink/30 text-xl">Fiyat yakında</span>}
+                {price ?? <span className="text-ink/45 text-xl">Fiyat yakında</span>}
               </div>
             </div>
             <ul className="space-y-2.5 text-sm text-ink/70 font-medium border-t border-border pt-5 flex-1">

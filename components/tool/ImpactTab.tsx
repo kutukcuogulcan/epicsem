@@ -21,9 +21,9 @@ const pct = (x: number | null) => (x == null ? "—" : `%${Math.round(x * 100)}`
 const VERDICT: Record<ImpactSummary["verdict"], { label: string; cls: string }> = {
   waiting: { label: "Ölçüm bekleniyor", cls: "bg-muted text-sub" },
   early: { label: "İlk sonuç", cls: "bg-sky-50 text-sky-700" },
-  up: { label: "İşe yaradı", cls: "bg-seo/10 text-seo" },
-  flat: { label: "Değişim yok", cls: "bg-warn/10 text-warn" },
-  down: { label: "Düştü", cls: "bg-danger/10 text-danger" },
+  up: { label: "İşe yaradı", cls: "bg-seo/10 text-seo-ink" },
+  flat: { label: "Değişim yok", cls: "bg-warn/10 text-warn-ink" },
+  down: { label: "Düştü", cls: "bg-danger/10 text-danger-ink" },
 };
 const nextAuto = (t: Track) => {
   if (!t.doneAt) return null;
@@ -97,7 +97,7 @@ export default function ImpactTab() {
       <div className={`${CARD} p-4 md:p-5`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold">Yaptığın iş AI görünürlüğünü değiştirdi mi?</h3>
+            <h2 className="text-sm font-semibold">Yaptığın iş AI görünürlüğünü değiştirdi mi?</h2>
             <p className="text-xs text-sub">
               Bir yazı ya da off-page işi için hedef soruyu ve onunla bağlantılı soruları seç. Önce şimdiki durum ölçülür; işi tamamlayınca 3 gün arayla yeniden ölçülür ve önce/sonra karşılaştırılır.
             </p>
@@ -115,13 +115,13 @@ export default function ImpactTab() {
           ] as const).map(([l, v, h]) => (
             <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
-              <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Ortalama değişim" && avg != null ? (avg > 0 ? "text-seo" : avg < 0 ? "text-danger" : "") : ""}`}>{v}</div>
+              <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Ortalama değişim" && avg != null ? (avg > 0 ? "text-seo-ink" : avg < 0 ? "text-danger-ink" : "") : ""}`}>{v}</div>
               <div className="truncate text-[11px] text-sub">{h}</div>
             </div>
           ))}
         </div>
-        {!engines.length && tracks && <p className="mt-3 text-xs text-danger">Ölçüm için en az bir AI motorunun anahtarı gerekli (Entegrasyonlar).</p>}
-        {err && <p className="mt-3 text-xs text-danger">{err}</p>}
+        {!engines.length && tracks && <p className="mt-3 text-xs text-danger-ink">Ölçüm için en az bir AI motorunun anahtarı gerekli (Entegrasyonlar).</p>}
+        {err && <p className="mt-3 text-xs text-danger-ink">{err}</p>}
       </div>
 
       {tracks === null ? (
@@ -159,7 +159,7 @@ export default function ImpactTab() {
                     <div className="text-sub">→</div>
                     <div className="text-center">
                       <div className="text-[11px] text-sub">Sonra{s.afterChecks > 1 ? ` (${s.afterChecks} ölçüm ort.)` : ""}</div>
-                      <div className={`text-[20px] font-semibold tabular-nums ${s.after != null && s.before != null ? (s.after > s.before ? "text-seo" : s.after < s.before ? "text-danger" : "") : ""}`}>{pct(s.after)}</div>
+                      <div className={`text-[20px] font-semibold tabular-nums ${s.after != null && s.before != null ? (s.after > s.before ? "text-seo-ink" : s.after < s.before ? "text-danger-ink" : "") : ""}`}>{pct(s.after)}</div>
                     </div>
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export default function ImpactTab() {
                   <button type="button" onClick={() => setOpen(isOpen ? null : t.id)} className="inline-flex h-7 items-center rounded-lg px-2.5 font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
                     {isOpen ? "Gizle" : "Soru bazında"}
                   </button>
-                  <button type="button" onClick={() => remove(t.id)} className="inline-flex h-7 items-center rounded-lg px-2 text-danger hover:bg-danger/10" title="Sil">
+                  <button type="button" onClick={() => remove(t.id)} className="inline-flex h-7 items-center rounded-lg px-2 text-danger-ink hover:bg-danger/10" title="Sil">
                     ✕
                   </button>
                 </div>
@@ -213,8 +213,8 @@ export default function ImpactTab() {
                                   <span key={e.engine} className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px]">
                                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: ENGINE_META[e.engine]?.color ?? "#999" }} />
                                     {ENGINE_META[e.engine]?.name ?? e.engine}
-                                    <b className={e.before ? "text-seo" : "text-sub"}>{e.before == null ? "–" : e.before ? "✓" : "✕"}</b>→
-                                    <b className={e.after == null ? "text-sub" : e.after >= 0.5 ? "text-seo" : "text-danger"}>{e.after == null ? "?" : e.after >= 0.5 ? "✓" : "✕"}</b>
+                                    <b className={e.before ? "text-seo-ink" : "text-sub"}>{e.before == null ? "–" : e.before ? "✓" : "✕"}</b>→
+                                    <b className={e.after == null ? "text-sub" : e.after >= 0.5 ? "text-seo-ink" : "text-danger-ink"}>{e.after == null ? "?" : e.after >= 0.5 ? "✓" : "✕"}</b>
                                   </span>
                                 ))}
                               </div>
@@ -330,7 +330,7 @@ function NewTrack({
                   <input type="checkbox" checked={p.on} disabled={p.source === "target"} onChange={(e) => setPrompts(prompts.map((x, j) => (j === i ? { ...x, on: e.target.checked } : x)))} className="mt-1" />
                   <span className="min-w-0 flex-1">
                     {p.text}
-                    <span className={`ml-1.5 rounded px-1 text-[10px] font-medium ${p.source === "target" ? "bg-accent/10 text-accent" : p.source === "library" ? "bg-seo/10 text-seo" : "bg-muted text-sub"}`}>
+                    <span className={`ml-1.5 rounded px-1 text-[11px] font-medium ${p.source === "target" ? "bg-accent/10 text-accent" : p.source === "library" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>
                       {p.source === "library" ? "kütüphaneden" : INTENT_LABEL[p.intent] ?? p.intent}
                     </span>
                   </span>
@@ -355,7 +355,7 @@ function NewTrack({
               <input type="checkbox" checked={f.done} onChange={(e) => setF({ ...f, done: e.target.checked })} />
               {f.kind === "article" ? "Yazı zaten yayında" : "İş zaten tamamlandı"} (ölçüm sayacı bugünden başlasın)
             </label>
-            {f.done && <p className="text-xs text-warn">Yazı zaten yayındaysa bugünkü ölçüm &quot;önce&quot; sayılır; gerçek &quot;önce&quot; durumu bilinemez. En doğru sonuç için takibi yayından önce başlat.</p>}
+            {f.done && <p className="text-xs text-warn-ink">Yazı zaten yayındaysa bugünkü ölçüm &quot;önce&quot; sayılır; gerçek &quot;önce&quot; durumu bilinemez. En doğru sonuç için takibi yayından önce başlat.</p>}
             <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
               <span className="text-xs text-sub">
                 {chosen.length} soru × {engines.length} motor = <b>{chosen.length * engines.length}</b> AI sorgusu (başlangıç ölçümü)
@@ -366,7 +366,7 @@ function NewTrack({
             </div>
           </div>
         )}
-        {err && <p className="text-xs text-danger">{err}</p>}
+        {err && <p className="text-xs text-danger-ink">{err}</p>}
       </div>
     </Drawer>
   );

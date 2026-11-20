@@ -137,7 +137,7 @@ export default function PublishDrawer({
       ) : done ? (
         <div className="space-y-3 text-sm">
           <div className="rounded-xl border border-seo/30 bg-seo/5 px-4 py-3">
-            <div className="font-medium text-seo">
+            <div className="font-medium text-seo-ink">
               {done.state === "published" ? "Yayınlandı ✓" : done.state === "scheduled" ? "Zamanlandı ✓" : "Sitene taslak olarak gönderildi ✓"}
             </div>
             {done.state === "scheduled" && done.scheduledAt && <div className="mt-0.5 text-sub">{new Date(done.scheduledAt).toLocaleString("tr-TR", { dateStyle: "long", timeStyle: "short" })} tarihinde yayına girecek.</div>}
@@ -238,7 +238,7 @@ export default function PublishDrawer({
               </span>
             </label>
             <div className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-sub">
-              Meta açıklama: {metaDescription ? <span className="text-ink/70">{metaDescription}</span> : <span className="text-warn">boş — sağ paneldeki SEO bölümünden ekle</span>}
+              Meta açıklama: {metaDescription ? <span className="text-ink/70">{metaDescription}</span> : <span className="text-warn-ink">boş — sağ paneldeki SEO bölümünden ekle</span>}
             </div>
           </div>
 

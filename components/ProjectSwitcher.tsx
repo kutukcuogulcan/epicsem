@@ -44,7 +44,7 @@ export default function ProjectSwitcher() {
 
   return (
     <div ref={ref} className="relative">
-      <div className="px-2 pb-1 text-[12px] font-medium text-ink/45">Proje</div>
+      <div className="px-2 pb-1 text-[12px] font-medium text-ink/60">Proje</div>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -62,7 +62,7 @@ export default function ProjectSwitcher() {
         ) : (
           <span className="flex-1 text-sub">{ready ? "Proje seç" : "Yükleniyor…"}</span>
         )}
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="shrink-0 text-ink/40">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="shrink-0 text-ink/60">
           <path d="M3 4.5l3-3 3 3M3 7.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
@@ -177,7 +177,7 @@ function ProjectForm({ initial, onClose }: { initial: { id?: number; name: strin
             <div key={i} className="flex gap-2">
               <input value={c.name} onChange={(e) => setComps((a) => a.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} placeholder="Rakip adı" className={inp} />
               <input value={c.domain} onChange={(e) => setComps((a) => a.map((x, j) => (j === i ? { ...x, domain: e.target.value } : x)))} placeholder="rakip.com" className={inp} />
-              <button type="button" onClick={() => setComps((a) => a.filter((_, j) => j !== i))} className="px-1 text-slate-400 hover:text-danger" aria-label="Sil">
+              <button type="button" onClick={() => setComps((a) => a.filter((_, j) => j !== i))} className="px-1 text-slate-400 hover:text-danger-ink" aria-label="Sil">
                 ✕
               </button>
             </div>

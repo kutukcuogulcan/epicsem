@@ -64,7 +64,7 @@ export default function PersonaPrompts({
     <div className="space-y-3 rounded-xl border border-accent/20 bg-accent/[0.03] p-3">
       <div>
         <div className="text-sm font-medium">Persona ile soru üret</div>
-        <p className="text-[11px] text-ink/50">Müşterilerin AI&apos;a gerçekte nasıl sorduğunu taklit eder. Sonuçlarda persona bazında görünürlük çıkar.</p>
+        <p className="text-[11px] text-ink/60">Müşterilerin AI&apos;a gerçekte nasıl sorduğunu taklit eder. Sonuçlarda persona bazında görünürlük çıkar.</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ürün/hizmet (ör. abiye elbise)" className={input} />
@@ -89,7 +89,7 @@ export default function PersonaPrompts({
         <button type="button" onClick={generateAi} disabled={busy} className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/5 disabled:opacity-50">
           {busy ? "Üretiliyor…" : "✦ AI ile zenginleştir (1 kredi)"}
         </button>
-        {note && <span className="text-[11px] text-ink/55">{note}</span>}
+        {note && <span className="text-[11px] text-ink/60">{note}</span>}
       </div>
       {list.length > 0 && (
         <div className="space-y-2">
@@ -99,7 +99,7 @@ export default function PersonaPrompts({
                 <label className="flex cursor-pointer items-start gap-2 text-xs">
                   <input type="checkbox" checked={p.on} onChange={() => setList((l) => l.map((x, j) => (j === i ? { ...x, on: !x.on } : x)))} className="mt-0.5 accent-[#4f00ff]" />
                   <span>
-                    <span className="mr-1 rounded bg-muted px-1.5 py-px text-[10px] font-medium text-ink/55">{p.persona}</span>
+                    <span className="mr-1 rounded bg-muted px-1.5 py-px text-[11px] font-medium text-ink/60">{p.persona}</span>
                     {p.text}
                   </span>
                 </label>

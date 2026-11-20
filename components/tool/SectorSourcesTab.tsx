@@ -13,10 +13,10 @@ const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(1
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 const KIND_CLS: Record<SourceKind, string> = {
-  video: "bg-danger/10 text-danger",
+  video: "bg-danger/10 text-danger-ink",
   community: "bg-[#ff4500]/10 text-[#d93a00]",
   complaint: "bg-emerald-50 text-emerald-700",
-  listicle: "bg-warn/10 text-warn",
+  listicle: "bg-warn/10 text-warn-ink",
   comparison: "bg-accent/10 text-accent",
   marketplace: "bg-sky-50 text-sky-700",
   "review-blog": "bg-violet-50 text-violet-700",
@@ -126,7 +126,7 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
       <div className={`${CARD} p-4 md:p-5`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold">AI&apos;ın sektöründe kaynak gösterdiği siteler</h3>
+            <h2 className="text-sm font-semibold">AI&apos;ın sektöründe kaynak gösterdiği siteler</h2>
             <p className="text-xs text-sub">Türkiye&apos;de ChatGPT ve Google&apos;ın AI cevaplarında en çok kullanılan siteler. Markanın ve rakiplerinin bu sitelerde geçip geçmediğini tarar.</p>
           </div>
           <label className="flex items-center gap-2 text-xs text-sub">
@@ -155,7 +155,7 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
               ] as const).map(([l, v, h]) => (
                 <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
-                  <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Fırsat" && gaps.length ? "text-danger" : ""}`}>{v}</div>
+                  <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Fırsat" && gaps.length ? "text-danger-ink" : ""}`}>{v}</div>
                   <div className="truncate text-[11px] text-sub" title={h}>
                     {h}
                   </div>
@@ -194,8 +194,8 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
                 {brands.length} marka × Google araması · {brands.length} AI sorgusu
               </span>
             </div>
-            {!searchOk && <p className="mt-2 text-xs text-danger">Tarama için Gemini (Google AI) anahtarı gerekiyor.</p>}
-            {err && <p className="mt-2 text-xs text-danger">{err}</p>}
+            {!searchOk && <p className="mt-2 text-xs text-danger-ink">Tarama için Gemini (Google AI) anahtarı gerekiyor.</p>}
+            {err && <p className="mt-2 text-xs text-danger-ink">{err}</p>}
             <p className="mt-3 text-[11px] text-sub">
               {sec.basis} &quot;Bulunamadı&quot;, Google aramasında sayfa çıkmadı demektir; sitede hiç geçmediğinin kesin kanıtı değildir.
             </p>
@@ -277,7 +277,7 @@ function Row({
           {s.label}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-1 pl-6">
-          <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${KIND_CLS[s.kind]}`}>{meta.label}</span>
+          <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${KIND_CLS[s.kind]}`}>{meta.label}</span>
           <span className="text-[11px] text-sub">{s.host}</span>
         </div>
       </td>
@@ -289,7 +289,7 @@ function Row({
         {!scanned ? (
           <span className="text-sub">—</span>
         ) : ownPages.length ? (
-          <a href={ownPages[0]} target="_blank" rel="noreferrer" className="inline-flex rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo hover:underline">
+          <a href={ownPages[0]} target="_blank" rel="noreferrer" className="inline-flex rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink hover:underline">
             ✓ Bulundu{ownPages.length > 1 ? ` (${ownPages.length})` : ""}
           </a>
         ) : (
@@ -302,7 +302,7 @@ function Row({
         ) : rivalHits.length ? (
           <div className="flex flex-wrap gap-1">
             {rivalHits.map((r) => (
-              <a key={r.name} href={r.url} target="_blank" rel="noreferrer" className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger hover:underline">
+              <a key={r.name} href={r.url} target="_blank" rel="noreferrer" className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink hover:underline">
                 {r.name}
               </a>
             ))}

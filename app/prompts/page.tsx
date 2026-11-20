@@ -26,7 +26,7 @@ export default function PromptsPage() {
               reponuzda gerçekten var olana dayanacak şekilde tasarlandı — uydurma istatistik yok, ince otomatik
               üretilmiş sayfa yok.
             </p>
-            <p className="text-ink/40 text-xs max-w-3xl mt-2">
+            <p className="text-ink/60 text-xs max-w-3xl mt-2">
               Bunlar kendinizin dolduracağı statik şablonlardır. Kendi gerçek bulgularınızla önceden doldurulmuş bir
               prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> ya da bir{" "}
               <a href="/gap" className="text-accent hover:underline">gap analysis</a> çalıştırın — ikisinde de o

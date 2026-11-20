@@ -36,8 +36,8 @@ const UGC = ["reddit.com", "youtube.com", "quora.com", "medium.com", "x.com", "t
 const EDITORIAL = ["hurriyet.com.tr", "milliyet.com.tr", "sabah.com.tr", "ntv.com.tr", "cnnturk.com", "sozcu.com.tr", "haberturk.com", "webtekno.com", "donanimhaber.com", "shiftdelete.net", "forbes.com", "bbc.com", "nytimes.com", "bloomberg.com", "techcrunch.com", "wired.com", "theverge.com"];
 function domainType(d: string, own: string, comps: string[]): { label: string; cls: string } {
   if (d === own) return { label: "Siz", cls: "bg-accent/10 text-accent" };
-  if (comps.includes(d)) return { label: "Rakip", cls: "bg-danger/10 text-danger" };
-  if (UGC.some((u) => d === u || d.endsWith("." + u))) return { label: "UGC", cls: "bg-warn/10 text-warn" };
+  if (comps.includes(d)) return { label: "Rakip", cls: "bg-danger/10 text-danger-ink" };
+  if (UGC.some((u) => d === u || d.endsWith("." + u))) return { label: "UGC", cls: "bg-warn/10 text-warn-ink" };
   if (EDITORIAL.some((u) => d === u || d.endsWith("." + u))) return { label: "Editoryal", cls: "bg-sky-50 text-sky-700" };
   if (/\.(gov|edu|bel|mil)(\.tr)?$/.test(d) || d.endsWith("wikipedia.org")) return { label: "Referans", cls: "bg-muted text-sub" };
   return { label: "Kurumsal", cls: "bg-muted text-sub" };
@@ -83,7 +83,7 @@ function CardTitle({ title, sub, right }: { title: string; sub?: string; right?:
   return (
     <div className="flex items-start justify-between gap-3 px-5 pt-4">
       <div>
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
         {sub && <p className="text-xs text-sub">{sub}</p>}
       </div>
       {right}
@@ -229,10 +229,10 @@ export default function GeoDashboard({
       const lostCount = ops.filter((o) => o.kind === "competitor-owned" || o.kind === "unclaimed").length;
       out.push({
         kind: lost.leader ? "Rakip kazanıyor" : "Boş alan",
-        color: "text-danger",
+        color: "text-danger-ink",
         title: lost.leader ? `"${lost.prompt}" sorusunda ${lost.leader.name} önde` : `"${lost.prompt}" sorusunda kimse önerilmiyor`,
         body: `${ops.length} sorunun ${lostCount} tanesinde hiç anılmıyorsun. Bu soruyu doğrudan cevaplayan bir yazı yayınla.`,
-        impact: ["Yüksek etki", "bg-danger/10 text-danger"],
+        impact: ["Yüksek etki", "bg-danger/10 text-danger-ink"],
         cta: (
           <Link href={`/editor?new=${encodeURIComponent(lost.prompt)}`} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
             Yazıyı yaz
@@ -253,10 +253,10 @@ export default function GeoDashboard({
     if (gap) {
       out.push({
         kind: "Kaynak boşluğu",
-        color: "text-warn",
+        color: "text-warn-ink",
         title: `${gap.domain} kaynaklı cevaplarda yoksun`,
         body: `AI cevaplarının %${Math.round(gap.share * 100)}'i bu siteye dayanıyor; bunların ${gap.compHit} tanesinde rakipler anılıyor, sen anılmıyorsun.`,
-        impact: ["Orta etki", "bg-warn/10 text-warn"],
+        impact: ["Orta etki", "bg-warn/10 text-warn-ink"],
         cta: (
           <button type="button" onClick={() => onTab("sources")} className="inline-flex h-7 items-center rounded-lg px-2.5 text-xs font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted">
             Kaynaklar
@@ -389,7 +389,7 @@ export default function GeoDashboard({
               <div className="mt-0.5 text-xs text-sub">
                 {engines.length} motor · {new Set(runs.map((r) => r.promptText)).size} prompt
               </div>
-              {band.demo && <span className="mt-1 inline-block rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn">[DEMO] Bazı cevaplar simüle</span>}
+              {band.demo && <span className="mt-1 inline-block rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">[DEMO] Bazı cevaplar simüle</span>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -400,12 +400,12 @@ export default function GeoDashboard({
             </div>
             <div className="rounded-xl border border-border px-3 py-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Kaybedilen cevap</div>
-              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.lost ? "text-danger" : "text-ink"}`}>{band.lost}</div>
+              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.lost ? "text-danger-ink" : "text-ink"}`}>{band.lost}</div>
               <div className="text-[11px] text-sub">rakip önerildi · {band.empty} cevapta kimse yok</div>
             </div>
             <div className="rounded-xl border border-border px-3 py-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Duygu</div>
-              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.sentiment == null ? "text-ink" : band.sentiment >= 65 ? "text-seo" : band.sentiment >= 50 ? "text-warn" : "text-danger"}`}>{band.sentiment ?? "—"}</div>
+              <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.sentiment == null ? "text-ink" : band.sentiment >= 65 ? "text-seo-ink" : band.sentiment >= 50 ? "text-warn-ink" : "text-danger-ink"}`}>{band.sentiment ?? "—"}</div>
               <div className="text-[11px] text-sub">{band.sentiment == null ? "Anılmadığın için ölçülmedi" : "Anıldığın cevaplarda, 0-100"}</div>
             </div>
             <div className="min-w-0 rounded-xl border border-border px-3 py-3">
@@ -459,13 +459,13 @@ export default function GeoDashboard({
             <Card key={k.label} className="px-4 py-4">
               <div className="flex items-center justify-between text-xs font-medium text-sub">
                 {k.label}
-                <span title={KPI_HINT[k.label]} className="cursor-help text-ink/30">
+                <span title={KPI_HINT[k.label]} className="cursor-help text-ink/45">
                   ⓘ
                 </span>
               </div>
               <div className="mt-1.5 flex items-baseline gap-1.5">
                 <span className="text-[26px] font-semibold leading-8 tracking-tight tabular-nums">{k.value}</span>
-                {!flat && <span className={`text-xs font-medium ${up ? "text-seo" : "text-danger"}`}>{up ? "↑" : "↓"} {k.fmt(k.d!)}</span>}
+                {!flat && <span className={`text-xs font-medium ${up ? "text-seo-ink" : "text-danger-ink"}`}>{up ? "↑" : "↓"} {k.fmt(k.d!)}</span>}
               </div>
               <Spark data={k.spark} color={flat ? "#a1a1aa" : up ? "#12b76a" : "#f04438"} />
             </Card>
@@ -538,7 +538,7 @@ export default function GeoDashboard({
                   <span key={b.domain} className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full" style={{ background: color(b.brand) }} />
                     {b.brand}
-                    {clean(b.domain) === own && <span className="rounded bg-accent/10 px-1 text-[10px] font-semibold text-accent">siz</span>}
+                    {clean(b.domain) === own && <span className="rounded bg-accent/10 px-1 text-[11px] font-semibold text-accent">siz</span>}
                   </span>
                 ))}
               </div>
@@ -564,11 +564,11 @@ export default function GeoDashboard({
                   <td className="py-2.5 pl-5">
                     <div className="flex items-center gap-2 font-medium">
                       <span className="w-3 text-xs text-sub">{i + 1}</span>
-                      <span className="flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-semibold text-white" style={{ background: color(s.name) }}>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md text-[11px] font-semibold text-white" style={{ background: color(s.name) }}>
                         {s.name.charAt(0).toLocaleUpperCase("tr")}
                       </span>
                       <span className="truncate">{s.name}</span>
-                      {s.isOwn && <span className="rounded bg-accent/10 px-1 text-[10px] font-semibold text-accent">siz</span>}
+                      {s.isOwn && <span className="rounded bg-accent/10 px-1 text-[11px] font-semibold text-accent">siz</span>}
                     </div>
                   </td>
                   <td className="py-2.5">
@@ -670,7 +670,7 @@ export default function GeoDashboard({
             {actions.map((a) => (
               <Card key={a.title} className="flex flex-col p-4">
                 <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
-                <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+                <h3 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h3>
                 <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                 <div className="mt-auto flex items-center justify-between pt-3">
                   <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${a.impact[1]}`}>{a.impact[0]}</span>

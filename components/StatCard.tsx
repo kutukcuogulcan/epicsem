@@ -2,9 +2,9 @@ type Tone = "accent" | "seo" | "warn" | "danger" | "ink";
 
 const TONE_TEXT: Record<Tone, string> = {
   accent: "text-accent",
-  seo: "text-seo",
-  warn: "text-warn",
-  danger: "text-danger",
+  seo: "text-seo-ink",
+  warn: "text-warn-ink",
+  danger: "text-danger-ink",
   ink: "text-ink",
 };
 
@@ -23,9 +23,9 @@ interface StatCardProps {
 export default function StatCard({ label, value, description, tone = "accent" }: StatCardProps) {
   return (
     <div className="card">
-      <div className="text-xs text-ink/40">{label}</div>
+      <div className="text-xs text-ink/60">{label}</div>
       <div className={`text-3xl font-medium mt-1.5 ${TONE_TEXT[tone]}`}>{value}</div>
-      <div className="text-xs text-ink/40 mt-1.5">{description}</div>
+      <div className="text-xs text-ink/60 mt-1.5">{description}</div>
     </div>
   );
 }

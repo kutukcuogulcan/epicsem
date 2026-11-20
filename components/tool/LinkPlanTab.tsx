@@ -14,10 +14,10 @@ const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 const TYPE_CLS: Partial<Record<AssetType, string>> = {
   stats: "bg-accent/10 text-accent",
-  tool: "bg-seo/10 text-seo",
+  tool: "bg-seo/10 text-seo-ink",
   guide: "bg-sky-50 text-sky-700",
-  listicle: "bg-warn/10 text-warn",
-  comparison: "bg-danger/10 text-danger",
+  listicle: "bg-warn/10 text-warn-ink",
+  comparison: "bg-danger/10 text-danger-ink",
   template: "bg-violet-50 text-violet-700",
   glossary: "bg-muted text-ink/70",
   case: "bg-muted text-ink/70",
@@ -34,7 +34,7 @@ const COMMUNITY: Record<CSource, { label: string; cls: string; open: string; tip
   donanimhaber: { label: "Donanımhaber", cls: "bg-sky-50 text-sky-700", open: "Konuyu aç ↗", tip: "Donanımhaber forumu: rakibinin konuşulduğu konuya deneyimini anlatan bir cevap yaz; reklam gibi durursa silinir. Uygunsa yazını kaynak olarak ver." },
   sikayetvar: { label: "ŞikayetVar", cls: "bg-emerald-50 text-emerald-700", open: "Sayfayı aç ↗", tip: "ŞikayetVar: rakiple ilgili şikâyetler müşterinin ne aradığını gösterir. Bu sorunları çözdüğünü anlatan bir karşılaştırma yazısı yaz; şikâyet sayfalarına yorum bırakma." },
   quora: { label: "Quora", cls: "bg-[#b92b27]/10 text-[#b92b27]", open: "Soruyu aç ↗", tip: "Quora: soruya tam ve tarafsız bir cevap yaz, markanı açıkça belirt; yazın varsa cevabın sonunda kaynak olarak ver." },
-  youtube: { label: "YouTube", cls: "bg-danger/10 text-danger", open: "Videoyu aç ↗", tip: "YouTube: rakibini inceleyen kanallar senin için de inceleme yapabilir. Kanal sahibine ulaş; videonun açıklamasına link istemek yerine ürününü denemeyi öner." },
+  youtube: { label: "YouTube", cls: "bg-danger/10 text-danger-ink", open: "Videoyu aç ↗", tip: "YouTube: rakibini inceleyen kanallar senin için de inceleme yapabilir. Kanal sahibine ulaş; videonun açıklamasına link istemek yerine ürününü denemeyi öner." },
   medium: { label: "Medium", cls: "bg-ink/10 text-ink", open: "Yazıyı aç ↗", tip: "Medium: rakibini anlatan yazarlara karşılaştırma ya da araştırma içeriğini öner; Medium'da kendi yazını da yayınlayabilirsin." },
 };
 /** Link verenler (konuya link var) ve bahsetmeler (Google'da rakibin konuşulduğu sayfa). */
@@ -171,7 +171,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
             Proje rakiplerinin sitelerini ve onlara link veren siteleri (Wikipedia, Reddit, Hacker News{` `}— Ahrefs bağlıysa tüm referanslar) inceleyip sana yazman gereken &quot;link çeken&quot; 5 yazıyı, hedef anchor text&apos;leri ve link isteyeceğin siteleri önerir.
           </p>
           {err && (
-            <p className="mt-3 text-sm text-danger">
+            <p className="mt-3 text-sm text-danger-ink">
               {err.text}{" "}
               {err.needsCompetitors && (
                 <Link href="/project" className="font-medium underline">
@@ -207,7 +207,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
           ] as const).map(([l, v, h]) => (
             <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
-              <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Rakip farkı" && opps.length ? "text-danger" : ""}`}>{v}</div>
+              <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Rakip farkı" && opps.length ? "text-danger-ink" : ""}`}>{v}</div>
               <div className="truncate text-[11px] text-sub" title={h}>
                 {h}
               </div>
@@ -282,7 +282,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
       <div className={`${CARD} overflow-hidden`}>
         <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
           <div>
-            <h3 className="text-sm font-semibold">Topluluk fırsatları</h3>
+            <h2 className="text-sm font-semibold">Topluluk fırsatları</h2>
             <p className="text-xs text-sub">Rakiplerinin konuşulduğu ve linklendiği konular: Reddit, Donanımhaber, ŞikayetVar, Quora, YouTube, Medium, Hacker News, Wikipedia. AI motorları bu sayfaları sık kaynak gösteriyor.</p>
           </div>
           {community.rows.length > 0 && (
@@ -322,7 +322,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                       </a>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-sub">
                         {r.competitors.map((c) => (
-                          <span key={c} className="rounded bg-danger/10 px-1 font-medium text-danger">
+                          <span key={c} className="rounded bg-danger/10 px-1 font-medium text-danger-ink">
                             {c}
                           </span>
                         ))}
@@ -362,7 +362,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
 
       <div className="flex items-end justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Yazman gereken link çeken yazılar</h3>
+          <h2 className="text-sm font-semibold">Yazman gereken link çeken yazılar</h2>
           <p className="text-xs text-sub">Kartı aç → anchor planı, link isteyeceğin siteler, içeriden link verecek sayfaların · &quot;Yazıyı yaz&quot; sihirbazı hazır açar</p>
         </div>
         <div className="flex items-center gap-2">
@@ -376,7 +376,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
         {plan.ideas.map((i) => (
           <div key={i.title} className={`${CARD} flex flex-col p-4`}>
             <span className={`self-start rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[i.type] ?? "bg-muted"}`}>{ASSET_LABEL[i.type]}</span>
-            <h4 className="mt-2 text-sm font-semibold leading-5">{i.title}</h4>
+            <h3 className="mt-2 text-sm font-semibold leading-5">{i.title}</h3>
             <p className="mt-1 line-clamp-3 text-[13px] text-sub">{i.why}</p>
             <div className="mt-3 space-y-1 text-[12px]">
               <div>
@@ -406,7 +406,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
 
       <div className={`${CARD} overflow-hidden`}>
         <div className="px-5 pt-4">
-          <h3 className="text-sm font-semibold">Fırsat tablosu</h3>
+          <h2 className="text-sm font-semibold">Fırsat tablosu</h2>
           <p className="text-xs text-sub">Rakiplerine link veren ama sana vermeyen siteler · en çok rakibe link verenler üstte</p>
         </div>
         {opps.length === 0 ? (
@@ -432,14 +432,14 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${o.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         {o.domain}
-                        {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
+                        {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
                       </div>
                       <div className="pl-6 text-[11px] text-sub">{o.sources.map((x) => SRC_LABEL[x] ?? x).join(", ")}</div>
                     </td>
                     <td className="py-2.5 pr-3">
                       <div className="flex flex-wrap gap-1">
                         {o.competitors.map((c) => (
-                          <span key={c} className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger">
+                          <span key={c} className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink">
                             {c}
                           </span>
                         ))}
@@ -454,7 +454,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                       {o.idea ? (
                         <>
                           <div className="line-clamp-2">{o.idea.title}</div>
-                          <span className={`mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium ${TYPE_CLS[o.idea.type] ?? "bg-muted"}`}>{ASSET_LABEL[o.idea.type]}</span>
+                          <span className={`mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[o.idea.type] ?? "bg-muted"}`}>{ASSET_LABEL[o.idea.type]}</span>
                         </>
                       ) : (
                         <span className="text-sub">Rakibin linklenen sayfasına benzer bir içerik</span>
@@ -487,7 +487,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
 
       <div className={`${CARD} overflow-hidden`}>
         <div className="px-5 pt-4">
-          <h3 className="text-sm font-semibold">Rakipler hangi içeriklerle link alıyor?</h3>
+          <h2 className="text-sm font-semibold">Rakipler hangi içeriklerle link alıyor?</h2>
           <p className="text-xs text-sub">Rakibin sitemap&apos;indeki içerik türleri ve link alan sayfaları</p>
         </div>
         <table className="mt-3 w-full text-[13px]">
@@ -567,8 +567,8 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
               <div className="mb-1.5 text-xs font-medium text-sub">Anchor text planı (dışarıdan alınacak linkler için)</div>
               <div className="divide-y divide-border rounded-xl border border-border">
                 {([
-                  ["Tam eşleşme", [open.anchors.exact], "az kullan (~%10)", "text-danger"],
-                  ["Kısmi eşleşme", open.anchors.partial, "en çok bunu iste (~%40)", "text-seo"],
+                  ["Tam eşleşme", [open.anchors.exact], "az kullan (~%10)", "text-danger-ink"],
+                  ["Kısmi eşleşme", open.anchors.partial, "en çok bunu iste (~%40)", "text-seo-ink"],
                   ["Markalı", [open.anchors.branded], "doğal görünür (~%35)", "text-accent"],
                   ["Genel", [open.anchors.generic], "doğallık için (~%15)", "text-sub"],
                 ] as const).map(([l, list, note, cls]) => (

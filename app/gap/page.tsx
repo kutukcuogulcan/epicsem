@@ -33,10 +33,10 @@ const TR_PROMPT_PRESET =
   "[kategori] için en iyi markalar hangileri?\nİstanbul'da [kategori] konusunda hangi firmayı önerirsiniz?\n[marka] güvenilir mi?\n[marka] ile [rakip] arasındaki fark ne?";
 
 const VERDICTS: { key: GapRow["verdict"]; label: string; hint: string; color: string; chip: string }[] = [
-  { key: "blocked", label: "AI'ya kapalı", hint: "robots.txt AI botlarını engelliyor", color: "#ef4444", chip: "bg-danger/10 text-danger" },
+  { key: "blocked", label: "AI'ya kapalı", hint: "robots.txt AI botlarını engelliyor", color: "#ef4444", chip: "bg-danger/10 text-danger-ink" },
   { key: "invisible", label: "Sağlam ama görünmez", hint: "Teknik olarak hazır, ama hiçbir AI motoru anmadı", color: "#4f00ff", chip: "bg-accent/10 text-accent" },
-  { key: "needs-work", label: "İyileştirme gerekli", hint: "Teknik SEO / AXO puanı düşük", color: "#f59e0b", chip: "bg-warn/10 text-warn" },
-  { key: "cited", label: "Anılıyor", hint: "AI cevaplarında kaynak olarak geçiyor", color: "#16a34a", chip: "bg-seo/10 text-seo" },
+  { key: "needs-work", label: "İyileştirme gerekli", hint: "Teknik SEO / AXO puanı düşük", color: "#f59e0b", chip: "bg-warn/10 text-warn-ink" },
+  { key: "cited", label: "Anılıyor", hint: "AI cevaplarında kaynak olarak geçiyor", color: "#16a34a", chip: "bg-seo/10 text-seo-ink" },
 ];
 const V = Object.fromEntries(VERDICTS.map((v) => [v.key, v])) as Record<GapRow["verdict"], (typeof VERDICTS)[number]>;
 
@@ -281,7 +281,7 @@ export default function GapPage() {
     if (blocked.length)
       actions.push({
         kind: "Kritik",
-        color: "text-danger",
+        color: "text-danger-ink",
         title: `${blocked.length} sayfa AI botlarına kapalı`,
         body: `${path(blocked[0].url)} için robots.txt ${blocked[0].blockedBots} AI botunu engelliyor. Bu sayfalar hiçbir AI cevabında kaynak olamaz.`,
         cta: (
@@ -306,7 +306,7 @@ export default function GapPage() {
     if (d.leader && d.own && d.leader.visibility > d.own.visibility)
       actions.push({
         kind: "Rakip",
-        color: "text-warn",
+        color: "text-warn-ink",
         title: `${d.leader.brand} AI'da senden önde`,
         body: `${d.leader.brand} ${pct(d.leader.visibility)}, sen ${pct(d.own.visibility)} görünürlükte. Yapay zekâ iki siteyi karşılaştırıp farkı ve yapılacakları çıkarsın (1 AI sorgusu).`,
         cta: (
@@ -319,7 +319,7 @@ export default function GapPage() {
     if (actions.length < 3 && nw.length)
       actions.push({
         kind: "Teknik",
-        color: "text-warn",
+        color: "text-warn-ink",
         title: `${nw.length} sayfanın teknik puanı düşük`,
         body: `${path(nw[0].url)}: SEO ${nw[0].seoScore}, AXO ${nw[0].aiCrawlScore}. Önce teknik sorunları düzelt.`,
         cta: (
@@ -331,7 +331,7 @@ export default function GapPage() {
     if (!actions.length)
       actions.push({
         kind: "İyi",
-        color: "text-seo",
+        color: "text-seo-ink",
         title: "Tüm sayfalar AI'da anılıyor",
         body: "Bu koşuda denetlenen her sayfa en az bir AI cevabında kaynak olarak geçti. Yeni sayfalar ve sorularla tekrar test et.",
         cta: (
@@ -399,11 +399,11 @@ export default function GapPage() {
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {([
-              ["AI görünürlüğün", d.own ? pct(d.own.visibility) : "—", "", d.own ? `pazar payı ${pct(d.own.shareOfVoice)}` : "marka cevaplarda yok", d.own && d.leader && d.own.visibility >= d.leader.visibility ? "text-seo" : ""],
-              ["Sıralaman", d.rank ? `${d.rank}.` : "—", `/${d.sums.length}`, d.leader ? `lider rakip: ${d.leader.brand}` : "", d.rank === 1 ? "text-seo" : d.rank ? "text-warn" : ""],
-              ["Anılan sayfa", String(d.cited), `/${d.m.length}`, "AI cevaplarında kaynak", d.cited ? "text-seo" : "text-danger"],
+              ["AI görünürlüğün", d.own ? pct(d.own.visibility) : "—", "", d.own ? `pazar payı ${pct(d.own.shareOfVoice)}` : "marka cevaplarda yok", d.own && d.leader && d.own.visibility >= d.leader.visibility ? "text-seo-ink" : ""],
+              ["Sıralaman", d.rank ? `${d.rank}.` : "—", `/${d.sums.length}`, d.leader ? `lider rakip: ${d.leader.brand}` : "", d.rank === 1 ? "text-seo-ink" : d.rank ? "text-warn-ink" : ""],
+              ["Anılan sayfa", String(d.cited), `/${d.m.length}`, "AI cevaplarında kaynak", d.cited ? "text-seo-ink" : "text-danger-ink"],
               ["Sağlam ama görünmez", String(d.invisible), "", "içerik fırsatı", d.invisible ? "text-accent" : ""],
-              ["AI'ya kapalı sayfa", String(d.blocked), "", "robots.txt engeli", d.blocked ? "text-danger" : ""],
+              ["AI'ya kapalı sayfa", String(d.blocked), "", "robots.txt engeli", d.blocked ? "text-danger-ink" : ""],
             ] as const).map(([l, v, suf, hint, col]) => (
               <div key={l} className={`${CARD} px-4 py-4`}>
                 <div className="text-xs font-medium text-sub">{l}</div>
@@ -509,7 +509,7 @@ export default function GapPage() {
                             <span className="w-4 text-xs tabular-nums text-sub">{i + 1}</span>
                             <span className={`min-w-0 flex-1 truncate ${me ? "font-semibold" : ""}`}>
                               {s.brand}
-                              {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">Siz</span>}
+                              {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">Siz</span>}
                             </span>
                             {!me && d.own && s.visibility > d.own.visibility && s.domain && (
                               <button type="button" onClick={() => runWhy(s, d.own)} title="Yapay zekâ ile karşılaştır (1 AI sorgusu)" className="text-[11px] font-medium text-accent hover:underline">

@@ -20,11 +20,11 @@ export default function FeatureComparison({
       </Reveal>
       <div className="relative grid grid-cols-1 md:grid-cols-2 gap-5">
         <Reveal variant="left" className="rounded-3xl border border-border bg-panel/70 p-7 space-y-5">
-          <div className="text-sm font-bold uppercase tracking-wide text-ink/40">{without.title}</div>
+          <div className="text-sm font-bold uppercase tracking-wide text-ink/60">{without.title}</div>
           <ul className="space-y-3.5">
             {without.items.map((item, i) => (
-              <Reveal as="li" key={item} delay={120 + i * 90} className="flex items-start gap-3 text-sm text-ink/55">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
+              <Reveal as="li" key={item} delay={120 + i * 90} className="flex items-start gap-3 text-sm text-ink/60">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger-ink">
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                     <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                   </svg>

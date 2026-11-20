@@ -52,7 +52,7 @@ interface Gap {
   linksTo: string[];
 }
 
-const drTone = (d: number | null) => (d === null ? "bg-muted text-ink/45" : d >= 60 ? "bg-seo/10 text-seo" : d >= 30 ? "bg-accent/10 text-accent" : d >= 10 ? "bg-warn/10 text-warn" : "bg-muted text-ink/55");
+const drTone = (d: number | null) => (d === null ? "bg-muted text-ink/60" : d >= 60 ? "bg-seo/10 text-seo-ink" : d >= 30 ? "bg-accent/10 text-accent" : d >= 10 ? "bg-warn/10 text-warn-ink" : "bg-muted text-ink/60");
 const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "2-digit" }) : "—");
 const SRC: Record<Src, { l: string; c: string }> = {
   bing: { l: "Bing", c: "#008373" },
@@ -229,7 +229,7 @@ export default function BacklinksPage() {
   if (unlinked.length)
     actions.push({
       kind: "Kolay link",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: `${unlinked.length} haberde linksiz anılıyorsun`,
       body: "Bu haberler markanı anıyor ama sitene link vermiyor. Her haberin yanındaki \"Link iste\" ile yapay zekâ kısa bir rica e-postası yazar.",
       cta: (
@@ -241,7 +241,7 @@ export default function BacklinksPage() {
   if (lostList.length)
     actions.push({
       kind: "Kayıp",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${lostList.length} site artık link vermiyor`,
       body: `En önemlisi ${lostList.sort((a, b) => (b.dr ?? 0) - (a.dr ?? 0))[0].domain}. Sayfa kaldırılmış ya da link silinmiş olabilir; site sahibine ulaş.`,
       cta: (
@@ -277,7 +277,7 @@ export default function BacklinksPage() {
   if (actions.length < 3)
     actions.push({
       kind: "Fırsat",
-      color: "text-warn",
+      color: "text-warn-ink",
       title: "Rakiplerine link veren siteleri bul",
       body: data?.sources.ahrefs ? "Rakiplerine link verip sana vermeyen siteler en kolay ikna edilecek olanlar." : "Bu karşılaştırma için Ahrefs bağlantısı gerekiyor.",
       cta: (
@@ -349,12 +349,12 @@ export default function BacklinksPage() {
 
       {data?.site && actions.length > 0 && (
         <div>
-        <h3 className="mb-2 text-sm font-semibold">Ne yapmalı?</h3>
+        <h2 className="mb-2 text-sm font-semibold">Ne yapmalı?</h2>
         <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
           {actions.slice(0, 3).map((a) => (
             <div key={a.title} className={`${card} flex flex-col p-4`}>
               <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
-              <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
+              <h3 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h3>
               <p className="mt-1 text-[13px] text-sub">{a.body}</p>
               <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
             </div>
@@ -441,8 +441,8 @@ export default function BacklinksPage() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={`https://www.google.com/s2/favicons?domain=${d.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                           <span className="font-medium">{d.domain}</span>
-                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-sub">{SRC[d.source]?.l ?? d.source}</span>
-                          {d.spam && <span className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[10px] font-medium text-danger">spam</span>}
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">{SRC[d.source]?.l ?? d.source}</span>
+                          {d.spam && <span className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink">spam</span>}
                         </div>
                         {d.anchors[0] && <div className="truncate pl-6 text-[11px] text-sub">“{d.anchors[0]}”</div>}
                       </td>
@@ -453,9 +453,9 @@ export default function BacklinksPage() {
                       <td className="hidden py-2.5 pr-3 text-xs text-sub lg:table-cell">{fmtDate(d.firstSeen)}</td>
                       <td className="py-2.5 pr-5">
                         {d.lostAt ? (
-                          <span className="whitespace-nowrap rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger">Kaybedildi</span>
+                          <span className="whitespace-nowrap rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger-ink">Kaybedildi</span>
                         ) : (
-                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Canlı</span>
+                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Canlı</span>
                         )}
                       </td>
                     </tr>
@@ -468,7 +468,7 @@ export default function BacklinksPage() {
           <div className="space-y-3">
             {(withDr.length > 0 || srcDist.length > 1) && <div className={card}>
               <div className="px-5 pt-4">
-                <h3 className="text-sm font-semibold">{withDr.length ? "Otorite dağılımı (DR)" : "Kaynağa göre"}</h3>
+                <h2 className="text-sm font-semibold">{withDr.length ? "Otorite dağılımı (DR)" : "Kaynağa göre"}</h2>
                 <p className="text-xs text-sub">{withDr.length ? "Link veren sitelerin Domain Rating aralıkları" : "DR için Ahrefs bağlantısı gerekir"}</p>
               </div>
               <div className="h-40 px-2 pb-2 pt-3">
@@ -489,7 +489,7 @@ export default function BacklinksPage() {
             </div>}
             <div className={card}>
               <div className="px-5 pt-4">
-                <h3 className="text-sm font-semibold">En sık bağlantı metinleri</h3>
+                <h2 className="text-sm font-semibold">En sık bağlantı metinleri</h2>
                 <p className="text-xs text-sub">Sitene hangi kelimelerle link veriliyor</p>
               </div>
               <ul className="space-y-2 px-5 pb-4 pt-3">
@@ -549,10 +549,10 @@ export default function BacklinksPage() {
                     </div>
                   </div>
                   {m.linked === true ? (
-                    <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Linkli</span>
+                    <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Linkli</span>
                   ) : m.linked === false ? (
                     <span className="flex shrink-0 items-center gap-2">
-                      <span className="rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn">Link yok</span>
+                      <span className="rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn-ink">Link yok</span>
                       <button type="button" onClick={() => draftMail("unlinked", { domain: m.domain, url: m.url, title: m.title })} className="text-[11px] font-medium text-accent hover:underline" title="1 AI sorgusu">
                         ✦ Link iste
                       </button>
@@ -599,7 +599,7 @@ export default function BacklinksPage() {
       {mode === "analysis" && data?.site && tab === "gap" && (
         <div className="space-y-3">
           <div className={`${card} p-5`}>
-            <h3 className="text-sm font-semibold">Rakiplerine link verip sana vermeyen siteler</h3>
+            <h2 className="text-sm font-semibold">Rakiplerine link verip sana vermeyen siteler</h2>
             <p className="mt-1 text-xs text-sub">En fazla 4 rakip gir. Birden çok rakibe link veren siteler en üstte; bunlar sana da link vermeye en yatkın olanlar. Ahrefs gerekir, sonuç 24 saat saklanır.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {comps.map((c, i) => (
@@ -649,7 +649,7 @@ export default function BacklinksPage() {
                       <td className="py-2.5 pr-3">
                         <div className="flex flex-wrap gap-1">
                           {g.linksTo.map((c) => (
-                            <span key={c} className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-sub">
+                            <span key={c} className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">
                               {c}
                             </span>
                           ))}
@@ -698,11 +698,11 @@ export default function BacklinksPage() {
               <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${drTone(openDomain.dr)}`}>DR {openDomain.dr !== null ? Math.round(openDomain.dr) : "—"}</span>
               <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">{openDomain.links} link</span>
               <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Kaynak: {SRC[openDomain.source]?.l ?? openDomain.source}</span>
-              {openDomain.dofollow === 0 && <span className="rounded-md bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn">nofollow</span>}
+              {openDomain.dofollow === 0 && <span className="rounded-md bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn-ink">nofollow</span>}
               {openDomain.lostAt ? (
-                <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">Kaybedildi · {fmtDate(openDomain.lostAt)}</span>
+                <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">Kaybedildi · {fmtDate(openDomain.lostAt)}</span>
               ) : (
-                <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo">Canlı</span>
+                <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Canlı</span>
               )}
             </div>
             <div>
@@ -811,7 +811,7 @@ export default function BacklinksPage() {
                     <span className="h-2 w-2 rounded-full" style={{ background: SRC[k].c }} />
                     {SRC[k].l}
                   </span>
-                  <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Ücretsiz · açık</span>
+                  <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Ücretsiz · açık</span>
                 </li>
               ))}
               {(["bing", "ahrefs"] as const).map((k) => (
@@ -821,7 +821,7 @@ export default function BacklinksPage() {
                     {SRC[k].l}
                   </span>
                   {data?.sources[k] ? (
-                    <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo">Bağlı</span>
+                    <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Bağlı</span>
                   ) : (
                     <Link href="/integrations" className="text-[12px] font-medium text-accent hover:underline">
                       Bağla →
@@ -832,7 +832,7 @@ export default function BacklinksPage() {
             </ul>
           </div>
           <div>
-            <div className="mb-2 text-xs font-medium text-sub">CSV yükle {data?.sources.imported ? <span className="text-seo">· {data.sources.imported} site yüklü</span> : null}</div>
+            <div className="mb-2 text-xs font-medium text-sub">CSV yükle {data?.sources.imported ? <span className="text-seo-ink">· {data.sources.imported} site yüklü</span> : null}</div>
             <p className="mb-3 text-[12px] leading-5 text-sub">
               En eksiksiz ücretsiz liste Google&apos;da: Search Console → Bağlantılar → Dışa aktar → &quot;En çok bağlantı veren siteler&quot;. Bing Webmaster ve Ahrefs Webmaster Tools dışa aktarmaları da okunur.
             </p>
@@ -850,7 +850,7 @@ export default function BacklinksPage() {
                 }}
               />
             </label>
-            {imp.msg && <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${imp.err ? "bg-danger/5 text-danger" : "bg-seo/10 text-seo"}`}>{imp.msg}</p>}
+            {imp.msg && <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${imp.err ? "bg-danger/5 text-danger-ink" : "bg-seo/10 text-seo-ink"}`}>{imp.msg}</p>}
           </div>
         </div>
       </Drawer>

@@ -12,7 +12,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button onClick={logout} className="text-ink/50 hover:text-danger transition-colors">
+    <button onClick={logout} className="text-ink/60 hover:text-danger-ink transition-colors">
       Çıkış
     </button>
   );

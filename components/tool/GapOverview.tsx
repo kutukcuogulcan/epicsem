@@ -16,10 +16,10 @@ interface GapRun {
 }
 
 const VERDICTS: { key: GapRow["verdict"]; label: string; color: string; badge: string }[] = [
-  { key: "cited", label: "Anılıyor", color: "#16a34a", badge: "bg-seo/10 text-seo" },
+  { key: "cited", label: "Anılıyor", color: "#16a34a", badge: "bg-seo/10 text-seo-ink" },
   { key: "invisible", label: "Sağlam ama görünmez", color: "#4f00ff", badge: "bg-accent/10 text-accent" },
-  { key: "needs-work", label: "İyileştirme gerekli", color: "#f59e0b", badge: "bg-warn/10 text-warn" },
-  { key: "blocked", label: "AI'ya kapalı", color: "#ef4444", badge: "bg-danger/10 text-danger" },
+  { key: "needs-work", label: "İyileştirme gerekli", color: "#f59e0b", badge: "bg-warn/10 text-warn-ink" },
+  { key: "blocked", label: "AI'ya kapalı", color: "#ef4444", badge: "bg-danger/10 text-danger-ink" },
 ];
 const V = Object.fromEntries(VERDICTS.map((v) => [v.key, v])) as Record<GapRow["verdict"], (typeof VERDICTS)[number]>;
 
@@ -114,7 +114,7 @@ export default function GapOverview({ refreshKey = 0 }: { refreshKey?: number })
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3.5">
             <span className="text-sm font-medium">Sayfa durumu dağılımı</span>
-            <span className="flex flex-wrap items-center gap-3 text-xs text-ink/50">
+            <span className="flex flex-wrap items-center gap-3 text-xs text-ink/60">
               {VERDICTS.map((v) => (
                 <span key={v.key} className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ background: v.color }} />
@@ -145,7 +145,7 @@ export default function GapOverview({ refreshKey = 0 }: { refreshKey?: number })
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <span className="text-sm font-medium">Son analiz · sayfalar</span>
-            <span className="text-xs text-ink/40">{new Date(stats.last.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
+            <span className="text-xs text-ink/60">{new Date(stats.last.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</span>
           </div>
           <table className="w-full text-sm">
             <thead>

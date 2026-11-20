@@ -42,7 +42,7 @@ export default function PromptBlock({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="font-medium text-sm">{title}</div>
-            {description && <p className="text-xs text-ink/50 mt-1">{description}</p>}
+            {description && <p className="text-xs text-ink/60 mt-1">{description}</p>}
           </div>
           <button type="button" onClick={() => setOpen((o) => !o)} className="text-xs rounded-lg border border-border px-3 py-1.5 hover:bg-muted shrink-0">
             {open ? "Gizle" : "Prompt'u göster"}
@@ -67,7 +67,7 @@ export default function PromptBlock({
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 font-mono text-xs font-medium text-accent">&gt;_</span>
             <div>
               <div className="text-sm font-medium">{title}</div>
-              {description && <p className="mt-0.5 text-xs leading-relaxed text-ink/50">{description}</p>}
+              {description && <p className="mt-0.5 text-xs leading-relaxed text-ink/60">{description}</p>}
             </div>
           </div>
           <div className="flex shrink-0 gap-2">

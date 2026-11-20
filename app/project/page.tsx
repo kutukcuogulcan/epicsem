@@ -181,7 +181,7 @@ export default function ProjectSettingsPage() {
             title="Ana sayfanı okuyup boş alanlar için öneri çıkarır (küçük bir AI çağrısı, içerik kotası harcamaz)"
           >
             {busy === "fill" ? "Site okunuyor…" : "Siteden doldur"}
-            <span className="rounded-md bg-muted px-1.5 text-[10px] text-sub">AI</span>
+            <span className="rounded-md bg-muted px-1.5 text-[11px] text-sub">AI</span>
           </button>
         }
       />
@@ -319,7 +319,7 @@ export default function ProjectSettingsPage() {
                   <img src={`https://www.google.com/s2/favicons?domain=${c.domain || "example.com"}&sz=32`} alt="" className="h-4 w-4 shrink-0 rounded" />
                   <input value={c.name} onChange={(e) => setComps((x) => x.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)))} placeholder="Ad" className={`${input} mt-0`} />
                   <input value={c.domain} onChange={(e) => setComps((x) => x.map((y, j) => (j === i ? { ...y, domain: e.target.value } : y)))} placeholder="rakip.com" className={`${input} mt-0`} />
-                  <button type="button" onClick={() => setComps((x) => x.filter((_, j) => j !== i))} className="shrink-0 rounded-lg px-2 py-1 text-sub hover:bg-muted hover:text-danger" aria-label="Kaldır">
+                  <button type="button" onClick={() => setComps((x) => x.filter((_, j) => j !== i))} className="shrink-0 rounded-lg px-2 py-1 text-sub hover:bg-muted hover:text-danger-ink" aria-label="Kaldır">
                     ✕
                   </button>
                 </div>

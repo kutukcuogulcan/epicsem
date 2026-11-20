@@ -13,14 +13,14 @@ const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 const TYPE_CLS: Record<ActionType, string> = {
   write: "bg-accent/10 text-accent",
-  listicle: "bg-warn/10 text-warn",
+  listicle: "bg-warn/10 text-warn-ink",
   community: "bg-sky-50 text-sky-700",
-  counter: "bg-danger/10 text-danger",
-  "own-page": "bg-seo/10 text-seo",
+  counter: "bg-danger/10 text-danger-ink",
+  "own-page": "bg-seo/10 text-seo-ink",
   entity: "bg-violet-50 text-violet-700",
-  sentiment: "bg-danger/10 text-danger",
+  sentiment: "bg-danger/10 text-danger-ink",
 };
-const EFFORT_CLS = { Kolay: "bg-seo/10 text-seo", Orta: "bg-warn/10 text-warn", Zor: "bg-danger/10 text-danger" } as const;
+const EFFORT_CLS = { Kolay: "bg-seo/10 text-seo-ink", Orta: "bg-warn/10 text-warn-ink", Zor: "bg-danger/10 text-danger-ink" } as const;
 
 export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs: GeoRunResult[]; own: BrandRef; competitors: BrandRef[]; onTab?: (t: "entity" | "sources") => void }) {
   const plan = useMemo(() => buildActionPlan(runs, own, competitors), [runs, own, competitors]);
@@ -66,7 +66,7 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {([
-          ["Kaybedilen cevap", `${lost.length}`, `/${nonBranded.length}`, "markasız sorularda anılmadığın", lost.length ? "text-danger" : "text-seo"],
+          ["Kaybedilen cevap", `${lost.length}`, `/${nonBranded.length}`, "markasız sorularda anılmadığın", lost.length ? "text-danger-ink" : "text-seo-ink"],
           ["Etkilenen soru", `${lostPrompts}`, "", "en az bir motorda yoksun", ""],
           ["Aksiyon", `${plan.length}`, "", "türüne göre gruplandı", "text-accent"],
           ["Önde olan rakip", plan.flatMap((a) => a.competitors).length ? mostCommon(plan.flatMap((a) => a.competitors)) : "—", "", "kaybettiğin cevaplarda en çok anılan", ""],
@@ -175,7 +175,7 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
                 ))}
               </ol>
             </div>
-            {msg && <div className={`rounded-xl px-3 py-2 ${msg.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>{msg.text}</div>}
+            {msg && <div className={`rounded-xl px-3 py-2 ${msg.ok ? "bg-seo/5 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>{msg.text}</div>}
             <div>
               <div className="mb-1.5 text-xs font-medium text-sub">Kanıt ({open.evidence.length})</div>
               <div className="divide-y divide-border rounded-xl border border-border">

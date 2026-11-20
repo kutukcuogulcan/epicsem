@@ -38,7 +38,7 @@ export default function StatsBand({ items }: { items: { value: number; suffix?: 
             {Math.round(s.value * t)}
             {s.suffix}
           </div>
-          <div className="mt-2 text-sm text-ink/55">{s.label}</div>
+          <div className="mt-2 text-sm text-ink/60">{s.label}</div>
         </div>
       ))}
     </div>

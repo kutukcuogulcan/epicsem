@@ -90,11 +90,11 @@ function bucketKey(iso: string, g: Granularity): string {
 }
 
 function Delta({ value, unit = "%", invert = false, digits = 1 }: { value: number | null; unit?: string; invert?: boolean; digits?: number }) {
-  if (value == null || !Number.isFinite(value)) return <span className="text-xs text-ink/30 w-12 inline-block" />;
+  if (value == null || !Number.isFinite(value)) return <span className="text-xs text-ink/45 w-12 inline-block" />;
   const rounded = Number(value.toFixed(digits));
   const good = invert ? rounded < 0 : rounded > 0;
   const bad = invert ? rounded > 0 : rounded < 0;
-  const color = good ? "text-seo" : bad ? "text-danger" : "text-ink/40";
+  const color = good ? "text-seo-ink" : bad ? "text-danger-ink" : "text-ink/60";
   const sign = rounded > 0 ? "+" : "";
   return (
     <span className={`text-xs tabular-nums w-12 inline-block ${color}`}>
@@ -118,9 +118,9 @@ function Dropdown<T extends string | number>({
 }) {
   return (
     <label className="relative inline-flex items-center gap-2 rounded-lg border border-border bg-panel px-3 py-1.5 text-sm hover:border-ink/30 cursor-pointer">
-      <span className="text-ink/50">{icon}</span>
+      <span className="text-ink/60">{icon}</span>
       <span className="font-medium">{options.find((o) => o.value === value)?.label ?? String(value)}</span>
-      <span className="text-ink/40 text-xs">▾</span>
+      <span className="text-ink/60 text-xs">▾</span>
       <select
         value={String(value)}
         onChange={(e) => {
@@ -281,7 +281,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           </button>
         )}
         <div className="ml-auto flex items-center gap-2">
-          {anyDemo && <span className="rounded-full bg-warn/10 text-warn text-xs font-medium px-2.5 py-1">Demo veri içeriyor</span>}
+          {anyDemo && <span className="rounded-full bg-warn/10 text-warn-ink text-xs font-medium px-2.5 py-1">Demo veri içeriyor</span>}
           {!onNewTest && (
             <Link href={newTestHref} className="rounded-lg bg-accent text-white px-3 py-1.5 text-sm font-medium hover:opacity-90">
               Yeni test
@@ -293,7 +293,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
       {!onNewTest && (
         <div>
           <h2 className="text-lg font-medium">Genel bakış</h2>
-          <p className="text-sm text-ink/50">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
+          <p className="text-sm text-ink/60">Her markanın AI üretimli cevaplarda ne sıklıkla geçtiği</p>
         </div>
       )}
 
@@ -342,7 +342,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                     type="button"
                     onClick={() => setGranularity(g)}
                     title={g === "D" ? "Günlük" : g === "W" ? "Haftalık" : "Aylık"}
-                    className={`px-2.5 py-1 ${granularity === g ? "bg-muted font-medium text-ink" : "text-ink/40 hover:text-ink"}`}
+                    className={`px-2.5 py-1 ${granularity === g ? "bg-muted font-medium text-ink" : "text-ink/60 hover:text-ink"}`}
                   >
                     {g === "D" ? "G" : g === "W" ? "H" : "A"}
                   </button>
@@ -367,7 +367,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-auto px-5 py-3 border-t border-border text-xs text-ink/50">
+            <div className="mt-auto px-5 py-3 border-t border-border text-xs text-ink/60">
               {days} günlük veri gösteriliyor · {inRange.length} test
             </div>
           </div>
@@ -376,12 +376,12 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           <div className="rounded-2xl border border-border bg-panel overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
               <div className="font-medium text-sm">İlk 7 marka</div>
-              <span className="text-xs text-ink/40">Satıra tıkla: grafikte gizle/göster</span>
+              <span className="text-xs text-ink/60">Satıra tıkla: grafikte gizle/göster</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-ink/50 border-b border-border">
+                  <tr className="text-xs text-ink/60 border-b border-border">
                     <th className="text-left font-medium px-4 py-2.5 w-8">#</th>
                     <th className="text-left font-medium py-2.5">Marka</th>
                     <th className="text-left font-medium py-2.5">Görünürlük</th>
@@ -452,7 +452,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
           <div className="pt-2 flex items-end justify-between">
             <div>
               <h2 className="text-lg font-medium">Kaynak dağılımı</h2>
-              <p className="text-sm text-ink/50">AI cevaplarına en çok hangi siteler ve kaynak tipleri katkı veriyor</p>
+              <p className="text-sm text-ink/60">AI cevaplarına en çok hangi siteler ve kaynak tipleri katkı veriyor</p>
             </div>
             <Link href="/geo" className="rounded-lg border border-border bg-panel px-3 py-1.5 text-sm hover:border-ink/30">
               Tüm domainler ↗
@@ -472,16 +472,16 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
                       key={k}
                       type="button"
                       onClick={() => setSourceTab(k)}
-                      className={sourceTab === k ? "font-medium text-ink" : "text-ink/40 hover:text-ink"}
+                      className={sourceTab === k ? "font-medium text-ink" : "text-ink/60 hover:text-ink"}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
-                <span className="text-xs text-ink/50">Atıf</span>
+                <span className="text-xs text-ink/60">Atıf</span>
               </div>
               <div className="p-3 space-y-1.5">
-                {sourceRows.length === 0 && <p className="text-sm text-ink/40 px-2 py-4">Bu sekmede gösterilecek domain yok.</p>}
+                {sourceRows.length === 0 && <p className="text-sm text-ink/60 px-2 py-4">Bu sekmede gösterilecek domain yok.</p>}
                 {sourceRows.map((r) => (
                   <div key={r.domain} className="flex items-center gap-3">
                     <div className="relative flex-1 h-9 rounded-lg overflow-hidden">
@@ -503,7 +503,7 @@ export default function OverviewPanel({ brands, selectedDomain, runs, onBrandCha
             <div className="rounded-2xl border border-border bg-panel">
               <div className="px-5 py-3 border-b border-border font-medium text-sm">Domain tipleri</div>
               <div className="p-3 space-y-1.5">
-                {sources.types.length === 0 && <p className="text-sm text-ink/40 px-2 py-4">Henüz atıf yok.</p>}
+                {sources.types.length === 0 && <p className="text-sm text-ink/60 px-2 py-4">Henüz atıf yok.</p>}
                 {sources.types.map((t) => (
                   <div key={t.type} className="flex items-center gap-3 rounded-lg bg-muted/60 px-3 h-9 text-sm">
                     <span className="w-2 h-2 rounded-full" style={{ background: DOMAIN_TYPE_COLOR[t.type] }} />

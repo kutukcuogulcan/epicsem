@@ -99,11 +99,11 @@ function Checklist({ checks, fixFor, busy }: { checks: Check[]; fixFor?: (c: Che
       {[...checks].sort((a, b) => Number(a.ok) - Number(b.ok)).map((c) => (
         <li key={c.key}>
           <button type="button" onClick={() => setOpen(open === c.key ? null : c.key)} className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-muted">
-            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-medium ${c.ok ? "bg-seo/15 text-seo" : (c.part ?? 0) > 0.4 ? "bg-warn/15 text-warn" : "bg-danger/10 text-danger"}`}>
+            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[11px] font-medium ${c.ok ? "bg-seo/15 text-seo-ink" : (c.part ?? 0) > 0.4 ? "bg-warn/15 text-warn-ink" : "bg-danger/10 text-danger-ink"}`}>
               {c.ok ? "✓" : "!"}
             </span>
-            <span className={`flex-1 ${c.ok ? "text-ink/55" : "font-medium text-ink/85"}`}>{c.label}</span>
-            {!c.ok && fixFor?.(c) && <span className={`shrink-0 rounded px-1.5 py-px text-[10px] font-medium ${fixFor(c)!.ai ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo"}`}>{fixFor(c)!.ai ? "✦ düzelt" : "düzelt"}</span>}
+            <span className={`flex-1 ${c.ok ? "text-ink/60" : "font-medium text-ink/85"}`}>{c.label}</span>
+            {!c.ok && fixFor?.(c) && <span className={`shrink-0 rounded px-1.5 py-px text-[11px] font-medium ${fixFor(c)!.ai ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo-ink"}`}>{fixFor(c)!.ai ? "✦ düzelt" : "düzelt"}</span>}
           </button>
           {open === c.key && !c.ok && (
             <div className="ml-8 mb-1 rounded-lg bg-accent/5 px-3 py-2 text-[11px] leading-relaxed text-ink/70">
@@ -503,9 +503,9 @@ export default function EditorPage() {
     <div className="space-y-4">
       {/* üst çubuk */}
       <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b border-border bg-paper/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
-        <button type="button" onClick={() => (!dirty || confirm("Kaydedilmemiş değişiklikler kaybolacak. Çıkılsın mı?")) && setBlocks(null)} className="rounded-lg px-2 py-1.5 text-sm text-ink/50 hover:bg-muted">← Yazılar</button>
+        <button type="button" onClick={() => (!dirty || confirm("Kaydedilmemiş değişiklikler kaybolacak. Çıkılsın mı?")) && setBlocks(null)} className="rounded-lg px-2 py-1.5 text-sm text-ink/60 hover:bg-muted">← Yazılar</button>
         <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-border bg-panel px-3 py-1.5">
-          <span className="text-xs font-medium text-ink/40">Hedef kelime</span>
+          <span className="text-xs font-medium text-ink/60">Hedef kelime</span>
           <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="ör. abiye elbise modelleri" className="flex-1 bg-transparent text-sm outline-none" />
         </div>
         <button type="button" onClick={undo} disabled={!history.length} className="rounded-lg border border-border bg-panel px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30 disabled:opacity-40">↶ Geri al</button>
@@ -536,7 +536,7 @@ export default function EditorPage() {
         metaDescription={meta}
         keyword={keyword}
       />
-      {msg && <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg ${msg.bad ? "bg-danger text-white" : "bg-ink text-white"}`}>{msg.t}</div>}
+      {msg && <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg ${msg.bad ? "bg-danger-ink text-white" : "bg-ink text-white"}`}>{msg.t}</div>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* ---------------- yazı alanı ---------------- */}
@@ -556,7 +556,7 @@ export default function EditorPage() {
           {pending?.blockId === "__doc__" && (
             <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-4">
               <div className="text-sm font-medium">Asistan tüm yazıyı güncelledi</div>
-              <p className="mt-1 text-xs text-ink/55">Yeni sürüm {pending.text.split(/\s+/).length} kelime. Uygularsan "Geri al" ile dönebilirsin.</p>
+              <p className="mt-1 text-xs text-ink/60">Yeni sürüm {pending.text.split(/\s+/).length} kelime. Uygularsan "Geri al" ile dönebilirsin.</p>
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={acceptPending} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white">Uygula</button>
                 <button type="button" onClick={() => setPending(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink/60">Vazgeç</button>
@@ -584,9 +584,9 @@ export default function EditorPage() {
                         ))}
                       <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setCustomOpen((v) => !v)} className="rounded-lg px-2 py-1 text-[11px] font-medium text-accent hover:bg-accent/10">✦ Özel</button>
                       <span className="mx-0.5 h-4 w-px bg-border" />
-                      <button type="button" title="Yukarı" onMouseDown={(e) => e.preventDefault()} onClick={() => move(b.id, -1)} className="rounded px-1.5 text-xs text-ink/50 hover:bg-muted">↑</button>
-                      <button type="button" title="Aşağı" onMouseDown={(e) => e.preventDefault()} onClick={() => move(b.id, 1)} className="rounded px-1.5 text-xs text-ink/50 hover:bg-muted">↓</button>
-                      <button type="button" title="Sil" onMouseDown={(e) => e.preventDefault()} onClick={() => remove(b.id)} className="rounded px-1.5 text-xs text-danger hover:bg-danger/10">✕</button>
+                      <button type="button" title="Yukarı" onMouseDown={(e) => e.preventDefault()} onClick={() => move(b.id, -1)} className="rounded px-1.5 text-xs text-ink/60 hover:bg-muted">↑</button>
+                      <button type="button" title="Aşağı" onMouseDown={(e) => e.preventDefault()} onClick={() => move(b.id, 1)} className="rounded px-1.5 text-xs text-ink/60 hover:bg-muted">↓</button>
+                      <button type="button" title="Sil" onMouseDown={(e) => e.preventDefault()} onClick={() => remove(b.id)} className="rounded px-1.5 text-xs text-danger-ink hover:bg-danger/10">✕</button>
                     </div>
                   )}
                   {isActive && customOpen && (
@@ -622,27 +622,27 @@ export default function EditorPage() {
                     <div className="my-2 rounded-xl border border-accent/30 bg-accent/5 p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-medium uppercase tracking-wide text-accent">AI önerisi · {AI_ACTIONS.find((a) => a.key === pend.action)?.label ?? "Özel"}</span>
-                        <span className="text-[10px] text-ink/40">{pend.text.split(/\s+/).length} kelime</span>
+                        <span className="text-[11px] text-ink/60">{pend.text.split(/\s+/).length} kelime</span>
                       </div>
                       <div className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-ink/85">{pend.text}</div>
                       <div className="mt-2 flex gap-2">
                         <button type="button" onClick={acceptPending} className="rounded-lg bg-accent px-3 py-1 text-xs font-medium text-white">Kabul et</button>
                         <button type="button" onClick={() => ai(pend.action, { blockId: b.id, instruction: customText })} disabled={!!busy} className="rounded-lg border border-border bg-panel px-3 py-1 text-xs font-medium text-ink/60">Tekrar dene</button>
-                        <button type="button" onClick={() => setPending(null)} className="rounded-lg px-3 py-1 text-xs font-medium text-ink/50 hover:text-ink">Reddet</button>
+                        <button type="button" onClick={() => setPending(null)} className="rounded-lg px-3 py-1 text-xs font-medium text-ink/60 hover:text-ink">Reddet</button>
                       </div>
                     </div>
                   )}
 
                   <div className="pointer-events-none absolute -bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
                     {(["p", "h2", "ul"] as BlockType[]).map((t) => (
-                      <button key={t} type="button" onClick={() => insertAfter(b.id, t)} className="rounded-full border border-border bg-panel px-2 py-0.5 text-[10px] font-medium text-ink/50 shadow-sm hover:border-accent hover:text-accent">+ {TYPE_LABEL[t]}</button>
+                      <button key={t} type="button" onClick={() => insertAfter(b.id, t)} className="rounded-full border border-border bg-panel px-2 py-0.5 text-[11px] font-medium text-ink/60 shadow-sm hover:border-accent hover:text-accent">+ {TYPE_LABEL[t]}</button>
                     ))}
                   </div>
                 </div>
               );
             })}
           </div>
-          <button type="button" onClick={() => insertAfter(null)} className="mt-4 w-full rounded-lg border border-dashed border-border py-2 text-xs font-medium text-ink/40 hover:border-accent hover:text-accent">+ Paragraf ekle</button>
+          <button type="button" onClick={() => insertAfter(null)} className="mt-4 w-full rounded-lg border border-dashed border-border py-2 text-xs font-medium text-ink/60 hover:border-accent hover:text-accent">+ Paragraf ekle</button>
         </div>
 
         {/* ---------------- sağ panel ---------------- */}
@@ -656,7 +656,7 @@ export default function EditorPage() {
                 ["assistant", "Asistan"],
                 ["kb", "Bilgi"],
               ] as const).map(([k, l]) => (
-                <button key={k} type="button" onClick={() => setTab(k)} className={`flex-1 py-2.5 ${tab === k ? "border-b-2 border-accent text-accent" : "text-ink/50 hover:text-ink"}`}>{l}</button>
+                <button key={k} type="button" onClick={() => setTab(k)} className={`flex-1 py-2.5 ${tab === k ? "border-b-2 border-accent text-accent" : "text-ink/60 hover:text-ink"}`}>{l}</button>
               ))}
             </div>
             <div className="max-h-[calc(100vh-11rem)] overflow-y-auto p-4">
@@ -676,7 +676,7 @@ export default function EditorPage() {
                       ["Link", sc.stats.links],
                     ].map(([l, v]) => (
                       <div key={l as string} className="rounded-lg bg-muted/60 py-1.5">
-                        <div className="text-[10px] text-ink/45">{l}</div>
+                        <div className="text-[11px] text-ink/60">{l}</div>
                         <div className="text-sm font-medium tabular-nums">{v}</div>
                       </div>
                     ))}
@@ -684,13 +684,13 @@ export default function EditorPage() {
                   {failing.length > 0 && (
                     <div className="rounded-xl border border-[#BDB4FF] bg-accent/[0.04] p-3">
                       <div className="text-xs font-semibold">{failing.length} madde iyileştirilebilir</div>
-                      <p className="mt-0.5 text-[11px] leading-relaxed text-ink/55">
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-ink/60">
                         {freeFixes.length ? `${freeFixes.length} tanesi tek tıkla ücretsiz, ` : ""}
                         {aiFixes.length ? `${aiFixes.length} tanesi AI ile tek seferde düzeltilir (1 AI isteği; önce önizleme gösterilir).` : "kalanlar için maddeye tıkla."}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {freeFixes.map((c) => (
-                          <button key={c.key} type="button" disabled={!!busy} onClick={fixFor(c)!.run} className="rounded-lg border border-seo/40 bg-panel px-2 py-1 text-[11px] font-medium text-seo hover:bg-seo/5 disabled:opacity-40">
+                          <button key={c.key} type="button" disabled={!!busy} onClick={fixFor(c)!.run} className="rounded-lg border border-seo/40 bg-panel px-2 py-1 text-[11px] font-medium text-seo-ink hover:bg-seo/5 disabled:opacity-40">
                             {c.key === "h1" ? "H1'i düzelt" : c.key === "links" ? "İç link ekle" : busy === "img" ? "Görsel aranıyor…" : "Görsel ekle"}
                           </button>
                         ))}
@@ -703,16 +703,16 @@ export default function EditorPage() {
                     </div>
                   )}
                   <div>
-                    <div className="mb-1 text-xs font-medium text-ink/50">SEO kontrolleri</div>
+                    <div className="mb-1 text-xs font-medium text-ink/60">SEO kontrolleri</div>
                     <Checklist checks={sc.seoChecks} fixFor={fixFor} busy={!!busy} />
                   </div>
                   <div>
-                    <div className="mb-1 flex items-center justify-between text-xs font-medium text-ink/50">
+                    <div className="mb-1 flex items-center justify-between text-xs font-medium text-ink/60">
                       <span>GEO / AI alıntılanabilirlik</span>
                     </div>
                     <Checklist checks={sc.geoChecks} fixFor={fixFor} busy={!!busy} />
                     <div className="mt-3 rounded-xl border border-border p-2.5">
-                      <div className="mb-1.5 text-xs font-medium text-ink/50">Bölüm bazlı alıntılanabilirlik</div>
+                      <div className="mb-1.5 text-xs font-medium text-ink/60">Bölüm bazlı alıntılanabilirlik</div>
                       <PassageList report={sc.passages} compact />
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
@@ -720,7 +720,7 @@ export default function EditorPage() {
                       <button type="button" disabled={!!busy} onClick={() => setTab("meta")} className="rounded-lg border border-border py-1.5 text-[11px] font-medium text-ink/60 hover:border-ink/30">Meta'yı düzenle</button>
                     </div>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-ink/35">Puanlar yazdıkça kurallarla hesaplanır, AI kullanmaz. ✦ işaretli düğmeler AI çağrısı yapar.</p>
+                  <p className="text-[11px] leading-relaxed text-ink/60">Puanlar yazdıkça kurallarla hesaplanır, AI kullanmaz. ✦ işaretli düğmeler AI çağrısı yapar.</p>
                 </div>
               )}
 
@@ -749,9 +749,9 @@ function ImageBlock({ block, onFocus, onChange }: { block: Block; onFocus: () =>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} className="h-24 w-36 shrink-0 rounded-lg border border-border object-cover" />
       <div className="flex-1">
-        <div className="text-[11px] font-medium text-ink/45">Alt metni {alt ? "" : <span className="text-warn">(eksik)</span>}</div>
+        <div className="text-[11px] font-medium text-ink/60">Alt metni {alt ? "" : <span className="text-warn-ink">(eksik)</span>}</div>
         <input value={alt ?? ""} onFocus={onFocus} onChange={(e) => onChange(`${e.target.value.replace(/\|/g, " ")}|${src ?? ""}`)} placeholder="Görselin ne gösterdiğini yazın" className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-1.5 text-sm outline-none focus:border-accent" />
-        <div className="mt-1 truncate text-[10px] text-ink/35">{src}</div>
+        <div className="mt-1 truncate text-[11px] text-ink/60">{src}</div>
       </div>
     </div>
   );
@@ -763,24 +763,24 @@ function MetaPanel({ title, meta, sourceUrl, onTitle, onMeta, onAi, busy }: { ti
   return (
     <div className="space-y-4">
       <div>
-        <div className="flex justify-between text-xs font-medium text-ink/50">
+        <div className="flex justify-between text-xs font-medium text-ink/60">
           <span>SEO title</span>
-          <span className={tl > 60 || (tl > 0 && tl < 30) ? "text-danger" : "text-ink/40"}>{tl}/60</span>
+          <span className={tl > 60 || (tl > 0 && tl < 30) ? "text-danger-ink" : "text-ink/60"}>{tl}/60</span>
         </div>
         <input value={title} onChange={(e) => onTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent" />
       </div>
       <div>
-        <div className="flex justify-between text-xs font-medium text-ink/50">
+        <div className="flex justify-between text-xs font-medium text-ink/60">
           <span>Meta açıklama</span>
-          <span className={ml > 160 || (ml > 0 && ml < 120) ? "text-warn" : "text-ink/40"}>{ml}/160</span>
+          <span className={ml > 160 || (ml > 0 && ml < 120) ? "text-warn-ink" : "text-ink/60"}>{ml}/160</span>
         </div>
         <textarea value={meta} onChange={(e) => onMeta(e.target.value)} rows={4} className="mt-1 w-full resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent" />
       </div>
       <button type="button" onClick={onAi} disabled={busy} className="w-full rounded-lg bg-accent py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50">{busy ? "Yazılıyor…" : "✦ AI ile title + meta yaz"}</button>
       <div>
-        <div className="mb-1 text-xs font-medium text-ink/50">Google önizleme</div>
+        <div className="mb-1 text-xs font-medium text-ink/60">Google önizleme</div>
         <div className="rounded-xl border border-border p-3">
-          <div className="truncate text-[11px] text-ink/50">{hostOf(sourceUrl) || "siteniz.com"} › …</div>
+          <div className="truncate text-[11px] text-ink/60">{hostOf(sourceUrl) || "siteniz.com"} › …</div>
           <div className="mt-0.5 line-clamp-1 text-[15px] text-[#1a0dab]">{title || "Sayfa başlığı"}</div>
           <div className="mt-0.5 line-clamp-2 text-xs text-ink/60">{meta || "Meta açıklama burada görünür."}</div>
         </div>
@@ -885,7 +885,7 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
   }
 
   const Anchor = ({ a }: { a: string }) => (
-    <button type="button" onClick={() => copy(a)} title="Kopyala" className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-ink/75 hover:bg-accent/10 hover:text-accent">
+    <button type="button" onClick={() => copy(a)} title="Kopyala" className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-ink/75 hover:bg-accent/10 hover:text-accent">
       {copied === a ? "✓ kopyalandı" : `“${a}”`}
     </button>
   );
@@ -895,8 +895,8 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
       {anchorPlan && (
         <div className="rounded-xl border border-[#BDB4FF] bg-accent/[0.04] p-3">
           <div className="text-xs font-semibold">Anchor text planı</div>
-          <p className="mt-0.5 text-[10px] leading-relaxed text-ink/50">Başka sitelerden bu yazıya link isterken hangi metinle linklenmesini isteyeceğin. Tıkla → kopyala. Hepsi aynı metinle olmasın; dağılım doğal görünmeli.</p>
-          <div className="mt-2 space-y-1.5 text-[10px]">
+          <p className="mt-0.5 text-[11px] leading-relaxed text-ink/60">Başka sitelerden bu yazıya link isterken hangi metinle linklenmesini isteyeceğin. Tıkla → kopyala. Hepsi aynı metinle olmasın; dağılım doğal görünmeli.</p>
+          <div className="mt-2 space-y-1.5 text-[11px]">
             {([
               ["Tam eşleşme · ~%10", [anchorPlan.exact]],
               ["Kısmi eşleşme · ~%40", anchorPlan.partial],
@@ -904,18 +904,18 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
               ["Genel · ~%15", anchorPlan.generic],
             ] as const).map(([l, list]) => (
               <div key={l}>
-                <div className="mb-0.5 text-ink/45">{l}</div>
+                <div className="mb-0.5 text-ink/60">{l}</div>
                 <div className="flex flex-wrap gap-1">{list.map((a) => <Anchor key={a} a={a} />)}</div>
               </div>
             ))}
           </div>
-          <Link href="/backlinks?mode=plan" className="mt-2 inline-block text-[10px] font-medium text-accent hover:underline">Link isteyeceğin siteler → Link planı</Link>
+          <Link href="/backlinks?mode=plan" className="mt-2 inline-block text-[11px] font-medium text-accent hover:underline">Link isteyeceğin siteler → Link planı</Link>
         </div>
       )}
       {incoming.length > 0 && (
         <div>
           <div className="mb-1 text-xs font-semibold">Bu yazıya sitenden link ver</div>
-          <p className="mb-1.5 text-[10px] leading-relaxed text-ink/50">Konusu en yakın sayfaların. Yazıyı yayınlayınca bu sayfalara, önerilen metinle bu yazının linkini ekle.</p>
+          <p className="mb-1.5 text-[11px] leading-relaxed text-ink/60">Konusu en yakın sayfaların. Yazıyı yayınlayınca bu sayfalara, önerilen metinle bu yazının linkini ekle.</p>
           <div className="space-y-1.5">
             {incoming.map((p, i) => {
               const a = anchorPlan ? [anchorPlan.partial[i % anchorPlan.partial.length], anchorPlan.exact][i === 0 ? 1 : 0] : kw;
@@ -923,7 +923,7 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
                 <div key={p.url} className="rounded-lg border border-border p-2.5">
                   <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-xs font-medium hover:text-accent">{p.label}</a>
                   <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="truncate text-[10px] text-ink/45">{p.url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+                    <span className="truncate text-[11px] text-ink/60">{p.url.replace(/^https?:\/\/(www\.)?/, "")}</span>
                     <Anchor a={a} />
                   </div>
                 </div>
@@ -933,13 +933,13 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
         </div>
       )}
       <div className="text-xs font-semibold">Bu yazıdan sitene link ver</div>
-      <p className="text-[11px] leading-relaxed text-ink/50">Öneriler, bu sitenin son <b>Site Taraması</b> ya da sitemap sayfalarından gelir (AI kullanmaz). Metinde geçen ifade bulunursa link o kelimelere eklenir.</p>
+      <p className="text-[11px] leading-relaxed text-ink/60">Öneriler, bu sitenin son <b>Site Taraması</b> ya da sitemap sayfalarından gelir (AI kullanmaz). Metinde geçen ifade bulunursa link o kelimelere eklenir.</p>
       <div className="flex gap-2">
         <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="siteniz.com" className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs outline-none focus:border-accent" />
         <button type="button" onClick={load} className="rounded-lg border border-border px-3 text-xs font-medium text-ink/60">{loading ? "…" : "Getir"}</button>
       </div>
       {pages !== null && pages.length === 0 && (
-        <div className="rounded-lg bg-muted/60 p-3 text-xs text-ink/55">
+        <div className="rounded-lg bg-muted/60 p-3 text-xs text-ink/60">
           Bu site için tarama yok. <Link href="/import" className="font-medium text-accent">Site Taraması</Link> yapınca sayfaları burada önerilir.
         </div>
       )}
@@ -947,10 +947,10 @@ function LinksPanel({ blocks, sourceUrl, activeId, onApply, site, brand, keyword
         {suggestions.map((s) => (
           <div key={s.url} className="rounded-lg border border-border p-2.5">
             <div className="truncate text-xs font-medium">{s.label}</div>
-            <div className="truncate text-[10px] text-ink/40">{s.url.replace(/^https?:\/\/(www\.)?/, "")}</div>
+            <div className="truncate text-[11px] text-ink/60">{s.url.replace(/^https?:\/\/(www\.)?/, "")}</div>
             <div className="mt-1.5 flex items-center justify-between gap-2">
-              <span className="truncate text-[10px] text-ink/55">{s.phrase ? <>Metinde: “<b>{s.phrase}</b>”</> : "Metinde eşleşme yok"}</span>
-              <button type="button" onClick={() => add(s)} className="shrink-0 rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20">+ Ekle</button>
+              <span className="truncate text-[11px] text-ink/60">{s.phrase ? <>Metinde: “<b>{s.phrase}</b>”</> : "Metinde eşleşme yok"}</span>
+              <button type="button" onClick={() => add(s)} className="shrink-0 rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/20">+ Ekle</button>
             </div>
           </div>
         ))}
@@ -964,11 +964,11 @@ function AssistantPanel({ busy, onRun }: { busy: boolean; onRun: (instruction: s
   const QUICK = ["Girişi daha çarpıcı yap", "Her H2'nin altına cevap-önce cümle ekle", "Karşılaştırma tablosu ekle", "Daha samimi ve sade bir ton kullan", "Gereksiz tekrarları temizle"];
   return (
     <div className="space-y-3">
-      <p className="text-[11px] leading-relaxed text-ink/50">Tüm yazıya uygulanacak bir talimat ver. Sonucu önce önizlersin, sonra uygularsın.</p>
+      <p className="text-[11px] leading-relaxed text-ink/60">Tüm yazıya uygulanacak bir talimat ver. Sonucu önce önizlersin, sonra uygularsın.</p>
       <textarea value={t} onChange={(e) => setT(e.target.value)} rows={4} placeholder="ör. 'Yazıyı 1500 kelimeye çıkar ve beden rehberi bölümü ekle'" className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent" />
       <div className="flex flex-wrap gap-1.5">
         {QUICK.map((q) => (
-          <button key={q} type="button" onClick={() => setT(q)} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-medium text-ink/60 hover:border-accent hover:text-accent">{q}</button>
+          <button key={q} type="button" onClick={() => setT(q)} className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-ink/60 hover:border-accent hover:text-accent">{q}</button>
         ))}
       </div>
       <button type="button" disabled={busy || !t.trim()} onClick={() => onRun(t)} className="w-full rounded-lg bg-accent py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50">{busy ? "Yazıyor… (20-40 sn)" : "✦ Uygula"}</button>

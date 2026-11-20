@@ -60,7 +60,7 @@ export default function FreeCheck() {
           {busy ? "Test ediliyor…" : "Ücretsiz test et"}
         </button>
       </form>
-      {err && <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-danger">{err}</p>}
+      {err && <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-danger-ink">{err}</p>}
       {busy && (
         <div className="mx-auto mt-6 flex max-w-2xl items-center justify-center gap-3 text-sm text-sub">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />

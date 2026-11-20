@@ -145,7 +145,7 @@ export default function ClientsPage() {
         </div>
 
         <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-ink/50">Rakipler</span>
+          <span className="text-xs text-ink/60">Rakipler</span>
           <button
             type="button"
             onClick={() => setCompetitors((c) => [...c, { name: "", domain: "" }])}
@@ -198,22 +198,22 @@ export default function ClientsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-medium text-sm">{c.name}</div>
-                  <div className="text-xs text-ink/40">{c.domain}</div>
+                  <div className="text-xs text-ink/60">{c.domain}</div>
                 </div>
                 <button
                   onClick={() => removeClient(c.id)}
                   disabled={busy === `remove-${c.id}`}
-                  className="text-xs text-danger/70 hover:text-danger"
+                  className="text-xs text-danger-ink hover:text-danger-ink"
                 >
                   Kaldır
                 </button>
               </div>
               {c.competitors.length > 0 && (
-                <div className="text-xs text-ink/50">
+                <div className="text-xs text-ink/60">
                   vs {c.competitors.map((comp) => comp.name).join(", ")}
                 </div>
               )}
-              {c.notes && <p className="text-xs text-ink/50">{c.notes}</p>}
+              {c.notes && <p className="text-xs text-ink/60">{c.notes}</p>}
               <div className="flex gap-3 pt-1 text-xs">
                 <Link href={`/audit?clientId=${c.id}`} className="text-accent hover:underline">Audit</Link>
                 <Link href={`/geo?clientId=${c.id}`} className="text-accent hover:underline">GEO testi</Link>
@@ -243,7 +243,7 @@ export default function ClientsPage() {
               ve gap analizi otomatik olarak buraya bağlanır; "geçen ay neydi" diye eski sekmeleri aramazsın.
             </li>
           </ul>
-          <p className="text-xs text-ink/40 pt-1">İlk müşterini yukarıdan ekleyerek başla.</p>
+          <p className="text-xs text-ink/60 pt-1">İlk müşterini yukarıdan ekleyerek başla.</p>
         </div>
       )}
 

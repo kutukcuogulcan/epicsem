@@ -26,9 +26,9 @@ function host(url: string) {
 }
 
 function scoreTone(n: number) {
-  if (n >= 80) return "bg-seo/10 text-seo";
-  if (n >= 50) return "bg-warn/10 text-warn";
-  return "bg-danger/10 text-danger";
+  if (n >= 80) return "bg-seo/10 text-seo-ink";
+  if (n >= 50) return "bg-warn/10 text-warn-ink";
+  return "bg-danger/10 text-danger-ink";
 }
 
 /**
@@ -112,7 +112,7 @@ export default function AuditOverview({ refreshKey = 0, onPick }: { refreshKey?:
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <span className="text-sm font-medium">Skor trendi</span>
-            <span className="flex items-center gap-3 text-xs text-ink/50">
+            <span className="flex items-center gap-3 text-xs text-ink/60">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" />SEO</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-seo" />AXO</span>
             </span>

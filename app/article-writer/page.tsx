@@ -19,12 +19,12 @@ const SCHEMA_STATUS_LABEL: Record<ArticleSchemaStatus, string> = {
 function SchemaStatusBadge({ status }: { status: ArticleSchemaStatus }) {
   const cls =
     status === "present-valid"
-      ? "bg-seo/10 text-seo"
+      ? "bg-seo/10 text-seo-ink"
       : status === "missing"
-      ? "bg-danger/10 text-danger"
+      ? "bg-danger/10 text-danger-ink"
       : status === "present-mismatch"
-      ? "bg-warn/10 text-warn"
-      : "bg-muted text-ink/50";
+      ? "bg-warn/10 text-warn-ink"
+      : "bg-muted text-ink/60";
   return <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${cls}`}>{SCHEMA_STATUS_LABEL[status]}</span>;
 }
 
@@ -97,24 +97,24 @@ export default function ArticleWriterPage() {
       {result && (
         <div className="space-y-8">
           {result.demoMode && (
-            <div className="card border-warn/40 text-warn text-sm">
+            <div className="card border-warn/40 text-warn-ink text-sm">
               Demo modu — gerçek bir model API anahtarı bağlı değil, aşağıdaki öneriler [DEMO DATA] olarak işaretlendi.
             </div>
           )}
 
           <div className="card space-y-1 text-sm text-ink/60">
-            <div><span className="text-ink/40">URL:</span> {result.url}</div>
-            <div><span className="text-ink/40">Sayfa tipi:</span> {result.pageType || "—"}</div>
-            <div><span className="text-ink/40">Arama niyeti:</span> {result.searchIntent || "—"}</div>
-            <div><span className="text-ink/40">Hedef anahtar kelime:</span> {result.targetKeyword || "—"}</div>
-            <div><span className="text-ink/40">Model:</span> {result.model}</div>
+            <div><span className="text-ink/60">URL:</span> {result.url}</div>
+            <div><span className="text-ink/60">Sayfa tipi:</span> {result.pageType || "—"}</div>
+            <div><span className="text-ink/60">Arama niyeti:</span> {result.searchIntent || "—"}</div>
+            <div><span className="text-ink/60">Hedef anahtar kelime:</span> {result.targetKeyword || "—"}</div>
+            <div><span className="text-ink/60">Model:</span> {result.model}</div>
           </div>
 
           <div className="card space-y-3">
             <h2 className="font-medium">1. Sayfa Başlığı (Title)</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-muted p-3">
-                <div className="text-xs text-ink/40 mb-1">Mevcut ({result.title.currentLength} karakter)</div>
+                <div className="text-xs text-ink/60 mb-1">Mevcut ({result.title.currentLength} karakter)</div>
                 <div>{result.title.current || "(boş)"}</div>
               </div>
               <div className="rounded-lg bg-accent/[0.06] border border-accent/20 p-3">
@@ -129,7 +129,7 @@ export default function ArticleWriterPage() {
             <h2 className="font-medium">2. Meta Açıklaması</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-muted p-3">
-                <div className="text-xs text-ink/40 mb-1">Mevcut</div>
+                <div className="text-xs text-ink/60 mb-1">Mevcut</div>
                 <div>{result.metaDescription.current || "(boş)"}</div>
               </div>
               <div className="rounded-lg bg-accent/[0.06] border border-accent/20 p-3">
@@ -144,7 +144,7 @@ export default function ArticleWriterPage() {
             <h2 className="font-medium">3. Canonical URL</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-muted p-3">
-                <div className="text-xs text-ink/40 mb-1">Mevcut</div>
+                <div className="text-xs text-ink/60 mb-1">Mevcut</div>
                 <div>{result.canonical.current || "(yok)"}</div>
               </div>
               <div className="rounded-lg bg-accent/[0.06] border border-accent/20 p-3">
@@ -158,20 +158,20 @@ export default function ArticleWriterPage() {
           <div className="card space-y-3">
             <h2 className="font-medium">
               4. Görsel Alt Metinleri
-              <span className="ml-2 text-xs font-normal text-ink/40">
+              <span className="ml-2 text-xs font-normal text-ink/60">
                 {result.imagesTotal} görsel bulundu{result.imagesSkipped > 0 ? `, ${result.imagesSkipped} tanesi atlandı` : ""}
               </span>
             </h2>
             {result.imageAlts.length === 0 ? (
-              <p className="text-sm text-ink/50">Sorun bulunamadı — tüm görsellerin alt metni uygun görünüyor.</p>
+              <p className="text-sm text-ink/60">Sorun bulunamadı — tüm görsellerin alt metni uygun görünüyor.</p>
             ) : (
               <div className="space-y-2">
                 {result.imageAlts.map((img, i) => (
                   <div key={i} className="rounded-lg bg-muted p-3 text-sm space-y-1">
-                    <div className="text-xs text-ink/40 truncate">{img.src}</div>
-                    <div><span className="text-ink/40">Mevcut:</span> {img.currentAlt || "(eksik)"}</div>
+                    <div className="text-xs text-ink/60 truncate">{img.src}</div>
+                    <div><span className="text-ink/60">Mevcut:</span> {img.currentAlt || "(eksik)"}</div>
                     <div className="text-accent">→ {img.suggestedAlt}</div>
-                    {img.why && <div className="text-xs text-ink/40">{img.why}</div>}
+                    {img.why && <div className="text-xs text-ink/60">{img.why}</div>}
                   </div>
                 ))}
               </div>
@@ -185,8 +185,8 @@ export default function ArticleWriterPage() {
                 <div className="text-sm font-medium text-ink/70">Mevcut linklerde sorun</div>
                 {result.linkIssues.map((link, i) => (
                   <div key={i} className="rounded-lg bg-muted p-3 text-sm space-y-1">
-                    <div><span className="text-ink/40">Anchor:</span> "{link.anchorText}" → {link.targetUrl}</div>
-                    <div className="text-warn">{link.issue}</div>
+                    <div><span className="text-ink/60">Anchor:</span> "{link.anchorText}" → {link.targetUrl}</div>
+                    <div className="text-warn-ink">{link.issue}</div>
                     <div className="text-accent">→ önerilen: "{link.suggestedAnchor}"</div>
                   </div>
                 ))}
@@ -198,14 +198,14 @@ export default function ArticleWriterPage() {
                 {result.missingLinks.map((link, i) => (
                   <div key={i} className="rounded-lg bg-accent/[0.06] border border-accent/20 p-3 text-sm space-y-1">
                     <div className="italic text-ink/60">"…{link.context}…"</div>
-                    <div><span className="text-ink/40">Önerilen anchor:</span> "{link.suggestedAnchor}" → {link.suggestedTargetUrlPattern}</div>
-                    {link.why && <div className="text-xs text-ink/40">{link.why}</div>}
+                    <div><span className="text-ink/60">Önerilen anchor:</span> "{link.suggestedAnchor}" → {link.suggestedTargetUrlPattern}</div>
+                    {link.why && <div className="text-xs text-ink/60">{link.why}</div>}
                   </div>
                 ))}
               </div>
             )}
             {result.linkIssues.length === 0 && result.missingLinks.length === 0 && (
-              <p className="text-sm text-ink/50">Sorun veya kaçırılmış fırsat bulunamadı.</p>
+              <p className="text-sm text-ink/60">Sorun veya kaçırılmış fırsat bulunamadı.</p>
             )}
           </div>
 
@@ -236,13 +236,13 @@ export default function ArticleWriterPage() {
             <div className="space-y-3">
               <div>
                 <h2 className="font-medium">8. Makale Önerileri</h2>
-                <p className="text-sm text-ink/50">Yukarıda bulunan boşluklara dayanarak — uydurma konu değil.</p>
+                <p className="text-sm text-ink/60">Yukarıda bulunan boşluklara dayanarak — uydurma konu değil.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {result.articleRecommendations.map((rec, i) => (
                   <div key={i} className="card space-y-2">
                     <div className="font-medium text-sm">{rec.title}</div>
-                    <div className="text-xs text-ink/40">Hedef kelime: {rec.targetKeyword}</div>
+                    <div className="text-xs text-ink/60">Hedef kelime: {rec.targetKeyword}</div>
                     <p className="text-sm text-ink/60">{rec.angle}</p>
                     <ul className="text-sm text-ink/60 list-disc pl-4 space-y-0.5">
                       {rec.outline.map((o, j) => (
@@ -261,7 +261,7 @@ export default function ArticleWriterPage() {
               <ol className="space-y-1.5 text-sm">
                 {result.priorityActions.map((action, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-muted text-ink/50 text-xs font-medium flex items-center justify-center">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-muted text-ink/60 text-xs font-medium flex items-center justify-center">
                       {i + 1}
                     </span>
                     <span>{action}</span>
@@ -274,7 +274,7 @@ export default function ArticleWriterPage() {
           <div className="space-y-3">
             <div>
               <h2 className="font-medium">10. AI Citability Score &amp; GEO Rewrite</h2>
-              <p className="text-sm text-ink/50">
+              <p className="text-sm text-ink/60">
                 AI motorlarının bu sayfadan doğrudan bir cevap alıntılayıp alıntılayamayacağını ölçer — sadece
                 sayfanın gerçek yapısına dayanır.
               </p>
@@ -295,7 +295,7 @@ export default function ArticleWriterPage() {
                   {result.citabilityWeaknesses.map((w, i) => (
                     <div key={i} className="rounded-lg bg-muted p-3 text-sm space-y-0.5">
                       <div className="font-medium">{w.issue}</div>
-                      <div className="text-xs text-ink/50">{w.why}</div>
+                      <div className="text-xs text-ink/60">{w.why}</div>
                     </div>
                   ))}
                 </div>
@@ -313,7 +313,7 @@ export default function ArticleWriterPage() {
             {result.citationSuggestions.length > 0 && (
               <div className="card space-y-2">
                 <div className="font-medium text-sm">Alıntı kaynağı önerileri</div>
-                <p className="text-xs text-ink/50 -mt-1">
+                <p className="text-xs text-ink/60 -mt-1">
                   Bunlar gerçek veri değil — hangi türden bir kaynağı/veriyi bulup eklemen gerektiğine dair öneriler.
                 </p>
                 <ul className="text-sm text-ink/60 list-disc pl-4 space-y-1">

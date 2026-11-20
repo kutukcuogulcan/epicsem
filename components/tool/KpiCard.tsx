@@ -25,14 +25,14 @@ export default function KpiCard({
   const id = `g-${label.replace(/\W/g, "")}`;
   return (
     <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4 flex flex-col">
-      <div className="flex items-center justify-between text-xs font-medium text-ink/50">
+      <div className="flex items-center justify-between text-xs font-medium text-ink/60">
         <span>{label}</span>
-        {hint && <span className="text-ink/30">{hint}</span>}
+        {hint && <span className="text-ink/45">{hint}</span>}
       </div>
       <div className="mt-1.5 flex items-baseline gap-2">
         <span className="text-2xl font-medium tracking-tight tabular-nums">{value}</span>
         {delta != null && delta !== 0 && (
-          <span className={`text-xs font-medium tabular-nums ${good ? "text-seo" : "text-danger"}`}>
+          <span className={`text-xs font-medium tabular-nums ${good ? "text-seo-ink" : "text-danger-ink"}`}>
             {delta > 0 ? "+" : ""}
             {delta.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}
           </span>

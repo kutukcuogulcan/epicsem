@@ -17,7 +17,7 @@ function Rich({ text }: { text: string }) {
   return (
     <>
       {parts.map((p, i) =>
-        p.startsWith("**") ? <strong key={i} className="font-medium text-ink">{p.slice(2, -2)}</strong> : p.startsWith("_") && p.endsWith("_") ? <em key={i} className="text-ink/45">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>
+        p.startsWith("**") ? <strong key={i} className="font-medium text-ink">{p.slice(2, -2)}</strong> : p.startsWith("_") && p.endsWith("_") ? <em key={i} className="text-ink/60">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>
       )}
     </>
   );
@@ -41,8 +41,8 @@ function BotBlocks({ blocks, onAsk }: { blocks: Block[]; onAsk: (q: string) => v
             <div key={i} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {b.items.map((x, j) => (
                 <div key={j} className="rounded-xl border border-border bg-paper px-3 py-2">
-                  <div className="text-[10px] text-ink/45">{x.label}</div>
-                  <div className={`text-base font-medium tabular-nums ${x.tone === "good" ? "text-seo" : x.tone === "bad" ? "text-danger" : x.tone === "warn" ? "text-warn" : ""}`}>{x.value}</div>
+                  <div className="text-[11px] text-ink/60">{x.label}</div>
+                  <div className={`text-base font-medium tabular-nums ${x.tone === "good" ? "text-seo-ink" : x.tone === "bad" ? "text-danger-ink" : x.tone === "warn" ? "text-warn-ink" : ""}`}>{x.value}</div>
                 </div>
               ))}
             </div>
@@ -127,10 +127,10 @@ export default function AssistantPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div>
           <h1 className="text-2xl font-medium tracking-tight">SEO Asistanı</h1>
-          <p className="text-sm text-ink/50">Sitenin taramalarına ve AI görünürlük testlerine bakarak cevap verir. Ücretsiz — AI kredisi harcamaz.</p>
+          <p className="text-sm text-ink/60">Sitenin taramalarına ve AI görünürlük testlerine bakarak cevap verir. Ücretsiz — AI kredisi harcamaz.</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-panel px-3 py-1.5">
-          <span className="text-xs font-medium text-ink/40">Site</span>
+          <span className="text-xs font-medium text-ink/60">Site</span>
           {sites && sites.length > 0 ? (
             <select value={site} onChange={(e) => { setSite(e.target.value); setMsgs([]); }} className="bg-transparent text-sm font-medium outline-none">
               {sites.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -147,7 +147,7 @@ export default function AssistantPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-2xl text-accent">✦</div>
             <div>
               <div className="font-medium">{site ? `${site} hakkında ne bilmek istersin?` : "Bir site seç ya da yaz"}</div>
-              <p className="mt-1 text-sm text-ink/50">Öncelikler, AI görünürlüğü, içerik fikirleri, değişimler, belirli sorunlar…</p>
+              <p className="mt-1 text-sm text-ink/60">Öncelikler, AI görünürlüğü, içerik fikirleri, değişimler, belirli sorunlar…</p>
             </div>
             <div className="flex max-w-xl flex-wrap justify-center gap-2">
               {suggestions.map((q) => (
@@ -155,7 +155,7 @@ export default function AssistantPage() {
               ))}
             </div>
             {sites && sites.length === 0 && (
-              <p className="text-xs text-ink/45">
+              <p className="text-xs text-ink/60">
                 Henüz verin yok — önce <Link href="/import" className="font-medium text-accent">Site Taraması</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.
               </p>
             )}

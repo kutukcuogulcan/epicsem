@@ -9,7 +9,7 @@ import GhostChart from "./GhostChart";
 const TT = { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 12 };
 const day = (d: string) => new Date(d).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-const tone = (n: number | null) => (n == null ? "bg-muted text-ink/40" : n >= 80 ? "bg-seo/10 text-seo" : n >= 50 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger");
+const tone = (n: number | null) => (n == null ? "bg-muted text-ink/60" : n >= 80 ? "bg-seo/10 text-seo-ink" : n >= 50 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink");
 
 function useTool<T>(tool: string, refreshKey: number) {
   const [d, setD] = useState<T | null>(null);
@@ -70,7 +70,7 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
         <KpiCard label="Açık uyarı" value={String(open)} spark={d.alerts.map((a) => a.count)} color="#ef4444" hint={drops ? `${drops} sayfada düşüş` : "düşüş yok"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Panel title="Skor trendi (tüm sayfalar ort.)" right={<span className="flex gap-3 text-xs text-ink/50"><span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" />SEO</span><span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-seo" />AI erişim</span></span>}>
+        <Panel title="Skor trendi (tüm sayfalar ort.)" right={<span className="flex gap-3 text-xs text-ink/60"><span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" />SEO</span><span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-seo" />AI erişim</span></span>}>
           <div className="h-64 px-2 pt-4">
             {s.length > 1 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -88,7 +88,7 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <p className="p-6 text-sm text-ink/45">Trend için en az iki günlük kontrol gerekiyor. Günlük kontroller birikince burada görünecek.</p>
+              <p className="p-6 text-sm text-ink/60">Trend için en az iki günlük kontrol gerekiyor. Günlük kontroller birikince burada görünecek.</p>
             )}
           </div>
         </Panel>
@@ -101,9 +101,9 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                 return (
                   <tr key={p.id} className="border-t border-border">
                     <td className="max-w-[11rem] truncate px-5 py-2.5 font-medium" title={p.url}>{p.label || short(p.url)}</td>
-                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-[10px] font-medium ${delta > 0 ? "text-seo" : "text-danger"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
+                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-[11px] font-medium ${delta > 0 ? "text-seo-ink" : "text-danger-ink"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
                     <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.ai)}`}>{p.ai ?? "—"}</span></td>
-                    <td className="py-2.5 pr-5 text-right">{p.openAlerts ? <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">{p.openAlerts}</span> : <span className="text-xs text-seo">✓</span>}</td>
+                    <td className="py-2.5 pr-5 text-right">{p.openAlerts ? <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">{p.openAlerts}</span> : <span className="text-xs text-seo-ink">✓</span>}</td>
                   </tr>
                 );
               })}
@@ -174,22 +174,22 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="p-6 text-sm text-ink/45">Son 12 haftada taslak üretilmedi.</p>
+              <p className="p-6 text-sm text-ink/60">Son 12 haftada taslak üretilmedi.</p>
             )}
           </div>
         </Panel>
         <Panel title="Autoblog durumu">
           <div className="divide-y divide-border">
-            {campaigns.length === 0 && <div className="px-5 py-6 text-sm text-ink/45">Kampanya yok.</div>}
+            {campaigns.length === 0 && <div className="px-5 py-6 text-sm text-ink/60">Kampanya yok.</div>}
             {campaigns.slice(0, 6).map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{c.brandName}</div>
-                  <div className="truncate text-[11px] text-ink/45">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
+                  <div className="truncate text-[11px] text-ink/60">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
-                  <div className="mt-0.5 text-[10px] text-ink/40">sonraki: {next(c)}</div>
+                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
+                  <div className="mt-0.5 text-[11px] text-ink/60">sonraki: {next(c)}</div>
                 </div>
               </div>
             ))}
@@ -258,8 +258,8 @@ export function LocalOverview({ refreshKey = 0 }: { refreshKey?: number }) {
             {d.recent.map((r) => (
               <div key={r.id} className="px-4 py-2.5">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className={`rounded px-1.5 py-0.5 font-medium ${r.kind === "gbp-post" ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo"}`}>{r.kind === "gbp-post" ? "Gönderi" : `Yanıt${r.rating ? ` · ${r.rating}★` : ""}`}</span>
-                  <span className="text-ink/40">{r.business} · {day(r.createdAt)}</span>
+                  <span className={`rounded px-1.5 py-0.5 font-medium ${r.kind === "gbp-post" ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo-ink"}`}>{r.kind === "gbp-post" ? "Gönderi" : `Yanıt${r.rating ? ` · ${r.rating}★` : ""}`}</span>
+                  <span className="text-ink/60">{r.business} · {day(r.createdAt)}</span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-xs text-ink/65">{r.output}</p>
               </div>
@@ -287,7 +287,7 @@ interface ClientRow {
 }
 
 function Spark({ data }: { data: number[] }) {
-  if (data.length < 2) return <span className="text-[10px] text-ink/30">—</span>;
+  if (data.length < 2) return <span className="text-[11px] text-ink/45">—</span>;
   const w = 64;
   const h = 20;
   const max = Math.max(...data, 1);
@@ -358,16 +358,16 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                       <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(c.domain)}&sz=32`} alt="" className="h-4 w-4 rounded" />
                       <div className="min-w-0">
                         <div className="truncate font-medium">{c.name}</div>
-                        <div className="truncate text-[11px] text-ink/40">{c.domain}</div>
+                        <div className="truncate text-[11px] text-ink/60">{c.domain}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-2.5 pr-3">{c.seoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.seoScore)}`}>{c.seoScore}</span> : <Link href={`/audit?url=${c.domain}`} className="text-[11px] font-medium text-accent">Denetle</Link>}</td>
-                  <td className="py-2.5 pr-3">{c.axoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.axoScore)}`}>{c.axoScore}</span> : <span className="text-xs text-ink/30">—</span>}</td>
-                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-[11px] font-medium text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-[10px] text-danger">{c.errors} hata</span> : null}</td>
+                  <td className="py-2.5 pr-3">{c.axoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.axoScore)}`}>{c.axoScore}</span> : <span className="text-xs text-ink/45">—</span>}</td>
+                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-[11px] font-medium text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-[11px] text-danger-ink">{c.errors} hata</span> : null}</td>
                   <td className="py-2.5 pr-3">{c.visibility != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.visibility * 1.25)}`}>%{c.visibility}</span> : <Link href={`/geo?clientId=${c.id}`} className="text-[11px] font-medium text-accent">GEO testi</Link>}</td>
                   <td className="py-2.5 pr-3"><Spark data={c.visibilityTrend.map((x) => x.visibility)} /></td>
-                  <td className="py-2.5 pr-5 text-right text-xs text-ink/45">{c.lastActivity ? day(c.lastActivity) : "—"}</td>
+                  <td className="py-2.5 pr-5 text-right text-xs text-ink/60">{c.lastActivity ? day(c.lastActivity) : "—"}</td>
                 </tr>
               ))}
             </tbody>

@@ -18,7 +18,7 @@ export default function GhostChart({ title, body, cta }: { title: string; body: 
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-panel/60 text-center backdrop-blur-[1px] px-6">
         <div className="font-medium">{title}</div>
-        <p className="max-w-md text-sm text-ink/55">{body}</p>
+        <p className="max-w-md text-sm text-ink/60">{body}</p>
         {cta}
       </div>
     </div>

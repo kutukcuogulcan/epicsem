@@ -37,10 +37,10 @@ export default function UsageMeter({ metric }: { metric: keyof typeof METRIC_LAB
   const pct = m.limit > 0 ? Math.min(100, Math.round((m.used / m.limit) * 100)) : 0;
 
   return (
-    <p className="text-xs text-ink/40">
+    <p className="text-xs text-ink/60">
       Bu ay: {m.used}/{m.limit} {METRIC_LABEL[metric]} kullanıldı
       {data.demoMode && <span> (demo modda sayılmaz — gerçek API anahtarı bağlandığında geçerli olur)</span>}
-      {pct >= 90 && !data.demoMode && <span className="text-warn"> — limite yaklaşıyorsunuz</span>}
+      {pct >= 90 && !data.demoMode && <span className="text-warn-ink"> — limite yaklaşıyorsunuz</span>}
     </p>
   );
 }

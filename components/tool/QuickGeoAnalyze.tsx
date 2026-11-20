@@ -158,13 +158,13 @@ export default function QuickGeoAnalyze({
         className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
-          <span className="text-ink/30">🌐</span>
+          <span className="text-ink/45">🌐</span>
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Markanın sitesi — ör. siteniz.com"
             disabled={active}
-            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/35 disabled:opacity-60"
+            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/60 disabled:opacity-60"
           />
         </div>
         <div className="flex gap-2">
@@ -196,7 +196,7 @@ export default function QuickGeoAnalyze({
                 <li
                   key={st.key}
                   className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
-                    s === "ready" ? "bg-seo/10 text-seo" : s === "running" ? "bg-accent/10 text-accent" : s === "error" ? "bg-danger/10 text-danger" : "bg-muted text-ink/40"
+                    s === "ready" ? "bg-seo/10 text-seo-ink" : s === "running" ? "bg-accent/10 text-accent" : s === "error" ? "bg-danger/10 text-danger-ink" : "bg-muted text-ink/60"
                   }`}
                 >
                   <span className="flex h-4 w-4 shrink-0 items-center justify-center">
@@ -208,7 +208,7 @@ export default function QuickGeoAnalyze({
             })}
           </ol>
           {error && (
-            <p className="mt-3 text-sm text-danger">
+            <p className="mt-3 text-sm text-danger-ink">
               {error}
               {/anahtar|kredi/i.test(error) ? (
                 <>

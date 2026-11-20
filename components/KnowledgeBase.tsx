@@ -48,10 +48,10 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
       {!compact && (
         <div>
           <div className="text-sm font-medium">Marka bilgi bankası</div>
-          <p className="mt-0.5 text-xs text-ink/50">AI yazarken bunları doğru kabul eder; burada ve sayfada olmayan bilgiyi uydurmaz. Editör, Autoblog, Sayfa Analizi, yorum yanıtları ve "Öneri yaz" kullanır.</p>
+          <p className="mt-0.5 text-xs text-ink/60">AI yazarken bunları doğru kabul eder; burada ve sayfada olmayan bilgiyi uydurmaz. Editör, Autoblog, Sayfa Analizi, yorum yanıtları ve "Öneri yaz" kullanır.</p>
         </div>
       )}
-      {compact && <p className="text-[11px] leading-relaxed text-ink/50">AI düzenlemelerinde doğru kabul edilecek marka bilgileri. Ürün, hizmet, fiyat aralığı, adres, garanti, kargo, ton…</p>}
+      {compact && <p className="text-[11px] leading-relaxed text-ink/60">AI düzenlemelerinde doğru kabul edilecek marka bilgileri. Ürün, hizmet, fiyat aralığı, adres, garanti, kargo, ton…</p>}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value.slice(0, 20000))}
@@ -66,8 +66,8 @@ export default function KnowledgeBase({ compact = false }: { compact?: boolean }
         </button>
         <button type="button" onClick={() => fileRef.current?.click()} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30">.txt / .md yükle</button>
         <input ref={fileRef} type="file" accept=".txt,.md,.csv" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-        <span className="ml-auto text-[10px] text-ink/40">{text.length.toLocaleString("tr-TR")} / 20.000</span>
-        {state === "error" && <span className="text-xs text-danger">Kaydedilemedi</span>}
+        <span className="ml-auto text-[11px] text-ink/60">{text.length.toLocaleString("tr-TR")} / 20.000</span>
+        {state === "error" && <span className="text-xs text-danger-ink">Kaydedilemedi</span>}
       </div>
     </div>
   );

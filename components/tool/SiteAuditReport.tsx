@@ -20,8 +20,8 @@ export interface RunSummary {
 }
 
 const SEV_STYLE: Record<Severity, { dot: string; badge: string; color: string }> = {
-  error: { dot: "bg-danger", badge: "bg-danger/10 text-danger", color: "#ef4444" },
-  warning: { dot: "bg-warn", badge: "bg-warn/10 text-warn", color: "#f59e0b" },
+  error: { dot: "bg-danger", badge: "bg-danger/10 text-danger-ink", color: "#ef4444" },
+  warning: { dot: "bg-warn", badge: "bg-warn/10 text-warn-ink", color: "#f59e0b" },
   notice: { dot: "bg-accent", badge: "bg-accent/10 text-accent", color: "#4f00ff" },
 };
 const SEV_ORDER: Severity[] = ["error", "warning", "notice"];
@@ -50,7 +50,7 @@ function Delta({ now, prev, goodWhen = "down" }: { now: number; prev: number | n
   if (prev == null || now === prev) return null;
   const d = now - prev;
   const good = goodWhen === "down" ? d < 0 : d > 0;
-  return <span className={`text-xs font-medium tabular-nums ${good ? "text-seo" : "text-danger"}`}>{d > 0 ? `+${d}` : d}</span>;
+  return <span className={`text-xs font-medium tabular-nums ${good ? "text-seo-ink" : "text-danger-ink"}`}>{d > 0 ? `+${d}` : d}</span>;
 }
 
 /**
@@ -176,9 +176,9 @@ export default function SiteAuditReport({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(site(result.filename))}&sz=64`} alt="" className="h-6 w-6 rounded" />
             <h2 className="truncate text-xl font-medium">{site(result.filename)}</h2>
-            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn">kısmi</span>}
+            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">kısmi</span>}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/50">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/60">
             <span>{rows.length} sayfa tarandı</span>
             <span>·</span>
             {runs.length > 1 ? (
@@ -219,7 +219,7 @@ export default function SiteAuditReport({
         <>
           {/* 1. satır: sağlık skoru | taranan sayfalar | hata/uyarı/bildirim */}
           <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr_1fr]">
-            <Card title="Sağlık skoru" right={<span className="text-xs text-ink/40">hatasız sayfa oranı</span>}>
+            <Card title="Sağlık skoru" right={<span className="text-xs text-ink/60">hatasız sayfa oranı</span>}>
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="relative h-32 w-32 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
@@ -252,13 +252,13 @@ export default function SiteAuditReport({
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="pt-6 text-xs text-ink/40">Aynı siteyi tekrar taradıkça skorun trendi burada çizilir.</p>
+                    <p className="pt-6 text-xs text-ink/60">Aynı siteyi tekrar taradıkça skorun trendi burada çizilir.</p>
                   )}
                 </div>
               </div>
             </Card>
 
-            <Card title="Taranan sayfalar" right={<span className="text-xs text-ink/40">{rows.length} URL</span>}>
+            <Card title="Taranan sayfalar" right={<span className="text-xs text-ink/60">{rows.length} URL</span>}>
               <div className="px-5 py-4">
                 <div className="flex h-3 overflow-hidden rounded-full bg-muted">
                   {data.crawled.filter((x) => x.v > 0).map((x) => (
@@ -277,15 +277,15 @@ export default function SiteAuditReport({
                   ))}
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
-                  <div><div className="text-[11px] text-ink/45">İndekslenebilir</div><div className="font-medium tabular-nums">{data.indexable}</div></div>
-                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/45">AI alıntı</div><div className={`font-medium tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo" : s.avgCitability >= 45 ? "text-warn" : "text-danger"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. yanıt</div><div className="font-medium tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/45">Ort. boyut</div><div className="font-medium tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/60">İndekslenebilir</div><div className="font-medium tabular-nums">{data.indexable}</div></div>
+                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/60">AI alıntı</div><div className={`font-medium tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo-ink" : s.avgCitability >= 45 ? "text-warn-ink" : "text-danger-ink"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/60">Ort. yanıt</div><div className="font-medium tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
+                  <div><div className="text-[11px] text-ink/60">Ort. boyut</div><div className="font-medium tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
                 </div>
               </div>
             </Card>
 
-            <Card title="Sorunlar" right={data.prev ? <span className="text-xs text-ink/40">önceki taramaya göre</span> : undefined}>
+            <Card title="Sorunlar" right={data.prev ? <span className="text-xs text-ink/60">önceki taramaya göre</span> : undefined}>
               <div className="divide-y divide-border">
                 {SEV_ORDER.map((k) => (
                   <button
@@ -300,7 +300,7 @@ export default function SiteAuditReport({
                     <span className="flex items-center gap-2.5">
                       <span className={`h-2.5 w-2.5 rounded-full ${SEV_STYLE[k].dot}`} />
                       <span className="text-sm font-medium">{SEVERITY_LABEL[k]}</span>
-                      <span className="text-xs text-ink/40">{data.sevTypes[k]} tür</span>
+                      <span className="text-xs text-ink/60">{data.sevTypes[k]} tür</span>
                     </span>
                     <span className="flex items-baseline gap-2">
                       <span className="text-xl font-medium tabular-nums" style={{ color: data.sev[k] ? SEV_STYLE[k].color : undefined }}>{data.sev[k]}</span>
@@ -316,12 +316,12 @@ export default function SiteAuditReport({
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             {data.themes.map((t) => (
               <div key={t.key} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
-                <div className="text-xs font-medium text-ink/50">{t.label}</div>
+                <div className="text-xs font-medium text-ink/60">{t.label}</div>
                 <div className="mt-1 text-2xl font-medium tabular-nums" style={{ color: scoreColor(t.score) }}>%{t.score}</div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${t.score}%`, background: scoreColor(t.score) }} />
                 </div>
-                <div className="mt-1.5 text-[11px] text-ink/40">{t.bad ? `${t.bad} sayfada sorun` : "sorun yok"}</div>
+                <div className="mt-1.5 text-[11px] text-ink/60">{t.bad ? `${t.bad} sayfada sorun` : "sorun yok"}</div>
               </div>
             ))}
           </div>
@@ -332,7 +332,7 @@ export default function SiteAuditReport({
             right={<button type="button" onClick={() => setTab("issues")} className="text-xs font-medium text-accent hover:underline">Tüm sorunlar →</button>}
           >
             {data.plan.length === 0 ? (
-              <div className="px-5 py-6 text-sm font-medium text-seo">Kritik bir sorun yok — site sağlıklı görünüyor.</div>
+              <div className="px-5 py-6 text-sm font-medium text-seo-ink">Kritik bir sorun yok — site sağlıklı görünüyor.</div>
             ) : (
               <ol className="divide-y divide-border">
                 {data.plan.map((it, i) => {
@@ -352,19 +352,19 @@ export default function SiteAuditReport({
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{ISSUE_LABEL[it.code] ?? it.code}</span>
-                            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
-                            <span className="text-xs text-ink/45">{it.n} sayfa</span>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
+                            <span className="text-xs text-ink/60">{it.n} sayfa</span>
                           </span>
                           {info && <span className="mt-0.5 block text-sm text-ink/60">{info.steps[0]}</span>}
                         </span>
                         <span className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
                           {info && (
-                            <span className="flex gap-1 text-[10px] font-medium">
+                            <span className="flex gap-1 text-[11px] font-medium">
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Etki: {info.impact}</span>
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Zorluk: {info.effort}</span>
                             </span>
                           )}
-                          {it.gain > 0 && <span className="text-xs font-medium text-seo">Sağlık skoru +{it.gain}</span>}
+                          {it.gain > 0 && <span className="text-xs font-medium text-seo-ink">Sağlık skoru +{it.gain}</span>}
                         </span>
                       </button>
                     </li>
@@ -406,7 +406,7 @@ export default function SiteAuditReport({
               </div>
             </Card>
 
-            <Card title="Tık derinliği" right={<span className="text-xs text-ink/40">ana sayfadan</span>}>
+            <Card title="Tık derinliği" right={<span className="text-xs text-ink/60">ana sayfadan</span>}>
               <div className="h-44 px-2 pt-3">
                 {Object.keys(data.depthDist).length ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -423,7 +423,7 @@ export default function SiteAuditReport({
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="p-4 text-xs text-ink/40">Bu taramada derinlik verisi yok.</p>
+                  <p className="p-4 text-xs text-ink/60">Bu taramada derinlik verisi yok.</p>
                 )}
               </div>
             </Card>
@@ -487,7 +487,7 @@ export default function SiteAuditReport({
                 })}
             </tbody>
           </table>
-          {data.issues.length === 0 && <div className="px-5 py-8 text-center text-sm font-medium text-seo">Bu taramada sorun bulunmadı.</div>}
+          {data.issues.length === 0 && <div className="px-5 py-8 text-center text-sm font-medium text-seo-ink">Bu taramada sorun bulunmadı.</div>}
         </div>
       )}
 
@@ -523,7 +523,7 @@ export default function SiteAuditReport({
                 </option>
               ))}
             </select>
-            <span className="ml-auto text-xs text-ink/40">{pageRows.length} sayfa</span>
+            <span className="ml-auto text-xs text-ink/60">{pageRows.length} sayfa</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -545,7 +545,7 @@ export default function SiteAuditReport({
               </tbody>
             </table>
           </div>
-          {pageRows.length > 300 && <p className="border-t border-border px-5 py-2 text-xs text-ink/40">İlk 300 sayfa gösteriliyor — aramayı ya da filtreyi daraltın.</p>}
+          {pageRows.length > 300 && <p className="border-t border-border px-5 py-2 text-xs text-ink/60">İlk 300 sayfa gösteriliyor — aramayı ya da filtreyi daraltın.</p>}
         </div>
       )}
 
@@ -567,7 +567,7 @@ function CopyCode({ code }: { code: string }) {
             setTimeout(() => setOk(false), 1500);
           });
         }}
-        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/20"
+        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-white/20"
       >
         {ok ? "Kopyalandı" : "Kopyala"}
       </button>
@@ -607,16 +607,16 @@ function IssueRow({
     <>
       <tr onClick={onToggle} className={`cursor-pointer border-t border-border hover:bg-muted/40 ${open ? "bg-muted/40" : ""}`}>
         <td className="px-5 py-3 font-medium">
-          <span className="mr-1.5 inline-block text-ink/30">{open ? "▾" : "▸"}</span>
+          <span className="mr-1.5 inline-block text-ink/45">{open ? "▾" : "▸"}</span>
           {label}
         </td>
         <td className="py-3 pr-3">
           <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
         </td>
-        <td className="py-3 pr-3 text-xs text-ink/55 max-md:hidden">{info?.impact ?? "—"}</td>
+        <td className="py-3 pr-3 text-xs text-ink/60 max-md:hidden">{info?.impact ?? "—"}</td>
         <td className="py-3 pr-3 text-right font-medium tabular-nums">{n}</td>
         <td className="py-3 pr-3 text-right tabular-nums">
-          {d == null ? <span className="text-ink/30">—</span> : d === 0 ? <span className="text-ink/40">0</span> : <span className={d < 0 ? "text-seo" : "text-danger"}>{d > 0 ? `+${d}` : d}</span>}
+          {d == null ? <span className="text-ink/45">—</span> : d === 0 ? <span className="text-ink/60">0</span> : <span className={d < 0 ? "text-seo-ink" : "text-danger-ink"}>{d > 0 ? `+${d}` : d}</span>}
         </td>
         <td className="py-3 pr-5 max-md:hidden">
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -636,19 +636,19 @@ function IssueRow({
                       <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Zorluk: {info.effort}</span>
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-ink/50">Sorun nedir?</div>
+                      <div className="text-xs font-medium text-ink/60">Sorun nedir?</div>
                       <p className="mt-0.5 text-ink/80">{info.what}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-ink/50">Neden önemli?</div>
+                      <div className="text-xs font-medium text-ink/60">Neden önemli?</div>
                       <p className="mt-0.5 text-ink/75">{info.why}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-ink/50">Nasıl çözülür?</div>
+                      <div className="text-xs font-medium text-ink/60">Nasıl çözülür?</div>
                       <ol className="mt-1 space-y-1">
                         {info.steps.map((st, i) => (
                           <li key={i} className="flex gap-2 text-ink/75">
-                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-medium text-accent">{i + 1}</span>
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-medium text-accent">{i + 1}</span>
                             <span>{st}</span>
                           </li>
                         ))}
@@ -656,7 +656,7 @@ function IssueRow({
                     </div>
                     {info.example && (
                       <div>
-                        <div className="text-xs font-medium text-ink/50">Örnek</div>
+                        <div className="text-xs font-medium text-ink/60">Örnek</div>
                         <CopyCode code={info.example} />
                       </div>
                     )}
@@ -664,7 +664,7 @@ function IssueRow({
                 ) : null}
               </div>
               <div>
-                <div className="flex items-center justify-between text-xs font-medium text-ink/50">
+                <div className="flex items-center justify-between text-xs font-medium text-ink/60">
                   <span>Etkilenen sayfalar ({affected.length})</span>
                   <button type="button" onClick={onShowAll} className="font-medium text-accent hover:underline">Sayfa gezgininde aç →</button>
                 </div>
@@ -676,11 +676,11 @@ function IssueRow({
                         <a href={r.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="block truncate text-xs font-medium text-ink/75 hover:text-accent">
                           {short(r.url)}
                         </a>
-                        {note && <div className="mt-0.5 truncate text-[11px] text-ink/45">{note}</div>}
+                        {note && <div className="mt-0.5 truncate text-[11px] text-ink/60">{note}</div>}
                       </div>
                     );
                   })}
-                  {affected.length > 10 && <div className="px-3 py-2 text-xs text-ink/40">+{affected.length - 10} sayfa daha</div>}
+                  {affected.length > 10 && <div className="px-3 py-2 text-xs text-ink/60">+{affected.length - 10} sayfa daha</div>}
                 </div>
               </div>
             </div>

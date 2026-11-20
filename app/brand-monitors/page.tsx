@@ -65,7 +65,7 @@ export default function BrandMonitorsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-          <svg viewBox="0 0 20 20" className="h-4 w-4 text-ink/35" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <svg viewBox="0 0 20 20" className="h-4 w-4 text-ink/60" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <circle cx="9" cy="9" r="5.5" />
             <path d="M13 13l3.5 3.5" />
           </svg>
@@ -115,15 +115,15 @@ export default function BrandMonitorsPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${r.brandDomain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="font-medium">{r.brandName} monitörü</span>
-                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">aktif proje</span>}
-                        <span className="hidden text-xs text-ink/40 sm:inline">{r.brandDomain}</span>
+                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">aktif proje</span>}
+                        <span className="hidden text-xs text-ink/60 sm:inline">{r.brandDomain}</span>
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-seo/30 bg-seo/10 text-seo" : "border-border bg-muted text-sub"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
+                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-seo/30 bg-seo/10 text-seo-ink" : "border-border bg-muted text-sub"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
                         {on ? "Aktif" : "Duraklatıldı"}
                       </span>
-                      {r.demoMode && <span className="ml-1.5 rounded-md bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn">demo</span>}
+                      {r.demoMode && <span className="ml-1.5 rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">demo</span>}
                     </td>
                     <td className="py-3 pr-4 text-center tabular-nums">{r.prompts}</td>
                     <td className="hidden py-3 pr-4 text-center tabular-nums text-ink/60 md:table-cell">{r.engines}</td>
@@ -140,7 +140,7 @@ export default function BrandMonitorsPage() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-ink/45">Durum: &quot;Aktif&quot; monitörler seçtiğin sıklıkta (günlük, haftalık…) kendiliğinden yeniden test edilir; &quot;Duraklatıldı&quot; olanlar sadece elle çalışır. Monitöre girip izlemeyi başlatabilirsin.</p>
+      <p className="text-xs text-ink/60">Durum: &quot;Aktif&quot; monitörler seçtiğin sıklıkta (günlük, haftalık…) kendiliğinden yeniden test edilir; &quot;Duraklatıldı&quot; olanlar sadece elle çalışır. Monitöre girip izlemeyi başlatabilirsin.</p>
     </div>
   );
 }

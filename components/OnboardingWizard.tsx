@@ -151,7 +151,7 @@ function TagEditor({ tags, onChange, placeholder }: { tags: string[]; onChange: 
         {tags.map((t, i) => (
           <span key={i} className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-3 py-1 text-xs">
             {t}
-            <button type="button" onClick={() => onChange(tags.filter((_, idx) => idx !== i))} className="text-ink/40 hover:text-danger">
+            <button type="button" onClick={() => onChange(tags.filter((_, idx) => idx !== i))} className="text-ink/60 hover:text-danger-ink">
               ✕
             </button>
           </span>
@@ -756,7 +756,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         @keyframes owz-field-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
       <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink/40">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink/60">
           {["URL", "Marka profili", "Ürün & pazar", "Kitle", "Topic'ler", "Promptlar"].map((label, i) => (
             <span key={label} className={i <= stepIndex && step !== "running" ? "text-accent font-semibold" : ""}>
               {i > 0 && "→ "}
@@ -771,7 +771,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               clearSessionParam();
               onClose();
             }}
-            className="text-xs text-ink/40 hover:text-ink/70"
+            className="text-xs text-ink/60 hover:text-ink/70"
           >
             ✕ Kapat
           </button>
@@ -779,7 +779,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       </div>
 
       {anyDemoMode && step !== "running" && (
-        <div className="rounded-lg border border-warn/40 text-warn text-xs px-3 py-2">
+        <div className="rounded-lg border border-warn/40 text-warn-ink text-xs px-3 py-2">
           <strong>Demo modda</strong> çalışıyor — bazı adımlar gerçek bir model API anahtarı olmadan simüle edildi, açıkça işaretli.
         </div>
       )}
@@ -787,7 +787,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       {step === "url" && (
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Proje detaylarını ekleyin</h2>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/60">
             Markanızın görünürlüğünü AI yanıtlarında izleyin. URL&apos;i yazıp başka bir alana geçin (Tab veya
             tıklayın) — aşağıdaki alanlar saniyeler içinde kendiliğinden dolar, siz sadece gözden geçirip
             düzeltirsiniz. Aynı anda arka planda taramayı, marka profilini, rakip önerilerini, konu başlıklarını ve
@@ -795,7 +795,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           </p>
 
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Marka URL&apos;si</h3>
+            <h3 className="text-xs font-semibold text-ink/60">Marka URL&apos;si</h3>
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -813,7 +813,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             />
           </div>
           <ErrorBlock message={discoverError} />
-          {prefillWarning && <p className="text-xs text-warn/90">⚠️ {prefillWarning}</p>}
+          {prefillWarning && <p className="text-xs text-warn-ink">⚠️ {prefillWarning}</p>}
 
           {/* Kart: LLM'siz otomatik doldurma — og:site_name/<title>/TLD/<html lang>/hreflang
               üzerinden, hiçbir model çağrısı yapmadan; Marka adı dışındakiler (Ülke/Dil/Saat
@@ -821,7 +821,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               dilimi) orada boş-görünen bir iskelete gerek yok — sadece gerçekten boş başlayan
               Marka adı alanı, tahmin gelene kadar iskelet gösteriyor. */}
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Marka adı</h3>
+            <h3 className="text-xs font-semibold text-ink/60">Marka adı</h3>
             {prefilling && !brandName ? (
               <SkeletonBar height="2.6rem" />
             ) : (
@@ -831,7 +831,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <h3 className="text-xs font-semibold text-ink/50">Ülke</h3>
+              <h3 className="text-xs font-semibold text-ink/60">Ülke</h3>
               {/* Step 1'in hızlı/LLM'siz tahmini: tek, birincil pazar. Birden fazla hedef
                   pazar eklemek (harita + çoklu seçim) Adım 3 "Ürünler ve hedef pazar"da. */}
               <select
@@ -847,7 +847,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </select>
             </div>
             <div className="space-y-1">
-              <h3 className="text-xs font-semibold text-ink/50">Dil</h3>
+              <h3 className="text-xs font-semibold text-ink/60">Dil</h3>
               <select value={language} onChange={(e) => setLanguage(e.target.value as "tr" | "en")} className={inputClass}>
                 <option value="tr">🇹🇷 Türkçe</option>
                 <option value="en">🇬🇧 English</option>
@@ -856,7 +856,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Saat dilimi</h3>
+            <h3 className="text-xs font-semibold text-ink/60">Saat dilimi</h3>
             {/* Intl.supportedValuesOf("timeZone") doesn't always include every value
                 resolvedOptions().timeZone can return (e.g. plain "UTC" on some systems) — the
                 detected zone is always added to the list if it's missing, so the select never
@@ -886,13 +886,13 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Marka profili</h2>
           {(crawlStatus === "pending" || crawlStatus === "running" || profileStatus === "running") && (
-            <p className="text-xs text-ink/40">
+            <p className="text-xs text-ink/60">
               {crawlStatus !== "ready" ? "Sayfa taranıyor…" : "Marka profili çıkarılıyor…"} Rakip önerileri de aynı anda
               hazırlanıyor.
             </p>
           )}
           {(crawlStatus === "error" || profileStatus === "error") && (
-            <div className="rounded-lg border border-danger/40 text-danger text-xs px-3 py-2 space-y-2">
+            <div className="rounded-lg border border-danger/40 text-danger-ink text-xs px-3 py-2 space-y-2">
               <p>{discoverError}</p>
               <button
                 type="button"
@@ -944,7 +944,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </RevealField>
               <RevealField index={1}>
                 <div className="space-y-1">
-                  <h3 className="text-xs font-semibold text-ink/50">Açıklama</h3>
+                  <h3 className="text-xs font-semibold text-ink/60">Açıklama</h3>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -956,14 +956,14 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </RevealField>
               <RevealField index={2}>
                 <div className="space-y-1">
-                  <h3 className="text-xs font-semibold text-ink/50">Sektör</h3>
+                  <h3 className="text-xs font-semibold text-ink/60">Sektör</h3>
                   <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="örn. Dijital pazarlama ajansı" className={inputClass} />
                 </div>
               </RevealField>
 
               <RevealField index={3}>
                 <div className="space-y-1">
-                  <h3 className="text-xs font-semibold text-ink/50">Marka kimliği (sıfatlar)</h3>
+                  <h3 className="text-xs font-semibold text-ink/60">Marka kimliği (sıfatlar)</h3>
                   <TagEditor tags={identityAdjectives} onChange={setIdentityAdjectives} placeholder="örn. güvenilir" />
                 </div>
               </RevealField>
@@ -971,7 +971,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               <RevealField index={4}>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-ink/50">Önerilen rakipler</h3>
+                    <h3 className="text-xs font-semibold text-ink/60">Önerilen rakipler</h3>
                     <button
                       type="button"
                       onClick={() => setCompetitorList((c) => [...c, { name: "", domain: "" }])}
@@ -980,18 +980,18 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                       + Rakip ekle
                     </button>
                   </div>
-                  {competitorsStatus === "running" && <p className="text-xs text-ink/40">Rakip önerileri hazırlanıyor…</p>}
+                  {competitorsStatus === "running" && <p className="text-xs text-ink/60">Rakip önerileri hazırlanıyor…</p>}
                   {competitorsStatus === "error" && (
-                    <p className="text-xs text-ink/40">Rakip önerisi başarısız oldu — aşağıya elle ekleyebilirsiniz.</p>
+                    <p className="text-xs text-ink/60">Rakip önerisi başarısız oldu — aşağıya elle ekleyebilirsiniz.</p>
                   )}
                   {competitorsWebSearch === true ? (
-                    <p className="text-xs text-ink/50">
+                    <p className="text-xs text-ink/60">
                       🔎 Rakipler web'de aranarak bulundu ve her domain'in açıldığı doğrulandı. Güven skoru en yüksek{" "}
                       {Math.min(5, competitorList.length)} tanesi seçili geldi — işaretini kaldırdığınız rakip takibe girmez.
                     </p>
                   ) : (
                     competitorsStatus === "ready" && (
-                      <p className="text-xs text-warn/90">
+                      <p className="text-xs text-warn-ink">
                         ⚠️ Web araması yapabilen bir model bağlı olmadığı için bu öneriler modelin genel bilgisinden geldi —
                         yanlış olabilir. Mutlaka gözden geçirin, gerekirse silin/düzeltin.
                       </p>
@@ -1017,12 +1017,12 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                           )}
                           <input value={c.name} onChange={(e) => updateCompetitor(i, "name", e.target.value)} placeholder="Rakip adı" className={`${inputClass} flex-1`} />
                           <input value={c.domain} onChange={(e) => updateCompetitor(i, "domain", e.target.value)} placeholder="rakip-domaini.com" className={`${inputClass} flex-1`} />
-                          <button type="button" onClick={() => removeCompetitor(i)} title="Sil" className="text-ink/40 hover:text-danger text-xs shrink-0 px-1">
+                          <button type="button" onClick={() => removeCompetitor(i)} title="Sil" className="text-ink/60 hover:text-danger-ink text-xs shrink-0 px-1">
                             ✕
                           </button>
                         </div>
                         {(c.reason || c.verified || typeof c.confidence === "number") && (
-                          <div className="pl-12 flex flex-wrap items-center gap-2 text-xs text-ink/50">
+                          <div className="pl-12 flex flex-wrap items-center gap-2 text-xs text-ink/60">
                             {c.verified && <span className="rounded-full bg-muted border border-border px-2 py-0.5">✓ domain açılıyor</span>}
                             {typeof c.confidence === "number" && (
                               <span className="rounded-full bg-muted border border-border px-2 py-0.5">güven %{Math.round(c.confidence * 100)}</span>
@@ -1052,7 +1052,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Ürünler ve hedef pazar</h2>
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-ink/50">Ürünler ve hizmetler</h3>
+            <h3 className="text-xs font-semibold text-ink/60">Ürünler ve hizmetler</h3>
             {profileStatus !== "ready" && profileStatus !== "error" ? (
               <div className="flex gap-2">
                 <SkeletonBar height="1.8rem" width="6rem" className="rounded-full" />
@@ -1065,8 +1065,8 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             )}
           </div>
           <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-ink/50">Hedef pazarlar</h3>
-            <p className="text-xs text-ink/40">
+            <h3 className="text-xs font-semibold text-ink/60">Hedef pazarlar</h3>
+            <p className="text-xs text-ink/60">
               Haritadan tıklayarak ya da listeden seçerek birden fazla pazar ekleyebilirsiniz — ilki (⭐) konu ve prompt
               üretiminde kullanılan birincil pazar olur.
             </p>
@@ -1084,7 +1084,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                       onClick={() => toggleTargetMarket(code)}
                       disabled={isOnly}
                       title={isOnly ? "En az bir pazar seçili olmalı" : "Kaldır"}
-                      className="text-ink/40 hover:text-danger disabled:opacity-30 disabled:hover:text-ink/40"
+                      className="text-ink/60 hover:text-danger-ink disabled:opacity-30 disabled:hover:text-ink/60"
                     >
                       ✕
                     </button>
@@ -1113,7 +1113,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             </select>
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setStep("profile")} className="text-sm text-ink/50 hover:underline">
+            <button type="button" onClick={() => setStep("profile")} className="text-sm text-ink/60 hover:underline">
               ← Geri
             </button>
             <button
@@ -1130,7 +1130,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       {step === "audience" && (
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Kitle dağılımı</h2>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/60">
             Bu dağılım bir sonraki adımda üretilecek promptların kimin ağzından (basit öneri arayan / bilinçli alıcı /
             detaylı araştırmacı) yazılacağını belirler — yüzdelerin toplamı 100 olmalı. Bunlar sabit 3 arketip; markaya
             özel persona isimleri burada yok, sadece payları.
@@ -1159,7 +1159,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                     className="flex-1 flex items-center gap-2 text-left"
                   >
                     <span className="text-sm font-semibold">{PERSONA_LABEL[key]}</span>
-                    <span className={`text-ink/40 text-xs transition-transform ${personaOpen[key] ? "rotate-180" : ""}`}>▾</span>
+                    <span className={`text-ink/60 text-xs transition-transform ${personaOpen[key] ? "rotate-180" : ""}`}>▾</span>
                   </button>
                   <div className="flex items-center gap-1 shrink-0">
                     <input
@@ -1171,19 +1171,19 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                       onChange={(e) => updateAudience(key, e.target.value)}
                       className={`${inputClass} w-20 disabled:opacity-50`}
                     />
-                    <span className="text-xs text-ink/40">%</span>
+                    <span className="text-xs text-ink/60">%</span>
                   </div>
                 </div>
                 {personaOpen[key] && (
                   <div className="pl-12 pt-1 space-y-1 text-xs text-ink/60">
                     <p>{PERSONA_DESCRIPTION[key]}</p>
-                    <p className="text-ink/40">Örnek soru: “{PERSONA_EXAMPLE[key]}”</p>
+                    <p className="text-ink/60">Örnek soru: “{PERSONA_EXAMPLE[key]}”</p>
                   </div>
                 )}
               </div>
             );
           })}
-          <p className={`text-xs ${audienceTotal === 100 ? "text-ink/40" : "text-danger"}`}>
+          <p className={`text-xs ${audienceTotal === 100 ? "text-ink/60" : "text-danger-ink"}`}>
             Toplam: %{audienceTotal}{audienceTotal !== 100 && " — 100 olmalı"}
             {audienceTotal !== 100 && (
               <button type="button" onClick={normalizeAudience} className="ml-2 text-accent hover:underline">
@@ -1191,7 +1191,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               </button>
             )}
           </p>
-          <p className="text-xs text-ink/30">
+          <p className="text-xs text-ink/45">
             {topicsStatus === "running" || topicsStatus === "pending"
               ? "Konu başlıkları arka planda hazırlanıyor — devam edince hazır olacak…"
               : topicResult
@@ -1199,7 +1199,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                 : topicsError ?? ""}
           </p>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setStep("market")} className="text-sm text-ink/50 hover:underline">
+            <button type="button" onClick={() => setStep("market")} className="text-sm text-ink/60 hover:underline">
               ← Geri
             </button>
             <button
@@ -1219,12 +1219,12 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Hangi konu başlıklarını takip edelim?</h2>
           {regenerateError && (
-            <div className="rounded-lg border border-warn/40 text-warn text-xs px-3 py-2">
+            <div className="rounded-lg border border-warn/40 text-warn-ink text-xs px-3 py-2">
               Profil değişikliğine göre güncellenemedi: {regenerateError} — önceki konu başlıkları/promptlar
               gösteriliyor.
             </div>
           )}
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/60">
             Markanız ve kategoriniz için üretilen {topicResult?.candidates.length ?? "…"} konu başlığından en iyi 5 tanesi
             otomatik seçildi (iş önemi, markaya uygunluk ve talep skoruna göre) — isterseniz değiştirin.
           </p>
@@ -1235,7 +1235,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               ))}
             </div>
           )}
-          {topicsError && !topicResult && <p className="text-xs text-danger">{topicsError}</p>}
+          {topicsError && !topicResult && <p className="text-xs text-danger-ink">{topicsError}</p>}
           {topicResult && (
             <RevealField index={0}>
               <div className="flex flex-wrap gap-2">
@@ -1266,7 +1266,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               sorularını ölçer.
             </span>
           </label>
-          <p className="text-xs text-ink/30">
+          <p className="text-xs text-ink/45">
             {promptsStatus === "running" || promptsStatus === "pending"
               ? "Promptlar arka planda hazırlanıyor…"
               : prompts
@@ -1274,7 +1274,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                 : promptsError ?? ""}
           </p>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setStep("audience")} className="text-sm text-ink/50 hover:underline">
+            <button type="button" onClick={() => setStep("audience")} className="text-sm text-ink/60 hover:underline">
               ← Geri
             </button>
             <button
@@ -1292,7 +1292,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       {step === "prompts" && (
         <div className="space-y-3">
           <h2 className="font-bold text-sm">Promptları gözden geçirin</h2>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/60">
             {checkedPrompts.size}/{visiblePromptCount} prompt seçili — istemediklerinizin işaretini kaldırabilirsiniz. Her
             promptun amacı (niyet/kalıp/persona) kod tarafından önceden planlandı; model sadece cümleyi yazdı.
           </p>
@@ -1307,7 +1307,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
               ))}
             </div>
           )}
-          {promptsError && !prompts && <p className="text-xs text-danger">{promptsError}</p>}
+          {promptsError && !prompts && <p className="text-xs text-danger-ink">{promptsError}</p>}
           {prompts && (
             <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
               {promptsByTopic
@@ -1317,7 +1317,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                     <details open={gi === 0} className="rounded-lg border border-border">
                       <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold flex items-center justify-between">
                         <span>{g.topic}</span>
-                        <span className="text-xs text-ink/40 font-normal">{g.items.filter((p) => checkedPrompts.has(p.i)).length}/{g.items.length}</span>
+                        <span className="text-xs text-ink/60 font-normal">{g.items.filter((p) => checkedPrompts.has(p.i)).length}/{g.items.length}</span>
                       </summary>
                       <div className="space-y-1 px-2 pb-2">
                         {g.items.map((p) => (
@@ -1325,7 +1325,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                             <input type="checkbox" checked={checkedPrompts.has(p.i)} onChange={() => togglePrompt(p.i)} className="mt-0.5" />
                             <span className="flex-1">
                               {p.text}
-                              <span className="block text-[10px] text-ink/30 mt-0.5">
+                              <span className="block text-[11px] text-ink/45 mt-0.5">
                                 {PERSONA_LABEL[p.persona]} · {p.intent} · {p.form}
                               </span>
                             </span>
@@ -1338,7 +1338,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
             </div>
           )}
           <div className="flex gap-3">
-            <button type="button" onClick={() => setStep("topics")} className="text-sm text-ink/50 hover:underline">
+            <button type="button" onClick={() => setStep("topics")} className="text-sm text-ink/60 hover:underline">
               ← Geri
             </button>
             <button
@@ -1356,12 +1356,12 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
       {step === "running" && (
         <div className="space-y-4 text-center py-4">
           <h2 className="font-bold text-sm">Promptlar çalıştırılıyor…</h2>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/60">
             {checkedPrompts.size} prompt, seçtiğiniz AI motorlarına gönderiliyor — bu birkaç dakika sürebilir.
           </p>
           <div className="relative w-40 h-40 mx-auto my-4">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-ink text-white text-[10px] font-bold w-14 h-14 flex items-center justify-center text-center px-1 leading-tight">
+              <div className="rounded-full bg-ink text-white text-[11px] font-bold w-14 h-14 flex items-center justify-center text-center px-1 leading-tight">
                 {brandName.slice(0, 12) || "Marka"}
               </div>
             </div>
@@ -1372,7 +1372,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                   className="absolute inset-0 flex items-start justify-center"
                   style={{ transform: `rotate(${(360 / ENGINE_BADGES.length) * i}deg)` }}
                 >
-                  <div className="rounded-full bg-white border border-border shadow-sm text-[9px] font-semibold w-10 h-10 flex items-center justify-center text-center">
+                  <div className="rounded-full bg-white border border-border shadow-sm text-[11px] font-semibold w-10 h-10 flex items-center justify-center text-center">
                     {label}
                   </div>
                 </div>

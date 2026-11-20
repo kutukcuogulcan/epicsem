@@ -24,7 +24,7 @@ export default function DashboardActivityChart({ data }: { data: ActivityPoint[]
 
   if (allZero) {
     return (
-      <div className="h-48 flex items-center justify-center text-sm text-ink/40">
+      <div className="h-48 flex items-center justify-center text-sm text-ink/60">
         Henüz içerik üretilmedi — Content Studio veya Article Writer'dan bir taslak ürettiğinde burada görünecek.
       </div>
     );

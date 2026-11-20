@@ -64,16 +64,16 @@ interface RefreshPlan {
   faq: { q: string; a: string }[];
 }
 const SIG_CLS: Record<string, string> = {
-  lost: "bg-danger/10 text-danger",
-  drop: "bg-danger/10 text-danger",
+  lost: "bg-danger/10 text-danger-ink",
+  drop: "bg-danger/10 text-danger-ink",
   striking: "bg-accent/10 text-accent",
   ai: "bg-violet-50 text-violet-700",
-  stale: "bg-warn/10 text-warn",
+  stale: "bg-warn/10 text-warn-ink",
   thin: "bg-muted text-ink/70",
-  holes: "bg-warn/10 text-warn",
+  holes: "bg-warn/10 text-warn-ink",
   nofaq: "bg-muted text-ink/70",
 };
-const PRIO = { high: { label: "Yüksek", cls: "text-danger" }, medium: { label: "Orta", cls: "text-warn" }, low: { label: "Düşük", cls: "text-sub" } } as const;
+const PRIO = { high: { label: "Yüksek", cls: "text-danger-ink" }, medium: { label: "Orta", cls: "text-warn-ink" }, low: { label: "Düşük", cls: "text-sub" } } as const;
 const planText = (it: RefreshItem, p: RefreshPlan) =>
   [
     `YENİLEME PLANI — ${it.title}${it.url ? ` (${it.url})` : ""}`,
@@ -99,19 +99,19 @@ interface Ev {
 
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
-const BTNDANGER = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-danger shadow-[inset_0_0_0_1px_#F3C2C2,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-danger/5 disabled:opacity-60";
+const BTNDANGER = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-danger-ink shadow-[inset_0_0_0_1px_#F3C2C2,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-danger/5 disabled:opacity-60";
 const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
 const INPUT = "h-9 w-full rounded-[10px] border border-border bg-panel px-3 text-sm outline-none focus:border-[#BDB4FF]";
 const chip = (on: boolean) =>
   `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
 
 const KIND: Record<Ev["kind"], { label: string; cls: string; dot: string }> = {
-  published: { label: "Yayında", cls: "bg-seo/10 text-seo", dot: "bg-seo" },
+  published: { label: "Yayında", cls: "bg-seo/10 text-seo-ink", dot: "bg-seo" },
   scheduled: { label: "Sitede zamanlandı", cls: "bg-accent/10 text-accent", dot: "bg-accent" },
   remote: { label: "Sitede taslak", cls: "bg-sky-50 text-sky-700", dot: "bg-sky-500" },
   planned: { label: "Planlandı", cls: "bg-violet-50 text-violet-700 shadow-[inset_0_0_0_1px_#DDD6FE]", dot: "bg-violet-400" },
   created: { label: "Taslak üretildi", cls: "bg-muted text-ink/70", dot: "bg-slate-400" },
-  error: { label: "Yayın hatası", cls: "bg-danger/10 text-danger", dot: "bg-danger" },
+  error: { label: "Yayın hatası", cls: "bg-danger/10 text-danger-ink", dot: "bg-danger" },
   run: { label: "Autoblog çalışacak", cls: "bg-panel text-sub shadow-[inset_0_0_0_1px_#D5D7DA] border-dashed", dot: "bg-warn" },
 };
 const FREQ_DAYS = { daily: 1, weekly: 7, monthly: 30 } as const;
@@ -321,7 +321,7 @@ export default function CalendarPage() {
   const actions = [
     pending.length > 0 && {
       kind: "Onay",
-      color: "text-warn",
+      color: "text-warn-ink",
       title: `${pending.length} yazı onayını bekliyor`,
       body: "Autoblog'un ürettiği taslakları gözden geçir: onayla, editörde düzelt ya da reddet.",
       cta: (
@@ -343,7 +343,7 @@ export default function CalendarPage() {
     },
     (refresh ?? []).some((r) => r.priority === "high") && {
       kind: "Yenile",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${(refresh ?? []).filter((r) => r.priority === "high").length} yazı acil yenileme istiyor`,
       body: "Sıralaması düşen, 2. sayfada kalan ya da AI cevaplarında anılmayan yazılar. Güncellemek yeni yazıdan daha hızlı sonuç verir.",
       cta: (
@@ -354,7 +354,7 @@ export default function CalendarPage() {
     },
     projCampaigns.filter((c) => c.status === "active").length === 0 && {
       kind: "Otomasyon",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Takvimi Autoblog doldursun",
       body: "Anahtar kelime ya da besleme listesinden günlük/haftalık taslak üretilir; hepsi önce bu kuyruğa düşer.",
       cta: (
@@ -421,9 +421,9 @@ export default function CalendarPage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {([
-          ["Onay bekleyen", kpi.pending, "Autoblog taslağı", kpi.pending ? "text-warn" : ""],
+          ["Onay bekleyen", kpi.pending, "Autoblog taslağı", kpi.pending ? "text-warn-ink" : ""],
           ["Bu ay planlı", kpi.planned, "planlandı + sitede zamanlandı", kpi.planned ? "text-accent" : ""],
-          ["Bu ay yayınlanan", kpi.published, "yayında + sitede taslak", kpi.published ? "text-seo" : ""],
+          ["Bu ay yayınlanan", kpi.published, "yayında + sitede taslak", kpi.published ? "text-seo-ink" : ""],
           ["Autoblog'dan gelecek", kpi.runs, "bu ay kalan çalışmalar", ""],
           ["Sonraki çalışma", nextRun ? new Date(nextRun).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) : "—", nextRun ? new Date(nextRun).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : "aktif Autoblog yok", ""],
         ] as const).map(([l, v, hint, col]) => (
@@ -461,7 +461,7 @@ export default function CalendarPage() {
         ]}
       />
 
-      {actionErr && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-2.5 text-[13px] text-danger">{actionErr}</div>}
+      {actionErr && <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-2.5 text-[13px] text-danger-ink">{actionErr}</div>}
 
       {tab === 0 && (
         <div className={`${CARD} overflow-hidden`}>
@@ -600,7 +600,7 @@ export default function CalendarPage() {
               <tbody>
                 {queueRows.map((d) => {
                   const k = draftKind(d);
-                  const st = isPending(d) ? { label: "Onay bekliyor", cls: "bg-warn/10 text-warn" } : isApproved(d) ? { label: d.plannedFor ? `Onaylı · ${fmtDay(d.plannedFor)}` : "Onaylı", cls: "bg-seo/10 text-seo" } : { label: KIND[k.kind].label, cls: KIND[k.kind].cls };
+                  const st = isPending(d) ? { label: "Onay bekliyor", cls: "bg-warn/10 text-warn-ink" } : isApproved(d) ? { label: d.plannedFor ? `Onaylı · ${fmtDay(d.plannedFor)}` : "Onaylı", cls: "bg-seo/10 text-seo-ink" } : { label: KIND[k.kind].label, cls: KIND[k.kind].cls };
                   const holes = d.article.openPlaceholders?.length ?? 0;
                   return (
                     <tr key={d.id} onClick={() => setOpen(d)} className="cursor-pointer border-t border-border hover:bg-muted/40">
@@ -621,7 +621,7 @@ export default function CalendarPage() {
                         <div className="truncate font-medium">{d.article.title || "(başlıksız)"}</div>
                         <div className="truncate text-xs text-sub">
                           {sourceLabel(d.sourceUrl)}
-                          {holes ? <span className="ml-2 text-warn">· {holes} eksik bilgi</span> : null}
+                          {holes ? <span className="ml-2 text-warn-ink">· {holes} eksik bilgi</span> : null}
                         </div>
                       </td>
                       <td className="hidden max-w-[200px] truncate py-3 pr-3 text-[13px] text-sub md:table-cell">{campaignName(d.campaignId) ?? "—"}</td>
@@ -977,7 +977,7 @@ export default function CalendarPage() {
               </div>
             )}
             {open.publishState === "scheduled" && open.scheduledAt && <div className="rounded-xl bg-accent/5 px-3 py-2 text-[13px]">Sitede {fmtDate(open.scheduledAt)} için zamanlandı.</div>}
-            {open.publishError && <div className="rounded-xl bg-danger/5 px-3 py-2 text-[13px] text-danger">{open.publishError}</div>}
+            {open.publishError && <div className="rounded-xl bg-danger/5 px-3 py-2 text-[13px] text-danger-ink">{open.publishError}</div>}
             {open.article.metaDescription && (
               <div>
                 <div className="text-xs font-medium text-sub">Meta açıklama</div>
@@ -987,7 +987,7 @@ export default function CalendarPage() {
             {(open.article.openPlaceholders?.length ?? 0) > 0 && (
               <div>
                 <div className="text-xs font-medium text-sub">Onaylamadan önce doldurulacak bilgiler</div>
-                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px] text-warn">
+                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px] text-warn-ink">
                   {open.article.openPlaceholders!.slice(0, 8).map((p) => (
                     <li key={p}>{p}</li>
                   ))}

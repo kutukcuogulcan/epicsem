@@ -33,12 +33,12 @@ const CATEGORY_LABEL: Record<IssueCategory, string> = {
   links: "Linkler",
 };
 const SEV: Record<IssueSeverity, { label: string; dot: string; chip: string; rank: number }> = {
-  critical: { label: "Kritik", dot: "bg-danger", chip: "bg-danger/10 text-danger", rank: 0 },
-  warning: { label: "Uyarı", dot: "bg-warn", chip: "bg-warn/10 text-warn", rank: 1 },
+  critical: { label: "Kritik", dot: "bg-danger", chip: "bg-danger/10 text-danger-ink", rank: 0 },
+  warning: { label: "Uyarı", dot: "bg-warn", chip: "bg-warn/10 text-warn-ink", rank: 1 },
   info: { label: "Bilgi", dot: "bg-sky-500", chip: "bg-sky-50 text-sky-700", rank: 2 },
-  pass: { label: "Geçti", dot: "bg-seo", chip: "bg-seo/10 text-seo", rank: 3 },
+  pass: { label: "Geçti", dot: "bg-seo", chip: "bg-seo/10 text-seo-ink", rank: 3 },
 };
-const EFFORT_CLS: Record<string, string> = { Kolay: "bg-seo/10 text-seo", Orta: "bg-warn/10 text-warn", Zor: "bg-danger/10 text-danger" };
+const EFFORT_CLS: Record<string, string> = { Kolay: "bg-seo/10 text-seo-ink", Orta: "bg-warn/10 text-warn-ink", Zor: "bg-danger/10 text-danger-ink" };
 const ROLE: Record<string, string> = { citation: "AI cevaplarında alıntı", fetch: "Kullanıcı isteğiyle açma", training: "Model eğitimi" };
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -57,7 +57,7 @@ function Spark({ data, color }: { data: number[]; color: string }) {
     </svg>
   );
 }
-const scoreColor = (n: number) => (n >= 80 ? "text-seo" : n >= 50 ? "text-warn" : "text-danger");
+const scoreColor = (n: number) => (n >= 80 ? "text-seo-ink" : n >= 50 ? "text-warn-ink" : "text-danger-ink");
 const scoreHex = (n: number) => (n >= 80 ? "#12b76a" : n >= 50 ? "#f59e0b" : "#f04438");
 const scoreWord = (n: number) => (n >= 80 ? "İyi" : n >= 50 ? "Geliştirilmeli" : "Zayıf");
 
@@ -151,9 +151,9 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
   const issueByKey = (key?: string) => (key ? issues.find((i) => I(i).key === key) ?? null : null);
 
   const kpis = [
-    { label: "Kritik sorun", value: String(counts.critical), suffix: "", cls: counts.critical ? "text-danger" : "text-ink", d: null, spark: [] },
-    { label: "Uyarı", value: String(counts.warning), suffix: "", cls: counts.warning ? "text-warn" : "text-ink", d: null, spark: [] },
-    { label: "İzinli AI botu", value: `${allowed}`, suffix: `/${bots.length}`, cls: allowed === bots.length ? "text-seo" : "text-danger", d: null, spark: [] },
+    { label: "Kritik sorun", value: String(counts.critical), suffix: "", cls: counts.critical ? "text-danger-ink" : "text-ink", d: null, spark: [] },
+    { label: "Uyarı", value: String(counts.warning), suffix: "", cls: counts.warning ? "text-warn-ink" : "text-ink", d: null, spark: [] },
+    { label: "İzinli AI botu", value: `${allowed}`, suffix: `/${bots.length}`, cls: allowed === bots.length ? "text-seo-ink" : "text-danger-ink", d: null, spark: [] },
   ];
 
   const facts: [string, React.ReactNode, boolean | null][] = [
@@ -235,7 +235,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                 <p className="mt-1 line-clamp-2 text-xs text-sub">{top.why || top.recommendation}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[top.effort]}`}>{top.effort}</span>
-                  {gainOf(top.key) > 0 && <span className="text-[11px] font-semibold text-seo">+{gainOf(top.key)} puan</span>}
+                  {gainOf(top.key) > 0 && <span className="text-[11px] font-semibold text-seo-ink">+{gainOf(top.key)} puan</span>}
                   <button type="button" onClick={() => setOpen(top.issue)} className="ml-auto rounded-lg bg-accent px-2.5 py-1 text-[12px] font-medium text-white hover:opacity-90">
                     {top.snippet ? "Hazır kodu al" : "Nasıl düzeltilir"}
                   </button>
@@ -260,7 +260,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                 .sort((a, b) => (a.score ?? 2) - (b.score ?? 2) || b.weight - a.weight)
                 .map((c) => {
                   const iss = c.score != null && c.score < 1 ? issueByKey(c.issueKey) : null;
-                  const mark = c.score == null ? { t: "–", cls: "bg-muted text-sub" } : c.score >= 1 ? { t: "✓", cls: "bg-seo/10 text-seo" } : c.score > 0 ? { t: "!", cls: "bg-warn/10 text-warn" } : { t: "✕", cls: "bg-danger/10 text-danger" };
+                  const mark = c.score == null ? { t: "–", cls: "bg-muted text-sub" } : c.score >= 1 ? { t: "✓", cls: "bg-seo/10 text-seo-ink" } : c.score > 0 ? { t: "!", cls: "bg-warn/10 text-warn-ink" } : { t: "✕", cls: "bg-danger/10 text-danger-ink" };
                   return (
                     <li key={c.label} className="flex items-center gap-3 px-3 py-2.5">
                       <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${mark.cls}`}>{mark.t}</span>
@@ -297,7 +297,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
             <div className="mt-1.5 flex items-baseline gap-1">
               <span className={`text-[26px] font-semibold leading-8 tabular-nums ${k.cls}`}>{k.value}</span>
               {k.suffix && <span className="text-sm text-sub">{k.suffix}</span>}
-              {k.d != null && k.d !== 0 && <span className={`ml-1 text-xs font-medium ${k.d > 0 ? "text-seo" : "text-danger"}`}>{k.d > 0 ? "↑" : "↓"} {Math.abs(k.d)}</span>}
+              {k.d != null && k.d !== 0 && <span className={`ml-1 text-xs font-medium ${k.d > 0 ? "text-seo-ink" : "text-danger-ink"}`}>{k.d > 0 ? "↑" : "↓"} {Math.abs(k.d)}</span>}
             </div>
             <Spark data={k.spark} color={k.d == null || k.d === 0 ? "#a1a1aa" : k.d > 0 ? "#12b76a" : "#f04438"} />
           </Card>
@@ -309,7 +309,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
         <div className="grid gap-3 lg:grid-cols-[1.45fr_1fr]">
           <Card className="overflow-hidden">
             <div className="px-5 pt-4">
-              <h3 className="text-sm font-semibold">Önce bunları düzelt</h3>
+              <h2 className="text-sm font-semibold">Önce bunları düzelt</h2>
               <p className="text-xs text-sub">Etkisi en yüksek, eforu en düşük {wins.length} madde. Çoğunun hazır kodu var.</p>
             </div>
             <div className="mt-2">
@@ -323,7 +323,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                   <div className="flex shrink-0 items-center gap-1.5">
                     {w.geo && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">AI görünürlüğü</span>}
                     <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[w.effort]}`}>{w.effort}</span>
-                    {gainOf(w.key) > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo">+{gainOf(w.key)} puan</span>}
+                    {gainOf(w.key) > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo-ink">+{gainOf(w.key)} puan</span>}
                     {w.snippet && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">Hazır kod</span>}
                   </div>
                 </button>
@@ -332,7 +332,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           </Card>
           <Card>
             <div className="px-5 pt-4">
-              <h3 className="text-sm font-semibold">Genel puan neden {pillars.overall}?</h3>
+              <h2 className="text-sm font-semibold">Genel puan neden {pillars.overall}?</h2>
               <p className="text-xs text-sub">SEO %30 · AXO %20 · AEO %25 · GEO hazırlığı %25 ağırlıklı ortalama. En çok puan kaybettiren eksikler:</p>
             </div>
             <div className="space-y-2.5 px-5 pb-4 pt-3">
@@ -342,7 +342,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <span className="min-w-0 truncate">
                       {l.label} <span className="text-xs text-sub">· {l.pillarLabel}</span>
                     </span>
-                    <span className="shrink-0 tabular-nums text-danger">−{l.lost < 1 ? "<1" : Math.round(l.lost)}</span>
+                    <span className="shrink-0 tabular-nums text-danger-ink">−{l.lost < 1 ? "<1" : Math.round(l.lost)}</span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-danger/70" style={{ width: `${Math.min(100, (l.lost / (losses[0]?.lost || 1)) * 100)}%` }} />
@@ -353,7 +353,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               {losses.length > 0 && (
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-seo/5 px-3 py-2.5 text-[13px]">
                   <span>İlk {Math.min(3, losses.length)} eksik düzelirse</span>
-                  <span className="text-lg font-semibold tabular-nums text-seo">{Math.min(100, Math.round(pillars.overall + losses.slice(0, 3).reduce((a, l) => a + l.lost, 0)))}</span>
+                  <span className="text-lg font-semibold tabular-nums text-seo-ink">{Math.min(100, Math.round(pillars.overall + losses.slice(0, 3).reduce((a, l) => a + l.lost, 0)))}</span>
                 </div>
               )}
             </div>
@@ -366,7 +366,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
         <Card className="overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
             <div>
-              <h3 className="text-sm font-semibold">Sorunlar</h3>
+              <h2 className="text-sm font-semibold">Sorunlar</h2>
               <p className="text-xs text-sub">Satıra tıkla → ne anlama geldiği ve nasıl düzeltileceği</p>
             </div>
             <select value={cat} onChange={(e) => setCat(e.target.value as typeof cat)} className="h-8 rounded-[9px] border border-border bg-panel px-2.5 text-[13px] outline-none">
@@ -410,7 +410,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <td className="py-3 pr-3">
                       <div className="font-medium text-ink">
                         {I(i).title}
-                        {I(i).geo && <span className="ml-1.5 rounded bg-violet-50 px-1 py-px align-middle text-[10px] font-medium text-violet-700">AI</span>}
+                        {I(i).geo && <span className="ml-1.5 rounded bg-violet-50 px-1 py-px align-middle text-[11px] font-medium text-violet-700">AI</span>}
                       </div>
                       {I(i).recommendation && <div className="mt-0.5 line-clamp-1 text-xs text-sub">{I(i).recommendation}</div>}
                     </td>
@@ -431,7 +431,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           {/* AI tarayıcıları */}
           <Card>
             <div className="px-5 pt-4">
-              <h3 className="text-sm font-semibold">AI tarayıcı erişimi</h3>
+              <h2 className="text-sm font-semibold">AI tarayıcı erişimi</h2>
               <p className="text-xs text-sub">
                 {allowed === bots.length ? `${bots.length} botun hepsi siteye erişebiliyor.` : `${bots.length - allowed} bot robots.txt ile engellenmiş.`}
               </p>
@@ -448,7 +448,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     </div>
                     {b.role && <div className="text-[11px] text-sub">{ROLE[b.role] ?? b.role}</div>}
                   </div>
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${b.allowed ? "bg-seo/10 text-seo" : "bg-danger/10 text-danger"}`}>{b.allowed ? "İzinli" : "Engelli"}</span>
+                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${b.allowed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{b.allowed ? "İzinli" : "Engelli"}</span>
                 </div>
               ))}
               <button type="button" onClick={() => setAllBots((v) => !v)} className="w-full border-t border-border px-5 py-2.5 text-left text-xs font-medium text-accent hover:bg-muted/40">
@@ -460,7 +460,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           {/* Sayfa özeti */}
           <Card>
             <div className="px-5 pt-4">
-              <h3 className="text-sm font-semibold">Sayfa özeti</h3>
+              <h2 className="text-sm font-semibold">Sayfa özeti</h2>
             </div>
             <div className="mt-2">
               {facts.map(([k, v, ok]) => (
@@ -477,7 +477,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           <Card>
             <div className="flex items-start justify-between gap-3 px-5 pt-4">
               <div>
-                <h3 className="text-sm font-semibold">Sayfa hızı (Core Web Vitals)</h3>
+                <h2 className="text-sm font-semibold">Sayfa hızı (Core Web Vitals)</h2>
                 <p className="text-xs text-sub">Google PageSpeed · mobil · ücretsiz, ~30 sn</p>
               </div>
               <button type="button" onClick={measure} disabled={psiBusy} className="inline-flex h-8 shrink-0 items-center rounded-[10px] bg-panel px-3 text-sm font-medium shadow-[inset_0_0_0_1px_#D5D7DA] hover:bg-muted disabled:opacity-60">
@@ -485,7 +485,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               </button>
             </div>
             <div className="px-5 pb-4 pt-3 text-[13px]">
-              {psiErr && <p className="text-xs text-danger">{psiErr}</p>}
+              {psiErr && <p className="text-xs text-danger-ink">{psiErr}</p>}
               {!psi && !psiErr && <p className="text-xs text-sub">LCP, INP ve CLS gerçek kullanıcı verisi; yoksa laboratuvar puanı.</p>}
               {psi && (
                 <div className="space-y-1.5">
@@ -493,7 +493,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <div className="flex items-baseline gap-1">
                       <span className={`text-[22px] font-semibold tabular-nums ${scoreColor(psi.labScore)}`}>{psi.labScore}</span>
                       <span className="text-xs text-sub">/100 performans</span>
-                      {psi.passed !== null && <span className={`ml-auto rounded-md px-2 py-0.5 text-[11px] font-medium ${psi.passed ? "bg-seo/10 text-seo" : "bg-danger/10 text-danger"}`}>{psi.passed ? "CWV geçti" : "CWV kaldı"}</span>}
+                      {psi.passed !== null && <span className={`ml-auto rounded-md px-2 py-0.5 text-[11px] font-medium ${psi.passed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{psi.passed ? "CWV geçti" : "CWV kaldı"}</span>}
                     </div>
                   )}
                   {psi.metrics
@@ -541,7 +541,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               Sayfa okunuyor ve düzeltmeler yazılıyor (15–30 sn)…
             </div>
           )}
-          {aiFix?.err && <p className="rounded-lg bg-danger/5 px-3 py-2 text-danger">{aiFix.err}</p>}
+          {aiFix?.err && <p className="rounded-lg bg-danger/5 px-3 py-2 text-danger-ink">{aiFix.err}</p>}
           {aiFix?.demo && <p className="rounded-lg bg-warn/5 px-3 py-2 text-xs text-ink/70">Demo mod: yapay zekâ çalışmadı, örnek çıktı gösteriliyor.</p>}
           {aiFix?.r && (
             <>
@@ -556,7 +556,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                   <div key={k}>
                     <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-sub">
                       <span>{l}</span>
-                      <span className={max && (v as string).length > max ? "text-warn" : ""}>{(v as string).length} karakter</span>
+                      <span className={max && (v as string).length > max ? "text-warn-ink" : ""}>{(v as string).length} karakter</span>
                     </div>
                     <div className="rounded-xl border border-border p-3 leading-6">{v}</div>
                     <button type="button" onClick={() => copy(v as string, `ai-${k}`)} className="mt-1.5 text-xs font-medium text-accent hover:underline">
@@ -609,7 +609,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
             {result.fixes.map((f, i) => (
               <Card key={i} className="flex flex-col p-4">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Hızlı kazanım</div>
-                <h4 className="mt-1.5 text-sm font-semibold">{f.label}</h4>
+                <h3 className="mt-1.5 text-sm font-semibold">{f.label}</h3>
                 <p className="mt-1 text-[13px] text-sub">{f.note}</p>
                 <pre className="mt-3 max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-2.5 text-[11px] leading-4 text-ink/70">{f.code}</pre>
                 <div className="mt-3 flex justify-end">
@@ -642,7 +642,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${EFFORT_CLS[oi!.effort]}`}>Efor: {oi!.effort}</span>
               <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Etki: {["", "Düşük", "Orta", "Yüksek"][oi!.impact]}</span>
               {oi!.geo && <span className="inline-block rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">AI görünürlüğünü etkiler</span>}
-              {gainOf(oi!.key) > 0 && <span className="inline-block rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo">Düzeltince genel puana ~+{gainOf(oi!.key)}</span>}
+              {gainOf(oi!.key) > 0 && <span className="inline-block rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Düzeltince genel puana ~+{gainOf(oi!.key)}</span>}
             </div>
             {oi!.detail && (
               <div>

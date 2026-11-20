@@ -24,7 +24,7 @@ export function ScoreRing({ value, size = 30, stroke = 3 }: { value: number | nu
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f3" strokeWidth={stroke} />
         {value != null && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={ringColor(v)} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} />}
       </svg>
-      <span className="absolute font-medium tabular-nums text-ink" style={{ fontSize: size * 0.34 }}>
+      <span className="absolute font-medium tabular-nums text-ink" style={{ fontSize: Math.max(11, size * 0.34) }}>
         {value == null ? "—" : v}
       </span>
     </span>

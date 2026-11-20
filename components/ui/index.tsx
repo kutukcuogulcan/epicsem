@@ -218,7 +218,7 @@ export function Drawer({
             {icon}
             <div className="min-w-0">
               {eyebrow && <div className="text-[11px] font-medium uppercase tracking-wide text-sub">{eyebrow}</div>}
-              <h3 className="text-lg font-medium text-ink">{title}</h3>
+              <h2 className="text-lg font-medium text-ink">{title}</h2>
               {subtitle && <div className="mt-0.5 text-xs text-sub">{subtitle}</div>}
             </div>
           </div>
@@ -345,10 +345,10 @@ export function ErrorBlock({ message, onRetry, className = "" }: { message: Reac
   if (!message) return null;
   return (
     <div role="alert" className={`flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm ${className}`}>
-      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-medium text-white">!</span>
-      <div className="min-w-0 flex-1 text-danger">{message}</div>
+      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger-ink text-[11px] font-medium text-white">!</span>
+      <div className="min-w-0 flex-1 text-danger-ink">{message}</div>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="shrink-0 text-sm font-medium text-danger underline hover:no-underline">
+        <button type="button" onClick={onRetry} className="shrink-0 text-sm font-medium text-danger-ink underline hover:no-underline">
           Tekrar dene
         </button>
       )}

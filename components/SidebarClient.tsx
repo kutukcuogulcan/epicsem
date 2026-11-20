@@ -23,7 +23,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
   useEffect(() => {
     setSearch(window.location.search);
     // Aktif sayfa uzun menüde ekran dışında kalmasın.
-    requestAnimationFrame(() => document.querySelector('aside nav [aria-current="page"]')?.scrollIntoView({ block: "nearest" }));
+    requestAnimationFrame(() => document.querySelector('aside nav [aria-current="page"]')?.scrollIntoView({ block: "center" }));
   }, [pathname]);
   useEffect(() => {
     try {
@@ -72,11 +72,11 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
 
       {/* Gezin / Sohbet sekmeleri */}
       <div className="mx-3 mb-2 grid grid-cols-2 border-b border-border text-[13px]">
-        <Link href="/dashboard" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${!chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+        <Link href="/dashboard" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${!chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/60 hover:text-ink"}`}>
           {TOOL_ICONS.overview}
           Gezin
         </Link>
-        <Link href="/assistant" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/50 hover:text-ink"}`}>
+        <Link href="/assistant" onClick={() => setOpen(false)} className={`-mb-px flex items-center justify-center gap-1.5 border-b-2 pb-2 ${chatActive ? "border-ink font-medium text-ink" : "border-transparent text-ink/60 hover:text-ink"}`}>
           {TOOL_ICONS.chat}
           Sohbet
         </Link>
@@ -90,7 +90,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
 
         {NAV_GROUPS.map((group) => (
           <div key={group.title}>
-            <button type="button" onClick={() => toggle(group.title)} className="flex w-full items-center gap-1 px-2 pb-1 text-[12px] font-medium text-ink/45 hover:text-ink/70">
+            <button type="button" onClick={() => toggle(group.title)} className="flex w-full items-center gap-1 px-2 pb-1 text-[12px] font-medium text-ink/60 hover:text-ink/70">
               {group.title}
               <Chevron open={!closed[group.title]} />
             </button>
@@ -109,9 +109,9 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
                       className={linkClass(active)}
                       aria-current={active ? "page" : undefined}
                     >
-                      <span className={active ? "text-ink" : "text-ink/55"}>{TOOL_ICONS[item.icon]}</span>
+                      <span className={active ? "text-ink" : "text-ink/60"}>{TOOL_ICONS[item.icon]}</span>
                       <span className="truncate">{item.label}</span>
-                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[9px] font-medium tracking-wide text-accent">{item.badge}</span>}
+                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[11px] font-medium tracking-wide text-accent">{item.badge}</span>}
                     </Link>
                   );
                 })}
@@ -134,14 +134,14 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
         </Link>
         {isDemoFallback ? (
           <div className="text-xs">
-            <span className="text-warn font-medium">Demo modu</span>
+            <span className="text-warn-ink font-medium">Demo modu</span>
             <Link href="/login" className="text-accent hover:underline ml-2">
               Hesapla gir
             </Link>
           </div>
         ) : email ? (
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="text-ink/50 truncate">{email}</span>
+            <span className="text-ink/60 truncate">{email}</span>
             <LogoutButton />
           </div>
         ) : (

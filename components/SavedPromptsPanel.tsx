@@ -177,7 +177,7 @@ export default function SavedPromptsPanel({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="font-bold">Kayıtlı promptlar</h2>
-          <p className="text-xs text-ink/50 mt-0.5">
+          <p className="text-xs text-ink/60 mt-0.5">
             Yukarıdaki testten bağımsız, kalıcı bir prompt kütüphanesi — tek tek, istediğiniz zaman yeniden
             çalıştırabilirsiniz. {engines.length} motor seçiliyken çalıştırılır.
           </p>
@@ -195,12 +195,12 @@ export default function SavedPromptsPanel({
 
       <ErrorBlock message={error} />
 
-      {!hasBrand && <div className="text-sm text-ink/40 text-center py-4">Önce markanızı girin.</div>}
+      {!hasBrand && <div className="text-sm text-ink/60 text-center py-4">Önce markanızı girin.</div>}
 
       {hasBrand && loading && <TableSkeleton rows={3} cols={3} />}
 
       {hasBrand && !loading && prompts && prompts.length === 0 && (
-        <div className="text-sm text-ink/40 text-center py-4">
+        <div className="text-sm text-ink/60 text-center py-4">
           Henüz kayıtlı prompt yok — &ldquo;+ Prompt ekle&rdquo; ile başlayın.
         </div>
       )}
@@ -223,14 +223,14 @@ export default function SavedPromptsPanel({
               <option value="branded">Marka bilinen</option>
               <option value="discovery">Keşif</option>
             </select>
-            <span className="text-xs text-ink/30">
+            <span className="text-xs text-ink/45">
               {filteredPrompts?.length ?? 0}/{prompts.length}
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-ink/40 text-left">
+              <thead className="text-ink/60 text-left">
                 <tr>
                   <th className="py-2 pr-4">Prompt</th>
                   <th className="py-2 pr-4">Tip</th>
@@ -242,7 +242,7 @@ export default function SavedPromptsPanel({
               <tbody>
                 {filteredPrompts?.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-ink/40">
+                    <td colSpan={5} className="py-6 text-center text-ink/60">
                       Bu filtreye uyan prompt yok.
                     </td>
                   </tr>
@@ -253,10 +253,10 @@ export default function SavedPromptsPanel({
                       <div className="truncate" title={p.promptText}>
                         {p.promptText}
                       </div>
-                      {p.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/50 mt-1">{p.topic}</span>}
+                      {p.topic !== "Genel" && <span className="badge bg-ink/5 text-ink/60 mt-1">{p.topic}</span>}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`badge ${p.branded ? "badge-info" : "bg-ink/5 text-ink/50"}`}>
+                      <span className={`badge ${p.branded ? "badge-info" : "bg-ink/5 text-ink/60"}`}>
                         {p.branded ? "Marka bilinen" : "Keşif"}
                       </span>
                     </td>
@@ -265,11 +265,11 @@ export default function SavedPromptsPanel({
                     </td>
                     <td className="py-2 pr-4">
                       {p.lastSentiment == null ? (
-                        <span className="text-xs text-ink/30">—</span>
+                        <span className="text-xs text-ink/45">—</span>
                       ) : (
                         <div className="flex items-center gap-2">
                           <GradientBar value={p.lastSentiment} className="w-20" />
-                          <span className="text-xs text-ink/50 w-6">{p.lastSentiment}</span>
+                          <span className="text-xs text-ink/60 w-6">{p.lastSentiment}</span>
                         </div>
                       )}
                     </td>
@@ -286,7 +286,7 @@ export default function SavedPromptsPanel({
                         <button
                           type="button"
                           onClick={() => setMenuOpenId(menuOpenId === p.id ? null : p.id)}
-                          className="rounded-lg px-2 py-1 text-ink/40 hover:bg-muted hover:text-ink"
+                          className="rounded-lg px-2 py-1 text-ink/60 hover:bg-muted hover:text-ink"
                           aria-label="Diğer işlemler"
                         >
                           ⋯
@@ -298,7 +298,7 @@ export default function SavedPromptsPanel({
                               <button
                                 type="button"
                                 onClick={() => remove(p.id)}
-                                className="w-full text-left px-3 py-1.5 text-xs text-danger hover:bg-danger/5"
+                                className="w-full text-left px-3 py-1.5 text-xs text-danger-ink hover:bg-danger/5"
                               >
                                 Sil
                               </button>
@@ -311,7 +311,7 @@ export default function SavedPromptsPanel({
                 ))}
               </tbody>
             </table>
-            <p className="mt-3 text-xs text-ink/30">
+            <p className="mt-3 text-xs text-ink/45">
               Görünürlük/duygu, o promptun en son çalıştırıldığında hangi motorların markayı andığının yüzdesi —
               hiç çalıştırılmadıysa boş görünür.
             </p>
@@ -325,11 +325,11 @@ export default function SavedPromptsPanel({
           <div className="relative bg-panel border border-border rounded-xl shadow-lg w-full max-w-lg p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold">Prompt ekle</h3>
-              <button type="button" onClick={() => setModalOpen(false)} className="text-ink/40 hover:text-ink">
+              <button type="button" onClick={() => setModalOpen(false)} className="text-ink/60 hover:text-ink">
                 ✕
               </button>
             </div>
-            <p className="text-xs text-ink/50">
+            <p className="text-xs text-ink/60">
               Markanızın nasıl sorulacağını izleyecek promptlar ekleyin — kaydettikten sonra dilediğiniz zaman
               tek tek yeniden çalıştırabilirsiniz.
             </p>
@@ -338,14 +338,14 @@ export default function SavedPromptsPanel({
               <button
                 type="button"
                 onClick={() => setTab("manual")}
-                className={`pb-2 -mb-px border-b-2 ${tab === "manual" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
+                className={`pb-2 -mb-px border-b-2 ${tab === "manual" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/60"}`}
               >
                 Manuel
               </button>
               <button
                 type="button"
                 onClick={() => setTab("import")}
-                className={`pb-2 -mb-px border-b-2 ${tab === "import" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/50"}`}
+                className={`pb-2 -mb-px border-b-2 ${tab === "import" ? "border-accent text-accent font-semibold" : "border-transparent text-ink/60"}`}
               >
                 İçe aktar
               </button>
@@ -365,7 +365,7 @@ export default function SavedPromptsPanel({
                       <button
                         type="button"
                         onClick={() => setManualRows((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-ink/30 hover:text-danger px-1"
+                        className="text-ink/45 hover:text-danger-ink px-1"
                         aria-label="Satırı sil"
                       >
                         🗑

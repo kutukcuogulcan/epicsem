@@ -508,7 +508,7 @@ export default function GeoPage() {
       <Drawer isOpen onClose={() => setManualOpen(false)} panelClassName="h-full w-screen max-w-xl overflow-y-auto border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
         <div>
           <div className="font-medium">Ayarlar</div>
-          <div className="text-xs text-ink/50">Marka, rakipler, promptlar ve motorlar — değişiklikler bu testte kullanılır.</div>
+          <div className="text-xs text-ink/60">Marka, rakipler, promptlar ve motorlar — değişiklikler bu testte kullanılır.</div>
         </div>
 </div>}>
       <form onSubmit={(e) => { setManualOpen(false); runTest(e); }} className="manual-form">
@@ -589,7 +589,7 @@ export default function GeoPage() {
             rows={4}
             className="w-full rounded-lg bg-muted border border-border px-3 py-2 text-sm outline-none focus:border-accent font-mono"
           />
-          <p className="text-xs text-ink/30">
+          <p className="text-xs text-ink/45">
             Bir satırı <code>Konu: prompt metni</code> şeklinde yazarsanız (örn. <code>Fiyat: X ne kadar tutar?</code>)
             sonuçlarda konu bazında görünürlük kırılımı çıkar — konu vermezseniz &ldquo;Genel&rdquo; sayılır.
           </p>
@@ -628,7 +628,7 @@ export default function GeoPage() {
         </div>
 
         <div className="flex items-center justify-between gap-4 bg-muted/50 px-6 py-4">
-          <span className="text-xs text-ink/50">
+          <span className="text-xs text-ink/60">
             {prompts.length} prompt × {engines.length} motor = <b className="text-ink/70">{prompts.length * engines.length}</b> sorgu
           </span>
           <button
@@ -648,7 +648,7 @@ export default function GeoPage() {
 
       {engineNotes.length > 0 && (
         <div className="rounded-xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm text-ink/80">
-          <div className="font-medium text-warn">Bazı AI motorları bu testte çalışmadı</div>
+          <div className="font-medium text-warn-ink">Bazı AI motorları bu testte çalışmadı</div>
           <ul className="mt-1 list-disc pl-5 text-sub">
             {engineNotes.map((n) => (
               <li key={n}>{n}</li>
@@ -659,7 +659,7 @@ export default function GeoPage() {
       )}
 
       {insufficientData && summaries && (
-        <div className="card border-ink/20 text-ink/50 text-sm">
+        <div className="card border-ink/20 text-ink/60 text-sm">
           Bu koşuda yalnızca {chatCount} sohbet var (prompt × motor). 10 sohbetin altında metrikler istatistiksel
           olarak gürültülü olabilir — aşağıdaki değerleri yönlendirici olarak okuyun, kesin kabul etmeyin.
         </div>
@@ -735,7 +735,7 @@ export default function GeoPage() {
       )}
 
       {restoredAt && summaries && !["overview", "library", "entity", "impact"].includes(resultsTab) && (
-        <p className="-mt-2 text-xs text-ink/45">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
+        <p className="-mt-2 text-xs text-ink/60">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
       {resultsTab === "impact" && <ImpactTab />}
@@ -745,7 +745,7 @@ export default function GeoPage() {
       {resultsTab === "visibility" && engineBreakdown && engineBreakdown.length > 1 && (
         <div className="card">
           <h2 className="font-medium">AI motoru bazında görünürlük</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar görünüyor — bazı motorlar sizi
             hiç anmıyorken diğerleri anabilir, bu fark hangi motora öncelik vermeniz gerektiğini gösterir.
           </p>
@@ -756,7 +756,7 @@ export default function GeoPage() {
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, e.visibility)}%` }} />
                 </div>
-                <div className="w-32 text-right text-ink/50 text-xs shrink-0">
+                <div className="w-32 text-right text-ink/60 text-xs shrink-0">
                   %{e.visibility} görünürlük{e.sentiment != null ? ` · ${e.sentiment} ton` : ""}
                 </div>
               </div>
@@ -768,7 +768,7 @@ export default function GeoPage() {
       {resultsTab === "sentiment" && engineBreakdown && engineBreakdown.length > 0 && (
         <div className="card">
           <h2 className="font-medium">AI motoru bazında duygu tonu</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             Son koşuda {ownSummary?.brand ?? "markanız"} hangi motorda ne kadar olumlu tanımlanıyor — 0 en olumsuz,
             100 en olumlu.
           </p>
@@ -779,11 +779,11 @@ export default function GeoPage() {
                 <div key={e.engine} className="flex items-center gap-3 text-sm">
                   <div className="w-40 truncate text-ink/70 shrink-0">{ENGINE_LABEL[e.engine]}</div>
                   <GradientBar value={e.sentiment as number} className="flex-1" />
-                  <div className="w-24 text-right text-ink/50 text-xs shrink-0">{e.sentiment} ton</div>
+                  <div className="w-24 text-right text-ink/60 text-xs shrink-0">{e.sentiment} ton</div>
                 </div>
               ))}
             {engineBreakdown.every((e) => e.sentiment == null) && (
-              <p className="text-sm text-ink/40">
+              <p className="text-sm text-ink/60">
                 Bu koşuda hiçbir motorda markanız anılmadığı için bir duygu tonu ölçülemedi.
               </p>
             )}
@@ -794,7 +794,7 @@ export default function GeoPage() {
       {resultsTab === "sentiment" && sentimentTrendData && (
         <div className="card">
           <h2 className="font-medium mb-1">Duygu trendi</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             Bu domain için kaydedilen her koşuda marka bazında duygu tonu ({sentimentTrendData.length} koşu).
           </p>
           <div className="h-64">
@@ -822,7 +822,7 @@ export default function GeoPage() {
         </div>
       )}
       {resultsTab === "sentiment" && !sentimentTrendData && (
-        <div className="card text-sm text-ink/40">
+        <div className="card text-sm text-ink/60">
           Duygu trendini görmek için bu domain için en az 2 koşu kaydedilmiş olmalı — daha sonra tekrar çalıştırın.
         </div>
       )}
@@ -846,7 +846,7 @@ export default function GeoPage() {
 
           <div className="mt-6 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-ink/40 text-left">
+              <thead className="text-ink/60 text-left">
                 <tr>
                   <th className="py-2 pr-4">#</th>
                   <th className="py-2 pr-4">Marka</th>
@@ -864,7 +864,7 @@ export default function GeoPage() {
                   const delta = prev ? Math.round((s.visibility - prev.visibility) * 100) : null;
                   return (
                     <tr key={s.brand} className="border-t border-border">
-                      <td className="py-2 pr-4 text-ink/40">{s.rank}</td>
+                      <td className="py-2 pr-4 text-ink/60">{s.rank}</td>
                       <td className="py-2 pr-4 font-medium">{s.brand}</td>
                       <td className="py-2 pr-4">
                         <ScoreBadge score={Math.round(s.visibility * 100)} display={`${Math.round(s.visibility * 100)}%`} />
@@ -878,7 +878,7 @@ export default function GeoPage() {
                       <td className="py-2 pr-4">{s.avgPosition ? `#${s.avgPosition.toFixed(1)}` : "—"}</td>
                       <td className="py-2 pr-4">{s.citationCount}</td>
                       {previousSummaries && (
-                        <td className={`py-2 pr-4 ${delta == null ? "text-ink/30" : delta > 0 ? "text-seo" : delta < 0 ? "text-danger" : "text-ink/40"}`}>
+                        <td className={`py-2 pr-4 ${delta == null ? "text-ink/45" : delta > 0 ? "text-seo-ink" : delta < 0 ? "text-danger-ink" : "text-ink/60"}`}>
                           {delta == null ? "yeni" : `${delta > 0 ? "+" : ""}${delta}pp`}
                         </td>
                       )}
@@ -887,7 +887,7 @@ export default function GeoPage() {
                 })}
               </tbody>
             </table>
-            <p className="mt-3 text-xs text-ink/30">
+            <p className="mt-3 text-xs text-ink/45">
               {previousSummaries
                 ? `Bu markanın önceki koşusuyla karşılaştırıldı (${new Date(previousRunAt ?? "").toLocaleString()}).`
                 : "Bu marka için ilk kaydedilen koşu — dönemsel trendi görmek için daha sonra tekrar çalıştırın."}
@@ -899,7 +899,7 @@ export default function GeoPage() {
       {resultsTab === "visibility" && trendData && (
         <div className="card">
           <h2 className="font-medium mb-1">Görünürlük trendi</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             Bu domain için kaydedilen her koşuda marka bazında görünürlük ({trendData.length} koşu).
           </p>
           <div className="h-64">
@@ -930,13 +930,13 @@ export default function GeoPage() {
       {resultsTab === "sources" && sourceDistribution && sourceDistribution.length > 0 && (
         <div className="card">
           <h2 className="font-medium">Domain metrikleri</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             AI motorlarının cevaplarında hangi sitelerin kaynak olarak gösterildiği. &ldquo;Oran&rdquo; cevap başına
             ortalama atıf sayısıdır; yüzde değildir, 1&apos;i geçebilir.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <div className="text-xs text-ink/40 mb-1">En çok atıf alan domainler</div>
+              <div className="text-xs text-ink/60 mb-1">En çok atıf alan domainler</div>
               {sourceDistribution.slice(0, 8).map((d) => {
                 const max = sourceDistribution[0].count;
                 const width = Math.max(6, Math.round((d.count / max) * 100));
@@ -946,7 +946,7 @@ export default function GeoPage() {
                     <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className={`h-full rounded-full ${DOMAIN_TYPE_COLOR[d.type]}`} style={{ width: `${width}%` }} />
                     </div>
-                    <div className="w-28 text-right text-ink/40 text-xs shrink-0">
+                    <div className="w-28 text-right text-ink/60 text-xs shrink-0">
                       {d.count} atıf · %{Math.round(d.citationShare * 100)} pay · {fmtRate(d.citationRate)} oran
                     </div>
                   </div>
@@ -954,7 +954,7 @@ export default function GeoPage() {
               })}
             </div>
             <div className="space-y-2">
-              <div className="text-xs text-ink/40 mb-1">
+              <div className="text-xs text-ink/60 mb-1">
                 Domain türleri · {sourceDistribution.reduce((s, d) => s + d.count, 0)} toplam atıf
               </div>
               {DOMAIN_TYPE_ORDER.map((type) => {
@@ -965,7 +965,7 @@ export default function GeoPage() {
                   <div key={type} className="flex items-center gap-2 text-sm">
                     <span className={`inline-block w-2.5 h-2.5 rounded-full ${DOMAIN_TYPE_COLOR[type]}`} />
                     <span className="flex-1 text-ink/70">{DOMAIN_TYPE_LABEL[type]}</span>
-                    <span className="text-ink/50 text-xs">{Math.round((count / total) * 100)}%</span>
+                    <span className="text-ink/60 text-xs">{Math.round((count / total) * 100)}%</span>
                   </div>
                 );
               })}
@@ -978,7 +978,7 @@ export default function GeoPage() {
         <div className="card space-y-3">
           <div>
             <h2 className="font-medium">Backlink fırsatları</h2>
-            <p className="text-sm text-ink/50 mt-1">
+            <p className="text-sm text-ink/60 mt-1">
               Bu, otomatik bir link değişim ağı değil — az önceki testte AI motorlarının bu konuda zaten kaynak
               gösterdiği, markanız veya rakipleriniz olmayan siteler. AI motorlarının güvendiğini kanıtladığı bu
               siteler, gerçek bir bağlantı/mention için iletişime geçilebilecek somut bir hedef listesi oluşturur.
@@ -1000,9 +1000,9 @@ export default function GeoPage() {
                     >
                       {d.domain}
                     </a>
-                    <span className="text-xs text-ink/40 shrink-0">{DOMAIN_TYPE_LABEL[d.type]}</span>
+                    <span className="text-xs text-ink/60 shrink-0">{DOMAIN_TYPE_LABEL[d.type]}</span>
                   </div>
-                  <span className="text-xs text-ink/50 shrink-0">{d.count} atıf</span>
+                  <span className="text-xs text-ink/60 shrink-0">{d.count} atıf</span>
                 </div>
               ))}
           </div>
@@ -1012,14 +1012,14 @@ export default function GeoPage() {
       {resultsTab === "urls" && urlStats && urlStats.length > 0 && (
         <div className="card">
           <h2 className="font-medium">URL metrikleri</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             Domain değil, tekil URL bazında atıf dağılımı — hangi sayfa (sadece hangi site) gerçekten kaynak
             gösteriliyor. &ldquo;Retrievals&rdquo; (kaynak olduğu sohbet sayısı, atıf almadan) aynı nedenle henüz
             yok — bkz. Domain sekmesindeki not.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-ink/40 text-left">
+              <thead className="text-ink/60 text-left">
                 <tr>
                   <th className="py-2 pr-4">URL</th>
                   <th className="py-2 pr-4">Tür</th>
@@ -1036,10 +1036,10 @@ export default function GeoPage() {
                         {u.url}
                       </a>
                     </td>
-                    <td className="py-2 pr-4 text-ink/50 text-xs whitespace-nowrap">{URL_TYPE_LABEL[u.type]}</td>
+                    <td className="py-2 pr-4 text-ink/60 text-xs whitespace-nowrap">{URL_TYPE_LABEL[u.type]}</td>
                     <td className="py-2 pr-4">{u.totalCitations}</td>
-                    <td className="py-2 pr-4 text-ink/50">%{Math.round(u.citationShare * 100)}</td>
-                    <td className="py-2 pr-4 text-ink/50">{fmtRate(u.citationRate)}</td>
+                    <td className="py-2 pr-4 text-ink/60">%{Math.round(u.citationShare * 100)}</td>
+                    <td className="py-2 pr-4 text-ink/60">{fmtRate(u.citationRate)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1048,7 +1048,7 @@ export default function GeoPage() {
         </div>
       )}
       {resultsTab === "urls" && (!urlStats || urlStats.length === 0) && (
-        <div className="card text-sm text-ink/40 text-center py-6">
+        <div className="card text-sm text-ink/60 text-center py-6">
           Bu koşuda hiçbir yanıt bir URL&apos;ye atıf vermedi.
         </div>
       )}
@@ -1056,7 +1056,7 @@ export default function GeoPage() {
       {resultsTab === "visibility" && topicBreakdown && topicBreakdown.length > 1 && (
         <div className="card">
           <h2 className="font-medium">Konu bazında görünürlük</h2>
-          <p className="text-sm text-ink/50 mb-4">
+          <p className="text-sm text-ink/60 mb-4">
             {ownSummary?.brand ?? "Markanız"} her prompt konusunda ne kadar görünüyor — hangi konularda görünmez
             olduğunuzu gösterir.
           </p>
@@ -1072,7 +1072,7 @@ export default function GeoPage() {
                       style={{ width: `${Math.max(4, pct)}%` }}
                     />
                   </div>
-                  <div className="w-24 text-right text-ink/50 text-xs">
+                  <div className="w-24 text-right text-ink/60 text-xs">
                     {pct}% ({t.mentionedCount}/{t.totalCount})
                   </div>
                 </div>

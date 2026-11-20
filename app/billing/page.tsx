@@ -45,20 +45,20 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
       {status === "success" && (
         <div className="card border-seo/40 text-sm">
-          <span className="font-bold text-seo">Ödeme alındı.</span>{" "}
+          <span className="font-bold text-seo-ink">Ödeme alındı.</span>{" "}
           <span className="text-ink/60">Planın birkaç saniye içinde güncellenir — görünmezse sayfayı yenile.</span>
         </div>
       )}
       {status === "cancel" && <div className="card text-sm text-ink/60">Ödeme iptal edildi, planında değişiklik olmadı.</div>}
       {!isStripeConfigured() && (
         <div className="card border-warn/40 text-sm text-ink/60">
-          <span className="font-bold text-warn">Ödeme henüz aktif değil.</span> Ücretli planlar Stripe bağlandığında açılacak.
+          <span className="font-bold text-warn-ink">Ödeme henüz aktif değil.</span> Ücretli planlar Stripe bağlandığında açılacak.
         </div>
       )}
 
       <div className="grid md:grid-cols-[1fr_2fr] gap-5">
         <div className="card space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Mevcut plan</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Mevcut plan</div>
           <div className="text-3xl font-extrabold">{planLabel(plan)}</div>
           {billing?.subscriptionStatus && (
             <div className="text-sm text-ink/60">Durum: {STATUS_LABEL[billing.subscriptionStatus] ?? billing.subscriptionStatus}</div>
@@ -70,7 +70,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           )}
         </div>
         <div className="card space-y-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Bu ayki kullanım</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Bu ayki kullanım</div>
           {METRICS.map((m, i) => {
             const used = usage[i];
             const limit = limits[m.key];
@@ -92,7 +92,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
               </div>
             );
           })}
-          <p className="text-xs text-ink/40">Kota her ayın başında (UTC) sıfırlanır.</p>
+          <p className="text-xs text-ink/60">Kota her ayın başında (UTC) sıfırlanır.</p>
         </div>
       </div>
 

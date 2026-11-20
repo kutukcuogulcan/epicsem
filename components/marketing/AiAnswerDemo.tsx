@@ -117,14 +117,14 @@ export default function AiAnswerDemo({
               <span
                 key={e.name}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                  i === engine ? "bg-panel shadow-sm text-ink" : "text-ink/40"
+                  i === engine ? "bg-panel shadow-sm text-ink" : "text-ink/60"
                 }`}
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: e.color }} />
                 {e.name}
               </span>
             ))}
-            <span className="ml-auto text-[10px] font-medium text-ink/30">Temsili animasyon</span>
+            <span className="ml-auto text-[11px] font-medium text-ink/45">Temsili animasyon</span>
           </div>
 
           <div className="p-5 space-y-4 min-h-[19rem]">
@@ -176,7 +176,7 @@ export default function AiAnswerDemo({
           <div className="border-t border-border bg-muted/30 px-5 py-4 space-y-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-ink/70">Görünürlük (tüm motorlar)</span>
-              {answered && <span className="animate-pop rounded-full bg-seo/10 px-2 py-0.5 font-bold text-seo">Markan #1</span>}
+              {answered && <span className="animate-pop rounded-full bg-seo/10 px-2 py-0.5 font-bold text-seo-ink">Markan #1</span>}
             </div>
             {BARS.map((b) => (
               <div key={b.name} className="flex items-center gap-3 text-xs">

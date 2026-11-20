@@ -7,9 +7,9 @@ function toneFor(score: number, kind: "percent" | "sentiment"): "seo" | "warn" |
 }
 
 const TONE_CLASS = {
-  seo: "bg-seo/10 text-seo border-seo/20",
-  warn: "bg-warn/10 text-warn border-warn/20",
-  danger: "bg-danger/10 text-danger border-danger/20",
+  seo: "bg-seo/10 text-seo-ink border-seo/20",
+  warn: "bg-warn/10 text-warn-ink border-warn/20",
+  danger: "bg-danger/10 text-danger-ink border-danger/20",
 };
 
 interface ScoreBadgeProps {
@@ -26,7 +26,7 @@ interface ScoreBadgeProps {
 export default function ScoreBadge({ score, display, kind = "percent" }: ScoreBadgeProps) {
   if (score == null) {
     return (
-      <span className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border text-ink/30 text-xs font-medium">
+      <span className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border text-ink/45 text-xs font-medium">
         —
       </span>
     );

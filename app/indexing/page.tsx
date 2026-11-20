@@ -91,19 +91,19 @@ export default function IndexingPage() {
           </div>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} placeholder={"Her satıra bir URL\nhttps://siten.com/yeni-sayfa\nhttps://siten.com/blog/guncel-yazi"} className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 font-mono text-xs outline-none focus:border-accent" />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs text-ink/50">{urls.length} geçerli URL</span>
+            <span className="text-xs text-ink/60">{urls.length} geçerli URL</span>
             <button type="button" onClick={send} disabled={!urls.length || !!busy || ready === false} className="rounded-[10px] bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
               {busy === "send" ? "Gönderiliyor…" : "Arama motorlarına bildir →"}
             </button>
           </div>
-          {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger" : "bg-seo/10 text-seo"}`}>{msg.t}</div>}
+          {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.bad ? "bg-danger/10 text-danger-ink" : "bg-seo/10 text-seo-ink"}`}>{msg.t}</div>}
           {results && (
             <ul className="divide-y divide-border rounded-xl border border-border">
               {results.map((r) => (
                 <li key={r.host} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                   <span className={`h-2 w-2 rounded-full ${r.ok ? "bg-seo" : "bg-danger"}`} />
                   <span className="font-medium">{r.host}</span>
-                  <span className="text-xs text-ink/55">{r.ok ? `${r.count} URL bildirildi` : r.detail}</span>
+                  <span className="text-xs text-ink/60">{r.ok ? `${r.count} URL bildirildi` : r.detail}</span>
                 </li>
               ))}
             </ul>
@@ -114,9 +114,9 @@ export default function IndexingPage() {
           <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
             <div className="text-sm font-medium">IndexNow durumu</div>
             {ready === null ? (
-              <p className="mt-1 text-xs text-ink/50">Siteni yaz.</p>
+              <p className="mt-1 text-xs text-ink/60">Siteni yaz.</p>
             ) : ready ? (
-              <p className="mt-1 text-xs text-seo">Hazır — bu site için anahtar kurulu.</p>
+              <p className="mt-1 text-xs text-seo-ink">Hazır — bu site için anahtar kurulu.</p>
             ) : (
               <p className="mt-1 text-xs text-ink/60">
                 Bu site için kurulu değil. <Link href="/integrations" className="font-medium text-accent">Entegrasyonlar</Link>&apos;dan IndexNow ekle ya da WordPress&apos;te Epicsem Connector&apos;ı kur.

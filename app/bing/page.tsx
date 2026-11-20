@@ -123,7 +123,7 @@ export default function BingPage() {
       {connected === false && (
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-8 text-center">
           <div className="font-medium">Bing Webmaster bağlı değil</div>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink/55">Ücretsiz Bing Webmaster hesabından bir API anahtarı alıp bağla; tıklama, gösterim ve sorgular burada görünür.</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink/60">Ücretsiz Bing Webmaster hesabından bir API anahtarı alıp bağla; tıklama, gösterim ve sorgular burada görünür.</p>
           <Link href="/integrations" className="mt-4 inline-block rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white">
             Entegrasyonlara git
           </Link>
@@ -142,9 +142,9 @@ export default function BingPage() {
               ["URL gönderme kotası", quota ? `${quota.daily} / gün` : "—", quota ? `${quota.monthly} / ay` : ""],
             ].map(([l, v, sub]) => (
               <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
-                <div className="text-[11px] text-ink/50">{l}</div>
+                <div className="text-[11px] text-ink/60">{l}</div>
                 <div className="text-2xl font-medium tabular-nums">{loading ? "…" : v}</div>
-                {sub && <div className="text-[11px] text-ink/45">{sub}</div>}
+                {sub && <div className="text-[11px] text-ink/60">{sub}</div>}
               </div>
             ))}
           </div>
@@ -183,7 +183,7 @@ export default function BingPage() {
           {opportunities.length > 0 && (
             <div className="rounded-2xl border border-warn/30 bg-warn/5 p-5">
               <div className="text-sm font-medium">Tıklama fırsatları</div>
-              <p className="mt-0.5 text-xs text-ink/55">Bing'de ilk 15'te görünüp neredeyse hiç tıklanmayan sorgular — sayfa başlığını ve açıklamasını bu sorguya göre yaz.</p>
+              <p className="mt-0.5 text-xs text-ink/60">Bing'de ilk 15'te görünüp neredeyse hiç tıklanmayan sorgular — sayfa başlığını ve açıklamasını bu sorguya göre yaz.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {opportunities.map((q) => (
                   <Link key={q.query} href={`/editor?new=${encodeURIComponent(q.query)}`} className="rounded-full bg-panel px-3 py-1 text-xs font-medium text-ink/70 ring-1 ring-border hover:text-accent">
@@ -220,7 +220,7 @@ export default function BingPage() {
                   ))}
                   {!shown.length && (
                     <tr>
-                      <td colSpan={4} className="px-5 py-8 text-center text-sm text-ink/45">
+                      <td colSpan={4} className="px-5 py-8 text-center text-sm text-ink/60">
                         {loading ? "Yükleniyor…" : "Sorgu verisi yok."}
                       </td>
                     </tr>
@@ -230,12 +230,12 @@ export default function BingPage() {
             </div>
             <div className="h-fit space-y-3 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
               <div className="text-sm font-medium">Bing'e URL gönder</div>
-              <p className="text-xs text-ink/55">Yeni ya da güncellenen sayfaları Bing'in hemen taramasını iste. Her satıra bir adres.</p>
+              <p className="text-xs text-ink/60">Yeni ya da güncellenen sayfaları Bing'in hemen taramasını iste. Her satıra bir adres.</p>
               <textarea value={submitText} onChange={(e) => setSubmitText(e.target.value)} rows={6} placeholder={`${site.replace(/\/$/, "")}/yeni-yazi`} className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-xs outline-none focus:border-accent" />
               <button type="button" onClick={submit} className="w-full rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white">
                 Gönder
               </button>
-              {submitMsg && <div className={`rounded-lg px-3 py-2 text-xs ${submitMsg.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>{submitMsg.text}</div>}
+              {submitMsg && <div className={`rounded-lg px-3 py-2 text-xs ${submitMsg.ok ? "bg-seo/5 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>{submitMsg.text}</div>}
             </div>
           </div>
         </>

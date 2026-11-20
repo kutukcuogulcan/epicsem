@@ -19,11 +19,11 @@ interface Kw {
 type Hist = Record<number, { position: number | null; at: string }[]>;
 
 function posTone(p: number | null) {
-  if (p === null) return "bg-muted text-ink/45";
-  if (p <= 3) return "bg-seo/10 text-seo";
+  if (p === null) return "bg-muted text-ink/60";
+  if (p <= 3) return "bg-seo/10 text-seo-ink";
   if (p <= 10) return "bg-accent/10 text-accent";
-  if (p <= 30) return "bg-warn/10 text-warn";
-  return "bg-danger/10 text-danger";
+  if (p <= 30) return "bg-warn/10 text-warn-ink";
+  return "bg-danger/10 text-danger-ink";
 }
 
 export default function RankingsPage() {
@@ -172,7 +172,7 @@ export default function RankingsPage() {
   if (!serpAvailable && !serpbear)
     actions.push({
       kind: "Kurulum",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: "Sıralama verisi için kaynak bağla",
       body: "SerpApi (ücretsiz plan, her kontrol 1 arama) ya da kendi sunucundaki SerpBear. Bağlayınca kontroller her gün otomatik çalışır.",
       cta: <Link href="/integrations" className={BTN2}>Entegrasyonlar</Link>,
@@ -180,7 +180,7 @@ export default function RankingsPage() {
   if (striking.length)
     actions.push({
       kind: "Hızlı kazanım",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: `${striking.length} kelime ilk sayfanın hemen dışında`,
       body: `"${striking[0].keyword}" ${striking[0].lastPosition}. sırada. 11–20 arası kelimeler küçük bir içerik güncellemesiyle ilk sayfaya en kolay çıkanlardır.`,
       cta: <button type="button" onClick={() => setF("striking")} className={BTN2}>Kelimeleri göster</button>,
@@ -188,7 +188,7 @@ export default function RankingsPage() {
   if (downList.length)
     actions.push({
       kind: "Düşüş",
-      color: "text-danger",
+      color: "text-danger-ink",
       title: `${downList.length} kelimede sıra düştü`,
       body: `En çok düşen "${downList[0].keyword}" (▼ ${-(deltaOf(downList[0]) ?? 0)}). Sayfayı denetle; rakip yeni içerik çıkarmış olabilir.`,
       cta: <button type="button" onClick={() => setF("down")} className={BTN2}>Düşenleri göster</button>,
@@ -196,7 +196,7 @@ export default function RankingsPage() {
   if (unranked.length)
     actions.push({
       kind: "İçerik yok",
-      color: "text-warn",
+      color: "text-warn-ink",
       title: `${unranked.length} kelimede ilk 100'de yoksun`,
       body: `"${unranked[0].keyword}" için sitende uygun sayfa yok ya da Google bulmuyor. Bu kelimeye özel bir yazı en doğru adım.`,
       cta: <Link href={`/editor?new=${encodeURIComponent(unranked[0].keyword)}`} className={BTN2}>Yazı yaz</Link>,
@@ -241,7 +241,7 @@ export default function RankingsPage() {
         }
       />
 
-      {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>{msg.text}</div>}
+      {msg && <div className={`rounded-xl px-4 py-2.5 text-sm ${msg.ok ? "bg-seo/10 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>{msg.text}</div>}
 
       {domains.length > 1 && (
         <div className="flex flex-wrap gap-2">
@@ -284,11 +284,11 @@ export default function RankingsPage() {
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {([
-              ["Ortalama sıra", avg !== null ? String(avg) : "—", "", `${ranked.length} kelime sıralanıyor`, avg === null ? "" : avg <= 10 ? "text-seo" : avg <= 30 ? "text-warn" : "text-danger"],
-              ["İlk 3", String(top3), `/${list.length}`, "en çok tıklanan sıralar", top3 ? "text-seo" : ""],
+              ["Ortalama sıra", avg !== null ? String(avg) : "—", "", `${ranked.length} kelime sıralanıyor`, avg === null ? "" : avg <= 10 ? "text-seo-ink" : avg <= 30 ? "text-warn-ink" : "text-danger-ink"],
+              ["İlk 3", String(top3), `/${list.length}`, "en çok tıklanan sıralar", top3 ? "text-seo-ink" : ""],
               ["İlk sayfa (1–10)", String(top10), `/${list.length}`, list.length ? `kelimelerin %${Math.round((top10 / list.length) * 100)}'i` : "", ""],
-              ["Yükselen", String(upList.length), "", "son kontrole göre", upList.length ? "text-seo" : ""],
-              ["Düşen", String(downList.length), "", "son kontrole göre", downList.length ? "text-danger" : ""],
+              ["Yükselen", String(upList.length), "", "son kontrole göre", upList.length ? "text-seo-ink" : ""],
+              ["Düşen", String(downList.length), "", "son kontrole göre", downList.length ? "text-danger-ink" : ""],
             ] as const).map(([l, v, suf, hint, col]) => (
               <div key={l} className={`${CARD} px-4 py-4`}>
                 <div className="text-xs font-medium text-sub">{l}</div>
@@ -366,7 +366,7 @@ export default function RankingsPage() {
                             <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${posTone(k.lastPosition)}`}>{k.lastCheckedAt ? (k.lastPosition ?? "100+") : "—"}</span>
                           </td>
                           <td className="py-2.5 pr-3 text-xs font-medium tabular-nums">
-                            {delta === null || delta === 0 ? <span className="text-sub">—</span> : delta > 0 ? <span className="text-seo">▲ {delta}</span> : <span className="text-danger">▼ {-delta}</span>}
+                            {delta === null || delta === 0 ? <span className="text-sub">—</span> : delta > 0 ? <span className="text-seo-ink">▲ {delta}</span> : <span className="text-danger-ink">▼ {-delta}</span>}
                           </td>
                           <td className="hidden py-2.5 pr-3 md:table-cell">
                             {h.length >= 2 ? (
@@ -424,7 +424,7 @@ export default function RankingsPage() {
                         <li key={k.id}>
                           <button type="button" onClick={() => setSel(k.id)} className="flex w-full items-center gap-2 py-2 text-left text-[13px] hover:text-accent">
                             <span className="min-w-0 flex-1 truncate">{k.keyword}</span>
-                            <span className={`text-xs font-medium tabular-nums ${d > 0 ? "text-seo" : "text-danger"}`}>{d > 0 ? `▲ ${d}` : `▼ ${-d}`}</span>
+                            <span className={`text-xs font-medium tabular-nums ${d > 0 ? "text-seo-ink" : "text-danger-ink"}`}>{d > 0 ? `▲ ${d}` : `▼ ${-d}`}</span>
                             <span className="w-8 text-right text-xs tabular-nums text-sub">{k.lastPosition ?? "100+"}</span>
                           </button>
                         </li>
@@ -492,7 +492,7 @@ export default function RankingsPage() {
               <Link href={`/keywords?q=${encodeURIComponent(selKw.keyword)}`} className={BTN2}>
                 Benzer kelimeler
               </Link>
-              <button type="button" onClick={() => remove(selKw.id)} className="ml-auto text-xs font-medium text-danger/70 hover:text-danger">
+              <button type="button" onClick={() => remove(selKw.id)} className="ml-auto text-xs font-medium text-danger-ink hover:text-danger-ink">
                 Takipten çıkar
               </button>
             </div>

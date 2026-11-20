@@ -63,27 +63,27 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
       {open && (
         <Drawer isOpen onClose={() => setOpen(false)} panelClassName="flex h-full w-screen max-w-lg flex-col border-l border-border bg-panel shadow-2xl animate-[pop-in_0.25s_ease-out]" raw header={<div className="min-w-0">
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Müşteri teklifi</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Müşteri teklifi</div>
                 <div className="font-medium">{domain}</div>
               </div>
 </div>}>
             <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-              <p className="text-xs leading-5 text-ink/55">Bu taramanın bulgularıyla (sağlık skoru, öncelikli sorunlar, AI erişimi) müşteriye gönderilecek hazır bir teklif PDF&apos;i oluşturur. Fiyat yazmazsan &quot;Görüşmede belirlenir&quot; yazar.</p>
+              <p className="text-xs leading-5 text-ink/60">Bu taramanın bulgularıyla (sağlık skoru, öncelikli sorunlar, AI erişimi) müşteriye gönderilecek hazır bir teklif PDF&apos;i oluşturur. Fiyat yazmazsan &quot;Görüşmede belirlenir&quot; yazar.</p>
               <div className="grid grid-cols-2 gap-3">
                 <label className="space-y-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Ajans adı</span>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Ajans adı</span>
                   <input value={agency} onChange={(e) => setAgency(e.target.value)} placeholder="Ajansın" className={inp} />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Müşteri</span>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Müşteri</span>
                   <input value={client} onChange={(e) => setClient(e.target.value)} className={inp} />
                 </label>
                 <label className="col-span-2 space-y-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">İletişim (PDF sonunda)</span>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/60">İletişim (PDF sonunda)</span>
                   <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Ad Soyad · telefon · e-posta" className={inp} />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Geçerlilik (gün)</span>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Geçerlilik (gün)</span>
                   <input type="number" min={1} max={180} value={days} onChange={(e) => setDays(Math.max(1, Math.min(180, Number(e.target.value) || 30)))} className={inp} />
                 </label>
               </div>
@@ -97,7 +97,7 @@ export default function ProposalButton({ runId, domain }: { runId: number | null
                 </div>
               ))}
               <label className="block space-y-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-ink/45">Not (isteğe bağlı)</span>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Not (isteğe bağlı)</span>
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Ödeme koşulları, sözleşme süresi…" className={inp} />
               </label>
               <ErrorBlock message={err} />

@@ -61,7 +61,7 @@ const GROUPS = [
   {
     title: "Otomasyon",
     description: "Bir kere kur, arkasında çalışsın — elle kontrol etmene gerek kalmasın.",
-    tone: "text-warn",
+    tone: "text-warn-ink",
     items: [
       { label: "AXO Monitoring", href: "/monitor", body: "Kritik sayfaları zamanla izler, daha önce izinli olan bir AI crawler robots.txt'te engellenirse Slack'e anında haber verir.", landingHref: "/features/axo-monitoring" },
       { label: "Autoblog", href: "/campaigns", body: "Anahtar kelime listesi, RSS beslemesi ya da Rakip Boşluğu'ndan günlük/haftalık/aylık otomatik taslak makale üretir — hiçbir şey kendiliğinden yayınlanmaz." },
@@ -73,7 +73,7 @@ const GROUPS = [
   {
     title: "Yönetim",
     description: "Birden fazla müşteri yönetiyorsan, her birinin markasını bir kere kaydet, her yerde tekrar kullan.",
-    tone: "text-seo",
+    tone: "text-seo-ink",
     items: [
       { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, kendi ajans adınla PDF rapor indir.", landingHref: "/features/clients" },
       { label: "Sınırsız motor", href: "/geo", body: "OpenAI, Anthropic, Google, Perplexity hepsi dahil — hangi modelin müşterin için önemli olduğunu test etmek için motor başına ek ücret yok." },
@@ -133,7 +133,7 @@ export default function Home() {
             </Reveal>
             <Reveal delay={80} as="h1" className="hero-title text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04]">
               Google&apos;da sırala, <span className="text-accent">AI&apos;da görün</span>
-              <span className="block text-3xl sm:text-4xl lg:text-5xl font-medium italic text-ink/40 mt-2">— elle uğraşmadan.</span>
+              <span className="block text-3xl sm:text-4xl lg:text-5xl font-medium italic text-ink/60 mt-2">— elle uğraşmadan.</span>
             </Reveal>
             <Reveal delay={160} as="p" className="mx-auto max-w-2xl text-base sm:text-lg text-ink/60">
               Teknik SEO denetimini ve ChatGPT, Claude, Gemini, Perplexity üzerinde gerçek prompt testlerini aynı panelde
@@ -142,7 +142,7 @@ export default function Home() {
             <Reveal delay={240}>
               <HeroUrlForm />
             </Reveal>
-            <Reveal delay={300} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-ink/45">
+            <Reveal delay={300} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-ink/60">
               <span>✓ Kart bilgisi gerekmez</span>
               <span>✓ Hesap açmadan dene</span>
               <span>✓ 8 AI motoru</span>
@@ -155,11 +155,11 @@ export default function Home() {
               <HeroDashboardPreview />
             </Reveal>
             <span className="absolute -left-6 top-1/4 hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" aria-hidden>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-seo/15 text-seo">↑</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-seo/15 text-seo-ink">↑</span>
               ChatGPT&apos;de görünüyorsun
             </span>
             <span className="absolute -right-6 bottom-1/4 hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" style={{ animationDelay: "1.5s" }} aria-hidden>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-danger/10 text-danger">!</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-danger/10 text-danger-ink">!</span>
               GPTBot robots.txt&apos;te engelli
             </span>
           </div>
@@ -190,7 +190,7 @@ export default function Home() {
               <div className="relative transition-transform duration-500 hover:-translate-y-1 hover:rotate-[0.4deg]">
                 <BrowserFrame {...s.image} />
               </div>
-              <p className="relative mt-3 text-center text-xs text-ink/30">Gerçek ekran görüntüsü — bu sitenin kendi sonucu, uydurma veri değil.</p>
+              <p className="relative mt-3 text-center text-xs text-ink/45">Gerçek ekran görüntüsü — bu sitenin kendi sonucu, uydurma veri değil.</p>
             </Reveal>
             <Reveal variant={s.imageSide === "right" ? "left" : "right"} delay={100} className={s.imageSide === "right" ? "lg:order-1" : ""}>
               <span className="pill-outline bg-accent/5">{s.eyebrow}</span>
@@ -236,7 +236,7 @@ export default function Home() {
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   {group.title}
                 </div>
-                <p className="mt-1.5 text-sm text-ink/50">{group.description}</p>
+                <p className="mt-1.5 text-sm text-ink/60">{group.description}</p>
               </div>
               <div className="space-y-1 pt-2 border-t border-border">
                 {group.items.map((item) => (
@@ -246,7 +246,7 @@ export default function Home() {
                         {item.label}
                         <span className="text-ink/20 transition-all group-hover/item:translate-x-1 group-hover/item:text-accent">→</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-ink/50">{item.body}</p>
+                      <p className="mt-0.5 text-xs text-ink/60">{item.body}</p>
                     </Link>
                     {"landingHref" in item && item.landingHref && (
                       <Link href={item.landingHref} className="mt-1 inline-block text-xs font-semibold text-accent hover:underline">

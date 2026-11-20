@@ -145,7 +145,7 @@ export default function LocalToolsPage() {
     if (neg.length)
       actions.push({
         kind: "Öncelik",
-        color: "text-danger",
+        color: "text-danger-ink",
         title: `${neg.length} olumsuz yorum var`,
         body: "Olumsuz yorumlara 24 saat içinde, özür dileyip çözüm öneren kısa bir yanıt hem müşteriyi hem yorumu okuyan herkesi etkiler.",
         cta: <button type="button" onClick={() => setRf("neg")} className={BTN2}>Olumsuzları göster</button>,
@@ -159,7 +159,7 @@ export default function LocalToolsPage() {
     });
     actions.push({
       kind: "Fırsat",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Yanıtlarda hizmeti ve şehri an",
       body: "\"Kadıköy'deki manikür hizmetimiz\" gibi doğal ifadeler yerel aramada ve AI cevaplarında işletmeni güçlendirir. Taslaklar bunu otomatik yapar.",
       cta: <Link href="/geo" className={BTN2}>AI görünürlüğü</Link>,
@@ -168,7 +168,7 @@ export default function LocalToolsPage() {
     if (!last || daysAgo(last.createdAt) >= 7)
       actions.push({
         kind: "Bu hafta",
-        color: "text-danger",
+        color: "text-danger-ink",
         title: last ? `${daysAgo(last.createdAt)} gündür gönderi yok` : "Henüz gönderi yok",
         body: "Google, düzenli paylaşım yapan profilleri yerel aramada daha canlı gösterir. Haftada bir gönderi yeterli.",
         cta: <button type="button" onClick={() => startNew("")} className={BTN2}>Gönderi hazırla</button>,
@@ -182,7 +182,7 @@ export default function LocalToolsPage() {
     });
     actions.push({
       kind: "Yorumlar",
-      color: "text-seo",
+      color: "text-seo-ink",
       title: "Yorumları yanıtsız bırakma",
       body: "Yanıtlanan yorumlar, profilin güvenilirliğini ve yerel sıralamanı artırır.",
       cta: <Link href="/local?tab=reviews" className={BTN2}>Yorum Yanıtları</Link>,
@@ -217,7 +217,7 @@ export default function LocalToolsPage() {
           <div key={l} className={`${CARD} px-4 py-4`}>
             <div className="text-xs font-medium text-sub">{l}</div>
             <div className="mt-1.5 flex items-baseline gap-1">
-              <span className={`text-[26px] font-semibold leading-8 tabular-nums ${l === "Olumsuz yorum" && neg.length ? "text-danger" : ""}`}>{items === null ? "…" : v}</span>
+              <span className={`text-[26px] font-semibold leading-8 tabular-nums ${l === "Olumsuz yorum" && neg.length ? "text-danger-ink" : ""}`}>{items === null ? "…" : v}</span>
               {suf && <span className="text-sm text-sub">{suf}</span>}
             </div>
             <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
@@ -281,7 +281,7 @@ export default function LocalToolsPage() {
               <tbody className="divide-y divide-border">
                 {shown.slice(0, 200).map((i) => (
                   <tr key={i.id} onClick={() => setOpen(i)} className="cursor-pointer hover:bg-[#fafafa]">
-                    {reviews && <td className={`py-2.5 pl-5 text-xs tracking-tight ${(i.rating ?? 5) <= 2 ? "text-danger" : (i.rating ?? 0) === 3 ? "text-warn" : "text-[#f59e0b]"}`}>{stars(i.rating)}</td>}
+                    {reviews && <td className={`py-2.5 pl-5 text-xs tracking-tight ${(i.rating ?? 5) <= 2 ? "text-danger-ink" : (i.rating ?? 0) === 3 ? "text-warn-ink" : "text-[#f59e0b]"}`}>{stars(i.rating)}</td>}
                     <td className={`max-w-[18rem] py-2.5 ${reviews ? "pr-3" : "pl-5 pr-3"}`}>
                       <div className="truncate font-medium">{i.input}</div>
                       {!project && <div className="text-[11px] text-sub">{i.business}</div>}
@@ -350,7 +350,7 @@ export default function LocalToolsPage() {
                 );
               })}
             </div>
-            <div className="flex justify-between px-5 pb-3 text-[10px] text-sub">
+            <div className="flex justify-between px-5 pb-3 text-[11px] text-sub">
               <span>{weeks[0].l}</span>
               <span>{weeks[weeks.length - 1].l}</span>
             </div>

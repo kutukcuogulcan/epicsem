@@ -25,7 +25,7 @@ export default function EmptyState({
         )}
       </span>
       <div className="font-bold">{title}</div>
-      {body && <p className="text-sm text-ink/50 max-w-md">{body}</p>}
+      {body && <p className="text-sm text-ink/60 max-w-md">{body}</p>}
       {actionLabel && actionHref && (
         <Link href={actionHref} className="rounded-lg bg-accent text-white px-4 py-2 text-sm font-bold hover:opacity-90">
           {actionLabel}

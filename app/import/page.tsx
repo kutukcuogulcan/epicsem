@@ -115,13 +115,13 @@ export default function ImportPage() {
         className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-2 shadow-sm transition-all focus-within:border-accent/50 focus-within:shadow-lg focus-within:shadow-accent/10"
       >
         <div className="flex flex-1 items-center gap-2 px-3">
-          <span className="text-ink/30">🌐</span>
+          <span className="text-ink/45">🌐</span>
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Taranacak site — ör. siteniz.com"
             disabled={loading}
-            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/35 disabled:opacity-60"
+            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/60 disabled:opacity-60"
           />
         </div>
         <div className="flex gap-2">
@@ -150,12 +150,12 @@ export default function ImportPage() {
         <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5">
           <div className="flex items-center gap-3 text-sm text-ink/70">
             <span className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-            Sitemap okunuyor, sayfalar ve linkler taranıyor… <span className="tabular-nums text-ink/40">{elapsed} sn</span>
+            Sitemap okunuyor, sayfalar ve linkler taranıyor… <span className="tabular-nums text-ink/60">{elapsed} sn</span>
           </div>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${Math.min(95, (elapsed / 90) * 100)}%` }} />
           </div>
-          <p className="mt-2 text-xs text-ink/40">Sayfa sayısına göre 20 sn – 2 dk sürer.</p>
+          <p className="mt-2 text-xs text-ink/60">Sayfa sayısına göre 20 sn – 2 dk sürer.</p>
         </div>
       )}
 

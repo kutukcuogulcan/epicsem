@@ -17,8 +17,8 @@ const INTENT_LABEL: Record<KeywordIntent, string> = {
 };
 const INTENT_TONE: Record<KeywordIntent, string> = {
   question: "bg-accent/10 text-accent",
-  commercial: "bg-seo/10 text-seo",
-  comparison: "bg-warn/10 text-warn",
+  commercial: "bg-seo/10 text-seo-ink",
+  comparison: "bg-warn/10 text-warn-ink",
   local: "bg-sky-500/10 text-sky-600",
   informational: "bg-muted text-ink/60",
 };
@@ -282,7 +282,7 @@ export default function KeywordsPage() {
     if (mapCount("missing") || mapCount("cannibal"))
       actions.push({
         kind: "İçerik haritası",
-        color: "text-danger",
+        color: "text-danger-ink",
         title: mapCount("missing") ? `${mapCount("missing")} konu için sitende sayfa yok` : `${mapCount("cannibal")} konuda birden fazla sayfa yarışıyor`,
         body: mapCount("missing")
           ? "Bu kümelerde Google ve AI motorlarına gösterecek bir sayfan yok; en büyük kümeden başla."
@@ -308,7 +308,7 @@ export default function KeywordsPage() {
     if (topCluster)
       actions.push({
         kind: "İçerik",
-        color: "text-seo",
+        color: "text-seo-ink",
         title: `En büyük konu: "${topCluster.name}"`,
         body: `${topCluster.count} kelime bu kümede. Hepsini kapsayan tek kapsamlı yazı, ayrı ayrı küçük yazılardan daha iyi sıralanır.`,
         cta: (
@@ -320,7 +320,7 @@ export default function KeywordsPage() {
     if (!hasVolume)
       actions.push({
         kind: "Eksik veri",
-        color: "text-warn",
+        color: "text-warn-ink",
         title: "Aylık arama hacmini gör",
         body: "Şu an popülerliği öneri sıklığıyla tahmin ediyoruz. Google Keyword Planner'ı bağlarsan gerçek aylık arama ve rekabet gelir.",
         cta: (
@@ -332,7 +332,7 @@ export default function KeywordsPage() {
     else if (counts("commercial"))
       actions.push({
         kind: "Satış",
-        color: "text-warn",
+        color: "text-warn-ink",
         title: `${counts("commercial")} satın almaya yakın kelime`,
         body: "Fiyat, en iyi, yorum gibi aramalar. Bunları sıralama takibine ekle, hangi sırada olduğunu her gün izle.",
         cta: (
@@ -493,7 +493,7 @@ export default function KeywordsPage() {
                 )}
               </div>
               {msg && (
-                <div className={`mx-5 mb-3 rounded-lg px-3 py-2 text-xs ${msg.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>
+                <div className={`mx-5 mb-3 rounded-lg px-3 py-2 text-xs ${msg.ok ? "bg-seo/10 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>
                   {msg.text}{" "}
                   {msg.href && (
                     <Link href={msg.href} className="font-medium underline">
@@ -531,7 +531,7 @@ export default function KeywordsPage() {
                         <button type="button" onClick={() => openSerp(i.keyword)} className="text-left font-medium hover:text-accent">
                           {i.keyword}
                         </button>
-                        {i.source === "planner" && <span className="ml-2 text-[10px] text-sub">Planner</span>}
+                        {i.source === "planner" && <span className="ml-2 text-[11px] text-sub">Planner</span>}
                       </td>
                       <td className="hidden py-2.5 pr-3 md:table-cell">
                         <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${INTENT_TONE[i.intent]}`}>{INTENT_LABEL[i.intent]}</span>
@@ -613,7 +613,7 @@ export default function KeywordsPage() {
                     , gerçek aylık aramayı gör.
                   </>
                 )}
-                {data?.adsError && <p className="mt-2 text-danger">Keyword Planner: {data.adsError}</p>}
+                {data?.adsError && <p className="mt-2 text-danger-ink">Keyword Planner: {data.adsError}</p>}
               </div>
             </div>
           </div>
@@ -646,7 +646,7 @@ export default function KeywordsPage() {
             {!domain ? null : cmap?.busy ? (
               <div className="h-32 animate-pulse border-t border-border bg-muted/40" />
             ) : cmap?.err ? (
-              <div className="border-t border-border px-5 py-4 text-[13px] text-danger">{cmap.err}</div>
+              <div className="border-t border-border px-5 py-4 text-[13px] text-danger-ink">{cmap.err}</div>
             ) : cmap && cmap.scanned === 0 ? (
               <div className="border-t border-border px-5 py-6 text-[13px] text-sub">
                 Sitenin sayfaları okunamadı (sitemap.xml yok ya da erişilemiyor).{" "}
@@ -673,10 +673,10 @@ export default function KeywordsPage() {
                     .map((r) => {
                       const cs = clusterStats.get(r.cluster);
                       const st = {
-                        missing: ["Sayfa yok", "bg-danger/10 text-danger"],
-                        cannibal: ["Yamyamlık riski", "bg-warn/10 text-warn"],
+                        missing: ["Sayfa yok", "bg-danger/10 text-danger-ink"],
+                        cannibal: ["Yamyamlık riski", "bg-warn/10 text-warn-ink"],
                         draft: ["Taslakta", "bg-sky-50 text-sky-700"],
-                        covered: ["Sayfa var", "bg-seo/10 text-seo"],
+                        covered: ["Sayfa var", "bg-seo/10 text-seo-ink"],
                       }[r.status];
                       return (
                         <tr key={r.cluster} className="align-top">
@@ -724,7 +724,7 @@ export default function KeywordsPage() {
                               ) : !r.ranking ? (
                                 <span className="text-xs text-sub">Sıralama takibine ekle</span>
                               ) : (
-                                <span className="text-xs text-seo">İyi durumda</span>
+                                <span className="text-xs text-seo-ink">İyi durumda</span>
                               ))}
                           </td>
                         </tr>
@@ -816,7 +816,7 @@ export default function KeywordsPage() {
                 <span className="text-[11px] text-sub">{project ? `${project.domain} projesine eklenir; çalıştırınca AI motoru kotası kullanır.` : "Önce soldan bir proje seç."}</span>
               </div>
               {pMsg && (
-                <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${pMsg.ok ? "bg-seo/10 text-seo" : "bg-danger/5 text-danger"}`}>
+                <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${pMsg.ok ? "bg-seo/10 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>
                   {pMsg.text}{" "}
                   {pMsg.ok && (
                     <Link href="/geo" className="font-medium underline">
@@ -909,7 +909,7 @@ export default function KeywordsPage() {
                           </div>
                         </div>
                         {p.citability !== null && (
-                          <span title="AI alıntılanabilirlik" className={`shrink-0 rounded px-1.5 py-0.5 font-medium ${p.citability >= 65 ? "bg-seo/10 text-seo" : p.citability >= 45 ? "bg-warn/10 text-warn" : "bg-danger/10 text-danger"}`}>
+                          <span title="AI alıntılanabilirlik" className={`shrink-0 rounded px-1.5 py-0.5 font-medium ${p.citability >= 65 ? "bg-seo/10 text-seo-ink" : p.citability >= 45 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink"}`}>
                             {p.citability}
                           </span>
                         )}

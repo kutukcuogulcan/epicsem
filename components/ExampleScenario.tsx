@@ -28,7 +28,7 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
           Nasıl çalışır
         </span>
         <h2 className="text-xl font-medium tracking-tight sm:text-2xl">{heading}</h2>
-        <p className="text-sm text-ink/50">Adım adım bir örnek — aracın baştan sona ne yaptığını görürsün.</p>
+        <p className="text-sm text-ink/60">Adım adım bir örnek — aracın baştan sona ne yaptığını görürsün.</p>
       </Reveal>
 
       <ol className={`relative mt-8 grid gap-4 sm:grid-cols-2 ${COLS[n] ?? "lg:grid-cols-3"}`}>
@@ -40,13 +40,13 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
             <div className="flex h-full flex-col items-center rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-5 text-center transition group-hover:-translate-y-0.5 group-hover:border-accent/30 group-hover:shadow-[0_12px_30px_-18px_rgba(93,22,255,0.45)]">
               <span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-sm font-medium text-white shadow-md shadow-accent/30">{i + 1}</span>
               <div className="mt-4 text-sm font-medium leading-snug">{s.title}</div>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-ink/55">{s.body}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-ink/60">{s.body}</p>
             </div>
           </Reveal>
         ))}
       </ol>
 
-      <p className="relative mt-6 text-center text-[11px] text-ink/35">Kurgusal bir örnektir — gerçek bir müşteriye ya da siteye ait değildir.</p>
+      <p className="relative mt-6 text-center text-[11px] text-ink/60">Kurgusal bir örnektir — gerçek bir müşteriye ya da siteye ait değildir.</p>
     </section>
   );
 }

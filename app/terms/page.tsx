@@ -107,11 +107,11 @@ export default function TermsPage() {
       <div className="space-y-2">
         <Breadcrumb items={[{ label: "Ana Sayfa", href: "/" }, { label: "Kullanım Şartları" }]} />
         <h1 className="text-3xl font-extrabold tracking-tight">Kullanım Şartları</h1>
-        <p className="text-ink/40 text-xs">Son güncelleme: bu sayfa {SITE_NAME} test aşamasındayken hazırlanmıştır.</p>
+        <p className="text-ink/60 text-xs">Son güncelleme: bu sayfa {SITE_NAME} test aşamasındayken hazırlanmıştır.</p>
       </div>
 
       <div className="card border-warn/40 text-sm text-ink/70">
-        <strong className="text-warn">Taslak metin.</strong> Bir hukuk danışmanı tarafından gözden geçirilmedi —
+        <strong className="text-warn-ink">Taslak metin.</strong> Bir hukuk danışmanı tarafından gözden geçirilmedi —
         gerçek kullanıcılara açmadan önce bir avukata gösterilmesi önerilir. İletişim e-postası da bir yer
         tutucudur — {CONTACT_EMAIL} gerçek bir destek adresiyle değiştirilmelidir.
       </div>

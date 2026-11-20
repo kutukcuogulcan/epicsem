@@ -52,7 +52,7 @@ export default function FeatureSteps({
           })}
         </ol>
       </div>
-      {note && <p className="text-center text-xs text-ink/30">{note}</p>}
+      {note && <p className="text-center text-xs text-ink/45">{note}</p>}
     </section>
   );
 }

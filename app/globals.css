@@ -25,10 +25,10 @@ body {
   @apply inline-flex items-center gap-1.5 rounded-full border border-accent/30 text-accent px-3 py-1 text-xs font-semibold;
 }
 
-.badge-critical { @apply bg-danger/10 text-danger; }
-.badge-warning { @apply bg-warn/10 text-warn; }
+.badge-critical { @apply bg-danger/10 text-danger-ink; }
+.badge-warning { @apply bg-warn/10 text-warn-ink; }
 .badge-info { @apply bg-accent/10 text-accent; }
-.badge-pass { @apply bg-seo/10 text-seo; }
+.badge-pass { @apply bg-seo/10 text-seo-ink; }
 
 /* ------------------------------------------------------------------------------------
    Pazarlama sayfaları hareket sistemi (arvow.com / peec.ai tarzı "akan" sayfalar).
@@ -38,6 +38,8 @@ body {
 html { scroll-behavior: smooth; }
 /* hidden mobilde yatay kaydırmaya izin veriyordu (süs lekeleri, kayan şerit); clip kaydırma alanı da açmaz. */
 html, body { overflow-x: clip; }
+/* Tarayıcının varsayılan ipucu grisi (#9ca3af) beyaz zeminde 2.5:1; bu ton 4.8:1. */
+::placeholder { color: #6b7280; }
 
 .full-bleed {
   width: 100vw;

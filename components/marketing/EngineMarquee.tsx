@@ -22,7 +22,7 @@ export default function EngineMarquee({ title = "Markanı tek panelden takip ett
   const row = [...ITEMS, ...ITEMS];
   return (
     <section className="space-y-4">
-      <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink/40">{title}</p>
+      <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink/60">{title}</p>
       <div className="marquee-mask overflow-hidden">
         <div className="animate-marquee flex w-max gap-3 py-1">
           {row.map((it, i) => (

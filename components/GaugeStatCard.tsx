@@ -3,9 +3,9 @@ import ScoreGauge from "./ScoreGauge";
 type Tone = "seo" | "warn" | "danger";
 
 const TONE_TEXT: Record<Tone, string> = {
-  seo: "text-seo",
-  warn: "text-warn",
-  danger: "text-danger",
+  seo: "text-seo-ink",
+  warn: "text-warn-ink",
+  danger: "text-danger-ink",
 };
 
 interface GaugeStatCardProps {
@@ -27,12 +27,12 @@ export default function GaugeStatCard({ label, score, suffix = "%", description,
     <div className="card flex items-center gap-4">
       <ScoreGauge label="" score={score} colorClass={TONE_TEXT[tone]} />
       <div className="min-w-0">
-        <div className="text-xs text-ink/40">{label}</div>
+        <div className="text-xs text-ink/60">{label}</div>
         <div className={`text-2xl font-extrabold mt-1 ${TONE_TEXT[tone]}`}>
           {score}
           {suffix}
         </div>
-        <div className="text-xs text-ink/40 mt-1">{description}</div>
+        <div className="text-xs text-ink/60 mt-1">{description}</div>
       </div>
     </div>
   );

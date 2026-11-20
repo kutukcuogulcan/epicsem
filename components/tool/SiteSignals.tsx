@@ -6,7 +6,7 @@ import type { BulkImportRow } from "@/types";
 import type { PageSpeedResult } from "@/lib/pagespeed";
 import { ErrorBlock } from "@/components/ui";
 
-const CAT_TONE: Record<string, string> = { FAST: "bg-seo/10 text-seo", AVERAGE: "bg-warn/10 text-warn", SLOW: "bg-danger/10 text-danger" };
+const CAT_TONE: Record<string, string> = { FAST: "bg-seo/10 text-seo-ink", AVERAGE: "bg-warn/10 text-warn-ink", SLOW: "bg-danger/10 text-danger-ink" };
 const CAT_LABEL: Record<string, string> = { FAST: "İyi", AVERAGE: "Geliştirilmeli", SLOW: "Kötü" };
 
 function fmt(key: string, v: number | null) {
@@ -100,7 +100,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
           <div>
             <div className="text-sm font-medium">Gerçek kullanıcı hızı</div>
-            <div className="text-[11px] text-ink/45">Google Chrome kullanıcılarının son 28 günü · Core Web Vitals</div>
+            <div className="text-[11px] text-ink/60">Google Chrome kullanıcılarının son 28 günü · Core Web Vitals</div>
           </div>
           <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-medium">
             {(["mobile", "desktop"] as const).map((st) => (
@@ -112,51 +112,51 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
         </div>
         <div className="p-5">
           {local ? (
-            <p className="text-sm text-ink/50">Yerel adresler Google tarafından ölçülemez.</p>
+            <p className="text-sm text-ink/60">Yerel adresler Google tarafından ölçülemez.</p>
           ) : !psi && !psiBusy ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="max-w-md text-sm text-ink/55">Ana sayfanın gerçek ziyaretçi hız verisini Google&apos;dan çek: LCP, INP, CLS. Ücretsiz; yaklaşık 20–40 saniye sürer.</p>
+              <p className="max-w-md text-sm text-ink/60">Ana sayfanın gerçek ziyaretçi hız verisini Google&apos;dan çek: LCP, INP, CLS. Ücretsiz; yaklaşık 20–40 saniye sürer.</p>
               <button type="button" onClick={() => measure("mobile")} className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white">
                 Hızı ölç
               </button>
             </div>
           ) : psiBusy ? (
-            <div className="flex items-center gap-2 text-sm text-ink/55">
+            <div className="flex items-center gap-2 text-sm text-ink/60">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
               Google ölçüyor… ({strategy === "mobile" ? "mobil" : "masaüstü"})
             </div>
           ) : psi ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${psi.passed === true ? "bg-seo/10 text-seo" : psi.passed === false ? "bg-danger/10 text-danger" : "bg-muted text-ink/55"}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${psi.passed === true ? "bg-seo/10 text-seo-ink" : psi.passed === false ? "bg-danger/10 text-danger-ink" : "bg-muted text-ink/60"}`}>
                   {psi.passed === true ? "Core Web Vitals: geçti" : psi.passed === false ? "Core Web Vitals: kaldı" : "Yeterli gerçek kullanıcı verisi yok"}
                 </span>
-                <span className="text-[11px] text-ink/45">
+                <span className="text-[11px] text-ink/60">
                   {psi.fieldScope === "url" ? "Bu sayfanın verisi" : psi.fieldScope === "origin" ? "Tüm sitenin verisi (sayfa için yeterli ziyaret yok)" : "Aşağıdaki değerler laboratuvar ölçümü"}
                 </span>
                 {psi.labScore !== null && (
-                  <span className="ml-auto text-xs text-ink/55">
-                    Lighthouse performans: <strong className={psi.labScore >= 90 ? "text-seo" : psi.labScore >= 50 ? "text-warn" : "text-danger"}>{psi.labScore}</strong>
+                  <span className="ml-auto text-xs text-ink/60">
+                    Lighthouse performans: <strong className={psi.labScore >= 90 ? "text-seo-ink" : psi.labScore >= 50 ? "text-warn-ink" : "text-danger-ink"}>{psi.labScore}</strong>
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {psi.metrics.map((m) => (
                   <div key={m.key} className="rounded-xl border border-border p-3">
-                    <div className="text-[10px] leading-3 text-ink/50">{m.label}</div>
+                    <div className="text-[11px] leading-3 text-ink/60">{m.label}</div>
                     <div className="mt-1 text-lg font-medium tabular-nums">{fmt(m.key, m.p75)}</div>
-                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[10px] text-ink/35">hedef {m.good}</span>}
+                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[11px] text-ink/60">hedef {m.good}</span>}
                   </div>
                 ))}
               </div>
               {psi.opportunities.length > 0 && (
                 <div>
-                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/45">En çok kazandıracak düzeltmeler</div>
+                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/60">En çok kazandıracak düzeltmeler</div>
                   <ul className="space-y-1 text-sm">
                     {psi.opportunities.map((o) => (
                       <li key={o.title} className="flex justify-between gap-3">
                         <span className="text-ink/70">{o.title}</span>
-                        <span className="shrink-0 tabular-nums text-ink/45">~{(o.savingsMs / 1000).toFixed(1).replace(".", ",")} sn</span>
+                        <span className="shrink-0 tabular-nums text-ink/60">~{(o.savingsMs / 1000).toFixed(1).replace(".", ",")} sn</span>
                       </li>
                     ))}
                   </ul>
@@ -171,17 +171,17 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
       <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="border-b border-border px-5 py-3">
           <div className="text-sm font-medium">Arama motorlarına bildir</div>
-          <div className="text-[11px] text-ink/45">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>
+          <div className="text-[11px] text-ink/60">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>
         </div>
         <div className="space-y-3 p-5">
           <div className="space-y-1.5 text-sm">
             <div className="flex items-center justify-between">
               <span>IndexNow</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${inReady ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${inReady ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Bing Webmaster</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${bingOk ? "bg-seo/10 text-seo" : "bg-muted text-ink/50"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${bingOk ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
             </div>
           </div>
           {inReady || bingOk ? (
@@ -189,12 +189,12 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
               {sendBusy ? "Gönderiliyor…" : `${indexable.length} indekslenebilir sayfayı bildir`}
             </button>
           ) : (
-            <p className="text-xs leading-5 text-ink/55">
+            <p className="text-xs leading-5 text-ink/60">
               <Link href="/integrations" className="font-medium text-accent">IndexNow&apos;ı kur</Link> (ücretsiz, hesap yok) ya da WordPress&apos;te Epicsem Connector 1.2&apos;yi yükle; yeni sayfalar arama motorlarına anında bildirilsin.
             </p>
           )}
           {sendMsg?.map((m, i) => (
-            <div key={i} className={`rounded-lg px-3 py-2 text-xs ${m.ok ? "bg-seo/5 text-seo" : "bg-danger/5 text-danger"}`}>
+            <div key={i} className={`rounded-lg px-3 py-2 text-xs ${m.ok ? "bg-seo/5 text-seo-ink" : "bg-danger/5 text-danger-ink"}`}>
               {m.text}
             </div>
           ))}

@@ -58,8 +58,8 @@ export default function HeroDashboardPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-danger/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-seo/60" />
-        <span className="ml-2 rounded-md border border-border bg-panel px-2.5 py-0.5 text-[11px] text-ink/40">epicsem.app/dashboard</span>
-        <span className="ml-auto rounded-full bg-warn/10 px-2 py-0.5 text-[10px] font-bold text-warn">Örnek görünüm</span>
+        <span className="ml-2 rounded-md border border-border bg-panel px-2.5 py-0.5 text-[11px] text-ink/60">epicsem.app/dashboard</span>
+        <span className="ml-auto rounded-full bg-warn/10 px-2 py-0.5 text-[11px] font-bold text-warn-ink">Örnek görünüm</span>
       </div>
 
       <div className="grid grid-cols-[150px_1fr] max-md:grid-cols-1">
@@ -70,7 +70,7 @@ export default function HeroDashboardPreview() {
             Epicsem
           </div>
           {MENU.map((m, i) => (
-            <div key={m} className={`rounded-lg px-2.5 py-1.5 text-xs ${i === 0 ? "bg-accent/10 font-bold text-accent" : "text-ink/50"}`}>
+            <div key={m} className={`rounded-lg px-2.5 py-1.5 text-xs ${i === 0 ? "bg-accent/10 font-bold text-accent" : "text-ink/60"}`}>
               {m}
             </div>
           ))}
@@ -80,14 +80,14 @@ export default function HeroDashboardPreview() {
           {/* KPI kartları */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Görünürlük", value: `%${count}`, sub: "+12 puan", tone: "text-seo" },
-              { label: "Share of Voice", value: `%${Math.round(count / 2.1)}`, sub: "4 marka içinde", tone: "text-ink/40" },
-              { label: "Ort. pozisyon", value: "#2,1", sub: "-0,6", tone: "text-seo" },
+              { label: "Görünürlük", value: `%${count}`, sub: "+12 puan", tone: "text-seo-ink" },
+              { label: "Share of Voice", value: `%${Math.round(count / 2.1)}`, sub: "4 marka içinde", tone: "text-ink/60" },
+              { label: "Ort. pozisyon", value: "#2,1", sub: "-0,6", tone: "text-seo-ink" },
             ].map((k) => (
               <div key={k.label} className="rounded-xl border border-border p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-ink/40">{k.label}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60">{k.label}</div>
                 <div className="mt-1 text-xl font-extrabold tabular-nums">{k.value}</div>
-                <div className={`text-[10px] font-semibold ${k.tone}`}>{k.sub}</div>
+                <div className={`text-[11px] font-semibold ${k.tone}`}>{k.sub}</div>
               </div>
             ))}
           </div>
@@ -97,7 +97,7 @@ export default function HeroDashboardPreview() {
             <div className="rounded-xl border border-border p-3">
               <div className="flex items-center justify-between pb-2">
                 <span className="text-xs font-bold">Görünürlük trendi</span>
-                <span className="flex gap-1 text-[10px] text-ink/40">
+                <span className="flex gap-1 text-[11px] text-ink/60">
                   <span className="rounded bg-muted px-1.5 py-0.5 font-bold text-ink">G</span>
                   <span className="px-1.5 py-0.5">H</span>
                   <span className="px-1.5 py-0.5">A</span>
@@ -142,7 +142,7 @@ export default function HeroDashboardPreview() {
                         {r.name}
                       </span>
                       <span className="tabular-nums text-ink/60">
-                        %{r.vis} <span className={r.delta.startsWith("-") ? "text-danger" : "text-seo"}>{r.delta}</span>
+                        %{r.vis} <span className={r.delta.startsWith("-") ? "text-danger-ink" : "text-seo-ink"}>{r.delta}</span>
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">

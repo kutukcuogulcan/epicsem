@@ -14,9 +14,9 @@ import { ENGINE_META } from "@/components/tool/MonitorBits";
 import { STATUS_LABEL, analyzeRun, cleanDomain, writeGapHref, type BrandRef, type CellStatus, type LossAnalysis } from "@/lib/geo-loss";
 
 const CELL: Record<CellStatus, { bg: string; fg: string; chip: string }> = {
-  won: { bg: "bg-seo", fg: "text-white", chip: "bg-seo/10 text-seo" },
-  mentioned: { bg: "bg-seo/25", fg: "text-seo", chip: "bg-seo/10 text-seo" },
-  lost: { bg: "bg-danger/85", fg: "text-white", chip: "bg-danger/10 text-danger" },
+  won: { bg: "bg-seo-ink", fg: "text-white", chip: "bg-seo/10 text-seo-ink" },
+  mentioned: { bg: "bg-seo/15", fg: "text-seo-ink", chip: "bg-seo/10 text-seo-ink" },
+  lost: { bg: "bg-danger-ink", fg: "text-white", chip: "bg-danger/10 text-danger-ink" },
   empty: { bg: "bg-muted", fg: "text-sub", chip: "bg-muted text-sub" },
 };
 
@@ -57,7 +57,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
     <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
         <div>
-          <h3 className="text-sm font-semibold">Motor × prompt haritası</h3>
+          <h2 className="text-sm font-semibold">Motor × prompt haritası</h2>
           <p className="text-xs text-sub">Her kare bir AI cevabı. Kırmızıya tıkla: neden kaybettin, ne yazmalısın.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-sub">
@@ -121,7 +121,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                       Yazıyı yaz
                     </Link>
                   ) : (
-                    <span className="text-xs text-seo">Kazanıyorsun</span>
+                    <span className="text-xs text-seo-ink">Kazanıyorsun</span>
                   )}
                 </td>
               </tr>
@@ -160,7 +160,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
               <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${CELL[open.a.status].chip}`}>{STATUS_LABEL[open.a.status]}</span>
               {open.a.ownRank && <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Sıran: {open.a.ownRank}.</span>}
               {open.a.rivals.map((r) => (
-                <span key={r.name} className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">
+                <span key={r.name} className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">
                   {r.rank}. {r.name}
                 </span>
               ))}
@@ -168,7 +168,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
             </div>
 
             <section>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-sub">{open.a.status === "won" ? "Neden kazandın" : "Neden kaybettin"}</h4>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-sub">{open.a.status === "won" ? "Neden kazandın" : "Neden kaybettin"}</h3>
               <ul className="mt-2 space-y-1.5">
                 {open.a.reasons.map((x) => (
                   <li key={x} className="flex gap-2 text-[13px]">
@@ -180,7 +180,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
             </section>
 
             <section className="rounded-xl bg-accent/[0.06] p-4">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-accent">Ne yapmalı</h4>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-accent">Ne yapmalı</h3>
               <p className="mt-1 text-[13px]">{open.a.fix}</p>
               {open.a.status !== "won" && (
                 <>
@@ -203,10 +203,10 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
 
             {open.a.sources.length > 0 && (
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-sub">AI&apos;ın baktığı kaynaklar</h4>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-sub">AI&apos;ın baktığı kaynaklar</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {open.run.citations.slice(0, 12).map((c, i) => (
-                    <a key={c.url + i} href={c.url} target="_blank" rel="noopener noreferrer" className={`max-w-full truncate rounded-md px-2 py-1 text-xs hover:underline ${c.isOwnDomain ? "bg-accent/10 text-accent" : open.a.rivalCited.includes(cleanDomain(c.domain || c.url)) ? "bg-danger/10 text-danger" : "bg-muted text-ink/70"}`}>
+                    <a key={c.url + i} href={c.url} target="_blank" rel="noopener noreferrer" className={`max-w-full truncate rounded-md px-2 py-1 text-xs hover:underline ${c.isOwnDomain ? "bg-accent/10 text-accent" : open.a.rivalCited.includes(cleanDomain(c.domain || c.url)) ? "bg-danger/10 text-danger-ink" : "bg-muted text-ink/70"}`}>
                       {c.domain || c.url}
                     </a>
                   ))}
