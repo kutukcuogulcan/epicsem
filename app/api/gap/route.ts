@@ -9,7 +9,7 @@ import { buildContentBriefs } from "@/lib/content-brief";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
 
@@ -47,18 +47,26 @@ export async function POST(req: NextRequest) {
 
   const plannedQueries = prompts.length * configuredEngines(engines as EngineId[]).length;
   if (!demoMode) {
-    const quota = await checkQuota(user.id, "engineQueries", plannedQueries);
+    const quota = await reserveQuota(user.id, "engineQueries", plannedQueries);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, plannedQueries) }, { status: 402 });
     }
   }
 
-  const [allRunsNested, audits] = await Promise.all([
-    Promise.all(prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))),
-    auditPagesForGap(pageUrls),
-  ]);
+  let allRunsNested: Awaited<ReturnType<typeof runPromptAcrossEngines>>[];
+  let audits: Awaited<ReturnType<typeof auditPagesForGap>>;
+  try {
+    [allRunsNested, audits] = await Promise.all([
+      Promise.all(prompts.map((p) => runPromptAcrossEngines(p, brand, competitors, engines as EngineId[]))),
+      auditPagesForGap(pageUrls),
+    ]);
+  } catch (e) {
+    if (!demoMode) await refundQuota(user.id, "engineQueries", plannedQueries);
+    throw e;
+  }
   const allRuns = allRunsNested.flat();
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", allRuns.length); // sadece gerçekten cevap gelen sorgular
+  // Kota işten önce ayrıldı; yalnızca gerçekten cevap gelen sorgular sayılır.
+  if (!demoMode) await refundQuota(user.id, "engineQueries", plannedQueries - allRuns.length);
 
   const allBrands = [brand, ...competitors];
   const summaries = computeShareOfVoice(summarizeVisibility(allRuns, allBrands))

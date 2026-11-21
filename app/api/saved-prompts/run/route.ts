@@ -7,7 +7,7 @@ import { getSavedPrompt, updateSavedPromptResult } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { checkQuota, consumeQuota, quotaExceededMessage } from "@/lib/usage-guard";
+import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 const bodySchema = z.object({
   id: z.number(),
@@ -44,20 +44,22 @@ export async function POST(req: NextRequest) {
   const engines = parsed.engines as EngineId[];
   const demoMode = isDemoMode();
   if (!demoMode) {
-    const quota = await checkQuota(user.id, "engineQueries", configuredEngines(engines).length);
+    const quota = await reserveQuota(user.id, "engineQueries", configuredEngines(engines).length);
     if (!quota.allowed) {
       return NextResponse.json({ error: quotaExceededMessage("engineQueries", quota, configuredEngines(engines).length) }, { status: 402 });
     }
   }
 
-  const runs = await runPromptAcrossEngines(
-    prompt.promptText,
-    { name: prompt.brandName, domain: prompt.brandDomain },
-    prompt.competitors,
-    engines,
-    prompt.topic
-  );
-  if (!demoMode) await consumeQuota(user.id, "engineQueries", runs.length);
+  const planned = configuredEngines(engines).length;
+  let runs: Awaited<ReturnType<typeof runPromptAcrossEngines>>;
+  try {
+    runs = await runPromptAcrossEngines(prompt.promptText, { name: prompt.brandName, domain: prompt.brandDomain }, prompt.competitors, engines, prompt.topic);
+  } catch (e) {
+    if (!demoMode) await refundQuota(user.id, "engineQueries", planned);
+    throw e;
+  }
+  // Kota işten önce ayrıldı (paralel istekler limiti aşamasın); cevap gelmeyen sorgular iade edilir.
+  if (!demoMode) await refundQuota(user.id, "engineQueries", planned - runs.length);
 
   const mentionedCount = runs.filter((r) => r.mentioned).length;
   const visibility = Math.round((mentionedCount / runs.length) * 100);
