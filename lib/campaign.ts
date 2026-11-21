@@ -22,6 +22,8 @@ import { fetchFeed, matchesFilter } from "./rss";
 import { checkQuota, consumeQuota } from "./usage-guard";
 import type { GeneratedArticle } from "@/types";
 import { getActiveProject, projectContextBlock } from "@/lib/project-context";
+import { computeNextRun, frequencyDays, isCampaignDue } from "./campaign-schedule";
+export { computeNextRun, frequencyDays, isCampaignDue };
 
 /**
  * Autoblog — "kur ve unut" içerik üretimi. Üç konu kaynağı:
@@ -32,22 +34,6 @@ import { getActiveProject, projectContextBlock } from "@/lib/project-context";
  * her çıktı Content Studio'da gözden geçirilecek bir taslaktır. AI yalnızca makale yazarken
  * kullanılır; konu seçimi, besleme okuma ve zamanlama tamamen kural tabanlıdır.
  */
-
-const FREQUENCY_DAYS: Record<Campaign["frequency"], number> = { daily: 1, weekly: 7, monthly: 30 };
-
-export function frequencyDays(f: Campaign["frequency"]): number {
-  return FREQUENCY_DAYS[f] ?? 7;
-}
-
-export function isCampaignDue(campaign: Campaign): boolean {
-  if (campaign.status !== "active") return false;
-  if (campaign.nextRunAt) return Date.now() >= new Date(campaign.nextRunAt).getTime() - 30 * 60 * 1000;
-  if (!campaign.lastRunAt) return true;
-  // 6 saatlik cron penceresi yüzünden "günlük" bir kampanya 24 saati birkaç dakika
-  // kaçırıp bir gün atlamasın diye küçük bir tolerans bırakıyoruz.
-  const dueAt = new Date(campaign.lastRunAt).getTime() + frequencyDays(campaign.frequency) * 864e5 - 30 * 60 * 1000;
-  return Date.now() >= dueAt;
-}
 
 export interface CampaignRunResult {
   campaignId: number;
@@ -64,12 +50,6 @@ interface Topic {
   key: string; // content_drafts.source_url — aynı konunun ikinci kez yazılmasını engeller
   label: string;
   write: (knowledge: string) => Promise<GeneratedArticle>;
-}
-
-/** Bir sonraki çalışma zamanı: sıklık + (varsa) rastgele gecikme. */
-export function computeNextRun(campaign: Campaign, from = Date.now()): Date {
-  const rand = Math.max(0, campaign.options.randomMinutes ?? 0);
-  return new Date(from + frequencyDays(campaign.frequency) * 864e5 + Math.floor(Math.random() * rand) * 60_000);
 }
 
 async function nextTopics(campaign: Campaign, used: Set<string>, count: number): Promise<{ topics: Topic[]; emptyReason: string }> {

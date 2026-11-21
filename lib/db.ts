@@ -3121,6 +3121,8 @@ async function ensureImpact() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`, []);
   await exec(`CREATE INDEX IF NOT EXISTS idx_impact_user_domain ON impact_tracks(user_id, domain)`, []);
+  // Son deneme zamanı (başarılı ya da hatalı): hatalı takip sırayı sonsuza kadar tıkamasın.
+  await exec(`ALTER TABLE impact_tracks ADD COLUMN IF NOT EXISTS last_attempt_at TIMESTAMPTZ`, []);
 }
 
 const rowToImpact = (r: any): ImpactTrack => ({
@@ -3174,11 +3176,23 @@ export async function deleteImpactTrack(userId: number, id: number): Promise<voi
 /** Zamanlayıcı için: işi tamamlanmış, en az 3 gün geçmiş, 3'ten az ölçümü olan ve son ölçümü 3 günden eski takipler. */
 export async function listDueImpactTracks(): Promise<(ImpactTrack & { userId: number })[]> {
   await ensureImpact();
-  const rows = await many<any>(`SELECT * FROM impact_tracks WHERE done_at IS NOT NULL AND done_at < now() - interval '3 days' ORDER BY id LIMIT 200`, []);
-  const now = Date.now();
-  return rows
-    .map((r) => ({ ...rowToImpact(r), userId: r.user_id as number }))
-    .filter((t) => t.checks.length < 3 && (!t.checks.length || now - new Date(t.checks[t.checks.length - 1].at).getTime() > 3 * 86400_000));
+  // Filtre SQL'de (eskiden ilk 200 satır alınıp JS'te süzülüyordu: hatalı eski takipler yenileri hiç ölçtürmüyordu).
+  const rows = await many<any>(
+    `SELECT * FROM impact_tracks
+      WHERE done_at IS NOT NULL AND done_at < now() - interval '3 days'
+        AND jsonb_array_length(checks_json::jsonb) < 3
+        AND (jsonb_array_length(checks_json::jsonb) = 0 OR (checks_json::jsonb -> -1 ->> 'at')::timestamptz < now() - interval '3 days')
+        AND COALESCE(last_attempt_at, 'epoch') < now() - interval '1 day'
+      ORDER BY COALESCE(last_attempt_at, 'epoch'), id
+      LIMIT 50`,
+    []
+  );
+  return rows.map((r) => ({ ...rowToImpact(r), userId: r.user_id as number }));
+}
+
+export async function markImpactAttempt(id: number): Promise<void> {
+  await ensureImpact();
+  await exec(`UPDATE impact_tracks SET last_attempt_at = now() WHERE id = $1`, [id]);
 }
 
 // ---------------- GEO analist raporları (test başına bir kez üretilir, AI maliyeti tekrarlanmaz) ----------------

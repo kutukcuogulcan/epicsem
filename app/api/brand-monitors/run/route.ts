@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
-import { getLatestGeoRunFull, listDueImpactTracks, listDueMonitorSchedules, markMonitorRun, updateImpactTrack } from "@/lib/db";
+import { getLatestGeoRunFull, listDueImpactTracks, markImpactAttempt, listDueMonitorSchedules, markMonitorRun, updateImpactTrack } from "@/lib/db";
 import { getActiveProject } from "@/lib/project-context";
 import { measureImpact } from "@/lib/impact";
 import { rootHost } from "@/lib/backlinks";
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     // Etki ölçümleri: işi tamamlanmış takipleri 3 gün arayla en fazla 3 kez yeniden ölç.
     const impacts = [];
     for (const t of (await listDueImpactTracks().catch(() => [])).slice(0, 10)) {
+      await markImpactAttempt(t.id).catch(() => {}); // hata da olsa sıranın sonuna geçsin
       try {
         const p = await getActiveProject(t.userId, t.domain);
         if (!p) continue;
