@@ -3180,3 +3180,32 @@ export async function listDueImpactTracks(): Promise<(ImpactTrack & { userId: nu
     .map((r) => ({ ...rowToImpact(r), userId: r.user_id as number }))
     .filter((t) => t.checks.length < 3 && (!t.checks.length || now - new Date(t.checks[t.checks.length - 1].at).getTime() > 3 * 86400_000));
 }
+
+// ---------------- GEO analist raporları (test başına bir kez üretilir, AI maliyeti tekrarlanmaz) ----------------
+
+async function ensureGeoOpportunities() {
+  await ensureSchema();
+  await exec(`CREATE TABLE IF NOT EXISTS geo_opportunities (
+    user_id INTEGER NOT NULL,
+    brand_domain TEXT NOT NULL,
+    run_at TEXT NOT NULL,
+    report_json TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, brand_domain, run_at)
+  )`, []);
+}
+
+export async function getGeoOpportunities<T>(userId: number, brandDomain: string, runAt: string): Promise<T | null> {
+  await ensureGeoOpportunities();
+  const row = await one<{ report_json: string }>(`SELECT report_json FROM geo_opportunities WHERE user_id = $1 AND brand_domain = $2 AND run_at = $3`, [userId, brandDomain, runAt]);
+  return row ? (JSON.parse(row.report_json) as T) : null;
+}
+
+export async function saveGeoOpportunities(userId: number, brandDomain: string, runAt: string, report: unknown): Promise<void> {
+  await ensureGeoOpportunities();
+  await exec(
+    `INSERT INTO geo_opportunities (user_id, brand_domain, run_at, report_json) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (user_id, brand_domain, run_at) DO UPDATE SET report_json = EXCLUDED.report_json, created_at = now()`,
+    [userId, brandDomain, runAt, JSON.stringify(report)]
+  );
+}

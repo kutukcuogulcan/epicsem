@@ -32,6 +32,9 @@ export interface RunOptions {
 }
 
 const SEARCH_COUNTRY = "TR";
+/** Uygulamalar (ChatGPT/Gemini/Claude arayüzleri) öneri ve ürün sorularında arar; API'de model bazen aramadan cevaplıyor. */
+const SEARCH_HINT =
+  "You are a helpful assistant like the consumer chat app. When a question asks for recommendations, products, companies, prices or anything that may have changed, search the web first and ground your answer in current sources.";
 const uniq = (xs: string[]) => [...new Set(xs.filter((u) => /^https?:\/\//.test(u)))];
 
 export interface LlmProvider {
@@ -92,7 +95,7 @@ class OpenAiProvider implements LlmProvider {
       const r = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({ model, input: prompt, tools: [{ type: "web_search", user_location: { type: "approximate", country: SEARCH_COUNTRY } }] }),
+        body: JSON.stringify({ model, instructions: SEARCH_HINT, input: prompt, tools: [{ type: "web_search", user_location: { type: "approximate", country: SEARCH_COUNTRY } }] }),
       });
       if (!r.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", r.status, await r.text()));
       const d = await r.json();
@@ -204,7 +207,7 @@ class AnthropicProvider implements LlmProvider {
           ...(withTemp && options?.temperature != null ? { temperature: options.temperature } : {}),
           messages: [{ role: "user", content: prompt }],
           // Claude arayüzü gibi web araması açık; temel sürüm bütün güncel modellerde çalışır. Arama başı ücretli.
-          ...(options?.search ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3, user_location: { type: "approximate", country: SEARCH_COUNTRY } }] } : {}),
+          ...(options?.search ? { system: SEARCH_HINT, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3, user_location: { type: "approximate", country: SEARCH_COUNTRY } }] } : {}),
         }),
       });
     let res = await send(!noTemperatureModels.has(model));
@@ -237,7 +240,7 @@ class GoogleProvider implements LlmProvider {
     const { data, model } = await geminiGenerate(
       {
         contents: [{ parts: [{ text: prompt }] }],
-        ...(options?.search ? { tools: [{ google_search: {} }] } : {}),
+        ...(options?.search ? { systemInstruction: { parts: [{ text: SEARCH_HINT }] }, tools: [{ google_search: {} }] } : {}),
         generationConfig: {
           ...(options?.temperature != null ? { temperature: options.temperature } : {}),
           ...(options?.json ? { responseMimeType: "application/json" } : {}),
