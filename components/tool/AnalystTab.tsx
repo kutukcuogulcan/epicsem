@@ -7,6 +7,7 @@ import type { OpportunityReport } from "@/lib/geo-opportunities";
 import type { Opportunity } from "@/lib/opportunity-check";
 import type { ContentBrief } from "@/lib/geo-brief";
 import { briefToWriterLink } from "@/lib/brief-link";
+import type { ChangeReport } from "@/lib/geo-change";
 
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
@@ -23,8 +24,85 @@ const IMPACT: Record<Opportunity["impact"], [string, string]> = {
   low: ["Düşük etki", "bg-muted text-sub"],
 };
 
+const ST: Record<string, string> = { won: "1. sırada", mentioned: "anıldın", lost: "rakip kazandı", empty: "kimse anılmadı" };
+const day = (iso: string) => new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+
+/** Haftalık "ne değişti": son test ~1 hafta önceki (yoksa bir önceki) testle karşılaştırılır (lib/geo-change). */
+function ChangeCard({ domain }: { domain: string }) {
+  const [r, setR] = useState<ChangeReport | null | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`/api/geo/change?domain=${encodeURIComponent(domain)}`)
+      .then((x) => (x.ok ? x.json() : null))
+      .then((d) => setR(d?.report ?? null))
+      .catch(() => setR(null));
+  }, [domain]);
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      const x = await fetch("/api/geo/change", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain }) });
+      const d = await x.json();
+      if (!x.ok) throw new Error(d.error ?? "Özet çıkarılamadı");
+      setR(d.report);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Özet çıkarılamadı");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (r === undefined) return null;
+  const d = r?.diff;
+  return (
+    <Card>
+      <CardHeader
+        title="Ne değişti?"
+        subtitle={r?.from ? `${day(r.from)} testi → ${day(r.to)} testi · ${d?.compared ?? 0} aynı soru × motor cevabı karşılaştırıldı` : "Son testi yaklaşık bir hafta önceki testle karşılaştırır. Değişiklik varsa 1 AI sorgusu."}
+        action={<button type="button" onClick={run} disabled={busy} className={r ? BTN2 : BTN1}>{busy ? "Karşılaştırılıyor…" : r ? "Yeniden karşılaştır" : "Karşılaştır"}</button>}
+      />
+      <ErrorBlock message={error} />
+      {r?.status === "no-baseline" && <p className="text-sm text-sub">Karşılaştıracak daha eski bir test yok. Marka Monitörleri&apos;nden otomatik ölçümü açınca her hafta burada değişimi görürsün.</p>}
+      {r?.status === "no-change" && <p className="text-sm text-sub">İki test arasında aynı sorularda değişiklik yok.</p>}
+      {r?.status === "ready" && d && (
+        <div className="space-y-3 text-[13px]">
+          <div className="text-sm">
+            Görünürlük <span className="font-semibold">%{Math.round(d.visibilityBefore * 100)} → %{Math.round(d.visibilityAfter * 100)}</span>
+            {d.gained.length > 0 && <span className="ml-3 text-seo-ink">↑ {d.gained.length} kazanılan</span>}
+            {d.lost.length > 0 && <span className="ml-3 text-danger-ink">↓ {d.lost.length} kaybedilen</span>}
+          </div>
+          <ul className="space-y-1">{r.narrative.map((t) => <li key={t}>{t}</li>)}</ul>
+          {(d.gained.length > 0 || d.lost.length > 0) && (
+            <ul className="space-y-0.5 text-sub">
+              {d.gained.slice(0, 5).map((g) => <li key={g.prompt + g.engine}><span className="text-seo-ink">↑</span> &ldquo;{g.prompt}&rdquo; · {g.engine}: {ST[g.from]} → {ST[g.to]}</li>)}
+              {d.lost.slice(0, 5).map((l) => <li key={l.prompt + l.engine}><span className="text-danger-ink">↓</span> &ldquo;{l.prompt}&rdquo; · {l.engine}: {ST[l.from]} → {ST[l.to]}</li>)}
+            </ul>
+          )}
+          {d.rivals.length > 0 && <p className="text-sub">Rakip hareketi: {d.rivals.slice(0, 4).map((x) => `${x.name} ${x.before} → ${x.after} cevap`).join(" · ")}</p>}
+          {d.newSources.length > 0 && <p className="text-sub">AI&apos;ın yeni gösterdiği kaynaklar: {d.newSources.slice(0, 6).join(", ")}</p>}
+          {r.actions.length > 0 && (
+            <div className="rounded-xl bg-accent/5 px-4 py-3">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">Şimdi ne yapmalı</div>
+              <ul className="space-y-1">{r.actions.map((a) => <li key={a}>{a}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /** GEO analisti: son testin gerçek cevaplarından öncelikli fırsatlar (lib/geo-opportunities). */
-export default function AnalystTab({ domain, brand }: { domain: string; brand: string }) {
+export default function AnalystTab(props: { domain: string; brand: string }) {
+  return (
+    <div className="space-y-3">
+      <ChangeCard domain={props.domain} />
+      <Opportunities {...props} />
+    </div>
+  );
+}
+
+function Opportunities({ domain, brand }: { domain: string; brand: string }) {
   const [report, setReport] = useState<OpportunityReport | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -3209,3 +3209,15 @@ export async function saveGeoOpportunities(userId: number, brandDomain: string, 
     [userId, brandDomain, runAt, JSON.stringify(report)]
   );
 }
+
+/** "Ne değişti" için kıyas testi: en az 6 gün önceki en yeni test; yoksa bundan önceki son test. */
+export async function getGeoRunForCompare(userId: number, brandDomain: string, beforeIso: string): Promise<{ createdAt: string; runs: GeoRunResult[] } | null> {
+  await ensureSchema();
+  const row = await one<any>(
+    `SELECT created_at, runs_json FROM geo_runs
+      WHERE user_id = $1 AND brand_domain = $2 AND runs_json IS NOT NULL AND created_at < $3::timestamptz
+      ORDER BY (created_at <= $3::timestamptz - interval '6 days') DESC, created_at DESC LIMIT 1`,
+    [userId, brandDomain, beforeIso]
+  );
+  return row ? { createdAt: toIso(row.created_at), runs: JSON.parse(row.runs_json || "[]") } : null;
+}
