@@ -5,7 +5,7 @@
  * silinirse Render'daki orijinal değere dönülür.
  */
 import { getAppOwnerId, getIntegration } from "@/lib/db";
-import { resetAnthropicModelCache } from "@/lib/geo-providers";
+import { resetAnthropicModelCache, resetOpenAiModelCache } from "@/lib/geo-providers";
 
 export const AI_KEY_ENV: Record<string, string> = {
   anthropic: "ANTHROPIC_API_KEY",
@@ -28,6 +28,7 @@ export async function applyAiKeys(): Promise<void> {
     captured = true;
   }
   const before = process.env.ANTHROPIC_API_KEY;
+  const beforeOpenAi = process.env.OPENAI_API_KEY;
   const owner = await getAppOwnerId();
   for (const [provider, env] of Object.entries(AI_KEY_ENV)) {
     const row = owner ? await getIntegration(owner, provider) : null;
@@ -37,4 +38,5 @@ export async function applyAiKeys(): Promise<void> {
     else delete process.env[env];
   }
   if (process.env.ANTHROPIC_API_KEY !== before) resetAnthropicModelCache();
+  if (process.env.OPENAI_API_KEY !== beforeOpenAi) resetOpenAiModelCache();
 }

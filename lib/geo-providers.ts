@@ -53,14 +53,40 @@ export const FAST_MODEL: Partial<Record<EngineId, string>> = {
 };
 
 /** OpenAI — powers ChatGPT's answers and (with search-enabled models) live citations. */
+/**
+ * ChatGPT modeli: OPENAI_MODEL tanımlıysa o; yoksa anahtarın erişebildiği en yeni genel GPT modeli
+ * (GET /v1/models, en yeni "created"). Sabit "gpt-4o" emekliye ayrılınca GEO ölçümü bozulmasın diye.
+ */
+let openAiModelCache: string | null = null;
+export function resetOpenAiModelCache() {
+  openAiModelCache = null;
+}
+async function resolveOpenAiModel(): Promise<string> {
+  if (process.env.OPENAI_MODEL) return process.env.OPENAI_MODEL;
+  if (openAiModelCache) return openAiModelCache;
+  try {
+    const res = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, signal: AbortSignal.timeout(10_000) });
+    if (res.ok) {
+      const list: { id: string; created?: number }[] = (await res.json()).data ?? [];
+      const pick = list
+        .filter((m) => /^gpt-\d/.test(m.id) && !/mini|nano|audio|realtime|search|transcribe|tts|image|instruct|codex|oss|\d{4}-\d{2}-\d{2}/.test(m.id))
+        .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0]?.id;
+      if (pick) return (openAiModelCache = pick);
+    }
+  } catch {
+    // düş
+  }
+  return "gpt-4o";
+}
+
 class OpenAiProvider implements LlmProvider {
   engine: EngineId = "openai";
-  defaultModel = "gpt-4o";
+  defaultModel = "ChatGPT (en yeni GPT)";
   isConfigured() {
     return Boolean(process.env.OPENAI_API_KEY);
   }
   async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
-    const model = options?.model ?? this.defaultModel;
+    const model = !options?.model || options.model === this.defaultModel ? await resolveOpenAiModel() : options.model;
     if (options?.search) {
       // ChatGPT arayüzü gibi: Responses API + web_search aracı (eski *-search-preview modelleri kapatıldı).
       const r = await fetch("https://api.openai.com/v1/responses", {
@@ -75,20 +101,30 @@ class OpenAiProvider implements LlmProvider {
       const sources = uniq(parts.flatMap((c: any) => (Array.isArray(c?.annotations) ? c.annotations : [])).filter((a: any) => a?.type === "url_citation").map((a: any) => String(a.url ?? "")));
       return { text, model, sources, truncated: d.status === "incomplete" };
     }
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: options?.temperature ?? 0.4,
-        ...(options?.json ? { response_format: { type: "json_object" } } : {}),
-        ...(options?.maxTokens ? { max_tokens: Math.min(16000, options.maxTokens) } : {}),
-      }),
-    });
+    // Yeni GPT (akıl yürüten) modelleri `temperature` kabul etmiyor; bir kez reddeden modele bir daha gönderilmez.
+    const send = (withTemp: boolean) =>
+      fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          ...(withTemp ? { temperature: options?.temperature ?? 0.4 } : {}),
+          ...(options?.json ? { response_format: { type: "json_object" } } : {}),
+          // max_tokens yeni modellerde reddediliyor; max_completion_tokens eski modellerde de geçerli.
+          ...(options?.maxTokens ? { max_completion_tokens: Math.min(16000, options.maxTokens) } : {}),
+        }),
+      });
+    let res = await send(!noTemperatureModels.has(model));
+    if (res.status === 400) {
+      const body = await res.text();
+      if (!/temperature/i.test(body)) throw new Error(friendlyApiError("ChatGPT (OpenAI)", 400, body));
+      noTemperatureModels.add(model);
+      res = await send(false);
+    }
     if (!res.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", res.status, await res.text()));
     const data = await res.json();
     return { text: data.choices?.[0]?.message?.content ?? "", model, truncated: data.choices?.[0]?.finish_reason === "length" };
