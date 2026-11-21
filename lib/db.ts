@@ -1818,60 +1818,6 @@ export async function tryIncrementUsage(userId: number, metric: string, amount: 
   return row ? row.count : null;
 }
 
-// ---------------- billing (Stripe) ----------------
-
-export interface BillingInfo {
-  plan: string;
-  email: string;
-  stripeCustomerId: string | null;
-  subscriptionStatus: string | null;
-  currentPeriodEnd: string | null;
-}
-
-export async function getBillingInfo(userId: number): Promise<BillingInfo | null> {
-  await ensureSchema();
-  const row = await one<any>(
-    `SELECT plan, email, stripe_customer_id, subscription_status, current_period_end FROM users WHERE id = $1`,
-    [userId]
-  );
-  if (!row) return null;
-  return {
-    plan: row.plan ?? "free",
-    email: row.email,
-    stripeCustomerId: row.stripe_customer_id ?? null,
-    subscriptionStatus: row.subscription_status ?? null,
-    currentPeriodEnd: row.current_period_end ? new Date(row.current_period_end).toISOString() : null,
-  };
-}
-
-export async function setStripeCustomerId(userId: number, customerId: string): Promise<void> {
-  await ensureSchema();
-  await exec(`UPDATE users SET stripe_customer_id = $2 WHERE id = $1`, [userId, customerId]);
-}
-
-/**
- * Applied by the webhook. Matches on stripe_customer_id first, then falls back to the
- * user id carried in Stripe metadata (first checkout, before the id was stored).
- */
-export async function applySubscriptionState(opts: {
-  customerId: string;
-  userId?: number | null;
-  plan: string;
-  subscriptionId: string | null;
-  status: string | null;
-  currentPeriodEnd: Date | null;
-}): Promise<number> {
-  await ensureSchema();
-  const res = await getPool().query(
-    `UPDATE users
-        SET plan = $3, stripe_subscription_id = $4, subscription_status = $5, current_period_end = $6,
-            stripe_customer_id = COALESCE(stripe_customer_id, $1)
-      WHERE stripe_customer_id = $1 OR ($2::int IS NOT NULL AND id = $2::int)`,
-    [opts.customerId, opts.userId ?? null, opts.plan, opts.subscriptionId, opts.status, opts.currentPeriodEnd]
-  );
-  return res.rowCount ?? 0;
-}
-
 // ---------------- campaigns (automatic, grounded content generation) ----------------
 
 export type CampaignFrequency = "daily" | "weekly" | "monthly";

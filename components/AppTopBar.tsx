@@ -33,7 +33,6 @@ export default function AppTopBar() {
       <div className="hidden md:flex h-14 items-center justify-end gap-6 border-b border-border bg-panel px-6 text-sm">
         <Link href="/#nasil-calisir" className="text-ink/60 hover:text-ink">Nasıl çalışır</Link>
         <Link href="/#tum-araclar" className="text-ink/60 hover:text-ink">Araçlar</Link>
-        <Link href="/pricing" className="text-ink/60 hover:text-ink">Fiyatlar</Link>
         <Link href="/login" className="font-medium text-ink/80 hover:text-ink">Giriş yap</Link>
         <Link href="/login?mode=signup" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-medium hover:opacity-90">
           Ücretsiz başla
@@ -50,7 +49,7 @@ export default function AppTopBar() {
   return (
     <div className="hidden md:flex h-14 items-center justify-end gap-4 border-b border-border bg-panel px-6">
       {u.demoMode && <span className="badge badge-warning">Demo modu</span>}
-      <Link href="/billing" className="flex items-center gap-3 group" title="Bu ayki AI motor sorgusu kullanımı">
+      <div className="flex items-center gap-3" title="Bu ayki AI motor sorgusu kullanımı (her ayın başında sıfırlanır)">
         <div className="text-right leading-tight">
           <div className="text-[11px] text-ink/60">AI motor sorgusu</div>
           <div className="text-xs font-medium text-ink/80">
@@ -60,13 +59,7 @@ export default function AppTopBar() {
         <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
           <div className={`h-full ${barTone}`} style={{ width: `${pct}%` }} />
         </div>
-      </Link>
-      <span className="pill-outline">{u.planLabel ?? u.plan}</span>
-      {u.plan !== "agency" && (
-        <Link href="/billing" className="rounded-lg bg-accent text-white px-3.5 py-1.5 text-xs font-medium hover:opacity-90">
-          Yükselt
-        </Link>
-      )}
+      </div>
     </div>
   );
 }

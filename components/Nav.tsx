@@ -72,7 +72,6 @@ export default async function Nav() {
           </div>
           <Link href="/dashboard" className="hover:text-accent transition-colors">Panel</Link>
           <Link href="/ai-gorunurluk-testi" className="hover:text-accent transition-colors">Ücretsiz AI testi</Link>
-          <Link href="/pricing" className="hover:text-accent transition-colors">Fiyatlandırma</Link>
           <Link href="/#nasil-calisir" className="hover:text-accent transition-colors">Nasıl çalışır</Link>
         </nav>
 

@@ -31,7 +31,7 @@ const FEATURE_PAGES = [
   ...["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek"].map((e) => `/ai-tracker/${e}`),
 ];
 
-const OTHER_PAGES = ["/", "/pricing", "/privacy", "/terms"];
+const OTHER_PAGES = ["/", "/privacy", "/terms"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

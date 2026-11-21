@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 /**
@@ -48,16 +47,9 @@ export default function QuotaWatcher() {
         <h2 className="text-lg font-extrabold">Limitine ulaştın</h2>
         <p className="text-sm text-ink/60">{message}</p>
         <div className="flex gap-3 pt-1">
-          <button onClick={() => setMessage(null)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-ink/70 hover:bg-muted">
-            Kapat
+          <button onClick={() => setMessage(null)} className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white hover:opacity-90">
+            Tamam
           </button>
-          <Link
-            href="/billing"
-            onClick={() => setMessage(null)}
-            className="flex-1 text-center rounded-lg bg-accent text-white px-4 py-2.5 text-sm font-bold hover:opacity-90"
-          >
-            Planı yükselt
-          </Link>
         </div>
       </div>
     </div>

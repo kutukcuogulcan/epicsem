@@ -1,14 +1,8 @@
 /**
  * Plans + usage limits. Enforcement lives in lib/usage-guard.ts (unchanged call sites);
- * paid plans are sold through Stripe (lib/stripe.ts). The Stripe webhook
- * (app/api/stripe/webhook) is the ONLY thing that ever moves `users.plan` off "free".
+ * Ödeme yok (Stripe kaldırıldı): plan yalnızca kota sınırı içindir; users.plan elle değiştirilir.
  *
- * Prices are NOT hard-coded here — each paid plan points at a Stripe Price id from env
- * (STRIPE_PRICE_PRO / STRIPE_PRICE_AGENCY) and the amount shown in the UI is read from
- * Stripe itself, so the number on /pricing can never drift from what's actually charged.
- *
- * NOTE: the pro/agency limit numbers below are starting values — adjust to the real
- * offer before launch.
+ * Bir kullanıcıya daha yüksek kota vermek için: UPDATE users SET plan = 'pro' (ya da 'agency') WHERE email = '…'.
  */
 
 export type PlanId = "free" | "pro" | "agency";
