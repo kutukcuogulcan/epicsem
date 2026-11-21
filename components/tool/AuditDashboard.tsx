@@ -13,6 +13,7 @@ import { buildAuditFixPrompt } from "@/lib/claude-code-prompt";
 import type { PageSpeedResult } from "@/lib/pagespeed";
 import type { AiFixResult } from "@/app/api/audit/ai-fix/route";
 import { insightFor, overallGainFor, overallLosses, pillarScores, quickWins, type IssueInsight, type Pillar } from "@/lib/audit-insights";
+import AuditAgentPanel from "@/components/tool/AuditAgentPanel";
 
 export interface AuditHistoryPoint {
   score: number;
@@ -532,6 +533,8 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           </button>
         </div>
       )}
+
+      <AuditAgentPanel url={result.url} />
 
       <Drawer isOpen={aiOpen} onClose={() => setAiOpen(false)} eyebrow="Yapay zekâ düzeltmeleri" title={result.url.replace(/^https?:\/\/(www\.)?/, "")} subtitle="Sayfanın kendi içeriğinden yazıldı. Kontrol et, kopyala, sitene yapıştır." size="xl">
         <div className="space-y-5 text-[13px]">
