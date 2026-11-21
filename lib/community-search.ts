@@ -48,7 +48,7 @@ const siteOf = (u: string): CommunitySiteId | null => {
 };
 
 /** Google yönlendirme bağlantısını gerçek adrese çözer (sayfayı indirmeden). */
-async function resolveRedirect(u: string): Promise<string | null> {
+export async function resolveRedirect(u: string): Promise<string | null> {
   if (!/vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/.test(u)) return u;
   try {
     const r = await fetch(u, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(8000) });

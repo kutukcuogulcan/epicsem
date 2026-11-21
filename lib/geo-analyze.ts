@@ -73,7 +73,7 @@ function extractCapitalizedPhrases(text: string): string[] {
   return Array.from(new Set(matches));
 }
 
-function extractCitations(text: string, brandDomain: string): { url: string; domain: string; isOwnDomain: boolean }[] {
+export function extractCitations(text: string, brandDomain: string): { url: string; domain: string; isOwnDomain: boolean }[] {
   const urlRegex = /https?:\/\/[^\s)\]]+/g;
   const found = text.match(urlRegex) ?? [];
   const seen = new Set<string>();

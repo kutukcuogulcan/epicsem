@@ -1,11 +1,14 @@
 import type { EngineId } from "@/types";
 import { geminiGenerate } from "@/lib/gemini";
+import { resolveRedirect } from "@/lib/community-search";
 
 export interface ProviderResponse {
   text: string;
   model: string;
   /** Model çıktı token sınırına takıldı (OpenAI finish_reason=length, Claude stop_reason=max_tokens, Gemini MAX_TOKENS). */
   truncated?: boolean;
+  /** Cevabın web aramasıyla gösterdiği gerçek kaynak adresleri (search: true iken). */
+  sources?: string[];
 }
 
 /** Optional per-call overrides — used by generation-only call sites (topic/prompt
@@ -20,7 +23,16 @@ export interface RunOptions {
   json?: boolean;
   /** Uzun yapılandırılmış çıktılar için çıktı token sınırı. */
   maxTokens?: number;
+  /**
+   * GEO ölçümü: motoru kullanıcının gördüğü gibi web araması AÇIK çalıştır (ChatGPT/Gemini/Claude
+   * arayüzleri güncel bilgi için arar ve kaynak gösterir). Desteklemeyen sağlayıcı yok sayar.
+   * shortcut: konum her zaman TR; proje ülkesine göre ayarlanmalı (çok ülkeli müşteri gelince).
+   */
+  search?: boolean;
 }
+
+const SEARCH_COUNTRY = "TR";
+const uniq = (xs: string[]) => [...new Set(xs.filter((u) => /^https?:\/\//.test(u)))];
 
 export interface LlmProvider {
   engine: EngineId;
@@ -49,6 +61,20 @@ class OpenAiProvider implements LlmProvider {
   }
   async run(prompt: string, options?: RunOptions): Promise<ProviderResponse> {
     const model = options?.model ?? this.defaultModel;
+    if (options?.search) {
+      // ChatGPT arayüzü gibi: Responses API + web_search aracı (eski *-search-preview modelleri kapatıldı).
+      const r = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+        body: JSON.stringify({ model, input: prompt, tools: [{ type: "web_search", user_location: { type: "approximate", country: SEARCH_COUNTRY } }] }),
+      });
+      if (!r.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", r.status, await r.text()));
+      const d = await r.json();
+      const parts = (Array.isArray(d.output) ? d.output : []).filter((o: any) => o?.type === "message").flatMap((o: any) => (Array.isArray(o.content) ? o.content : []));
+      const text = parts.filter((c: any) => c?.type === "output_text").map((c: any) => String(c.text ?? "")).join("");
+      const sources = uniq(parts.flatMap((c: any) => (Array.isArray(c?.annotations) ? c.annotations : [])).filter((a: any) => a?.type === "url_citation").map((a: any) => String(a.url ?? "")));
+      return { text, model, sources, truncated: d.status === "incomplete" };
+    }
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -141,6 +167,8 @@ class AnthropicProvider implements LlmProvider {
           max_tokens: options?.maxTokens ?? 4096,
           ...(withTemp && options?.temperature != null ? { temperature: options.temperature } : {}),
           messages: [{ role: "user", content: prompt }],
+          // Claude arayüzü gibi web araması açık; temel sürüm bütün güncel modellerde çalışır. Arama başı ücretli.
+          ...(options?.search ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3, user_location: { type: "approximate", country: SEARCH_COUNTRY } }] } : {}),
         }),
       });
     let res = await send(!noTemperatureModels.has(model));
@@ -153,8 +181,11 @@ class AnthropicProvider implements LlmProvider {
     }
     if (!res.ok) throw new Error(friendlyApiError("Claude", res.status, await res.text()));
     const data = await res.json();
-    const text = Array.isArray(data.content) ? data.content.map((c: { text?: string }) => c.text ?? "").join("") : "";
-    return { text, model, truncated: data.stop_reason === "max_tokens" };
+    const blocks: any[] = Array.isArray(data.content) ? data.content : [];
+    // Yalnızca metin blokları (arama sorgusu / sonuç blokları metne karışmasın); kaynaklar = cevapta alıntılananlar.
+    const text = blocks.filter((c) => c?.type === "text").map((c) => String(c.text ?? "")).join("");
+    const sources = uniq(blocks.flatMap((c) => (Array.isArray(c?.citations) ? c.citations : [])).map((c: any) => String(c?.url ?? "")));
+    return { text, model, truncated: data.stop_reason === "max_tokens", ...(options?.search ? { sources } : {}) };
   }
 }
 
@@ -170,6 +201,7 @@ class GoogleProvider implements LlmProvider {
     const { data, model } = await geminiGenerate(
       {
         contents: [{ parts: [{ text: prompt }] }],
+        ...(options?.search ? { tools: [{ google_search: {} }] } : {}),
         generationConfig: {
           ...(options?.temperature != null ? { temperature: options.temperature } : {}),
           ...(options?.json ? { responseMimeType: "application/json" } : {}),
@@ -179,7 +211,11 @@ class GoogleProvider implements LlmProvider {
       { preferred: options?.model ?? this.defaultModel }
     );
     const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-    return { text, model, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
+    if (!options?.search) return { text, model, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
+    // Google araması kaynakları yönlendirme bağlantısı olarak gelir; gerçek adrese çözülür.
+    const chunks: { web?: { uri?: string } }[] = data.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+    const sources = uniq((await Promise.all(chunks.slice(0, 15).map((c) => resolveRedirect(String(c.web?.uri ?? ""))))).map((u) => u ?? ""));
+    return { text, model, sources, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
   }
 }
 

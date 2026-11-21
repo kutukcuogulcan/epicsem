@@ -10,7 +10,7 @@ import type {
 } from "@/types";
 import { PROVIDERS, isDemoMode } from "./geo-providers";
 import { simulateResponse } from "./geo-demo";
-import { analyzeResponse } from "./geo-analyze";
+import { analyzeResponse, extractCitations } from "./geo-analyze";
 import { brandMentioned, rankTrackedBrands } from "./text-match";
 
 export interface BrandInput {
@@ -52,6 +52,7 @@ export async function runPromptAcrossEngines(
       const provider = PROVIDERS[engineId];
       let text: string;
       let model: string;
+      let sources: string[] = [];
 
       if (demo || !provider.isConfigured()) {
         const sim = simulateResponse(promptText, engineId, brand.name, brand.domain, competitors);
@@ -59,9 +60,10 @@ export async function runPromptAcrossEngines(
         model = sim.model;
       } else {
         try {
-          const res = await provider.run(promptText);
+          const res = await provider.run(promptText, { search: true });
           text = res.text;
           model = res.model;
+          sources = res.sources ?? [];
         } catch (err) {
           // Canlı çağrı başarısızsa bu motor-prompt sonucu atlanır (sahte veri yazılmaz).
           console.error(`[geo] ${engineId} çağrısı başarısız:`, err instanceof Error ? err.message : err);
@@ -70,6 +72,8 @@ export async function runPromptAcrossEngines(
       }
 
       const analyzed = analyzeResponse(text, brand.name, brand.domain, brand.aliases ?? []);
+      // Web aramasının gösterdiği kaynaklar (metinde link olarak geçmese de) kaynak listesine eklenir.
+      for (const c of extractCitations(sources.join("\n"), brand.domain)) if (!analyzed.citations.some((x) => x.url === c.url)) analyzed.citations.push(c);
 
       return {
         engine: engineId,
