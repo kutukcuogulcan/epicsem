@@ -69,8 +69,40 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
           ))}
         </div>
       </div>
-      <p className="px-5 pt-2 text-[11px] text-sub sm:hidden">Diğer motorlar için tabloyu yana kaydır →</p>
-      <div className="mt-3 overflow-x-auto">
+      {/* Telefon: tabloda kareler ekran dışında kalıyordu; her soru altında motor sonuçları etiket olarak. */}
+      <ul className="mt-3 divide-y divide-border border-t border-border sm:hidden">
+        {shown.map((row) => (
+          <li key={row.prompt} className="px-5 py-3">
+            <div className="text-[13px] font-medium">{row.prompt}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {engines.map((e) => {
+                const c = row.cells.get(e);
+                if (!c) return null;
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => {
+                      setShowText(false);
+                      setOpen({ ...c, row });
+                    }}
+                    className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium ${CELL[c.a.status].chip}`}
+                  >
+                    <span className={`h-2.5 w-2.5 rounded-sm ${CELL[c.a.status].bg}`} />
+                    {name(e)}: {c.a.ownRank ? `${c.a.ownRank}. sırada` : c.a.status === "lost" ? `${c.a.rivals[0]?.name ?? "rakip"} kazandı` : STATUS_LABEL[c.a.status]}
+                  </button>
+                );
+              })}
+            </div>
+            {row.lost > 0 && (
+              <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a))} className="mt-2 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white">
+                Yazıyı yaz
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 hidden overflow-x-auto sm:block">
         <table className="w-full min-w-[560px] text-[13px]">
           <thead>
             <tr className="border-y border-border text-xs text-sub">
