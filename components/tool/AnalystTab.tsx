@@ -119,6 +119,15 @@ export default function AnalystTab({ domain, brand }: { domain: string; brand: s
           </div>
           <h3 className="mt-2 text-sm font-semibold">{o.title}</h3>
           <p className="mt-1 text-[13px] text-ink/80">{o.why}</p>
+          {/* İş yapılınca önce/sonra ölçüm (Etki sekmesi; hedef soru ve referans hazır gelir). */}
+          <div className="mt-2">
+            <a
+              href={`/geo?tab=impact&target=${encodeURIComponent(o.prompts[0].text.slice(0, 200))}&title=${encodeURIComponent(o.title.slice(0, 200))}&kind=${o.category === "outreach" || o.category === "social" ? "offpage" : "article"}${o.sources[0]?.urls[0] ? `&ref=${encodeURIComponent(o.sources[0].urls[0].slice(0, 300))}` : ""}`}
+              className="text-xs font-medium text-accent hover:underline"
+            >
+              Etkisini takibe al →
+            </a>
+          </div>
           <div className="mt-3 grid gap-3 text-[13px] md:grid-cols-2">
             <div>
               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sub">İlgili sorular</div>
