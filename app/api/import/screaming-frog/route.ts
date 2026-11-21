@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
     // Panoda siteyle eşleşsin: dosya adı yerine taranan alan adı + kaynak.
     try {
-      const host = new URL(result.rows[0].url).hostname.replace(/^www\./, "");
+      const host = new URL(result.rows[0].url).hostname.replace(/^www\./i, "");
       result.filename = `${host} · Screaming Frog`;
     } catch {}
     let id: number | null = null;

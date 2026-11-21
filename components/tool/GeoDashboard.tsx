@@ -28,7 +28,7 @@ interface HistoryRun {
 }
 
 const PALETTE = ["#4f00ff", "#f79009", "#12b76a", "#ec4899", "#0ea5e9", "#64748b", "#a855f7"];
-const clean = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const clean = (d: string) => d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 const pct = (x: number | null | undefined) => (x == null ? "—" : `%${Math.round(x * 100)}`);
 const num1 = (x: number | null | undefined) => (x == null ? "—" : x.toFixed(1).replace(".", ","));
 

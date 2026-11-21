@@ -24,8 +24,8 @@ interface BrandRef {
 function normalizeDomain(d: string): string {
   return d
     .trim()
-    .replace(/^https?:\/\//, "")
-    .replace(/^www\./, "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
     .replace(/\/.*$/, "")
     .toLowerCase();
 }

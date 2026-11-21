@@ -19,7 +19,7 @@ interface AuditRun {
 
 function host(url: string) {
   try {
-    return new URL(/^https?:\/\//.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, "");
+    return new URL(/^https?:\/\//.test(url) ? url : `https://${url}`).hostname.replace(/^www\./i, "");
   } catch {
     return url;
   }

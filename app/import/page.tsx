@@ -56,7 +56,7 @@ export default function ImportPage() {
     if (!projectReady) return;
     if (project) setUrl(project.domain);
     loadRuns().then((list) => {
-      const host = (x: RunSummary) => x.filename.split(" ")[0].replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+      const host = (x: RunSummary) => x.filename.split(" ")[0].replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
       const pick = project ? list.find((x) => host(x) === project.domain) : list[0];
       if (pick) loadRun(pick.id);
       else {

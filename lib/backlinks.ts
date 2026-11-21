@@ -9,9 +9,9 @@ const T = (ms: number) => AbortSignal.timeout(ms);
 
 export const rootHost = (u: string) => {
   try {
-    return new URL(/^https?:/i.test(u) ? u : `https://${u}`).hostname.replace(/^www\./, "").toLowerCase();
+    return new URL(/^https?:/i.test(u) ? u : `https://${u}`).hostname.replace(/^www\./i, "").toLowerCase();
   } catch {
-    return u.replace(/^https?:\/\//i, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+    return u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
   }
 };
 

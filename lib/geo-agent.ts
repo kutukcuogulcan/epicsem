@@ -30,7 +30,7 @@ export interface AgentReport extends OpportunityReport {
 
 const host = (u: string) => {
   try {
-    return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+    return new URL(u).hostname.toLowerCase().replace(/^www\./i, "");
   } catch {
     return "";
   }

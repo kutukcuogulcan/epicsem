@@ -48,7 +48,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
       .catch(() => setInReady(false));
     fetch("/api/bing")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setBingOk(!!d?.connected && (d.sites ?? []).some((s: { url: string }) => s.url.includes(host.replace(/^www\./, "")))))
+      .then((d) => setBingOk(!!d?.connected && (d.sites ?? []).some((s: { url: string }) => s.url.includes(host.replace(/^www\./i, "")))))
       .catch(() => {});
   }, [host]);
 
@@ -81,7 +81,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
       }
       if (bingOk) {
         const sitesRes = await fetch("/api/bing").then((r) => r.json());
-        const siteUrl = (sitesRes.sites ?? []).find((s: { url: string }) => s.url.includes(host.replace(/^www\./, "")))?.url;
+        const siteUrl = (sitesRes.sites ?? []).find((s: { url: string }) => s.url.includes(host.replace(/^www\./i, "")))?.url;
         if (siteUrl) {
           const r = await fetch("/api/bing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ site: siteUrl, urls: indexable.slice(0, 100) }) });
           const d = await r.json();

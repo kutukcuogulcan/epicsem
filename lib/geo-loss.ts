@@ -41,7 +41,7 @@ export const STATUS_LABEL: Record<CellStatus, string> = {
 };
 
 export const cleanDomain = (d: string) =>
-  d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+  d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 
 const UGC = ["reddit.com", "youtube.com", "quora.com", "medium.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "tiktok.com", "eksisozluk.com", "linkedin.com", "sikayetvar.com", "donanimhaber.com"];
 const MARKET = ["trendyol.com", "hepsiburada.com", "amazon.com.tr", "n11.com", "amazon.com", "akakce.com", "cimri.com"];

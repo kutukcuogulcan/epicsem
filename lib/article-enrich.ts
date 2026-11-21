@@ -66,10 +66,10 @@ export async function researchTopic(topic: string, language = "tr", opts: { bran
   const rivals = (opts.competitors ?? []).filter((c) => c.name || c.domain);
   // Rakibin sitesinden kaynak ya da rakibin adı geçen video, markanın yazısında rakibi öne çıkarır.
   const isRival = (url: string, text: string) => {
-    const h = (() => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })();
+    const h = (() => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./i, ""); } catch { return ""; } })();
     const t = text.toLocaleLowerCase("tr");
     return rivals.some((c) => {
-      const d = c.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+      const d = c.domain.toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
       return (d && h && (h === d || h.endsWith("." + d))) || (c.name.length > 2 && t.includes(c.name.toLocaleLowerCase("tr")));
     });
   };
@@ -211,7 +211,7 @@ export async function sitePagesForLinks(userId: number, site: string, max = 40):
     .filter((p) => p.title || p.h1)
     .map((p) => ({ title: String(p.title || p.h1), url: p.url }));
   if (crawl.length >= 5) return crawl.slice(0, max);
-  const origin = `https://${site.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}`;
+  const origin = `https://${site.replace(/^https?:\/\//i, "").replace(/\/.*$/, "")}`;
   const locs = async (u: string) => {
     try {
       const r = await safeFetch(u, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "EpicsemBot/1.0" } });
@@ -226,12 +226,12 @@ export async function sitePagesForLinks(userId: number, site: string, max = 40):
     const child = urls.filter((u) => /post|page|blog|sayfa|yazi/i.test(u)).slice(0, 2);
     urls = (await Promise.all((child.length ? child : urls.slice(0, 2)).map(locs))).flat();
   }
-  const host = new URL(origin).hostname.replace(/^www\./, "");
+  const host = new URL(origin).hostname.replace(/^www\./i, "");
   const fromSitemap = urls
     .filter((u) => {
       try {
         const x = new URL(u);
-        return x.hostname.replace(/^www\./, "") === host && x.pathname.length > 1 && !/\.(xml|jpg|png|pdf)$/i.test(x.pathname);
+        return x.hostname.replace(/^www\./i, "") === host && x.pathname.length > 1 && !/\.(xml|jpg|png|pdf)$/i.test(x.pathname);
       } catch {
         return false;
       }
@@ -312,7 +312,7 @@ export async function comparisonBrief(brand: { name: string; domain: string }, c
         const href = $(a).attr("href") ?? "";
         if (/fiyat|pricing|paket|ucret|ücret/i.test(`${href} ${$(a).text()}`)) {
           const u = new URL(href, `https://${domain}`);
-          if (u.hostname.replace(/^www\./, "") === domain.replace(/^www\./, "")) return u.toString();
+          if (u.hostname.replace(/^www\./i, "") === domain.replace(/^www\./i, "")) return u.toString();
         }
       }
     } catch {

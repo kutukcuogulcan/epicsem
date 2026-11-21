@@ -7,7 +7,7 @@ import { sitePagesForLinks } from "@/lib/article-enrich";
 export async function GET(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
-  const d = (req.nextUrl.searchParams.get("domain") ?? "").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").trim();
+  const d = (req.nextUrl.searchParams.get("domain") ?? "").replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").trim();
   if (!d) return NextResponse.json({ pages: [] });
   const crawl = await getLatestCrawlPages(user.id, d);
   if (crawl.length >= 5) return NextResponse.json({ pages: crawl });

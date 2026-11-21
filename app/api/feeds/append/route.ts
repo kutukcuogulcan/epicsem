@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
   let feed = p.feedId ? await getFeed(user.id, p.feedId) : null;
   if (!feed) {
-    const host = (p.siteUrl ?? "").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+    const host = (p.siteUrl ?? "").replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
     feed = (await listFeeds(user.id)).find((f) => f.kind === "keyword" && f.name === `GEO fırsatları · ${host}`) ?? null;
     if (!feed) feed = await createFeed(user.id, { kind: "keyword", name: `GEO fırsatları · ${host || "site"}`, config: { siteUrl: host, seeds: [], competitors: [], country: "TR", language: "tr" } });
   }

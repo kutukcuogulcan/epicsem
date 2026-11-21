@@ -32,7 +32,7 @@ const fold = (s: string) =>
     .replace(/[şs]/g, "s")
     .replace(/[üu]/g, "u");
 const toks = (s: string) => [...new Set(fold(s).replace(/[^a-z0-9]+/g, " ").split(" ").filter((w) => w.length > 2 && !STOP.has(w)))];
-const host = (s: string) => s.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const host = (s: string) => s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 
 /** Kelime/kök eşleşmesi: tam ya da ilk 5 harf (Türkçe ekleri tolere eder). */
 function overlap(need: string[], have: string[]): number {

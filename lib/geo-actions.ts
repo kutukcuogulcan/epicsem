@@ -38,7 +38,7 @@ export const ACTION_LABEL: Record<ActionType, string> = {
   sentiment: "Algıyı düzelt",
 };
 
-const clean = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const clean = (d: string) => d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 
 export function buildActionPlan(runs: GeoRunResult[], own: BrandRef, competitors: BrandRef[]): GeoAction[] {
   const ownD = clean(own.domain);

@@ -183,7 +183,7 @@ export function auditImages($: CheerioAPI, origin: string): { issues: SeoIssueRe
 export async function auditLinks($: CheerioAPI, pageUrl: string): Promise<{ issues: SeoIssueResult[]; stats: { internal: number; external: number; checked: number; broken: string[]; redirects: number; outboundCitations: number } }> {
   const issues: SeoIssueResult[] = [];
   const base = new URL(pageUrl);
-  const host = base.hostname.replace(/^www\./, "");
+  const host = base.hostname.replace(/^www\./i, "");
   const internal = new Set<string>();
   const external = new Set<string>();
   let emptyAnchors = 0;
@@ -200,7 +200,7 @@ export async function auditLinks($: CheerioAPI, pageUrl: string): Promise<{ issu
     u.hash = "";
     const txt = $(el).text().trim() || $(el).attr("aria-label") || $(el).find("img").attr("alt") || "";
     if (!txt) emptyAnchors++;
-    if (u.hostname.replace(/^www\./, "") === host) internal.add(u.toString());
+    if (u.hostname.replace(/^www\./i, "") === host) internal.add(u.toString());
     else external.add(u.toString());
   });
   // İçerik alanındaki dış linkler (kaynak gösterme) — nav/footer hariç
@@ -208,7 +208,7 @@ export async function auditLinks($: CheerioAPI, pageUrl: string): Promise<{ issu
     .toArray()
     .filter((el) => {
       try {
-        return new URL($(el).attr("href")!).hostname.replace(/^www\./, "") !== host;
+        return new URL($(el).attr("href")!).hostname.replace(/^www\./i, "") !== host;
       } catch {
         return false;
       }
@@ -298,11 +298,11 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
   const locs = (x: string) => Array.from(x.matchAll(/<loc>\s*(?:<!\[CDATA\[)?\s*([^<\]\s]+)/gi)).map((m) => m[1].trim());
   let urls: string[] = [];
   if (/<sitemapindex/i.test(xml)) {
-    const ch = new URL(origin).hostname.replace(/^www\./, "");
+    const ch = new URL(origin).hostname.replace(/^www\./i, "");
     const children = locs(xml)
       .filter((c) => {
         try {
-          return new URL(c).hostname.replace(/^www\./, "") === ch;
+          return new URL(c).hostname.replace(/^www\./i, "") === ch;
         } catch {
           return false;
         }
@@ -320,10 +320,10 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
   } else urls = locs(xml);
   stats.urls = urls.length;
   // Yalnızca aynı sitenin URL'leri kontrol edilir (başka sunuculara istek atılmaz).
-  const host = new URL(origin).hostname.replace(/^www\./, "");
+  const host = new URL(origin).hostname.replace(/^www\./i, "");
   urls = urls.filter((u) => {
     try {
-      return new URL(u).hostname.replace(/^www\./, "") === host;
+      return new URL(u).hostname.replace(/^www\./i, "") === host;
     } catch {
       return false;
     }

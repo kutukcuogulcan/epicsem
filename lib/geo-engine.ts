@@ -137,7 +137,7 @@ export function summarizeVisibility(
     const positions = hitIdx.map((i) => ranks[i].get(brand.name)!);
     const sentiments = isOwn ? hitIdx.map((i) => runs[i].sentiment).filter((s): s is number => s != null) : [];
     const citationCount = runs.reduce(
-      (sum, r) => sum + r.citations.filter((c) => c.domain === brand.domain.replace(/^www\./, "")).length,
+      (sum, r) => sum + r.citations.filter((c) => c.domain === brand.domain.replace(/^www\./i, "")).length,
       0
     );
 
@@ -185,10 +185,10 @@ const EDITORIAL_HINTS = [
  * more useful default than lumping everything into "Diğer". The spec also calls for a manual
  * override ("Kullanıcı her ikisini de elle değiştirebilir") — not yet built; flagged as pending. */
 export function classifyDomain(domain: string, brandDomain: string, competitorDomains: string[]): SourceDomainType {
-  const clean = domain.replace(/^www\./, "");
-  const own = brandDomain.replace(/^www\./, "");
+  const clean = domain.replace(/^www\./i, "");
+  const own = brandDomain.replace(/^www\./i, "");
   if (clean === own) return "You";
-  if (competitorDomains.some((c) => clean === c.replace(/^www\./, ""))) return "Competitor";
+  if (competitorDomains.some((c) => clean === c.replace(/^www\./i, ""))) return "Competitor";
   if (GOVERNMENT_HINTS.some((g) => clean.endsWith(g))) return "Government";
   if (REFERENCE_HINTS.some((r) => clean.endsWith(r))) return "Reference";
   if (UGC_DOMAINS.some((u) => clean.endsWith(u))) return "UGC";

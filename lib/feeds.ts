@@ -87,7 +87,7 @@ async function competitorTopics(site: string): Promise<string[]> {
 
 function hostOf(u: string): string {
   try {
-    return new URL(normalizeUrl(u)).hostname.replace(/^www\./, "");
+    return new URL(normalizeUrl(u)).hostname.replace(/^www\./i, "");
   } catch {
     return u;
   }

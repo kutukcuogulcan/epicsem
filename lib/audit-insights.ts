@@ -122,7 +122,7 @@ const origin = (u: string) => {
 
 function snippetFor(key: string, r: SeoAuditResult): IssueInsight["snippet"] {
   const o = origin(r.url);
-  const host = o.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  const host = o.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
   const brand = host.split(".")[0].replace(/^./, (c) => c.toLocaleUpperCase("tr"));
   switch (key) {
     case "ai-blocked":

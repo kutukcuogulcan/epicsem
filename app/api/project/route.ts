@@ -15,7 +15,7 @@ import { readableZodError } from "@/lib/zod-error";
  * PATCH { id, name?, domain?, competitors? } → projeyi düzenle
  */
 const COOKIE = "epicsem_project";
-const norm = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const norm = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 
 export interface Project {
   id: number;

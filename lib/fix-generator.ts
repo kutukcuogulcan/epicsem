@@ -42,7 +42,7 @@ export function generateMetaDescription($: CheerioAPI, title: string | null): Ge
 
 export function generateOrganizationSchema(url: string, title: string | null, htmlLang?: string | null): GeneratedFix {
   const parsed = new URL(url);
-  const domain = parsed.hostname.replace(/^www\./, "");
+  const domain = parsed.hostname.replace(/^www\./i, "");
   const name = title ? title.split(/[|\-–—]/)[0].trim() : domain;
   const siteUrl = parsed.origin;
   const isTurkish = (htmlLang ?? "").startsWith("tr");

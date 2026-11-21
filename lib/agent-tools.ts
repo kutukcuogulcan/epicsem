@@ -37,7 +37,7 @@ export function searchResultUrls(messages: readonly { role: string; content?: un
 
 export const hostOf = (u: string) => {
   try {
-    return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+    return new URL(u).hostname.toLowerCase().replace(/^www\./i, "");
   } catch {
     return "";
   }

@@ -59,7 +59,7 @@ function health(r: BulkImportResult) {
   return html.length ? Math.round(((html.length - bad) / html.length) * 100) : 0;
 }
 function ownSummary(geo: { summaries: GeoVisibilitySummary[]; brandName: string }, site: string) {
-  return geo.summaries.find((s) => s.domain.replace(/^www\./, "").includes(site) || site.includes(s.domain.replace(/^www\./, ""))) ?? geo.summaries.find((s) => s.brand === geo.brandName) ?? null;
+  return geo.summaries.find((s) => s.domain.replace(/^www\./i, "").includes(site) || site.includes(s.domain.replace(/^www\./i, ""))) ?? geo.summaries.find((s) => s.brand === geo.brandName) ?? null;
 }
 function rowsWith(r: BulkImportResult, code: string) {
   return r.rows.filter((x) => x.issues.includes(code));
@@ -156,7 +156,7 @@ export async function answer(userId: number, message: string, site: string | nul
     const ahead = me ? ranked.filter((s) => s !== me && s.visibility > me.visibility) : [];
     const weak = [...g.topics].filter((t) => t.totalCount > 0 && t.visibility < 0.67).sort((a, b) => a.visibility - b.visibility).slice(0, 4);
     const prevMe = d.prevGeo ? ownSummary(d.prevGeo, site) : null;
-    const topSources = [...g.sources].filter((s: any) => !String(s.domain ?? "").replace(/^www\./, "").includes(site)).sort((a: any, b: any) => (b.count ?? b.citations ?? 0) - (a.count ?? a.citations ?? 0)).slice(0, 5);
+    const topSources = [...g.sources].filter((s: any) => !String(s.domain ?? "").replace(/^www\./i, "").includes(site)).sort((a: any, b: any) => (b.count ?? b.citations ?? 0) - (a.count ?? a.citations ?? 0)).slice(0, 5);
     const blocks: Block[] = [];
     blocks.push({
       type: "metrics",

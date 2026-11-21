@@ -35,7 +35,7 @@ export function communitySearchAvailable(): boolean {
 const siteOf = (u: string): CommunitySiteId | null => {
   let h: string;
   try {
-    h = new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+    h = new URL(u).hostname.toLowerCase().replace(/^www\./i, "");
   } catch {
     return null;
   }
@@ -90,7 +90,7 @@ export async function titleFor(url: string, site: CommunitySiteId | "other"): Pr
 
 const hostOf = (u: string) => {
   try {
-    return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+    return new URL(u).hostname.toLowerCase().replace(/^www\./i, "");
   } catch {
     return "";
   }

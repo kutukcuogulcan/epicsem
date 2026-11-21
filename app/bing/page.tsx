@@ -32,7 +32,7 @@ export default function BingPage() {
   projectDomainRef.current = project?.domain ?? null;
   useEffect(() => {
     if (!project || !sites.length) return;
-    const host = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+    const host = (u: string) => u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
     const m = sites.find((x) => host(x.url) === project.domain);
     if (m) setSite(m.url);
   }, [project?.domain, sites]);
@@ -55,7 +55,7 @@ export default function BingPage() {
         const list: Site[] = d.sites ?? [];
         setSites(list);
         const want = projectDomainRef.current;
-        const host = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+        const host = (u: string) => u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
         setSite((want && list.find((x) => host(x.url) === want)?.url) || list.find((s) => s.verified)?.url || list[0]?.url || "");
       })
       .catch(() => setConnected(false));
@@ -112,7 +112,7 @@ export default function BingPage() {
           <select value={site} onChange={(e) => setSite(e.target.value)} className="rounded-xl border border-border bg-panel px-3 py-2 text-sm">
             {sites.map((s) => (
               <option key={s.url} value={s.url}>
-                {s.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                {s.url.replace(/^https?:\/\//i, "").replace(/\/$/, "")}
                 {s.verified ? "" : " (doğrulanmamış)"}
               </option>
             ))}

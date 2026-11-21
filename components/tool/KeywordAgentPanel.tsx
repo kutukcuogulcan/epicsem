@@ -74,7 +74,7 @@ export default function KeywordAgentPanel({ seed, ideas }: { seed: string; ideas
                       <ul className="space-y-0.5">
                         {k.topResults.map((t) => (
                           <li key={t.url}>
-                            <a href={t.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">{(() => { try { return new URL(t.url).hostname.replace(/^www\./, ""); } catch { return t.url; } })()}</a>
+                            <a href={t.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">{(() => { try { return new URL(t.url).hostname.replace(/^www\./i, ""); } catch { return t.url; } })()}</a>
                             <span className="text-sub"> · {t.kind}</span>
                           </li>
                         ))}

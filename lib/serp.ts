@@ -31,7 +31,7 @@ export interface SerpResponse {
 
 const host = (u: string) => {
   try {
-    return new URL(u).hostname.replace(/^www\./, "");
+    return new URL(u).hostname.replace(/^www\./i, "");
   } catch {
     return u;
   }
@@ -166,7 +166,7 @@ export async function analyzeSerp(keyword: string, opts: { gl?: string; hl?: str
 /** Bir domainin bir kelimedeki pozisyonu (ilk 100 içinde; yoksa null). */
 export async function rankOf(keyword: string, domain: string, opts: { gl?: string; hl?: string; apiKey?: string | null } = {}): Promise<{ position: number | null; url: string | null; top: SerpResult[]; aiOverview: boolean }> {
   const serp = await googleSerp(keyword, { ...opts, num: 100 });
-  const d = domain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+  const d = domain.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
   const hit = serp.results.find((r) => r.domain === d || r.domain.endsWith(`.${d}`));
   return { position: hit?.position ?? null, url: hit?.link ?? null, top: serp.results.slice(0, 5), aiOverview: serp.aiOverview };
 }

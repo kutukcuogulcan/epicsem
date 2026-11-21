@@ -46,7 +46,7 @@ export async function suggestPageFix(url: string, issues: string[], knowledge = 
   }
 
   const $ = cheerio.load(html);
-  const host = new URL(url).hostname.replace(/^www\./, "");
+  const host = new URL(url).hostname.replace(/^www\./i, "");
   const current = {
     title: $("title").first().text().trim() || null,
     metaDescription: $('meta[name="description" i]').attr("content")?.trim() || null,

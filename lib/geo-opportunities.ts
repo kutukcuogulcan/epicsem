@@ -34,7 +34,7 @@ export function buildEvidence(runs: GeoRunResult[], own: BrandRef, rivals: Brand
       const a = analyzeRun(r, own, rivals);
       if (a.status === "lost" || a.status === "empty") lost++;
       for (const c of r.citations) {
-        const d = (c.domain || "").toLowerCase().replace(/^www\./, "");
+        const d = (c.domain || "").toLowerCase().replace(/^www\./i, "");
         if (!d) continue;
         const e = srcMap.get(d) ?? { count: 0, urls: new Set<string>() };
         e.count++;
@@ -81,7 +81,7 @@ export async function generateOpportunities(userId: number, runAt: string, runs:
   const base = { generatedAt: new Date().toISOString(), runAt, answers: evidence.totalAnswers };
   if (evidence.totalAnswers < MIN_ANSWERS) return { ...base, status: "insufficient-data", summary: [], opportunities: [], risks: [] };
   const parsed = await runSmallAiJson(userId, opportunitiesPrompt(own, rivals, lines, evidence));
-  const ownHost = own.domain.toLowerCase().replace(/^www\./, "");
+  const ownHost = own.domain.toLowerCase().replace(/^www\./i, "");
   const opportunities = validateOpportunities(parsed.opportunities, { ...evidence, sources: evidence.sources.filter((s) => s.domain !== ownHost) });
   const list = (v: unknown, n: number) => (Array.isArray(v) ? v : []).map((x) => noIdx(String(x ?? ""))).filter((x) => x.length > 5).slice(0, n);
   for (const o of opportunities) o.why = noIdx(o.why);

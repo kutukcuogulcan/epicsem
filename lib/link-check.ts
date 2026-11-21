@@ -18,7 +18,7 @@ const LINK = /(?<!!)\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g;
 const norm = (u: string) => u.trim().replace(/#.*$/, "").replace(/\/+$/, "").replace(/^http:/, "https:").replace(/\/\/www\./, "//").toLowerCase();
 const hostOf = (u: string) => {
   try {
-    return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+    return new URL(u).hostname.toLowerCase().replace(/^www\./i, "");
   } catch {
     return "";
   }
@@ -59,7 +59,7 @@ const GENERIC = /^(kaynak|source|link|burada|here|tıkla|bkz\.?)$/i;
 /** Dış kaynak listesi (kendi sitesi hariç); yazıda zaten "Kaynaklar" başlığı varsa eklenmez. */
 export function appendSources(md: string, ownHost: string, language = "tr", labels: Record<string, string> = {}): string {
   if (/^##\s+(Kaynaklar|Sources)\s*$/im.test(md)) return md;
-  const own = ownHost.toLowerCase().replace(/^www\./, "");
+  const own = ownHost.toLowerCase().replace(/^www\./i, "");
   const seen = new Map<string, string>();
   for (const m of md.matchAll(LINK)) {
     const h = hostOf(m[2]);

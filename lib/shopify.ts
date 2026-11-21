@@ -15,7 +15,7 @@ import { safeFetch } from "@/lib/safe-fetch";
 const API_VERSION = "2024-10";
 
 function normalizeShopDomain(input: string): string {
-  let v = input.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  let v = input.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
   if (!v.includes(".")) v = `${v}.myshopify.com`;
   return v;
 }
@@ -54,8 +54,10 @@ function markdownToHtml(markdown: string): string {
   const html: string[] = [];
   let inList = false;
 
+  // Metin HTML olarak mağazaya basılır: önce kaçır (aksi halde yazıdaki <script> vb. doğrudan sayfaya girer).
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function inline(text: string): string {
-    return text
+    return esc(text)
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/(?<!\*)\*(?!\*)(.+?)\*(?!\*)/g, "<em>$1</em>")
       .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');

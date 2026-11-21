@@ -12,7 +12,7 @@ const AGENT_QUERIES = 5;
 
 export const maxDuration = 300;
 
-const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 
 /** GET ?domain= → son test için kayıtlı analist raporu (yoksa null). POST {domain} → üret (1 AI sorgusu) ve kaydet. */
 export async function GET(req: NextRequest) {

@@ -15,6 +15,6 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   const b = await req.json().catch(() => ({}));
   const message = typeof b.message === "string" ? b.message.slice(0, 500) : "";
-  const site = typeof b.site === "string" && b.site.trim() ? b.site.trim().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "") : null;
+  const site = typeof b.site === "string" && b.site.trim() ? b.site.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "") : null;
   return NextResponse.json(await answer(user.id, message, site));
 }

@@ -54,11 +54,11 @@ interface Run {
   createdAt: string;
 }
 
-const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 function path(url: string) {
   try {
     const u = new URL(/^https?:\/\//.test(url) ? url : `https://${url}`);
-    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
+    return `${u.hostname.replace(/^www\./i, "")}${u.pathname === "/" ? "" : u.pathname}`;
   } catch {
     return url;
   }

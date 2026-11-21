@@ -15,7 +15,7 @@ export interface ActiveProject {
   settings: ProjectSettings;
 }
 
-const norm = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const norm = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 
 export async function getActiveProject(userId: number, domain?: string | null): Promise<ActiveProject | null> {
   if (domain) {

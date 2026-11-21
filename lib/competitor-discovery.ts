@@ -236,7 +236,7 @@ export function normalizeHost(raw: string): string | null {
   if (!s) return null;
   try {
     const u = new URL(/^https?:\/\//.test(s) ? s : `https://${s}`);
-    const host = u.hostname.replace(/^www\./, "");
+    const host = u.hostname.replace(/^www\./i, "");
     if (!host.includes(".") || /\s/.test(host)) return null;
     return host;
   } catch {
@@ -274,7 +274,7 @@ export async function verifyDomain(host: string): Promise<{ ok: boolean; finalHo
         const reachable = res.status < 400 || res.status === 401 || res.status === 403 || res.status === 429;
         if (reachable) {
           const final = new URL(res.url || url);
-          return { ok: true, finalHost: final.hostname.replace(/^www\./, ""), origin: final.origin };
+          return { ok: true, finalHost: final.hostname.replace(/^www\./i, ""), origin: final.origin };
         }
         // HEAD'i desteklemeyen sunucular 405/501 döner → aynı URL'i GET ile dene.
         if (method === "HEAD" && (res.status === 405 || res.status === 501 || res.status === 400)) continue;

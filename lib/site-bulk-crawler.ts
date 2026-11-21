@@ -51,7 +51,7 @@ function canon(u: string): string {
 
 function sameSite(u: string, host: string): boolean {
   try {
-    return new URL(u).hostname.replace(/^www\./, "") === host;
+    return new URL(u).hostname.replace(/^www\./i, "") === host;
   } catch {
     return false;
   }
@@ -442,7 +442,7 @@ export async function crawlSiteBulk(input: string, maxPages = 150): Promise<Bulk
   } catch {
     throw new Error("Siteye ulaşılamadı — adresi kontrol edip tekrar dene.");
   }
-  const host = new URL(origin).hostname.replace(/^www\./, "");
+  const host = new URL(origin).hostname.replace(/^www\./i, "");
   const started = Date.now();
 
   const home = canon(`${origin}/`);

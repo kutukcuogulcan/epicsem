@@ -23,7 +23,7 @@ const TYPE_CLS: Partial<Record<AssetType, string>> = {
   case: "bg-muted text-ink/70",
 };
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-const host = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const host = (d: string) => d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 /** Bu kaynaklar site bazında değil konu bazında değerlendirilir (Topluluk fırsatları bölümü). */
 const isCommunity = (d: string) => d === "reddit.com" || d === "news.ycombinator.com" || d.endsWith("wikipedia.org");
 type CSource = CommunityThread["source"];

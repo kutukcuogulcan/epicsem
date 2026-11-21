@@ -4,7 +4,7 @@ import { wpIndexNowKey } from "./wp-apply";
 
 export const hostOf = (u: string) => {
   try {
-    return new URL(u).host.replace(/^www\./, "");
+    return new URL(u).host.replace(/^www\./i, "");
   } catch {
     return "";
   }

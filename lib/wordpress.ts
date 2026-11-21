@@ -55,7 +55,8 @@ export function markdownToHtml(markdown: string): string {
   let table: string[][] | null = null;
   const used = new Map<string, number>();
 
-  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // " de kaçırılır: aksi halde [x](https://a"onmouseover=…) link özelliğine kod sokar.
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function inline(text: string): string {
     return esc(text)
       .replace(/`([^`]+)`/g, "<code>$1</code>")

@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   const owned = await ownershipError(user.id, parsed);
   if (owned) return NextResponse.json({ error: owned }, { status: 400 });
   // Aynı site + aynı kaynak için ikinci autoblog aynı konuları iki kez yazdırır; mevcut olana eklenmeli.
-  const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
   const twin = (await listCampaigns(user.id)).find(
     (c) => host(c.brandDomain) === host(parsed.brandDomain) && c.source === parsed.source && (c.config.feedId ?? null) === (parsed.config.feedId ?? null) && (c.config.rssUrl ?? null) === (parsed.config.rssUrl ?? null)
   );

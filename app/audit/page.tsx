@@ -119,7 +119,7 @@ export default function AuditPage() {
 
   const host = (() => {
     try {
-      return result ? new URL(result.url).hostname.replace(/^www\./, "") : project?.domain ?? "";
+      return result ? new URL(result.url).hostname.replace(/^www\./i, "") : project?.domain ?? "";
     } catch {
       return project?.domain ?? "";
     }

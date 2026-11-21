@@ -51,7 +51,7 @@ const INPUT = "h-10 w-full rounded-[10px] border border-border bg-panel px-3 tex
 const LABEL = "mb-1.5 block text-xs font-medium text-sub";
 const ENGINES = ["anthropic", "openai", "google", "perplexity"];
 const MAX_PROMPTS = 20;
-const host = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const host = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 
 function Dot({ s }: { s: StepStatus | "skip" }) {
   if (s === "ready") return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-seo-ink text-[11px] text-white">✓</span>;

@@ -7,7 +7,7 @@ import { QuotaError } from "@/lib/ai-small";
 
 export const maxDuration = 120;
 
-const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const host = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 // Rapor tablosunu paylaşır; anahtar "change:<son test zamanı>".
 const keyOf = (runAt: string) => `change:${runAt}`;
 

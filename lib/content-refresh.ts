@@ -30,8 +30,8 @@ const normUrl = (u: string) =>
   u
     .trim()
     .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/^www\./, "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
     .replace(/[?#].*$/, "")
     .replace(/\/+$/, "");
 const host = (u: string) => normUrl(u).replace(/\/.*$/, "");

@@ -9,7 +9,7 @@ const T = () => AbortSignal.timeout(12_000);
 
 const hostOf = (u: string) => {
   try {
-    return new URL(/^https?:/.test(u) ? u : `https://${u}`).hostname.replace(/^www\./, "").toLowerCase();
+    return new URL(/^https?:/.test(u) ? u : `https://${u}`).hostname.replace(/^www\./i, "").toLowerCase();
   } catch {
     return "";
   }

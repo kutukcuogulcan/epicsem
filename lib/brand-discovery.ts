@@ -83,9 +83,9 @@ function pickProvider() {
 
 export function domainFromUrl(url: string): string {
   try {
-    return new URL(normalizeUrl(url)).hostname.replace(/^www\./, "");
+    return new URL(normalizeUrl(url)).hostname.replace(/^www\./i, "");
   } catch {
-    return url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+    return url.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
   }
 }
 

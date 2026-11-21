@@ -27,7 +27,7 @@ export const metadata = {
   description: "Aktif projenin özeti: kurulum adımları, AI görünürlüğü, son yazılar ve Autoblog.",
 };
 
-const norm = (d: string) => d.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+const norm = (d: string) => d.toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) : "—");
 const FREQ: Record<string, string> = { daily: "Her gün", weekly: "Haftalık", biweekly: "2 haftada bir", monthly: "Aylık" };
 

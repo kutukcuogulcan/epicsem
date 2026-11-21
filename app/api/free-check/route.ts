@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Geçerli bir site adresi yaz (ör. siteniz.com)." }, { status: 400 });
   }
-  const host = u.hostname.toLowerCase().replace(/^www\./, "");
+  const host = u.hostname.toLowerCase().replace(/^www\./i, "");
   if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host) || u.port) return NextResponse.json({ error: "Yalnızca herkese açık alan adları test edilebilir." }, { status: 400 });
 
   const hit = cache.get(host);

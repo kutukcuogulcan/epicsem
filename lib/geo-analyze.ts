@@ -83,8 +83,8 @@ export function extractCitations(text: string, brandDomain: string): { url: stri
     if (seen.has(cleaned)) continue;
     seen.add(cleaned);
     try {
-      const domain = new URL(cleaned).hostname.replace(/^www\./, "");
-      results.push({ url: cleaned, domain, isOwnDomain: domain === brandDomain.replace(/^www\./, "") });
+      const domain = new URL(cleaned).hostname.replace(/^www\./i, "");
+      results.push({ url: cleaned, domain, isOwnDomain: domain === brandDomain.replace(/^www\./i, "") });
     } catch {
       // skip malformed URL
     }

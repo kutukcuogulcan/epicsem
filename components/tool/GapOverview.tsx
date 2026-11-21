@@ -26,7 +26,7 @@ const V = Object.fromEntries(VERDICTS.map((v) => [v.key, v])) as Record<GapRow["
 function path(url: string) {
   try {
     const u = new URL(/^https?:\/\//.test(url) ? url : `https://${url}`);
-    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
+    return `${u.hostname.replace(/^www\./i, "")}${u.pathname === "/" ? "" : u.pathname}`;
   } catch {
     return url;
   }

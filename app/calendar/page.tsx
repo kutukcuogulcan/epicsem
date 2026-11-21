@@ -128,7 +128,7 @@ const fmtDay = (s: string) => {
 };
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const words = (md: string) => (md.replace(/[#*_>`\[\]()!-]/g, " ").match(/\S+/g) ?? []).length;
-const hostOf = (s: string) => s.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const hostOf = (s: string) => s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 const sourceLabel = (s: string) => (s.startsWith("keyword:") ? `Kelime · ${s.slice(8)}` : s === "editor" ? "Editörde yazıldı" : s.replace(/^https?:\/\/(www\.)?/, ""));
 
 function draftKind(d: Draft): { kind: Kind; day: string } {

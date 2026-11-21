@@ -11,7 +11,7 @@ import type { GapRow, GeoRunResult, SeoAuditResult } from "@/types";
 function normalizeForMatch(url: string): string {
   try {
     const u = new URL(url);
-    return (u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/$/, "")).toLowerCase();
+    return (u.hostname.replace(/^www\./i, "") + u.pathname.replace(/\/$/, "")).toLowerCase();
   } catch {
     return url.trim().toLowerCase();
   }
@@ -19,7 +19,7 @@ function normalizeForMatch(url: string): string {
 
 function domainOf(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    return new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
   } catch {
     return "";
   }

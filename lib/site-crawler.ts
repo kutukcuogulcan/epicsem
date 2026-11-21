@@ -149,13 +149,13 @@ function extractHreflang($: cheerio.CheerioAPI, baseUrl: string): { lang: string
 function extractInternalLinks($: cheerio.CheerioAPI, baseUrl: string, hostname: string): { href: string; text: string }[] {
   const out: { href: string; text: string }[] = [];
   const seen = new Set<string>();
-  const bareHost = hostname.replace(/^www\./, "");
+  const bareHost = hostname.replace(/^www\./i, "");
   $("a[href]").each((_, el) => {
     const raw = $(el).attr("href");
     if (!raw || raw.startsWith("#") || /^(mailto|tel):/i.test(raw)) return;
     try {
       const resolved = new URL(raw, baseUrl);
-      if (resolved.hostname.replace(/^www\./, "") !== bareHost) return;
+      if (resolved.hostname.replace(/^www\./i, "") !== bareHost) return;
       const key = resolved.origin + resolved.pathname;
       if (seen.has(key)) return;
       seen.add(key);
@@ -313,7 +313,7 @@ function pickCriticalPages(opts: {
   homeUrl: string;
 }): string[] {
   const { sitemapUrls, homeLinks, hostname, homeUrl } = opts;
-  const bareHost = hostname.replace(/^www\./, "");
+  const bareHost = hostname.replace(/^www\./i, "");
   const picked: string[] = [];
   const pickedSet = new Set<string>([homeUrl]);
 
@@ -323,7 +323,7 @@ function pickCriticalPages(opts: {
       if (count >= max) break;
       try {
         const parsed = new URL(u);
-        if (parsed.hostname.replace(/^www\./, "") !== bareHost) continue;
+        if (parsed.hostname.replace(/^www\./i, "") !== bareHost) continue;
         const path = normalizeForMatch(parsed.pathname);
         if (keywords.some((k) => path.includes(k)) && !pickedSet.has(u)) {
           picked.push(u);

@@ -104,7 +104,7 @@ async function migrateGeoSummariesV2(): Promise<void> {
       const runs = JSON.parse(r.runs_json || "[]");
       if (!Array.isArray(runs) || !runs.length) continue;
       const old: GeoVisibilitySummary[] = JSON.parse(r.summaries_json || "[]");
-      const norm = (d: string) => String(d || "").replace(/^www\./, "").toLowerCase();
+      const norm = (d: string) => String(d || "").replace(/^www\./i, "").toLowerCase();
       let comps: { name: string; domain: string }[] = r.competitors_json ? JSON.parse(r.competitors_json) : [];
       if (!comps.length) comps = old.filter((s) => norm(s.domain) !== norm(r.brand_domain)).map((s) => ({ name: s.brand, domain: s.domain }));
       const summaries = computeShareOfVoice(summarizeVisibility(runs, [{ name: r.brand_name, domain: r.brand_domain }, ...comps]))
@@ -712,7 +712,7 @@ export async function getLatestAuditForHost(
   host: string
 ): Promise<{ result: SeoAuditResult; createdAt: string; history: AuditRunSummary[] } | null> {
   await ensureSchema();
-  const h = host.replace(/^www\./, "").toLowerCase();
+  const h = host.replace(/^www\./i, "").toLowerCase();
   const row = await one<any>(
     `SELECT * FROM audit_runs WHERE user_id = $1 AND (url ILIKE $2 OR url ILIKE $3) ORDER BY id DESC LIMIT 1`,
     [userId, `%://${h}%`, `%://www.${h}%`]
@@ -917,7 +917,7 @@ export async function listKnownSites(userId: number): Promise<string[]> {
      ) x GROUP BY d ORDER BY MAX(t) DESC LIMIT 30`,
     [userId]
   );
-  return [...new Set(rows.map((r) => String(r.d).replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "")).filter(Boolean))];
+  return [...new Set(rows.map((r) => String(r.d).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "")).filter(Boolean))];
 }
 
 /** Bir alan adının son N site taramasının tam sonucu (en yenisi önce). */
@@ -1030,7 +1030,7 @@ export async function clientsOverview(userId: number) {
   const clients = await many<any>(`SELECT id, name, domain FROM clients WHERE user_id = $1 ORDER BY id`, [userId]);
   const out = [];
   for (const c of clients) {
-    const host = String(c.domain).replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+    const host = String(c.domain).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
     const like = `%${host}%`;
     const audit = await one<any>(`SELECT score, ai_crawl_score, created_at FROM audit_runs WHERE user_id = $1 AND url LIKE $2 ORDER BY id DESC LIMIT 1`, [userId, like]);
     const crawl = await one<any>(`SELECT summary_json, row_count, created_at FROM import_runs WHERE user_id = $1 AND (filename = $2 OR filename LIKE $3) ORDER BY id DESC LIMIT 1`, [userId, host, `${host} %`]);
@@ -1113,7 +1113,7 @@ export async function getLatestGapRun(
   domain: string
 ): Promise<{ id: number; brandName: string; brandDomain: string; demoMode: boolean; gapMatrix: GapRow[]; summaries: GeoVisibilitySummary[]; contentBriefs: ContentBrief[]; createdAt: string } | null> {
   await ensureSchema();
-  const norm = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const norm = domain.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
   const row = await one<any>(
     `SELECT * FROM gap_runs WHERE user_id = $1 AND regexp_replace(regexp_replace(lower(brand_domain), '^(https?://)?(www\\.)?', ''), '/.*$', '') = $2 ORDER BY id DESC LIMIT 1`,
     [userId, norm]
@@ -1497,7 +1497,7 @@ function rowToContentDraft(row: any): ContentDraft {
 }
 
 const draftSite = (s: string | null | undefined) => {
-  const v = String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const v = String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
   return v.includes(".") ? v : null;
 };
 

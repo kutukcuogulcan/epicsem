@@ -54,7 +54,7 @@ const TYPE_LABEL: Record<BlockType, string> = { h1: "H1", h2: "H2", h3: "H3", p:
 
 function hostOf(u: string) {
   try {
-    return new URL(/^https?:\/\//.test(u) ? u : `https://${u}`).hostname.replace(/^www\./, "");
+    return new URL(/^https?:\/\//.test(u) ? u : `https://${u}`).hostname.replace(/^www\./i, "");
   } catch {
     return "";
   }

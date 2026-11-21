@@ -62,7 +62,7 @@ export function validateOpportunities(raw: unknown, ev: Evidence): Opportunity[]
       .map((i) => ev.prompts.find((p) => p.i === i))
       .filter((p): p is EvidencePrompt => !!p);
     if (!prompts.length) continue; // kanıta bağlanmayan fırsat yok
-    const sources = [...new Set((Array.isArray(o.sources) ? o.sources : []).map((d) => String(d).toLowerCase().replace(/^www\./, "")))]
+    const sources = [...new Set((Array.isArray(o.sources) ? o.sources : []).map((d) => String(d).toLowerCase().replace(/^www\./i, "")))]
       .map((d) => ev.sources.find((s) => s.domain === d))
       .filter((s): s is EvidenceSource => !!s);
     if ((category === "outreach" || category === "social") && !sources.length) continue; // dış site işi kaynaksız olmaz

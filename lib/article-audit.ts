@@ -151,7 +151,7 @@ async function extractPage(rawUrl: string): Promise<ExtractedPage> {
   $c("script, style, noscript, svg, nav, footer, header, form, iframe").remove();
   const cleanText = $c("body").text().replace(/\s+/g, " ").trim();
   const enough = cleanText.split(" ").length >= 80;
-  const cit = enough ? scoreCitability(citInputFromHtml($c, parsed.hostname.replace(/^www\./, ""))) : null;
+  const cit = enough ? scoreCitability(citInputFromHtml($c, parsed.hostname.replace(/^www\./i, ""))) : null;
   const passages = enough ? analyzePassages(passagesFromHtml($c)) : null;
 
   const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 8000);

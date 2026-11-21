@@ -13,7 +13,7 @@ export interface BrandRef {
   domain: string;
 }
 
-const cleanDomain = (d: string) => d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const cleanDomain = (d: string) => d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 
 function mentionIndex(text: string, b: BrandRef): number {
   const folded = trLower(text);

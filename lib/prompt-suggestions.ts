@@ -249,7 +249,7 @@ export async function fillAllSlots(opts: FillSlotsOptions): Promise<{ prompts: S
   const { brand, pack } = opts;
   const language = opts.language ?? "tr";
   const country = opts.country ?? "Türkiye";
-  const excludedNames = [brand.name, brand.domain.replace(/^www\./, "").split(".")[0], ...opts.competitors.map((c) => c.name)];
+  const excludedNames = [brand.name, brand.domain.replace(/^www\./i, "").split(".")[0], ...opts.competitors.map((c) => c.name)];
   const filterCtx: FilterContext = { language, excludedNames, pack };
 
   const entries = Array.from(opts.slotsByTopic.entries());

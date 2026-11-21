@@ -79,7 +79,7 @@ export async function generateRelatedPrompts(
   return out.slice(0, count + 1 + lib.length);
 }
 
-const host = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase();
+const host = (u: string) => u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();
 
 /** Soru seti × motorlar ölçümü. Kota kontrolü dahil; GEO test geçmişine yazılmaz (trend bozulmasın). */
 export async function measureImpact(
