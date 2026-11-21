@@ -28,6 +28,57 @@ interface Row {
   hits: number;
 }
 
+/** Peec tarzı satır özeti: görünürlük, ortalama sıra, duygu ve cevaplarda öne çıkan markalar (en iyi sırasına göre). */
+function rowStats(row: Row, own: BrandRef, rivals: BrandRef[]) {
+  const cs = [...row.cells.values()];
+  const ranks = cs.map((c) => c.a.ownRank).filter((r): r is number => r != null);
+  const sent = cs.filter((c) => c.run.mentioned && c.run.sentiment != null).map((c) => c.run.sentiment as number);
+  const best = new Map<string, number>();
+  for (const c of cs) {
+    if (c.a.ownRank) best.set(own.name, Math.min(best.get(own.name) ?? 99, c.a.ownRank));
+    for (const r of c.a.rivals) best.set(r.name, Math.min(best.get(r.name) ?? 99, r.rank));
+  }
+  const brands = [...best.entries()]
+    .sort((a, b) => a[1] - b[1])
+    .map(([n]) => ({ name: n, own: n === own.name, domain: n === own.name ? own.domain : rivals.find((r) => r.name === n)?.domain }));
+  return {
+    vis: cs.length ? Math.round((row.hits / cs.length) * 100) : 0,
+    pos: ranks.length ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null,
+    sentiment: sent.length ? Math.round(sent.reduce((a, b) => a + b, 0) / sent.length) : null,
+    brands,
+  };
+}
+
+function BrandStack({ brands }: { brands: { name: string; own: boolean; domain?: string }[] }) {
+  if (!brands.length) return <span className="text-xs text-sub">Marka anılmadı</span>;
+  return (
+    <span className="flex items-center">
+      {brands.slice(0, 5).map((b, i) => (
+        <span
+          key={b.name}
+          title={b.name}
+          className={`-ml-1.5 inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 bg-panel text-[10px] font-semibold first:ml-0 ${b.own ? "border-accent" : "border-panel"}`}
+          style={{ zIndex: 10 - i }}
+        >
+          {b.domain ? <img src={`https://www.google.com/s2/favicons?domain=${b.domain}&sz=32`} alt={b.name} className="h-4 w-4 rounded-sm" /> : b.name.charAt(0).toLocaleUpperCase("tr")}
+        </span>
+      ))}
+      {brands.length > 5 && <span className="ml-1 text-[11px] text-sub">+{brands.length - 5}</span>}
+    </span>
+  );
+}
+
+function VisBar({ v }: { v: number }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+        <span className={`block h-full rounded-full ${v >= 50 ? "bg-seo" : v > 0 ? "bg-warn" : "bg-danger"}`} style={{ width: `${Math.max(v, 4)}%` }} />
+      </span>
+      <span className="tabular-nums font-semibold text-ink">%{v}</span>
+    </span>
+  );
+}
+
 export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]; own: BrandRef; rivals: BrandRef[] }) {
   const [open, setOpen] = useState<{ run: GeoRunResult; a: LossAnalysis; row: Row } | null>(null);
   const [all, setAll] = useState(false);
@@ -69,44 +120,79 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
           ))}
         </div>
       </div>
-      {/* Telefon: tabloda kareler ekran dışında kalıyordu; her soru altında motor sonuçları etiket olarak. */}
+      {/* Telefon: Peec tarzı kart — soru, görünürlük/sıra/duygu, öne çıkan markalar, motor sonuçları. */}
       <ul className="mt-3 divide-y divide-border border-t border-border sm:hidden">
-        {shown.map((row) => (
-          <li key={row.prompt} className="px-5 py-3">
-            <div className="text-[13px] font-medium">{row.prompt}</div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {engines.map((e) => {
-                const c = row.cells.get(e);
-                if (!c) return null;
-                return (
-                  <button
-                    key={e}
-                    type="button"
-                    onClick={() => {
-                      setShowText(false);
-                      setOpen({ ...c, row });
-                    }}
-                    className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium ${CELL[c.a.status].chip}`}
-                  >
-                    <span className={`h-2.5 w-2.5 rounded-sm ${CELL[c.a.status].bg}`} />
-                    {name(e)}: {c.a.ownRank ? `${c.a.ownRank}. sırada` : c.a.status === "lost" ? `${c.a.rivals[0]?.name ?? "rakip"} kazandı` : STATUS_LABEL[c.a.status]}
-                  </button>
-                );
-              })}
-            </div>
-            {row.lost > 0 && (
-              <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a))} className="mt-2 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white">
-                Yazıyı yaz
-              </Link>
-            )}
-          </li>
-        ))}
+        {shown.map((row) => {
+          const st = rowStats(row, own, rivals);
+          const worst = [...row.cells.values()].sort((x, y) => (x.a.status === "lost" ? -1 : 0) - (y.a.status === "lost" ? -1 : 0))[0];
+          return (
+            <li key={row.prompt} className="px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowText(false);
+                  if (worst) setOpen({ ...worst, row });
+                }}
+                className="w-full text-left"
+              >
+                <div className="text-[13px] font-medium leading-5">{row.prompt}</div>
+                <div className="mt-0.5 text-[11px] text-sub">{row.topic}</div>
+                <dl className="mt-2.5 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <dt className="text-[11px] text-sub">Görünürlük</dt>
+                    <dd className="mt-0.5"><VisBar v={st.vis} /></dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] text-sub">Ort. sıra</dt>
+                    <dd className="mt-0.5 font-semibold tabular-nums">{st.pos ? `#${st.pos.toFixed(1)}` : "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] text-sub">Duygu</dt>
+                    <dd className="mt-0.5 font-semibold tabular-nums">{st.sentiment ?? "—"}</dd>
+                  </div>
+                </dl>
+              </button>
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <BrandStack brands={st.brands} />
+                <span className="flex gap-1">
+                  {engines.map((e) => {
+                    const c = row.cells.get(e);
+                    if (!c) return null;
+                    return (
+                      <button
+                        key={e}
+                        type="button"
+                        onClick={() => {
+                          setShowText(false);
+                          setOpen({ ...c, row });
+                        }}
+                        aria-label={`${name(e)}: ${STATUS_LABEL[c.a.status]}`}
+                        className={`inline-flex h-8 min-w-[32px] items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold ${CELL[c.a.status].bg} ${CELL[c.a.status].fg}`}
+                      >
+                        {name(e).slice(0, 2)}
+                        <span>{c.a.ownRank ? `${c.a.ownRank}.` : c.a.status === "lost" ? "✕" : "–"}</span>
+                      </button>
+                    );
+                  })}
+                </span>
+              </div>
+              {row.lost > 0 && (
+                <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a))} className="mt-2.5 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white">
+                  Yazıyı yaz
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <div className="mt-3 hidden overflow-x-auto sm:block">
-        <table className="w-full min-w-[560px] text-[13px]">
+        <table className="w-full min-w-[760px] text-[13px]">
           <thead>
             <tr className="border-y border-border text-xs text-sub">
               <th className="py-2 pl-5 text-left font-medium">Prompt</th>
+              <th className="px-2 py-2 text-left font-medium">Görünürlük</th>
+              <th className="px-2 py-2 text-left font-medium">Sıra</th>
+              <th className="px-2 py-2 text-left font-medium">Markalar</th>
               {engines.map((e) => (
                 <th key={e} className="px-1 py-2 text-center font-medium">
                   <span className="inline-flex items-center gap-1">
@@ -119,14 +205,19 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {shown.map((row) => (
+            {shown.map((row) => {
+              const st = rowStats(row, own, rivals);
+              return (
               <tr key={row.prompt}>
-                <td className="max-w-[340px] py-2 pl-5">
+                <td className="max-w-[300px] py-2 pl-5">
                   <div className="truncate font-medium" title={row.prompt}>
                     {row.prompt}
                   </div>
                   <div className="text-[11px] text-sub">{row.topic}</div>
                 </td>
+                <td className="px-2 py-2 text-xs"><VisBar v={st.vis} /></td>
+                <td className="px-2 py-2 text-xs font-semibold tabular-nums">{st.pos ? `#${st.pos.toFixed(1)}` : "—"}</td>
+                <td className="px-2 py-2"><BrandStack brands={st.brands} /></td>
                 {engines.map((e) => {
                   const c = row.cells.get(e);
                   if (!c) return <td key={e} className="px-1 py-2 text-center text-xs text-sub">·</td>;
@@ -158,11 +249,12 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
           <tfoot>
             <tr className="border-t border-border text-xs text-sub">
-              <td className="py-2 pl-5">Motorda görünürlük</td>
+              <td className="py-2 pl-5" colSpan={4}>Motorda görünürlük</td>
               {engines.map((e) => (
                 <td key={e} className="py-2 text-center font-semibold tabular-nums text-ink">
                   %{Math.round(engineRate(e) * 100)}
