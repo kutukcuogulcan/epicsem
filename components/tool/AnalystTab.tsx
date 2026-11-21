@@ -8,6 +8,7 @@ import type { Opportunity } from "@/lib/opportunity-check";
 import type { ContentBrief } from "@/lib/geo-brief";
 import { briefToWriterLink } from "@/lib/brief-link";
 import type { ChangeReport } from "@/lib/geo-change";
+import type { AgentReport } from "@/lib/geo-agent";
 
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
@@ -108,6 +109,15 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
   const [error, setError] = useState<string | null>(null);
   const [briefs, setBriefs] = useState<Record<number, ContentBrief>>({});
   const [briefBusy, setBriefBusy] = useState<number | null>(null);
+  const [agentBusy, setAgentBusy] = useState(false);
+  const buttons = (primary: boolean) => (
+    <div className="flex flex-wrap justify-end gap-2">
+      <button type="button" onClick={() => analyze(false)} disabled={busy} className={BTN2}>{busy && !agentBusy ? "Analiz ediliyor…" : "Hızlı analiz"}</button>
+      <button type="button" onClick={() => analyze(true)} disabled={busy} className={primary ? BTN1 : BTN2} title="Agent kaynak sayfaları kendisi açıp okur, sitene bakar; 1-3 dakika sürer, 5 AI sorgusu">
+        {agentBusy ? "Agent çalışıyor (1-3 dk)…" : "Agent ile derin analiz"}
+      </button>
+    </div>
+  );
 
   async function makeBrief(index: number) {
     setBriefBusy(index);
@@ -131,11 +141,12 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
       .catch(() => setReport(null));
   }, [domain]);
 
-  async function analyze() {
+  async function analyze(agent = false) {
     setBusy(true);
+    setAgentBusy(agent);
     setError(null);
     try {
-      const r = await fetch("/api/geo/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain }) });
+      const r = await fetch("/api/geo/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain, agent }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Analiz yapılamadı");
       setReport(d.report);
@@ -153,8 +164,8 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
       <Card>
         <EmptyBlock
           title="Son testi analiste okut"
-          description={`AI motorlarının ${brand} hakkında verdiği gerçek cevaplar, gösterdikleri kaynaklar ve rakiplerin durumu okunur; öncelikli işler çıkarılır. Her iş gerçek bir soruya ve kaynağa bağlıdır. 1 AI sorgusu.`}
-          action={<button type="button" onClick={analyze} disabled={busy} className={BTN1}>{busy ? "Analiz ediliyor…" : "Analiz et"}</button>}
+          description={`Hızlı analiz: test verisinden öncelikli işler (1 AI sorgusu). Agent ile derin analiz: AI'ın gösterdiği kaynak sayfaları agent kendisi açıp okur (${brand} orada geçiyor mu, kaçıncı), sitende ilgili sayfa var mı bakar, sonra raporu yazar (1-3 dk, 5 AI sorgusu).`}
+          action={buttons(true)}
         />
         <ErrorBlock message={error} />
       </Card>
@@ -171,14 +182,20 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
     <div className="space-y-3">
       <Card>
         <CardHeader
-          title="Analist özeti"
-          subtitle={`${new Date(report.runAt).toLocaleString("tr-TR")} testindeki ${report.answers} AI cevabına göre`}
-          action={<button type="button" onClick={analyze} disabled={busy} className={BTN2}>{busy ? "Analiz ediliyor…" : "Yeniden analiz et"}</button>}
+          title={(report as AgentReport).agent ? "Agent analizi" : "Analist özeti"}
+          subtitle={`${new Date(report.runAt).toLocaleString("tr-TR")} testindeki ${report.answers} AI cevabına göre${(report as AgentReport).agent ? ` · ${(report as AgentReport).trace.filter((t) => t.startsWith("Sayfayı okudu")).length} sayfa okundu` : ""}`}
+          action={buttons(false)}
         />
         <ErrorBlock message={error} />
         <ul className="space-y-1.5 text-sm">
           {report.summary.map((s) => <li key={s}>{s}</li>)}
         </ul>
+        {(report as AgentReport).agent && (report as AgentReport).trace.length > 0 && (
+          <details className="mt-3 text-[13px]">
+            <summary className="cursor-pointer text-sub">Agent ne yaptı ({(report as AgentReport).trace.length} adım)</summary>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-sub">{(report as AgentReport).trace.map((t, i) => <li key={i} className="break-all">{t}</li>)}</ol>
+          </details>
+        )}
         {report.risks.length > 0 && (
           <div className="mt-4 rounded-xl bg-danger/5 px-4 py-3 text-[13px]">
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-danger-ink">Riskler</div>
@@ -197,6 +214,17 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
           </div>
           <h3 className="mt-2 text-sm font-semibold">{o.title}</h3>
           <p className="mt-1 text-[13px] text-ink/80">{o.why}</p>
+          {o.evidence && o.evidence.length > 0 && (
+            <ul className="mt-2 space-y-1 rounded-lg bg-seo/5 px-3 py-2 text-[13px]">
+              {o.evidence.map((e) => (
+                <li key={e.url + e.finding}>
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-seo-ink">Okunan sayfadan bulgu · </span>
+                  {e.finding}{" "}
+                  <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">kaynak</a>
+                </li>
+              ))}
+            </ul>
+          )}
           {/* İş yapılınca önce/sonra ölçüm (Etki sekmesi; hedef soru ve referans hazır gelir). */}
           <div className="mt-2">
             <a

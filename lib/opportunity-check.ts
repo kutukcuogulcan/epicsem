@@ -37,6 +37,8 @@ export interface Opportunity {
   impact: "high" | "medium" | "low";
   /** Bu fırsatın kapsadığı kaybedilen cevap sayısı. */
   lostAnswers: number;
+  /** Agent'ın okuduğu sayfalardan bulgular (yalnızca agent raporunda). */
+  evidence?: { url: string; finding: string }[];
 }
 
 const CATS: OpportunityCategory[] = ["creation", "existing-content", "outreach", "social"];
