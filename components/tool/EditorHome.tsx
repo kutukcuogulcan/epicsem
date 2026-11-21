@@ -9,6 +9,23 @@ import WriteWizard from "@/components/tool/WriteWizard";
 import { Drawer, EmptyBlock, TableSkeleton, PageHeader } from "@/components/ui";
 import { publishLabel } from "@/lib/publish-state";
 
+/** GEO brief'inden gelen hazır plan (?plan=JSON). Adres çubuğundan gelir: şekli ve uzunlukları doğrulanır. */
+export type WriterPlan = { outline: { h2: string; h3: string[]; note: string }[]; questions: string[] };
+function parsePlan(raw: string | null): WriterPlan | undefined {
+  if (!raw) return undefined;
+  try {
+    const p = JSON.parse(raw);
+    const outline = (Array.isArray(p?.outline) ? p.outline : [])
+      .map((s: any) => ({ h2: String(s?.h2 ?? "").slice(0, 140), h3: (Array.isArray(s?.h3) ? s.h3 : []).map((x: unknown) => String(x).slice(0, 140)).slice(0, 5), note: String(s?.note ?? "").slice(0, 400) }))
+      .filter((s: { h2: string }) => s.h2.trim())
+      .slice(0, 8);
+    const questions = (Array.isArray(p?.questions) ? p.questions : []).map((x: unknown) => String(x).slice(0, 200)).filter(Boolean).slice(0, 6);
+    return outline.length ? { outline, questions } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 interface DraftItem {
   id: number;
   sourceUrl: string;
@@ -52,12 +69,12 @@ export default function EditorHome({
   const [filter, setFilter] = useState<"all" | "weak" | "site" | "published">("all");
   const [limit, setLimit] = useState(12);
   const [newOpen, setNewOpen] = useState(false);
-  const [preset, setPreset] = useState<{ keyword: string; title?: string; note?: string } | null>(null);
+  const [preset, setPreset] = useState<{ keyword: string; title?: string; note?: string; plan?: WriterPlan } | null>(null);
   // ?write=1&kw=…&title=…&note=… (Link planı, GEO aksiyonları vb.) → sihirbaz hazır açılır
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search);
     if (qs.get("write") !== "1" || !qs.get("kw")) return;
-    setPreset({ keyword: qs.get("kw")!.slice(0, 100), title: qs.get("title")?.slice(0, 200) || undefined, note: qs.get("note")?.slice(0, 700) || undefined });
+    setPreset({ keyword: qs.get("kw")!.slice(0, 100), title: qs.get("title")?.slice(0, 200) || undefined, note: qs.get("note")?.slice(0, 700) || undefined, plan: parsePlan(qs.get("plan")) });
     setNewOpen(true);
     window.history.replaceState(null, "", "/editor");
   }, []);

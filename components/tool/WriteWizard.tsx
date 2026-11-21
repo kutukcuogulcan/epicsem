@@ -32,7 +32,7 @@ const INTENT_TONE: Record<string, string> = {
   liste: "bg-rose-50 text-rose-700",
 };
 
-export default function WriteWizard({ onDone, preset }: { onDone: (id: number) => void; preset?: { keyword: string; title?: string; note?: string } | null }) {
+export default function WriteWizard({ onDone, preset }: { onDone: (id: number) => void; preset?: { keyword: string; title?: string; note?: string; plan?: { outline: Section[]; questions: string[] } } | null }) {
   const { project } = useProject();
   useEffect(() => {
     if (!project) return;
@@ -80,6 +80,12 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
     if (preset.title) {
       setCustom(preset.title);
       setStep(1);
+    }
+    // GEO brief'inden geldiyse plan hazır: doğrudan Plan adımı (düzenlenebilir).
+    if (preset.title && preset.plan?.outline.length) {
+      setOutline(preset.plan.outline);
+      setQuestions(preset.plan.questions);
+      setStep(2);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset?.keyword, preset?.title]);

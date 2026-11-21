@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, EmptyBlock, ErrorBlock } from "@/components/ui";
 import type { OpportunityReport } from "@/lib/geo-opportunities";
 import type { Opportunity } from "@/lib/opportunity-check";
+import type { ContentBrief } from "@/lib/geo-brief";
+import { briefToWriterLink } from "@/lib/brief-link";
 
 const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
@@ -26,6 +28,23 @@ export default function AnalystTab({ domain, brand }: { domain: string; brand: s
   const [report, setReport] = useState<OpportunityReport | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [briefs, setBriefs] = useState<Record<number, ContentBrief>>({});
+  const [briefBusy, setBriefBusy] = useState<number | null>(null);
+
+  async function makeBrief(index: number) {
+    setBriefBusy(index);
+    setError(null);
+    try {
+      const r = await fetch("/api/geo/opportunities/brief", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain, index }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Brief üretilemedi");
+      setBriefs((b) => ({ ...b, [index]: d.brief }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Brief üretilemedi");
+    } finally {
+      setBriefBusy(null);
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/geo/opportunities?domain=${encodeURIComponent(domain)}`)
@@ -118,16 +137,50 @@ export default function AnalystTab({ domain, brand }: { domain: string; brand: s
               </div>
             )}
           </div>
-          {(o.category === "creation" || o.category === "existing-content") && (
-            <div className="mt-3 flex justify-end">
-              <Link
-                href={`/editor?write=1&kw=${encodeURIComponent(o.prompts[0].text.replace(/[?!.]+$/, "").slice(0, 100))}&title=${encodeURIComponent(o.prompts[0].text.slice(0, 200))}&note=${encodeURIComponent(`${o.title}. ${o.why}`.slice(0, 700))}`}
-                className={BTN1}
-              >
-                Yazıya dönüştür
-              </Link>
-            </div>
-          )}
+          {(o.category === "creation" || o.category === "existing-content") && (() => {
+            const b = briefs[n] ?? (o as Opportunity & { brief?: ContentBrief }).brief;
+            if (!b)
+              return (
+                <div className="mt-3 flex justify-end">
+                  <button type="button" onClick={() => makeBrief(n)} disabled={briefBusy !== null} className={BTN1}>
+                    {briefBusy === n ? "Brief hazırlanıyor…" : "Brief hazırla"}
+                  </button>
+                </div>
+              );
+            return (
+              <div className="mt-4 space-y-3 rounded-xl border border-border p-4 text-[13px]">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">İçerik brief&apos;i</div>
+                  <div className="mt-1 text-sm font-semibold">{b.h1Options[0] ?? b.mainQuestion}</div>
+                  {b.h1Options.length > 1 && <div className="text-sub">Alternatif: {b.h1Options.slice(1).join(" · ")}</div>}
+                  <div className="mt-1 text-sub">Meta: {b.metaTitle} — {b.metaDescription}</div>
+                </div>
+                <p><span className="font-medium">Ana soru:</span> {b.mainQuestion}</p>
+                <p><span className="font-medium">Açı:</span> {b.angle}</p>
+                {b.proofPoints.length > 0 && <p><span className="font-medium">Kanıt noktaları:</span> {b.proofPoints.join(" · ")}</p>}
+                <ol className="space-y-2">
+                  {b.sections.map((sec, k) => (
+                    <li key={k} className="rounded-lg bg-muted/50 px-3 py-2">
+                      <div className="font-medium">H2: {sec.h2}</div>
+                      <div className="text-sub">{sec.angle}</div>
+                      {sec.questions.length > 0 && <div className="mt-1"><span className="text-sub">Cevapladığı sorular:</span> {sec.questions.map((q) => `"${q}"`).join(" · ")}</div>}
+                      {sec.points.length > 0 && <ul className="mt-1 list-disc pl-5">{sec.points.map((pt) => <li key={pt}>{pt}</li>)}</ul>}
+                    </li>
+                  ))}
+                </ol>
+                {b.neverWrite.length > 0 && <p><span className="font-medium text-danger-ink">Kullanma:</span> {b.neverWrite.join(", ")}</p>}
+                {b.neededInputs.length > 0 && (
+                  <div className="rounded-lg bg-warn/10 px-3 py-2">
+                    <div className="font-medium text-warn-ink">Yayından önce gerekli bilgiler</div>
+                    <ul className="list-disc pl-5">{b.neededInputs.map((x) => <li key={x}>{x}</li>)}</ul>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Link href={briefToWriterLink(b, o.prompts[0].text)} className={BTN1}>Bu brief ile yaz</Link>
+                </div>
+              </div>
+            );
+          })()}
         </Card>
       ))}
     </div>
