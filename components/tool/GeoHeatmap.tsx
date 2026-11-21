@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * GEO sonucu — motor × prompt ısı haritası. Her hücre bir AI cevabı:
+ * GEO sonucu — motor × prompt haritası. Her rozet bir AI cevabı:
  * yeşil = ilk sırada / anıldın, kırmızı = rakip kazandı, gri = kimse anılmadı.
  * Hücreye tıklayınca "neden kaybettik", kaynaklar, gerçek cevap ve
  * "bu boşluğu kapatacak yazıyı yaz" düğmesi (yazı sihirbazı hazır açılır).
@@ -14,11 +14,14 @@ import { ENGINE_META } from "@/components/tool/MonitorBits";
 import { STATUS_LABEL, analyzeRun, cleanDomain, writeGapHref, type BrandRef, type CellStatus, type LossAnalysis } from "@/lib/geo-loss";
 
 const CELL: Record<CellStatus, { bg: string; fg: string; chip: string }> = {
-  won: { bg: "bg-seo-ink", fg: "text-white", chip: "bg-seo/10 text-seo-ink" },
-  mentioned: { bg: "bg-seo/15", fg: "text-seo-ink", chip: "bg-seo/10 text-seo-ink" },
-  lost: { bg: "bg-danger-ink", fg: "text-white", chip: "bg-danger/10 text-danger-ink" },
-  empty: { bg: "bg-muted", fg: "text-sub", chip: "bg-muted text-sub" },
+  won: { bg: "bg-seo-ink", fg: "text-white", chip: "bg-seo/10 text-seo-ink ring-1 ring-inset ring-seo/25" },
+  mentioned: { bg: "bg-seo/40", fg: "text-seo-ink", chip: "bg-panel text-ink ring-1 ring-inset ring-border" },
+  lost: { bg: "bg-danger-ink", fg: "text-white", chip: "bg-danger/10 text-danger-ink ring-1 ring-inset ring-danger/25" },
+  empty: { bg: "bg-sub/40", fg: "text-sub", chip: "bg-muted/60 text-sub" },
 };
+
+/** Hücre etiketi: kendi sıran ("#1"), kaybettiysen kazanan rakip, yoksa "—". */
+const cellLabel = (a: LossAnalysis) => (a.ownRank ? `#${a.ownRank}` : a.status === "lost" ? a.rivals[0]?.name ?? "Rakip" : "—");
 
 interface Row {
   prompt: string;
@@ -109,12 +112,12 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
         <div>
           <h2 className="text-sm font-semibold">Motor × prompt haritası</h2>
-          <p className="text-xs text-sub">Her kare bir AI cevabı. Kırmızıya tıkla: neden kaybettin, ne yazmalısın.</p>
+          <p className="text-xs text-sub">Her rozet bir AI cevabı. Kırmızıya tıkla: neden kaybettin, ne yazmalısın.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-sub">
           {(["won", "mentioned", "lost", "empty"] as CellStatus[]).map((s) => (
             <span key={s} className="flex items-center gap-1.5">
-              <span className={`h-3 w-3 rounded ${CELL[s].bg}`} />
+              <span className={`h-2 w-2 rounded-full ${CELL[s].bg}`} />
               {STATUS_LABEL[s]}
             </span>
           ))}
@@ -167,10 +170,10 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                           setOpen({ ...c, row });
                         }}
                         aria-label={`${name(e)}: ${STATUS_LABEL[c.a.status]}`}
-                        className={`inline-flex h-8 min-w-[32px] items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold ${CELL[c.a.status].bg} ${CELL[c.a.status].fg}`}
+                        className={`inline-flex h-8 max-w-[140px] items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold tabular-nums ${CELL[c.a.status].chip}`}
                       >
-                        {name(e).slice(0, 2)}
-                        <span>{c.a.ownRank ? `${c.a.ownRank}.` : c.a.status === "lost" ? "✕" : "–"}</span>
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ENGINE_META[e]?.color ?? "#999" }} />
+                        <span className="truncate">{name(e)} {cellLabel(c.a)}</span>
                       </button>
                     );
                   })}
@@ -221,8 +224,6 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                 {engines.map((e) => {
                   const c = row.cells.get(e);
                   if (!c) return <td key={e} className="px-1 py-2 text-center text-xs text-sub">·</td>;
-                  const st = CELL[c.a.status];
-                  const label = c.a.ownRank ? `${c.a.ownRank}.` : c.a.status === "lost" ? c.a.rivals[0]?.name.charAt(0).toLocaleUpperCase("tr") ?? "✕" : "–";
                   return (
                     <td key={e} className="px-1 py-2 text-center">
                       <button
@@ -232,9 +233,10 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                           setOpen({ ...c, row });
                         }}
                         title={`${name(e)}: ${STATUS_LABEL[c.a.status]}${c.a.rivals[0] && c.a.status === "lost" ? ` (${c.a.rivals[0].name})` : ""}`}
-                        className={`inline-flex h-8 w-full min-w-[44px] max-w-[72px] items-center justify-center rounded-md text-xs font-semibold transition-transform hover:scale-105 ${st.bg} ${st.fg}`}
+                        className={`inline-flex h-7 max-w-[120px] items-center gap-1.5 truncate rounded-full px-2.5 text-xs font-semibold tabular-nums hover:opacity-80 ${CELL[c.a.status].chip}`}
                       >
-                        {label}
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CELL[c.a.status].bg}`} />
+                        <span className="truncate">{cellLabel(c.a)}</span>
                       </button>
                     </td>
                   );
