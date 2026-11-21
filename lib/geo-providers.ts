@@ -57,8 +57,10 @@ export const FAST_MODEL: Partial<Record<EngineId, string>> = {
 
 /** OpenAI — powers ChatGPT's answers and (with search-enabled models) live citations. */
 /**
- * ChatGPT modeli: OPENAI_MODEL tanımlıysa o; yoksa anahtarın erişebildiği en yeni genel GPT modeli
- * (GET /v1/models, en yeni "created"). Sabit "gpt-4o" emekliye ayrılınca GEO ölçümü bozulmasın diye.
+ * ChatGPT modeli: OPENAI_MODEL tanımlıysa o; yoksa anahtarın erişebildiği en yeni GPT'nin "mini" sürümü
+ * (GET /v1/models, en yeni "created"), mini yoksa en yeni genel GPT. Sabit "gpt-4o" emekliye ayrılınca
+ * GEO ölçümü bozulmasın diye.
+ * shortcut: maliyet için mini (ChatGPT ücretsiz katmanının sınıfı); bütçe büyüyünce OPENAI_MODEL ile büyük modele geç.
  */
 let openAiModelCache: string | null = null;
 export function resetOpenAiModelCache() {
@@ -71,9 +73,10 @@ async function resolveOpenAiModel(): Promise<string> {
     const res = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, signal: AbortSignal.timeout(10_000) });
     if (res.ok) {
       const list: { id: string; created?: number }[] = (await res.json()).data ?? [];
-      const pick = list
-        .filter((m) => /^gpt-\d/.test(m.id) && !/mini|nano|audio|realtime|search|transcribe|tts|image|instruct|codex|oss|\d{4}-\d{2}-\d{2}/.test(m.id))
-        .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0]?.id;
+      const usable = list
+        .filter((m) => /^gpt-\d/.test(m.id) && !/nano|audio|realtime|search|transcribe|tts|image|instruct|codex|oss|\d{4}-\d{2}-\d{2}/.test(m.id))
+        .sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
+      const pick = (usable.find((m) => /-mini$/.test(m.id)) ?? usable.find((m) => !/mini/.test(m.id)))?.id;
       if (pick) return (openAiModelCache = pick);
     }
   } catch {
@@ -95,7 +98,8 @@ class OpenAiProvider implements LlmProvider {
       const r = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({ model, instructions: SEARCH_HINT, input: prompt, tools: [{ type: "web_search", user_location: { type: "approximate", country: SEARCH_COUNTRY } }] }),
+                // Maliyet: cevap ~1200 token ile sınırlı, arama bağlamı "low" (modele giden arama metni az).
+        body: JSON.stringify({ model, instructions: SEARCH_HINT, input: prompt, max_output_tokens: 1200, tools: [{ type: "web_search", search_context_size: "low", user_location: { type: "approximate", country: SEARCH_COUNTRY } }] }),
       });
       if (!r.ok) throw new Error(friendlyApiError("ChatGPT (OpenAI)", r.status, await r.text()));
       const d = await r.json();
