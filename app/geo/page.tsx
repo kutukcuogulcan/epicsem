@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UnderlineTabs, Drawer, ErrorBlock, PageHeader, Card, EmptyBlock } from "@/components/ui";
+import { UnderlineTabs, Drawer, ErrorBlock, PageHeader, Card, EmptyBlock, BTN1, BTN2 } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
 import {
   Bar,
@@ -131,8 +131,6 @@ function parsePromptLine(line: string): PromptInput {
   return { topic: "Genel", text: line };
 }
 
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
 const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity"] as const;
 type ResultsTab = (typeof RESULTS_TABS)[number];

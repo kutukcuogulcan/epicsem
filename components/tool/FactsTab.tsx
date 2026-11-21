@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Card, CardHeader, EmptyBlock, ErrorBlock } from "@/components/ui";
+import { Card, CardHeader, EmptyBlock, ErrorBlock, BTN1, BTN2 } from "@/components/ui";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import { isDemoRun } from "@/lib/geo-loss";
 import type { FactIssue } from "@/lib/fact-check";
 import type { GeoRunResult } from "@/types";
 
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
 /** Yanlış bilgi: son GEO testindeki cevapları Bilgi Bankası'yla karşılaştırır. */
 export default function FactsTab({ runs, brand }: { runs: GeoRunResult[]; brand: string }) {

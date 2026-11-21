@@ -218,28 +218,6 @@ export function quickWins(r: SeoAuditResult, n = 5): (IssueInsight & { issue: Se
     .map((y) => y.x);
 }
 
-/** Teknik SEO puanının kategori bazlı dökümü (başlangıç 70; geçen kontrol +4, kritik −20, uyarı −8, bilgi −2). */
-export function scoreBreakdown(r: SeoAuditResult): { category: string; lost: number; gained: number; issues: number }[] {
-  const by = new Map<string, { lost: number; gained: number; issues: number }>();
-  for (const i of r.issues) {
-    if (!SEO_CATS.has(i.category)) continue;
-    const e = by.get(i.category) ?? { lost: 0, gained: 0, issues: 0 };
-    if (i.severity === "pass") e.gained += 4;
-    else {
-      e.lost += LOST[i.severity];
-      e.issues++;
-    }
-    by.set(i.category, e);
-  }
-  return [...by.entries()].map(([category, v]) => ({ category, ...v })).sort((a, b) => b.lost - a.lost);
-}
-
-/** Düzeltilebilir tüm sorunlar giderilirse tahmini Teknik SEO puanı. */
-export function potentialScore(r: SeoAuditResult): number {
-  const fixable = r.issues.filter((i) => SEO_CATS.has(i.category) && i.severity !== "pass");
-  return Math.min(100, r.score + fixable.reduce((s, i) => s + LOST[i.severity] + 4, 0));
-}
-
 /* ------------------------------------------------------------------ */
 /* Katman puanları: SEO · AXO · AEO · GEO hazırlığı                    */
 /* ------------------------------------------------------------------ */

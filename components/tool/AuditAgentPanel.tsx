@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ErrorBlock } from "@/components/ui";
+import { ErrorBlock, BTN1 } from "@/components/ui";
 import type { AuditAgentReport } from "@/lib/audit-agent";
 
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const LVL: Record<string, string> = { yüksek: "bg-seo/10 text-seo-ink", orta: "bg-warn/10 text-warn-ink", düşük: "bg-muted text-sub" };
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
 

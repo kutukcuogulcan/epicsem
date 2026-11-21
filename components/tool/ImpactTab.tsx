@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Drawer } from "@/components/ui";
+import { Drawer, BTN1, BTN2, CARD } from "@/components/ui";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import { INTENT_LABEL } from "@/lib/impact-labels";
 import type { ImpactSummary, RelatedPrompt } from "@/lib/impact";
@@ -15,9 +15,6 @@ import type { ImpactTrack } from "@/lib/db";
 
 type Track = ImpactTrack & { summary: ImpactSummary };
 
-const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 const pct = (x: number | null) => (x == null ? "—" : `%${Math.round(x * 100)}`);
 const VERDICT: Record<ImpactSummary["verdict"], { label: string; cls: string }> = {
   waiting: { label: "Ölçüm bekleniyor", cls: "bg-muted text-sub" },

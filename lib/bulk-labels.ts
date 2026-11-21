@@ -85,23 +85,6 @@ export const ISSUE_LABEL: Record<string, string> = {
   "http-not-redirected": "HTTP sürümü HTTPS'e yönlenmiyor",
 };
 
-export const ISSUE_GROUPS: { label: string; codes: string[] }[] = [
-  { label: "Yanıt kodları", codes: ["broken", "redirect", "redirect-chain", "redirect-loop", "redirect-temporary", "https-to-http"] },
-  { label: "Linkler & yapı", codes: ["broken-outlinks", "broken-external-links", "orphan-page", "deep-page", "not-in-sitemap", "empty-anchor", "generic-anchor", "nofollow-internal", "too-many-links"] },
-  { label: "Title & meta", codes: ["missing-title", "title-too-long", "title-too-short", "duplicate-title", "missing-meta-description", "meta-description-too-long", "meta-description-too-short", "duplicate-meta-description"] },
-  { label: "Başlıklar & içerik", codes: ["missing-h1", "multiple-h1", "missing-h2", "thin-content"] },
-  { label: "Görseller", codes: ["images-missing-alt", "broken-images", "large-images", "images-no-dimensions"] },
-  { label: "İndekslenme", codes: ["non-indexable", "noindex-tag", "missing-canonical", "canonical-to-non200", "noindex-in-sitemap", "near-duplicate", "title-equals-h1"] },
-  { label: "Çok dilli (hreflang)", codes: ["hreflang-invalid", "hreflang-no-self", "hreflang-no-return"] },
-  { label: "Güvenlik", codes: ["no-https", "no-hsts", "http-not-redirected"] },
-  { label: "AI & GEO hazırlığı", codes: ["ai-citation-bots-blocked", "ai-training-bots-blocked", "snippet-blocked", "nosnippet-heavy", "low-citability", "no-author", "no-date", "future-date", "schema-name-hidden", "no-sitemap-in-robots"] },
-  { label: "Teknik", codes: ["missing-schema", "missing-viewport", "missing-lang", "missing-open-graph", "mixed-content", "bad-charset", "meta-refresh", "dev-leakage", "unrendered-markdown", "placeholder-text", "no-favicon", "no-compression", "missing-security-headers", "unsafe-target-blank"] },
-  { label: "Sosyal paylaşım", codes: ["missing-og-image", "missing-twitter-card"] },
-  { label: "Başlık yapısı & URL", codes: ["heading-skip", "empty-heading", "dead-end-page", "url-uppercase", "url-underscore", "url-too-long"] },
-  { label: "Güven (E-E-A-T)", codes: ["no-about-page", "no-contact-page", "no-privacy-page", "no-organization-schema", "stale-copyright"] },
-  { label: "Performans", codes: ["slow-response", "large-page"] },
-];
-
 /** Kritik (kırmızı) sayılan sorunlar. */
 export const CRITICAL_ISSUES = new Set(["ai-citation-bots-blocked", "snippet-blocked", "broken", "broken-outlinks", "missing-title", "noindex-tag", "redirect-chain", "mixed-content", "redirect-loop", "https-to-http", "broken-images", "canonical-to-non200", "no-https", "http-not-redirected"]);
 

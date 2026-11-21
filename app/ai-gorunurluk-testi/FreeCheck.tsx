@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { FreeCheckResult } from "@/app/api/free-check/route";
+import { CARD } from "@/components/ui";
 
-const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
 const BTN1 = "inline-flex h-11 items-center justify-center gap-1.5 rounded-[12px] bg-accent px-5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 
 const color = (n: number) => (n >= 75 ? "#12b76a" : n >= 50 ? "#f79009" : "#f04438");

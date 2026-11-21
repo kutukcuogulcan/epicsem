@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import KnowledgeBase from "@/components/KnowledgeBase";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import WriteWizard from "@/components/tool/WriteWizard";
-import { Drawer, EmptyBlock, TableSkeleton, PageHeader } from "@/components/ui";
+import { Drawer, EmptyBlock, TableSkeleton, PageHeader, BTN1, BTN2 } from "@/components/ui";
 import { publishLabel } from "@/lib/publish-state";
 
 /** GEO brief'inden gelen hazır plan (?plan=JSON). Adres çubuğundan gelir: şekli ve uzunlukları doğrulanır. */
@@ -129,8 +129,6 @@ export default function EditorHome({
     .filter((r) => (filter === "weak" ? r.geo !== null && r.geo < 45 : filter === "published" ? publishLabel(r).key === "published" : filter === "site" ? publishLabel(r).key !== "draft" : true))
     .filter((r) => !q || (r.article.title + " " + r.sourceUrl).toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")));
 
-  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
   const chip = (on: boolean) =>
     `inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap ${on ? "bg-accent/5 text-ink shadow-[inset_0_0_0_1px_#BDB4FF]" : "bg-panel text-sub shadow-[inset_0_0_0_1px_#E4E5E8] hover:text-ink"}`;
   const card = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";

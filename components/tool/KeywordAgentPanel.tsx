@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ErrorBlock } from "@/components/ui";
+import { ErrorBlock, BTN1 } from "@/components/ui";
 import type { KeywordAgentReport } from "@/lib/keyword-agent";
 
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const DIFF: Record<string, string> = { kolay: "bg-seo/10 text-seo-ink", orta: "bg-warn/10 text-warn-ink", zor: "bg-danger/10 text-danger-ink" };
 
 /** Kelime agent'ı: en değerli kelimelerde Google'da kim var, sitende karşılığı var mı → kazanılabilirlik ve plan. */

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Card, CardHeader, EmptyBlock, ErrorBlock } from "@/components/ui";
+import { Card, CardHeader, EmptyBlock, ErrorBlock, BTN1, BTN2 } from "@/components/ui";
 import type { OpportunityReport } from "@/lib/geo-opportunities";
 import type { Opportunity } from "@/lib/opportunity-check";
 import type { ContentBrief } from "@/lib/geo-brief";
@@ -10,8 +10,6 @@ import { briefToWriterLink } from "@/lib/brief-link";
 import type { ChangeReport } from "@/lib/geo-change";
 import type { AgentReport } from "@/lib/geo-agent";
 
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 
 const CAT: Record<Opportunity["category"], string> = {
   outreach: "Dış sitede görün",

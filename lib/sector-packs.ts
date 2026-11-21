@@ -309,10 +309,6 @@ export function getSectorPack(id?: string | null): SectorPack {
   return DEFAULT_SECTOR_PACK;
 }
 
-export function listSectorPacks(): SectorPack[] {
-  return Object.values(SECTOR_PACKS);
-}
-
 /** Turkish-aware lowercase — plain .toLowerCase() mishandles İ/I in some engines. */
 function trLower(s: string): string {
   return s.replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();

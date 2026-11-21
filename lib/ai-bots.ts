@@ -45,4 +45,3 @@ export const AI_BOTS: AiBotDef[] = [
   { userAgent: "MistralAI-User", engine: "Mistral", role: "fetch", purpose: "Le Chat on-demand fetch" },
 ];
 
-export const CITATION_BOTS = AI_BOTS.filter((b) => b.role === "citation").map((b) => b.userAgent);

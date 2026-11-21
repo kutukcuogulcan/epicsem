@@ -15,13 +15,6 @@ import { safeFetch } from "@/lib/safe-fetch";
  *  - youtube: YouTube kanalının resmi RSS beslemesi (başlık + açıklama).
  */
 
-export const FEED_KIND_LABEL: Record<Feed["kind"], string> = {
-  keyword: "Anahtar kelime",
-  news: "Haber",
-  rss: "RSS",
-  youtube: "YouTube",
-};
-
 /** Kelime beslemeleri haftada bir, diğerleri 6 saatte bir tazelenir. */
 export function feedIsStale(feed: Feed): boolean {
   if (!feed.refreshedAt) return true;

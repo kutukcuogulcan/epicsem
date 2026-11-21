@@ -741,15 +741,6 @@ export async function getLatestAuditForHost(
   return { result: JSON.parse(row.result_json), createdAt: toIso(row.created_at), history: hist.map(rowToAuditSummary) };
 }
 
-export async function getAuditHistory(userId: number, url: string, limit = 10): Promise<AuditRunSummary[]> {
-  await ensureSchema();
-  const rows = await many<any>(
-    `SELECT * FROM audit_runs WHERE user_id = $1 AND url = $2 ORDER BY id DESC LIMIT $3`,
-    [userId, url, limit]
-  );
-  return rows.map(rowToAuditSummary);
-}
-
 // ---------------- geo runs ----------------
 
 export async function saveGeoRun(userId: number, params: {
@@ -2152,12 +2143,6 @@ export async function getDraftCover(draftId: number): Promise<{ userId: number; 
   return row ? { userId: row.user_id, kind: row.kind, mime: row.mime, data: row.data, token: row.token } : null;
 }
 
-export async function listDraftCoverIds(userId: number): Promise<Set<number>> {
-  await ensureSchema();
-  const rows = await many<{ draft_id: number }>(`SELECT draft_id FROM draft_covers WHERE user_id = $1`, [userId]);
-  return new Set(rows.map((r) => r.draft_id));
-}
-
 /** Every URL this user has ever generated a content draft for — a campaign skips
  * these when picking its next topic, whether the draft came from a manual "Generate
  * article" click or an earlier campaign run. */
@@ -2602,7 +2587,6 @@ export async function setOnboardingDomainCache(
   );
 }
 
-
 // ---------------- sıralama takibi ----------------
 
 export interface RankKeyword {
@@ -2680,7 +2664,6 @@ export async function rankHistory(userId: number): Promise<Record<number, { posi
   for (const r of rows) (out[r.keyword_id] ??= []).push({ position: r.position, at: toIso(r.checked_at) });
   return out;
 }
-
 
 /** Sıralama geçmişine dış kaynaktan (SerpBear) belirli bir tarihli kayıt ekler; aynı gün varsa atlar. */
 export async function importRankPoint(id: number, position: number | null, url: string | null, at: Date): Promise<boolean> {
@@ -2780,7 +2763,6 @@ export async function usersWithIntegration(provider: string): Promise<number[]> 
   return (await many<any>(`SELECT user_id FROM user_integrations WHERE provider = $1`, [provider])).map((r) => r.user_id);
 }
 
-
 /** Backlink sonuçları önbelleği (Ahrefs API birimi ve Bing kotası harcamamak için). */
 export async function getBacklinkCache<T>(userId: number, key: string, maxAgeHours = 24): Promise<{ data: T; createdAt: string } | null> {
   await ensureSchema();
@@ -2801,7 +2783,6 @@ export async function setBacklinkCache(userId: number, key: string, data: unknow
     [userId, key, JSON.stringify(data)]
   );
 }
-
 
 // ---------------- Kayıt listesi (citation) ----------------
 

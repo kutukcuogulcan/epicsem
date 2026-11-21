@@ -195,8 +195,6 @@ export async function runOnboardingChain(sessionId: number, userId: number): Pro
   }
 }
 
-export const ONBOARDING_STEP_ORDER: OnboardingStepName[] = ["crawl", "profile", "competitors", "topics", "prompts"];
-
 // ---------------------------------------------------------------------------------------
 // Kart: Değişiklikte yeniden üretim (hash kontrolü)
 // ---------------------------------------------------------------------------------------

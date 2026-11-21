@@ -26,24 +26,6 @@ export interface ProposalInput {
   run: BulkImportResult;
 }
 
-export const DEFAULT_PACKAGES: ProposalPackage[] = [
-  {
-    name: "Başlangıç",
-    price: "",
-    items: ["Kritik teknik SEO hatalarının düzeltilmesi", "AI arama botlarına erişim ve robots.txt düzenlemesi", "Ana sayfa ve hizmet sayfalarına schema (yapılandırılmış veri)", "Aylık sağlık taraması ve rapor"],
-  },
-  {
-    name: "Büyüme",
-    price: "",
-    items: ["Başlangıç paketindeki her şey", "Ayda 4 GEO uyumlu içerik (alıntılanabilirlik puanı 70+)", "ChatGPT, Gemini, Perplexity görünürlük takibi", "Rakip karşılaştırması ve fırsat raporu", "IndexNow ile anında indeksleme"],
-  },
-  {
-    name: "Kurumsal",
-    price: "",
-    items: ["Büyüme paketindeki her şey", "Ayda 8+ içerik ve mevcut içeriklerin yenilenmesi", "Wikipedia/Wikidata ve bilgi grafı çalışması", "Sıralama takibi ve haftalık rapor", "Öncelikli destek ve aylık strateji toplantısı"],
-  },
-];
-
 const ACCENT = "#4f00ff";
 const INK = "#1e1b29";
 const MUTED = "#6b6478";

@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { GeoRunResult } from "@/types";
-import { Drawer } from "@/components/ui";
+import { Drawer, BTN1, BTN2, CARD } from "@/components/ui";
 import { ACTION_LABEL, buildActionPlan, pitchTemplate, type ActionType, type BrandRef, type GeoAction } from "@/lib/geo-actions";
 
 /** GEO "Aksiyon planı" sekmesi — kaybedilen cevapların kaynaklarından çıkan işler (AI'sız). */
 
-const CARD = "rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]";
-const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted disabled:opacity-60";
 const TYPE_CLS: Record<ActionType, string> = {
   write: "bg-accent/10 text-accent",
   listicle: "bg-warn/10 text-warn-ink",

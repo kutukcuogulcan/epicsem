@@ -6,7 +6,7 @@ import AuditOverview from "@/components/tool/AuditOverview";
 import AuditDashboard, { type AuditHistoryPoint } from "@/components/tool/AuditDashboard";
 import { useAgencyName } from "@/lib/use-agency-name";
 import { useProject } from "@/components/ProjectProvider";
-import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
+import { Drawer, ErrorBlock, PageHeader, BTN1, BTN2 } from "@/components/ui";
 
 export default function AuditPage() {
   const [url, setUrl] = useState("");
@@ -124,8 +124,6 @@ export default function AuditPage() {
       return project?.domain ?? "";
     }
   })();
-  const BTN1 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
-  const BTN2 = "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-panel px-3 text-sm font-medium text-ink shadow-[inset_0_0_0_1px_#D5D7DA,0_1px_2px_rgba(13,18,28,0.05)] hover:bg-muted";
 
   return (
     <div className="space-y-6">
