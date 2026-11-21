@@ -69,14 +69,16 @@ const PATTERNS: Record<string, { questions: string[]; commercial: string[]; comp
   },
 };
 
-const Q_RE = /^(nasıl|nedir|neden|niçin|ne |ne zaman|hangi|kaç|nerede|ne kadar|kim|how|what|why|when|which|where|who|can|is|are|does|do)\b|\b(nedir|nasıl|neden|mı|mi|mu|mü|mıdır|midir|ne kadar|hangisi)\b|\?$/i;
-const COM_RE = /\b(fiyat|fiyatı|fiyatları|en iyi|ucuz|uygun|satın|al$|indirim|kampanya|yorum|yorumları|öneri|tavsiye|price|best|cheap|buy|deal|discount|review|sale|kiralık|kiralama|sipariş|online)\b/i;
-const CMP_RE = /\b(vs|veya|yoksa|farkı|fark|alternatif|karşılaştırma|mı .* mı|or|versus|alternative|compared)\b/i;
-const LOC_RE = /\b(yakınımda|near me|istanbul|ankara|izmir|bursa|antalya|adana|konya|kadıköy|beşiktaş|şişli|bakırköy|merkez)\b/i;
+// \b yalnızca İngilizce harfleri tanır ("fiyatları"nın sonundaki "ı"da kelime sınırı bulamaz); Türkçe için harf-duyarlı sınır.
+const W = (alts: string, extra = "") => new RegExp(`${extra}(?<![\\p{L}\\p{N}])(?:${alts})(?![\\p{L}\\p{N}])`, "iu");
+const Q_RE = new RegExp(`^(?:nasıl|nedir|neden|niçin|ne|ne zaman|hangi|kaç|nerede|ne kadar|kim|how|what|why|when|which|where|who|can|is|are|does|do)(?![\\p{L}\\p{N}])|(?<![\\p{L}\\p{N}])(?:nedir|nasıl|neden|mı|mi|mu|mü|mıdır|midir|ne kadar|hangisi)(?![\\p{L}\\p{N}])|\\?$`, "iu");
+const COM_RE = W("fiyat|fiyatı|fiyatları|en iyi|ucuz|uygun|ücretsiz|bedava|satın al|satın|indir|indirim|kampanya|paket|paketleri|abonelik|demo|deneme|yorum|yorumları|öneri|önerisi|tavsiye|price|pricing|best|cheap|free|buy|deal|discount|review|sale|kiralık|kiralama|sipariş|online");
+const CMP_RE = W("vs|veya|yoksa|farkı|fark|alternatif|alternatifleri|karşılaştırma|mı .* mı|or|versus|alternative|compared");
+const LOC_RE = W("yakınımda|near me|istanbul|ankara|izmir|bursa|antalya|adana|konya|kadıköy|beşiktaş|şişli|bakırköy|merkez");
 
 const STOP = new Set("ve ile için en bir bu şu da de mi mı ne the and for with of to in a".split(" "));
 
-function intentOf(k: string): KeywordIntent {
+export function intentOf(k: string): KeywordIntent {
   if (Q_RE.test(k)) return "question";
   if (CMP_RE.test(k)) return "comparison";
   if (LOC_RE.test(k)) return "local";

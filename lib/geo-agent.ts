@@ -6,7 +6,7 @@ import type { BrandRef } from "@/lib/geo-loss";
 import { buildEvidence, type OpportunityReport } from "@/lib/geo-opportunities";
 import { validateOpportunities } from "@/lib/opportunity-check";
 import { fetchPageSummary } from "@/lib/content-fetch";
-import { sitePagesForLinks } from "@/lib/article-enrich";
+import { ownPagesTool } from "@/lib/agent-tools";
 import { projectContextBlock } from "@/lib/project-context";
 import { trLower } from "@/lib/text-match";
 
@@ -75,18 +75,7 @@ export async function runGeoAgent(userId: number, runAt: string, runs: GeoRunRes
     },
   });
 
-  const listOwnPages = betaZodTool({
-    name: "list_own_pages",
-    description: `List pages that exist on ${own.domain} (from the site crawl / sitemap), optionally filtered by Turkish words, to check whether ${own.name} already has a page answering a question before recommending a new one.`,
-    inputSchema: z.object({ query: z.string().optional().describe("Words to filter titles/URLs, e.g. 'e-fatura'") }),
-    run: async ({ query }) => {
-      const pages = await sitePagesForLinks(userId, own.domain, 200).catch(() => []);
-      const words = trLower(query ?? "").split(/\s+/).filter((w) => w.length > 2);
-      const hit = pages.filter((p) => !words.length || words.some((w) => trLower(`${p.title} ${p.url}`).includes(w))).slice(0, 25);
-      trace.push(`Kendi sitesine baktı${query ? `: "${query}"` : ""} (${hit.length} sayfa)`);
-      return hit.length ? hit.map((p) => `${p.title} — ${p.url}`).join("\n") : "Eşleşen sayfa yok (ya da site henüz taranmadı).";
-    },
-  });
+  const listOwnPages = ownPagesTool(userId, own.domain, trace, new Set());
 
   const submitReport = betaZodTool({
     name: "submit_report",

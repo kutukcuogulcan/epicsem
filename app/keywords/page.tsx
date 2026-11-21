@@ -7,6 +7,7 @@ import { Drawer, ErrorBlock, PageHeader } from "@/components/ui";
 import type { MapRow } from "@/app/api/keywords/map/route";
 import { useProject } from "@/components/ProjectProvider";
 import type { AiCluster, AiPrompt } from "@/app/api/keywords/ai/route";
+import KeywordAgentPanel from "@/components/tool/KeywordAgentPanel";
 
 const INTENT_LABEL: Record<KeywordIntent, string> = {
   question: "Soru",
@@ -438,6 +439,8 @@ export default function KeywordsPage() {
               {ai?.busy ? "Çalışıyor…" : ai && !ai.err ? "Sonuçları aç" : "AI ile analiz et"}
             </button>
           </div>
+
+          <KeywordAgentPanel seed={data.seed} ideas={data.ideas.map((i) => ({ keyword: i.keyword, intent: i.intent, hits: i.hits }))} />
 
           {actions.length > 0 && (
             <div>
