@@ -14,6 +14,7 @@ import type {
 } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import { citabilityOfMarkdown } from "@/lib/citability";
+import { openSecret, sealSecret } from "./secret-box";
 
 /**
  * Persistence layer — Postgres via `pg` (node-postgres), connected through DATABASE_URL.
@@ -81,6 +82,7 @@ function ensureSchema(): Promise<void> {
   if (!schemaReady)
     schemaReady = initSchema()
       .then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)))
+      .then(() => sealExistingSecrets().catch((e) => console.error("[db] sır şifreleme göçü başarısız:", e)))
       .catch((e) => {
         schemaReady = null; // bir sonraki istek yeniden denesin; geçici bir bağlantı hatası siteyi restart'a kadar düşürmesin
         throw e;
@@ -93,6 +95,23 @@ function ensureSchema(): Promise<void> {
  * Eski özette rakip görünürlüğü yanlıştı ("rakip VE sen anıldın" sayılıyordu, pozisyon olarak
  * senin pozisyonun yazılıyordu); Genel Bakış ile GEO sayfası bu yüzden farklı sayı gösteriyordu.
  */
+/** SECRETS_KEY tanımlıysa, eskiden düz yazılmış sırları bir kez şifreler (yeni kayıtlar zaten şifreli yazılır). */
+async function sealExistingSecrets(): Promise<void> {
+  if (!process.env.SECRETS_KEY) return;
+  if (await one(`SELECT 1 FROM _meta WHERE k = 'secrets_sealed_v1'`, [])) return;
+  let n = 0;
+  for (const r of await many<any>(`SELECT id, auth_secret FROM cms_connections WHERE auth_secret NOT LIKE 'enc:v1:%'`, [])) {
+    await exec(`UPDATE cms_connections SET auth_secret = $1 WHERE id = $2`, [sealSecret(r.auth_secret), r.id]);
+    n++;
+  }
+  const hasInt = await one(`SELECT 1 FROM information_schema.tables WHERE table_name = 'user_integrations'`, []);
+  for (const r of hasInt ? await many<any>(`SELECT user_id, provider, secrets_json FROM user_integrations WHERE secrets_json NOT LIKE 'enc:v1:%'`, []) : []) {
+    await exec(`UPDATE user_integrations SET secrets_json = $1 WHERE user_id = $2 AND provider = $3`, [sealSecret(r.secrets_json), r.user_id, r.provider]);
+    n++;
+  }
+  await exec(`INSERT INTO _meta (k, v) VALUES ('secrets_sealed_v1', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(n)]);
+}
+
 async function migrateGeoSummariesV2(): Promise<void> {
   const done = await one<{ v: string }>(`SELECT v FROM _meta WHERE k = 'geo_summaries_v2'`);
   if (done) return;
@@ -1402,7 +1421,7 @@ export async function getImportRun(userId: number, id: number): Promise<BulkImpo
 
 // ---------------- CMS connections (WordPress) ----------------
 //
-// auth_secret is stored as plain text, same as monitored_pages.slack_webhook above — for
+// auth_secret is encrypted at rest when SECRETS_KEY is set (lib/secret-box.ts; old rows are sealed once) — for
 // WordPress it's a scoped, individually-revocable "Application Password" (not the user's
 // real WP login); for Shopify it's a Custom App Admin API access token, also scoped and
 // revocable from the merchant's own Shopify admin. Same risk class as the webhook URLs
@@ -1421,7 +1440,7 @@ function rowToCmsConnection(row: any): CmsConnection {
     label: row.label,
     siteUrl: row.site_url,
     authIdentifier: row.auth_identifier,
-    authSecretMasked: maskSecret(row.auth_secret),
+    authSecretMasked: maskSecret(openSecret(row.auth_secret)),
     createdAt: toIso(row.created_at),
   };
 }
@@ -1436,7 +1455,7 @@ export async function createCmsConnection(userId: number, params: {
   await ensureSchema();
   const row = await one<any>(
     `INSERT INTO cms_connections (user_id, platform, label, site_url, auth_identifier, auth_secret) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [userId, params.platform, params.label, params.siteUrl, params.authIdentifier, params.authSecret]
+    [userId, params.platform, params.label, params.siteUrl, params.authIdentifier, sealSecret(params.authSecret)]
   );
   return rowToCmsConnection(row);
 }
@@ -1460,7 +1479,7 @@ export async function getCmsConnectionSecret(userId: number, id: number): Promis
   await ensureSchema();
   const row = await one<any>(`SELECT * FROM cms_connections WHERE id = $1 AND user_id = $2`, [id, userId]);
   if (!row) return null;
-  return { id: row.id, platform: row.platform, siteUrl: row.site_url, authIdentifier: row.auth_identifier, authSecret: row.auth_secret };
+  return { id: row.id, platform: row.platform, siteUrl: row.site_url, authIdentifier: row.auth_identifier, authSecret: openSecret(row.auth_secret) };
 }
 
 export async function deleteCmsConnection(userId: number, id: number): Promise<void> {
@@ -2762,7 +2781,7 @@ export async function listIntegrations(userId: number): Promise<IntegrationRow[]
   await ensureSchema();
   const rows = await many<any>(`SELECT * FROM user_integrations WHERE user_id = $1`, [userId]);
   return rows.map((r) => {
-    const sec = parseObj(r.secrets_json);
+    const sec = parseObj(openSecret(r.secrets_json));
     return {
       provider: r.provider,
       config: parseObj(r.config_json),
@@ -2776,7 +2795,7 @@ export async function listIntegrations(userId: number): Promise<IntegrationRow[]
 export async function getIntegration(userId: number, provider: string): Promise<{ config: Record<string, string>; secrets: Record<string, string> } | null> {
   await ensureSchema();
   const r = await one<any>(`SELECT * FROM user_integrations WHERE user_id = $1 AND provider = $2`, [userId, provider]);
-  return r ? { config: parseObj(r.config_json), secrets: parseObj(r.secrets_json) } : null;
+  return r ? { config: parseObj(r.config_json), secrets: parseObj(openSecret(r.secrets_json)) } : null;
 }
 
 /** Boş bırakılan gizli alanlar mevcut değeri korur. */
@@ -2788,7 +2807,7 @@ export async function saveIntegration(userId: number, provider: string, config: 
   await exec(
     `INSERT INTO user_integrations (user_id, provider, config_json, secrets_json, updated_at) VALUES ($1, $2, $3, $4, now())
      ON CONFLICT (user_id, provider) DO UPDATE SET config_json = EXCLUDED.config_json, secrets_json = EXCLUDED.secrets_json, updated_at = now()`,
-    [userId, provider, JSON.stringify(config), JSON.stringify(merged)]
+    [userId, provider, JSON.stringify(config), sealSecret(JSON.stringify(merged))]
   );
 }
 
