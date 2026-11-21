@@ -15,7 +15,7 @@ export default function FAQSection({ items, title = "Sık sorulan sorular" }: { 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-8 py-4">
       <Reveal className="space-y-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-accent">SSS</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-medium uppercase tracking-wide text-accent">SSS</span>
         <h2 className="text-2xl font-medium tracking-tight sm:text-3xl">{title}</h2>
         <p className="text-sm text-ink/60">Aklına takılan bir şey mi var? En çok sorulanlar burada.</p>
       </Reveal>

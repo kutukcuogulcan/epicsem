@@ -37,7 +37,7 @@ export default function KeywordAgentPanel({ seed, ideas }: { seed: string; ideas
           <div className="text-sm font-semibold">Kelime agent&apos;ı: hangi kelimeler kazanılabilir?</div>
           <p className="text-[13px] text-sub">En değerli 5-8 kelimeyi seçer, her biri için Google&apos;da kimin üstte olduğuna bakar, sitende karşılığı var mı kontrol eder; zorluk ve içerik planı çıkarır. Arama hacmi verisi yoktur.</p>
         </div>
-        <span className="text-[11px] text-sub">1-3 dk · 5 AI sorgusu</span>
+        <span className="text-xs text-sub">1-3 dk · 5 AI sorgusu</span>
         <button type="button" onClick={run} disabled={busy || ideas.length < 3} className={BTN1}>{busy ? "Agent çalışıyor…" : r ? "Yeniden çalıştır" : "Agent'ı çalıştır"}</button>
       </div>
       <ErrorBlock message={error} />
@@ -67,7 +67,7 @@ export default function KeywordAgentPanel({ seed, ideas }: { seed: string; ideas
                       <div className="font-medium">{k.keyword}</div>
                       <div className="mt-0.5 text-sub">{k.why}</div>
                     </td>
-                    <td className="py-2.5 pr-3"><span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${DIFF[k.difficulty]}`}>{k.difficulty}</span></td>
+                    <td className="py-2.5 pr-3"><span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${DIFF[k.difficulty]}`}>{k.difficulty}</span></td>
                     <td className="py-2.5 pr-3">{k.contentType}</td>
                     <td className="py-2.5 pr-3">
                       <ul className="space-y-0.5">
@@ -91,7 +91,7 @@ export default function KeywordAgentPanel({ seed, ideas }: { seed: string; ideas
           </div>
           {r.plan.length > 0 && (
             <div className="rounded-xl bg-accent/5 px-4 py-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">İçerik planı (öncelik sırasıyla)</div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">İçerik planı (öncelik sırasıyla)</div>
               <ol className="list-decimal space-y-1 pl-5">{r.plan.map((p) => <li key={p}>{p}</li>)}</ol>
             </div>
           )}

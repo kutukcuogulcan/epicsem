@@ -261,7 +261,7 @@ export default function MonitorPage() {
               <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-danger" />
               <div className="min-w-0 flex-1">
                 <div>{a.message}</div>
-                <div className="text-[11px] text-sub">{new Date(a.createdAt).toLocaleString("tr-TR")}</div>
+                <div className="text-xs text-sub">{new Date(a.createdAt).toLocaleString("tr-TR")}</div>
               </div>
               <button type="button" onClick={() => ackAlert(a.id)} className={BTN2}>
                 Gördüm
@@ -299,7 +299,7 @@ export default function MonitorPage() {
                   <span className={`text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{v}</span>
                   {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <div className="mt-1 h-4 text-[11px] text-sub">{hint}</div>
+                <div className="mt-1 h-4 text-xs text-sub">{hint}</div>
               </div>
             ))}
           </div>
@@ -309,7 +309,7 @@ export default function MonitorPage() {
             <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
               {actions.slice(0, 3).map((a) => (
                 <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-                  <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                  <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                   <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                   <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                   <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -349,15 +349,15 @@ export default function MonitorPage() {
                     <tr key={p.id} onClick={() => openPage(p.id)} className="cursor-pointer hover:bg-[#fafafa]">
                       <td className="max-w-[24rem] py-2.5 pl-5">
                         <div className="truncate font-medium">{p.label || host(p.url)}</div>
-                        {p.label && <div className="truncate text-[11px] text-sub">{host(p.url)}</div>}
+                        {p.label && <div className="truncate text-xs text-sub">{host(p.url)}</div>}
                       </td>
                       <td className="py-2.5 pr-3">
                         {!c ? (
-                          <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">Kontrol edilmedi</span>
+                          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Kontrol edilmedi</span>
                         ) : c.blockedBots.length ? (
-                          <span className="rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger-ink">{c.blockedBots.length} bot engelli</span>
+                          <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">{c.blockedBots.length} bot engelli</span>
                         ) : (
-                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">AI&apos;ya açık</span>
+                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">AI&apos;ya açık</span>
                         )}
                       </td>
                       <td className="py-2.5 pr-3 text-right">{c ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(c.score)}`}>{c.score}</span> : "—"}</td>
@@ -398,7 +398,7 @@ export default function MonitorPage() {
                     ["Engelli bot", selPage.latestCheck.blockedBots.length],
                   ] as const).map(([l, v]) => (
                     <div key={l} className="rounded-xl border border-border px-3 py-2">
-                      <div className="text-[11px] text-sub">{l}</div>
+                      <div className="text-xs text-sub">{l}</div>
                       <div className="text-lg font-semibold tabular-nums">{v}</div>
                     </div>
                   ))}

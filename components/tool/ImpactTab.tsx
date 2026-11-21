@@ -112,9 +112,9 @@ export default function ImpactTab() {
             ["Ortalama değişim", avg == null ? "—" : `${avg >= 0 ? "+" : ""}${Math.round(avg * 100)} puan`, "anılma oranında, önce → sonra"],
           ] as const).map(([l, v, h]) => (
             <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">{l}</div>
               <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Ortalama değişim" && avg != null ? (avg > 0 ? "text-seo-ink" : avg < 0 ? "text-danger-ink" : "") : ""}`}>{v}</div>
-              <div className="truncate text-[11px] text-sub">{h}</div>
+              <div className="truncate text-xs text-sub">{h}</div>
             </div>
           ))}
         </div>
@@ -141,8 +141,8 @@ export default function ImpactTab() {
                 <div className="flex flex-wrap items-start gap-3 p-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">{t.kind === "article" ? "Yazı" : "Off-page"}</span>
-                      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${v.cls}`}>{v.label}</span>
+                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-sub">{t.kind === "article" ? "Yazı" : "Off-page"}</span>
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${v.cls}`}>{v.label}</span>
                     </div>
                     <div className="mt-1 text-[14px] font-semibold">{t.title}</div>
                     <div className="text-xs text-sub">
@@ -151,12 +151,12 @@ export default function ImpactTab() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-center">
-                      <div className="text-[11px] text-sub">Önce</div>
+                      <div className="text-xs text-sub">Önce</div>
                       <div className="text-[20px] font-semibold tabular-nums">{pct(s.before)}</div>
                     </div>
                     <div className="text-sub">→</div>
                     <div className="text-center">
-                      <div className="text-[11px] text-sub">Sonra{s.afterChecks > 1 ? ` (${s.afterChecks} ölçüm ort.)` : ""}</div>
+                      <div className="text-xs text-sub">Sonra{s.afterChecks > 1 ? ` (${s.afterChecks} ölçüm ort.)` : ""}</div>
                       <div className={`text-[20px] font-semibold tabular-nums ${s.after != null && s.before != null ? (s.after > s.before ? "text-seo-ink" : s.after < s.before ? "text-danger-ink" : "") : ""}`}>{pct(s.after)}</div>
                     </div>
                   </div>
@@ -203,12 +203,12 @@ export default function ImpactTab() {
                           <tr key={p.prompt} className="align-top">
                             <td className="max-w-[320px] py-2 pl-4 pr-3">
                               <div>{p.prompt}</div>
-                              <span className="text-[11px] text-sub">{INTENT_LABEL[p.intent] ?? p.intent}</span>
+                              <span className="text-xs text-sub">{INTENT_LABEL[p.intent] ?? p.intent}</span>
                             </td>
                             <td className="py-2 pr-3">
                               <div className="flex flex-wrap gap-1">
                                 {p.engines.map((e) => (
-                                  <span key={e.engine} className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px]">
+                                  <span key={e.engine} className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs">
                                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: ENGINE_META[e.engine]?.color ?? "#999" }} />
                                     {ENGINE_META[e.engine]?.name ?? e.engine}
                                     <b className={e.before ? "text-seo-ink" : "text-sub"}>{e.before == null ? "–" : e.before ? "✓" : "✕"}</b>→
@@ -224,7 +224,7 @@ export default function ImpactTab() {
                         ))}
                       </tbody>
                     </table>
-                    <p className="px-4 py-2 text-[11px] text-sub">✓ = marka cevapta anıldı. AI cevapları günden güne değişir; karar için birden fazla ölçümün ortalamasına bak.</p>
+                    <p className="px-4 py-2 text-xs text-sub">✓ = marka cevapta anıldı. AI cevapları günden güne değişir; karar için birden fazla ölçümün ortalamasına bak.</p>
                   </div>
                 )}
               </div>
@@ -328,7 +328,7 @@ function NewTrack({
                   <input type="checkbox" checked={p.on} disabled={p.source === "target"} onChange={(e) => setPrompts(prompts.map((x, j) => (j === i ? { ...x, on: e.target.checked } : x)))} className="mt-1" />
                   <span className="min-w-0 flex-1">
                     {p.text}
-                    <span className={`ml-1.5 rounded px-1 text-[11px] font-medium ${p.source === "target" ? "bg-accent/10 text-accent" : p.source === "library" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>
+                    <span className={`ml-1.5 rounded px-1 text-xs font-medium ${p.source === "target" ? "bg-accent/10 text-accent" : p.source === "library" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>
                       {p.source === "library" ? "kütüphaneden" : INTENT_LABEL[p.intent] ?? p.intent}
                     </span>
                   </span>

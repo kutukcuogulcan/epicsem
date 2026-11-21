@@ -170,7 +170,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
               >
                 <td className="px-4 py-3">
                   <div className="font-medium text-ink">{p.text}</div>
-                  {p.branded && <span className="mt-0.5 inline-block rounded-md bg-muted px-1.5 text-[11px] font-medium text-sub">markalı</span>}
+                  {p.branded && <span className="mt-0.5 inline-block rounded-md bg-muted px-1.5 text-xs font-medium text-sub">markalı</span>}
                 </td>
                 <td className="hidden py-3 pr-4 text-xs text-sub md:table-cell">{p.topic}</td>
                 <td className="py-3 pr-4 text-center">
@@ -190,7 +190,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                 </td>
                 <td className="hidden py-3 pr-4 sm:table-cell">
                   {p.leader ? (
-                    <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${p.leader === brandName ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger-ink"}`}>
+                    <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${p.leader === brandName ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger-ink"}`}>
                       {p.leader === brandName ? "Siz" : p.leader}
                     </span>
                   ) : (
@@ -257,16 +257,16 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                             <span className="font-medium text-ink">{ENGINE_META[r.engine]?.name ?? r.engine}</span>
                             {r.model && <span className="hidden sm:inline">{r.model}</span>}
                             {r.mentioned ? (
-                              <span className="rounded-md bg-seo/10 px-1.5 text-[11px] font-medium text-seo-ink">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
+                              <span className="rounded-md bg-seo/10 px-1.5 text-xs font-medium text-seo-ink">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
                             ) : (
-                              <span className="rounded-md bg-danger/10 px-1.5 text-[11px] font-medium text-danger-ink">geçmiyor</span>
+                              <span className="rounded-md bg-danger/10 px-1.5 text-xs font-medium text-danger-ink">geçmiyor</span>
                             )}
                           </div>
                           <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{highlight(r.text, open.mentions, brandName)}</p>
-                          {r.mentions.length > 0 && <div className="mt-1 text-[11px] text-sub">Geçen markalar: {r.mentions.join(", ")}</div>}
+                          {r.mentions.length > 0 && <div className="mt-1 text-xs text-sub">Geçen markalar: {r.mentions.join(", ")}</div>}
                           {exp && r.citations.length > 0 && (
                             <div className="mt-2 space-y-0.5">
-                              <div className="text-[11px] font-medium text-sub">Kaynaklar</div>
+                              <div className="text-xs font-medium text-sub">Kaynaklar</div>
                               {r.citations.map((c) => (
                                 <a key={c.url} href={c.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className={`block truncate text-xs hover:underline ${c.isOwnDomain ? "font-medium text-seo-ink" : "text-accent"}`}>
                                   {c.url}
@@ -274,7 +274,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                               ))}
                             </div>
                           )}
-                          {!exp && <div className="mt-1 text-[11px] text-accent">Tamamını göster</div>}
+                          {!exp && <div className="mt-1 text-xs text-accent">Tamamını göster</div>}
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1.5">
                           <ScoreRing value={r.mentioned ? (r.sentiment ?? 50) : 0} size={30} />

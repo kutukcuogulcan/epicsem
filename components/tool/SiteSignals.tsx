@@ -100,9 +100,9 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
           <div>
             <div className="text-sm font-medium">Gerçek kullanıcı hızı</div>
-            <div className="text-[11px] text-ink/60">Google Chrome kullanıcılarının son 28 günü · Core Web Vitals</div>
+            <div className="text-xs text-ink/60">Google Chrome kullanıcılarının son 28 günü · Core Web Vitals</div>
           </div>
-          <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-medium">
+          <div className="flex rounded-lg border border-border p-0.5 text-xs font-medium">
             {(["mobile", "desktop"] as const).map((st) => (
               <button key={st} type="button" disabled={psiBusy || local} onClick={() => measure(st)} className={`rounded-md px-2.5 py-1 disabled:opacity-40 ${psi && strategy === st ? "bg-ink text-white" : "text-ink/60 hover:text-ink"}`}>
                 {st === "mobile" ? "Mobil" : "Masaüstü"}
@@ -131,7 +131,7 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${psi.passed === true ? "bg-seo/10 text-seo-ink" : psi.passed === false ? "bg-danger/10 text-danger-ink" : "bg-muted text-ink/60"}`}>
                   {psi.passed === true ? "Core Web Vitals: geçti" : psi.passed === false ? "Core Web Vitals: kaldı" : "Yeterli gerçek kullanıcı verisi yok"}
                 </span>
-                <span className="text-[11px] text-ink/60">
+                <span className="text-xs text-ink/60">
                   {psi.fieldScope === "url" ? "Bu sayfanın verisi" : psi.fieldScope === "origin" ? "Tüm sitenin verisi (sayfa için yeterli ziyaret yok)" : "Aşağıdaki değerler laboratuvar ölçümü"}
                 </span>
                 {psi.labScore !== null && (
@@ -143,15 +143,15 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {psi.metrics.map((m) => (
                   <div key={m.key} className="rounded-xl border border-border p-3">
-                    <div className="text-[11px] leading-3 text-ink/60">{m.label}</div>
+                    <div className="text-xs leading-3 text-ink/60">{m.label}</div>
                     <div className="mt-1 text-lg font-medium tabular-nums">{fmt(m.key, m.p75)}</div>
-                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-[11px] text-ink/60">hedef {m.good}</span>}
+                    {m.category ? <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${CAT_TONE[m.category]}`}>{CAT_LABEL[m.category]}</span> : <span className="text-xs text-ink/60">hedef {m.good}</span>}
                   </div>
                 ))}
               </div>
               {psi.opportunities.length > 0 && (
                 <div>
-                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/60">En çok kazandıracak düzeltmeler</div>
+                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink/60">En çok kazandıracak düzeltmeler</div>
                   <ul className="space-y-1 text-sm">
                     {psi.opportunities.map((o) => (
                       <li key={o.title} className="flex justify-between gap-3">
@@ -171,17 +171,17 @@ export default function SiteSignals({ rows, host: siteName }: { rows: BulkImport
       <div className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)]">
         <div className="border-b border-border px-5 py-3">
           <div className="text-sm font-medium">Arama motorlarına bildir</div>
-          <div className="text-[11px] text-ink/60">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>
+          <div className="text-xs text-ink/60">ChatGPT arama ve Copilot, Bing indeksini kullanır</div>
         </div>
         <div className="space-y-3 p-5">
           <div className="space-y-1.5 text-sm">
             <div className="flex items-center justify-between">
               <span>IndexNow</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${inReady ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${inReady ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{inReady === null ? "…" : inReady ? "Hazır" : "Kurulu değil"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Bing Webmaster</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${bingOk ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${bingOk ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{bingOk ? "Bağlı" : "Bağlı değil"}</span>
             </div>
           </div>
           {inReady || bingOk ? (

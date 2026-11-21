@@ -197,7 +197,7 @@ export default function ContentStudioPage() {
           <div key={l} className={`${CARD} px-4 py-4`}>
             <div className="text-xs font-medium text-sub">{l}</div>
             <div className={`mt-1.5 text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{connsLoaded ? v : "…"}</div>
-            <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+            <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
           </div>
         ))}
       </div>
@@ -207,7 +207,7 @@ export default function ContentStudioPage() {
         <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
           {actions.slice(0, 3).map((a) => (
             <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-              <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+              <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
               <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
               <p className="mt-1 text-[13px] text-sub">{a.body}</p>
               <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -232,10 +232,10 @@ export default function ContentStudioPage() {
             <ul className="divide-y divide-border border-t border-border">
               {connections.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 px-5 py-3 text-[13px]">
-                  <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">{PL[c.platform] ?? c.platform}</span>
+                  <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-accent">{PL[c.platform] ?? c.platform}</span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{c.label}</div>
-                    <div className="truncate text-[11px] text-sub">
+                    <div className="truncate text-xs text-sub">
                       {c.siteUrl}
                       {c.authIdentifier ? ` · ${c.authIdentifier}` : ""}
                     </div>
@@ -271,7 +271,7 @@ export default function ContentStudioPage() {
                         </Link>
                       </td>
                       <td className="py-2.5 pr-3">
-                        <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                        <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>
                           {st.label}
                         </span>
                       </td>

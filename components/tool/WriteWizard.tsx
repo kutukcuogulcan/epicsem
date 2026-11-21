@@ -182,14 +182,14 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                 onClick={() => setStep(i)}
                 className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium ${i === step ? "bg-accent/10 text-accent" : done ? "text-ink/70 hover:bg-muted" : "text-ink/60"}`}
               >
-                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${i === step ? "bg-accent text-white" : done ? "bg-seo-ink text-white" : "bg-muted text-ink/60"}`}>{done ? "✓" : i + 1}</span>
+                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium ${i === step ? "bg-accent text-white" : done ? "bg-seo-ink text-white" : "bg-muted text-ink/60"}`}>{done ? "✓" : i + 1}</span>
                 {s}
               </button>
               {i < STEPS.length - 1 && <span className="h-px w-5 bg-border" />}
             </div>
           );
         })}
-        <span className="ml-auto hidden whitespace-nowrap pl-3 text-[11px] text-ink/60">Konu ve plan ücretsiz · yazı 1 kota</span>
+        <span className="ml-auto hidden whitespace-nowrap pl-3 text-xs text-ink/60">Konu ve plan ücretsiz · yazı 1 kota</span>
       </div>
 
       <div className="p-5">
@@ -218,11 +218,11 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
             </form>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className="text-[11px] font-medium text-ink/60">Marka sitesi</span>
+                <span className="text-xs font-medium text-ink/60">Marka sitesi</span>
                 <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="markan.com" className="mt-1 w-full rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent" />
               </label>
               <label className="block">
-                <span className="text-[11px] font-medium text-ink/60">Dil</span>
+                <span className="text-xs font-medium text-ink/60">Dil</span>
                 <select value={lang} onChange={(e) => setLang(e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none">
                   <option value="tr">Türkçe</option>
                   <option value="en">English</option>
@@ -280,8 +280,8 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                           <div className="text-sm font-medium leading-5">{t.title}</div>
                           {t.angle && <div className="mt-1 text-xs leading-5 text-ink/60">{t.angle}</div>}
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${INTENT_TONE[t.intent] ?? "bg-muted text-ink/60"}`}>{t.intent}</span>
-                            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-ink/60">{t.format === "listicle" ? "Liste yazısı" : "Makale"}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${INTENT_TONE[t.intent] ?? "bg-muted text-ink/60"}`}>{t.intent}</span>
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-ink/60">{t.format === "listicle" ? "Liste yazısı" : "Makale"}</span>
                           </div>
                         </div>
                       </div>
@@ -291,7 +291,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
               </div>
             )}
             <label className="block">
-              <span className="text-[11px] font-medium text-ink/60">Ya da kendi başlığın</span>
+              <span className="text-xs font-medium text-ink/60">Ya da kendi başlığın</span>
               <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={`ör. ${keyword} seçerken dikkat edilmesi gerekenler`} className="mt-1 w-full rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent" />
             </label>
             <div className="flex items-center justify-between border-t border-border pt-4">
@@ -318,14 +318,14 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
               </button>
             </div>
             <div className="rounded-xl bg-muted/50 px-4 py-3">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-ink/60">H1 · Başlık</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-ink/60">H1 · Başlık</div>
               <input value={title} onChange={(e) => setCustom(e.target.value)} className="mt-0.5 w-full bg-transparent text-base font-medium outline-none" />
             </div>
             <ol className="space-y-2">
               {outline.map((s, i) => (
                 <li key={i} className="group rounded-xl border border-border p-3">
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">H2</span>
+                    <span className="rounded bg-accent/10 px-1.5 py-0.5 text-xs font-medium text-accent">H2</span>
                     <input value={s.h2} onChange={(e) => upd(i, { h2: e.target.value })} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none" />
                     <div className="flex shrink-0 gap-0.5 opacity-60 group-hover:opacity-100">
                       <button type="button" onClick={() => move(i, -1)} className="rounded px-1.5 text-xs hover:bg-muted" title="Yukarı">↑</button>
@@ -335,14 +335,14 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   </div>
                   {s.h3.map((h, k) => (
                     <div key={k} className="ml-7 mt-1.5 flex items-center gap-2">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-ink/60">H3</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-ink/60">H3</span>
                       <input value={h} onChange={(e) => upd(i, { h3: s.h3.map((x, m) => (m === k ? e.target.value : x)) })} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
                       <button type="button" onClick={() => upd(i, { h3: s.h3.filter((_, m) => m !== k) })} className="rounded px-1.5 text-xs text-ink/60 hover:text-danger-ink">✕</button>
                     </div>
                   ))}
                   <div className="ml-7 mt-1.5 flex items-center gap-3">
-                    {s.note && <span className="min-w-0 flex-1 truncate text-[11px] text-ink/60">{s.note}</span>}
-                    <button type="button" onClick={() => upd(i, { h3: [...s.h3, ""] })} className="ml-auto shrink-0 text-[11px] font-medium text-accent hover:underline">
+                    {s.note && <span className="min-w-0 flex-1 truncate text-xs text-ink/60">{s.note}</span>}
+                    <button type="button" onClick={() => upd(i, { h3: [...s.h3, ""] })} className="ml-auto shrink-0 text-xs font-medium text-accent hover:underline">
                       + alt başlık
                     </button>
                   </div>
@@ -356,7 +356,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
             <div className="rounded-xl border border-border p-3">
               <div className="mb-2 flex items-center gap-2">
                 <span className="text-sm font-medium">Sık sorulan sorular</span>
-                <span className="text-[11px] text-ink/60">AI cevaplarında en çok alıntılanan bölüm</span>
+                <span className="text-xs text-ink/60">AI cevaplarında en çok alıntılanan bölüm</span>
               </div>
               {questions.map((q, i) => (
                 <div key={i} className="mt-1 flex items-center gap-2">
@@ -365,7 +365,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   <button type="button" onClick={() => setQuestions((a) => a.filter((_, j) => j !== i))} className="rounded px-1.5 text-xs text-ink/60 hover:text-danger-ink">✕</button>
                 </div>
               ))}
-              <button type="button" onClick={() => setQuestions((a) => [...a, ""])} className="mt-2 text-[11px] font-medium text-accent hover:underline">
+              <button type="button" onClick={() => setQuestions((a) => [...a, ""])} className="mt-2 text-xs font-medium text-accent hover:underline">
                 + soru ekle
               </button>
             </div>
@@ -391,7 +391,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   {(["short", "medium", "long"] as const).map((k) => (
                     <button key={k} type="button" onClick={() => setLength(k)} className={`rounded-xl border px-3 py-2.5 text-left ${length === k ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/40"}`}>
                       <div className="text-sm font-medium">{k === "short" ? "Kısa" : k === "medium" ? "Orta" : "Uzun"}</div>
-                      <div className="text-[11px] text-ink/60">{words[k]}</div>
+                      <div className="text-xs text-ink/60">{words[k]}</div>
                     </button>
                   ))}
                 </div>
@@ -431,7 +431,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                       <input type="checkbox" checked={opts[k]} onChange={(e) => setOpts((o) => ({ ...o, [k]: e.target.checked }))} className="mt-0.5 accent-[#4f00ff]" />
                       <span>
                         <span className="block text-sm font-medium">{l}</span>
-                        <span className="block text-[11px] text-ink/60">{d}</span>
+                        <span className="block text-xs text-ink/60">{d}</span>
                       </span>
                     </label>
                   ))}
@@ -446,12 +446,12 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   placeholder="ör. Geçen yıl 40 şubeli bir müşterimiz e-faturaya geçince ay sonu kapanışı 5 günden 2 güne indi."
                   className="mt-1 w-full rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
                 />
-                <span className="mt-1 block text-[11px] text-ink/60">Yazıya gerçek örnek olarak girer, rakamlar değiştirilmez. Yazmazsan örnek uydurulmaz. Sürekli kullanılacak hikâyeleri Proje ayarları&apos;na ekle.</span>
+                <span className="mt-1 block text-xs text-ink/60">Yazıya gerçek örnek olarak girer, rakamlar değiştirilmez. Yazmazsan örnek uydurulmaz. Sürekli kullanılacak hikâyeleri Proje ayarları&apos;na ekle.</span>
               </label>
             </div>
 
             <div className="flex flex-col rounded-xl bg-muted/50 p-4">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Özet</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-ink/60">Özet</div>
               <div className="mt-1 text-base font-medium leading-6">{title}</div>
               <dl className="mt-3 space-y-1.5 text-xs">
                 {[
@@ -467,7 +467,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                   </div>
                 ))}
               </dl>
-              <p className="mt-3 text-[11px] leading-5 text-ink/60">Marka bilgi bankası kullanılır. Bilinmeyen rakam ya da bilgi uydurulmaz, [NEEDS: …] olarak işaretlenir.</p>
+              <p className="mt-3 text-xs leading-5 text-ink/60">Marka bilgi bankası kullanılır. Bilinmeyen rakam ya da bilgi uydurulmaz, [NEEDS: …] olarak işaretlenir.</p>
               <div className="mt-auto pt-4">
                 {busy === "write" ? (
                   <div className="rounded-xl bg-panel p-3">
@@ -475,7 +475,7 @@ export default function WriteWizard({ onDone, preset }: { onDone: (id: number) =
                       <div className="h-full rounded-full bg-accent transition-all duration-[6000ms]" style={{ width: `${Math.min(92, 12 + tick * 16)}%` }} />
                     </div>
                     <div className="mt-2 text-xs font-medium text-ink/60">{progress[Math.min(tick, progress.length - 1)]}</div>
-                    <div className="text-[11px] text-ink/60">30–90 saniye sürebilir; bitince editörde açılacak.</div>
+                    <div className="text-xs text-ink/60">30–90 saniye sürebilir; bitince editörde açılacak.</div>
                   </div>
                 ) : (
                   <button type="button" onClick={write} disabled={!title || !outline.some((s) => s.h2.trim())} className="w-full rounded-[10px] bg-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">

@@ -58,15 +58,15 @@ export default function HeroDashboardPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-danger/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-seo/60" />
-        <span className="ml-2 rounded-md border border-border bg-panel px-2.5 py-0.5 text-[11px] text-ink/60">epicsem.app/dashboard</span>
-        <span className="ml-auto rounded-full bg-warn/10 px-2 py-0.5 text-[11px] font-bold text-warn-ink">Örnek görünüm</span>
+        <span className="ml-2 rounded-md border border-border bg-panel px-2.5 py-0.5 text-xs text-ink/60">epicsem.app/dashboard</span>
+        <span className="ml-auto rounded-full bg-warn/10 px-2 py-0.5 text-xs font-bold text-warn-ink">Örnek görünüm</span>
       </div>
 
       <div className="grid grid-cols-[150px_1fr] max-md:grid-cols-1">
         {/* sol menü */}
         <aside className="max-md:hidden border-r border-border p-3 space-y-1 bg-paper/60">
           <div className="flex items-center gap-2 px-2 pb-3 text-sm font-extrabold">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-[11px] text-white">E</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-xs text-white">E</span>
             Epicsem
           </div>
           {MENU.map((m, i) => (
@@ -85,9 +85,9 @@ export default function HeroDashboardPreview() {
               { label: "Ort. pozisyon", value: "#2,1", sub: "-0,6", tone: "text-seo-ink" },
             ].map((k) => (
               <div key={k.label} className="rounded-xl border border-border p-3">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60">{k.label}</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">{k.label}</div>
                 <div className="mt-1 text-xl font-extrabold tabular-nums">{k.value}</div>
-                <div className={`text-[11px] font-semibold ${k.tone}`}>{k.sub}</div>
+                <div className={`text-xs font-semibold ${k.tone}`}>{k.sub}</div>
               </div>
             ))}
           </div>
@@ -97,7 +97,7 @@ export default function HeroDashboardPreview() {
             <div className="rounded-xl border border-border p-3">
               <div className="flex items-center justify-between pb-2">
                 <span className="text-xs font-bold">Görünürlük trendi</span>
-                <span className="flex gap-1 text-[11px] text-ink/60">
+                <span className="flex gap-1 text-xs text-ink/60">
                   <span className="rounded bg-muted px-1.5 py-0.5 font-bold text-ink">G</span>
                   <span className="px-1.5 py-0.5">H</span>
                   <span className="px-1.5 py-0.5">A</span>
@@ -136,7 +136,7 @@ export default function HeroDashboardPreview() {
               <div className="space-y-2">
                 {ROWS.map((r, i) => (
                   <div key={r.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5 font-semibold">
                         <span className="h-2 w-2 rounded-full" style={{ background: SERIES[i].color }} />
                         {r.name}

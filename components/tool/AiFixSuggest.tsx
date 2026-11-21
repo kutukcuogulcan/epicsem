@@ -29,7 +29,7 @@ function Copy({ text }: { text: string }) {
           setTimeout(() => setOk(false), 1500);
         });
       }}
-      className="shrink-0 rounded-md border border-border bg-panel px-2 py-0.5 text-[11px] font-medium text-ink/60 hover:border-accent hover:text-accent"
+      className="shrink-0 rounded-md border border-border bg-panel px-2 py-0.5 text-xs font-medium text-ink/60 hover:border-accent hover:text-accent"
     >
       {ok ? "Kopyalandı" : "Kopyala"}
     </button>
@@ -40,7 +40,7 @@ function Field({ label, current, value, onChange, max, on, onToggle, multiline }
   return (
     <div className={`rounded-xl border bg-panel p-3 ${on ? "border-accent/40" : "border-border"}`}>
       <div className="flex items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink/60">
+        <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink/60">
           <input type="checkbox" checked={on} onChange={(e) => onToggle(e.target.checked)} />
           {label}
         </label>
@@ -52,7 +52,7 @@ function Field({ label, current, value, onChange, max, on, onToggle, multiline }
       ) : (
         <input value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-2 py-1.5 text-sm outline-none focus:border-accent" />
       )}
-      {max && <div className={`mt-1 text-[11px] ${value.length > max ? "text-danger-ink" : "text-ink/60"}`}>{value.length} / {max} karakter</div>}
+      {max && <div className={`mt-1 text-xs ${value.length > max ? "text-danger-ink" : "text-ink/60"}`}>{value.length} / {max} karakter</div>}
     </div>
   );
 }
@@ -205,9 +205,9 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
         <div className="text-sm font-medium">Düzeltmeler</div>
         <div className="flex items-center gap-2">
           {busy && <span className="text-xs text-accent">AI yazıyor…</span>}
-          <span className="rounded bg-panel px-2 py-0.5 text-[11px] font-medium text-ink/60 ring-1 ring-border">{source === "ai" ? "AI ile yazıldı — kontrol edin" : source === "kural" ? "Kural tabanlı öneri" : "Elle düzenleme"}</span>
+          <span className="rounded bg-panel px-2 py-0.5 text-xs font-medium text-ink/60 ring-1 ring-border">{source === "ai" ? "AI ile yazıldı — kontrol edin" : source === "kural" ? "Kural tabanlı öneri" : "Elle düzenleme"}</span>
           {!s && !busy && (
-            <button type="button" onClick={runAi} className="rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/20">✦ AI ile doldur</button>
+            <button type="button" onClick={runAi} className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/20">✦ AI ile doldur</button>
           )}
         </div>
       </div>
@@ -221,7 +221,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
 
       {alts.length > 0 && (
         <div className={`rounded-xl border bg-panel p-3 ${on.alts ? "border-accent/40" : "border-border"}`}>
-          <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink/60">
+          <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink/60">
             <input type="checkbox" checked={on.alts} onChange={(e) => setOn((o) => ({ ...o, alts: e.target.checked }))} />
             Görsel alt metinleri ({alts.length})
           </label>
@@ -248,7 +248,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
       )}
 
       <div className={`rounded-xl border bg-panel p-3 ${on.og ? "border-accent/40" : "border-border"}`}>
-        <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink/60">
+        <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink/60">
           <input type="checkbox" checked={on.og} onChange={(e) => setOn((o) => ({ ...o, og: e.target.checked }))} />
           Paylaşım görseli (og:image){needsOg ? " — eksik" : ""}
         </label>
@@ -262,9 +262,9 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
                 <option value="ogimg" disabled={!ogimgConnected}>ogimg şablonu{ogimgConnected ? "" : " — bağlı değil"}</option>
               </select>
               <a href={`/api/og?download=1&${ogQs(ogTitle)}`} className="text-xs font-medium text-accent hover:underline">PNG indir</a>
-              {!ogimgConnected && <a href="/integrations" className="text-[11px] text-ink/60 hover:underline">ogimg bağla</a>}
+              {!ogimgConnected && <a href="/integrations" className="text-xs text-ink/60 hover:underline">ogimg bağla</a>}
             </div>
-            <p className="text-[11px] text-ink/60">1200×630. WordPress'e uygularken öne çıkan görsel yapılır; Epicsem Connector varsa og:image olarak da basılır.</p>
+            <p className="text-xs text-ink/60">1200×630. WordPress'e uygularken öne çıkan görsel yapılır; Epicsem Connector varsa og:image olarak da basılır.</p>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/api/og?${ogQs(ogTitle || "Başlık")}`} alt="Paylaşım görseli önizlemesi" className="aspect-[1200/630] w-full rounded-lg border border-border object-cover" />
@@ -273,20 +273,20 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
 
       <div className={`rounded-xl border bg-panel p-3 ${on.schema ? "border-accent/40" : "border-border"}`}>
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink/60">
+          <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink/60">
             <input type="checkbox" checked={on.schema} onChange={(e) => setOn((o) => ({ ...o, schema: e.target.checked }))} />
             Schema (JSON-LD)
           </label>
           {schema && <Copy text={`<script type="application/ld+json">\n${schema}\n</script>`} />}
         </div>
-        <textarea value={schema} onChange={(e) => { setSchema(e.target.value); setOn((o) => ({ ...o, schema: !!e.target.value.trim() })); }} rows={schema ? 6 : 2} placeholder='{"@context":"https://schema.org","@type":"Organization", …}' className="mt-1.5 w-full resize-y rounded-lg bg-ink px-3 py-2 font-mono text-[11px] text-white/90 outline-none" />
+        <textarea value={schema} onChange={(e) => { setSchema(e.target.value); setOn((o) => ({ ...o, schema: !!e.target.value.trim() })); }} rows={schema ? 6 : 2} placeholder='{"@context":"https://schema.org","@type":"Organization", …}' className="mt-1.5 w-full resize-y rounded-lg bg-ink px-3 py-2 font-mono text-xs text-white/90 outline-none" />
       </div>
 
       {s && (s.contentIdeas.length > 0 || s.notes.length > 0) && (
         <div className="rounded-xl border border-border bg-panel p-3 text-sm">
           {s.contentIdeas.length > 0 && (
             <>
-              <div className="text-[11px] font-medium uppercase tracking-wide text-ink/60">Eklenecek içerik bölümleri</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-ink/60">Eklenecek içerik bölümleri</div>
               <ul className="mt-1 list-disc space-y-0.5 pl-4 text-ink/75">{s.contentIdeas.map((c, i) => <li key={i}>{c}</li>)}</ul>
               <a href={`/editor?url=${encodeURIComponent(url)}`} className="mt-2 inline-block text-xs font-medium text-accent hover:underline">İçeriği AI SEO Editör'de genişlet →</a>
             </>
@@ -299,7 +299,7 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
       <div className="rounded-xl border border-ink/10 bg-panel p-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium">WordPress'e uygula</span>
-          <span className="text-[11px] text-ink/60">AI kullanmaz · ücretsiz</span>
+          <span className="text-xs text-ink/60">AI kullanmaz · ücretsiz</span>
         </div>
         {conns === null ? (
           <div className="mt-2 h-8 animate-pulse rounded bg-muted" />
@@ -319,12 +319,12 @@ export default function AiFixSuggest({ row }: { row: BulkImportRow }) {
               {editUrl && <a href={editUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-accent hover:underline">WordPress'te aç ↗</a>}
             </div>
             {plugin === false && (
-              <div className="rounded-lg bg-warn/10 px-3 py-2 text-[11px] leading-relaxed text-ink/70">
+              <div className="rounded-lg bg-warn/10 px-3 py-2 text-xs leading-relaxed text-ink/70">
                 SEO title, meta açıklama ve schema için sitede <b>Epicsem Connector</b> eklentisi gerekir (H1 ve alt metinleri eklentisiz de uygulanır).{" "}
                 <a href="/api/wp-plugin" className="font-medium text-accent hover:underline">Eklentiyi indir (.zip)</a> → WordPress › Eklentiler › Yeni ekle › Eklenti yükle → Etkinleştir. Yoast ve Rank Math ile uyumludur.
               </div>
             )}
-            {plugin && <div className="text-[11px] font-medium text-seo-ink">✓ Epicsem Connector eklentisi kurulu</div>}
+            {plugin && <div className="text-xs font-medium text-seo-ink">✓ Epicsem Connector eklentisi kurulu</div>}
             {results && (
               <ul className="space-y-1">
                 {results.map((r, i) => (

@@ -311,7 +311,7 @@ export default function ContentHub() {
                 <CardIcon type={c.type} />
               </span>
               <div className="mt-1.5 text-xs font-semibold leading-tight">{c.title}</div>
-              <div className="text-[11px] text-ink/60 mt-0.5">
+              <div className="text-xs text-ink/60 mt-0.5">
                 {addingType === c.type ? "Ekleniyor…" : c.hint}
               </div>
             </button>

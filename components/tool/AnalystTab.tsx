@@ -81,7 +81,7 @@ function ChangeCard({ domain }: { domain: string }) {
           {d.newSources.length > 0 && <p className="text-sub">AI&apos;ın yeni gösterdiği kaynaklar: {d.newSources.slice(0, 6).join(", ")}</p>}
           {r.actions.length > 0 && (
             <div className="rounded-xl bg-accent/5 px-4 py-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">Şimdi ne yapmalı</div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Şimdi ne yapmalı</div>
               <ul className="space-y-1">{r.actions.map((a) => <li key={a}>{a}</li>)}</ul>
             </div>
           )}
@@ -196,7 +196,7 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
         )}
         {report.risks.length > 0 && (
           <div className="mt-4 rounded-xl bg-danger/5 px-4 py-3 text-[13px]">
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-danger-ink">Riskler</div>
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-danger-ink">Riskler</div>
             <ul className="space-y-1">{report.risks.map((r) => <li key={r}>{r}</li>)}</ul>
           </div>
         )}
@@ -204,7 +204,7 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
 
       {report.opportunities.map((o, n) => (
         <Card key={o.title}>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
             <span className="text-sub">{n + 1}.</span>
             <span className="rounded-md bg-accent/10 px-2 py-0.5 text-accent">{CAT[o.category]}</span>
             <span className={`rounded-md px-2 py-0.5 ${IMPACT[o.impact][1]}`}>{IMPACT[o.impact][0]}</span>
@@ -216,7 +216,7 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
             <ul className="mt-2 space-y-1 rounded-lg bg-seo/5 px-3 py-2 text-[13px]">
               {o.evidence.map((e) => (
                 <li key={e.url + e.finding}>
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-seo-ink">Okunan sayfadan bulgu · </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-seo-ink">Okunan sayfadan bulgu · </span>
                   {e.finding}{" "}
                   <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">kaynak</a>
                 </li>
@@ -234,12 +234,12 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
           </div>
           <div className="mt-3 grid gap-3 text-[13px] md:grid-cols-2">
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sub">İlgili sorular</div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-sub">İlgili sorular</div>
               <ul className="space-y-0.5">{o.prompts.map((p) => <li key={p.i}>&ldquo;{p.text}&rdquo;</li>)}</ul>
             </div>
             {o.sources.length > 0 && (
               <div>
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sub">AI&apos;ın gösterdiği kaynaklar</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-sub">AI&apos;ın gösterdiği kaynaklar</div>
                 <ul className="space-y-0.5">
                   {o.sources.map((s) => (
                     <li key={s.domain}>
@@ -263,7 +263,7 @@ function Opportunities({ domain, brand }: { domain: string; brand: string }) {
             return (
               <div className="mt-4 space-y-3 rounded-xl border border-border p-4 text-[13px]">
                 <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">İçerik brief&apos;i</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-sub">İçerik brief&apos;i</div>
                   <div className="mt-1 text-sm font-semibold">{b.h1Options[0] ?? b.mainQuestion}</div>
                   {b.h1Options.length > 1 && <div className="text-sub">Alternatif: {b.h1Options.slice(1).join(" · ")}</div>}
                   <div className="mt-1 text-sub">Meta: {b.metaTitle} — {b.metaDescription}</div>

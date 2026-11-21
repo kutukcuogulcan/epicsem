@@ -91,7 +91,7 @@ export function LinksTab({ result }: { result: BulkImportResult }) {
                 <td className="max-w-[12rem] truncate py-2 pr-3">{l.anchor ? <span className="text-ink/70">{l.anchor}</span> : <span className="text-warn-ink">boş</span>}</td>
                 <td className="py-2 pr-3 text-xs">
                   <span className="text-ink/60">{l.external ? "Dış" : "İç"}</span>
-                  {l.nofollow && <span className="ml-1 rounded bg-muted px-1 text-[11px] font-medium text-ink/60">nofollow</span>}
+                  {l.nofollow && <span className="ml-1 rounded bg-muted px-1 text-xs font-medium text-ink/60">nofollow</span>}
                 </td>
                 <td className="py-2 pr-5"><StatusPill code={l.code} /></td>
               </tr>
@@ -189,7 +189,7 @@ export function RedirectsTab({ result }: { result: BulkImportResult }) {
                   {!(i === hops.length - 1 && h.status === 0 && !r.metrics?.redirectHops) && <StatusPill code={h.status} />}
                 </span>
               ))}
-              {bad && <span className="ml-auto rounded bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger-ink">{hops.some((h) => h.status === -1) ? "Döngü" : hops.length > 2 ? `${hops.length - 1} adım` : "Kırık hedef"}</span>}
+              {bad && <span className="ml-auto rounded bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">{hops.some((h) => h.status === -1) ? "Döngü" : hops.length > 2 ? `${hops.length - 1} adım` : "Kırık hedef"}</span>}
             </div>
           );
         })}
@@ -260,7 +260,7 @@ export function CompareTab({ result, prevId, prevLabel }: { result: BulkImportRe
                 <span className="flex items-center gap-2">
                   <span className="text-ink/45 group-open:rotate-90">▸</span>
                   {ISSUE_LABEL[code] ?? code}
-                  <span className="text-[11px] font-medium text-ink/60">{SEVERITY_LABEL[ISSUE_SEVERITY[code] ?? "notice"]}</span>
+                  <span className="text-xs font-medium text-ink/60">{SEVERITY_LABEL[ISSUE_SEVERITY[code] ?? "notice"]}</span>
                 </span>
                 <span className="font-medium tabular-nums">{urls.length}</span>
               </summary>
@@ -314,7 +314,7 @@ export function DuplicateGroups({ result }: { result: BulkImportResult }) {
       <div className="grid gap-3 p-4 md:grid-cols-2">
         {groups.slice(0, 8).map((g, i) => (
           <div key={i} className="rounded-xl border border-border p-3">
-            <div className="text-[11px] font-medium text-warn-ink">Grup {i + 1} · {g.length} sayfa</div>
+            <div className="text-xs font-medium text-warn-ink">Grup {i + 1} · {g.length} sayfa</div>
             {g.slice(0, 5).map((u) => (
               <div key={u} className="truncate text-xs text-ink/65">{short(u)}</div>
             ))}

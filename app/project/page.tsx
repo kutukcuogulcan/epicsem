@@ -184,7 +184,7 @@ export default function ProjectSettingsPage() {
             title="Ana sayfanı okuyup boş alanlar için öneri çıkarır (küçük bir AI çağrısı, içerik kotası harcamaz)"
           >
             {busy === "fill" ? "Site okunuyor…" : "Siteden doldur"}
-            <span className="rounded-md bg-muted px-1.5 text-[11px] text-sub">AI</span>
+            <span className="rounded-md bg-muted px-1.5 text-xs text-sub">AI</span>
           </button>
         }
       />

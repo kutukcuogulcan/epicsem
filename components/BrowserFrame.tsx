@@ -30,7 +30,7 @@ export default function BrowserFrame({
         <span className="h-2.5 w-2.5 rounded-full bg-danger/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-seo/60" />
-        <span className="ml-2 truncate rounded-md bg-panel border border-border px-2.5 py-0.5 text-[11px] text-ink/60">
+        <span className="ml-2 truncate rounded-md bg-panel border border-border px-2.5 py-0.5 text-xs text-ink/60">
           {path}
         </span>
       </div>

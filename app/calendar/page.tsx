@@ -426,7 +426,7 @@ export default function CalendarPage() {
           <div key={l} className={`${CARD} px-4 py-4`}>
             <div className="text-xs font-medium text-sub">{l}</div>
             <div className={`mt-1.5 text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{drafts === null ? "…" : v}</div>
-            <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+            <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
           </div>
         ))}
       </div>
@@ -437,7 +437,7 @@ export default function CalendarPage() {
           <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
             {actions.slice(0, 3).map((a) => (
               <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-                <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                 <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                 <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                 <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -476,7 +476,7 @@ export default function CalendarPage() {
                 Bugün
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-sub">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-sub">
               {(["published", "scheduled", "remote", "planned", "created", "run"] as const).map((k) => (
                 <span key={k} className="inline-flex items-center gap-1.5">
                   <span className={`h-2 w-2 rounded-full ${KIND[k].dot}`} />
@@ -485,7 +485,7 @@ export default function CalendarPage() {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-7 border-t border-border bg-muted/40 text-[11px] font-medium uppercase tracking-wide text-sub">
+          <div className="grid grid-cols-7 border-t border-border bg-muted/40 text-xs font-medium uppercase tracking-wide text-sub">
             {WEEKDAYS.map((w) => (
               <div key={w} className="px-2 py-2">
                 {w}
@@ -504,7 +504,7 @@ export default function CalendarPage() {
                 >
                   <div className="flex items-center justify-between px-1">
                     <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full text-xs tabular-nums ${isToday ? "bg-accent px-1.5 font-semibold text-white" : c.inMonth ? "text-ink" : "text-sub/70"}`}>{c.date}</span>
-                    <span className="text-[11px] text-accent opacity-0 group-hover:opacity-100">+ planla</span>
+                    <span className="text-xs text-accent opacity-0 group-hover:opacity-100">+ planla</span>
                   </div>
                   <div className="mt-1 space-y-1">
                     {evs.slice(0, 3).map((e) => (
@@ -517,13 +517,13 @@ export default function CalendarPage() {
                           if (e.draft) setOpen(e.draft);
                           else if (e.campaign) setRunOpen({ c: e.campaign, day: e.day });
                         }}
-                        className={`block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium ${KIND[e.kind].cls} ${e.kind === "run" ? "border border-dashed border-[#D5D7DA] shadow-none" : ""}`}
+                        className={`block w-full truncate rounded-md px-1.5 py-0.5 text-left text-xs font-medium ${KIND[e.kind].cls} ${e.kind === "run" ? "border border-dashed border-[#D5D7DA] shadow-none" : ""}`}
                       >
                         {e.kind === "run" ? "⟳ " : ""}
                         {e.title}
                       </button>
                     ))}
-                    {evs.length > 3 && <div className="px-1.5 text-[11px] text-sub">+{evs.length - 3} daha</div>}
+                    {evs.length > 3 && <div className="px-1.5 text-xs text-sub">+{evs.length - 3} daha</div>}
                   </div>
                 </div>
               );
@@ -575,7 +575,7 @@ export default function CalendarPage() {
             </div>
           ) : (
             <table className="w-full border-t border-border text-sm">
-              <thead className="bg-muted/40 text-left text-[11px] font-medium uppercase tracking-wide text-sub">
+              <thead className="bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-sub">
                 <tr>
                   <th className="w-10 px-5 py-2">
                     <input
@@ -624,7 +624,7 @@ export default function CalendarPage() {
                       <td className="py-3 pr-3 text-right tabular-nums text-[13px]">{words(d.article.bodyMarkdown).toLocaleString("tr-TR")}</td>
                       <td className="hidden py-3 pr-3 text-[13px] text-sub lg:table-cell">{fmtDate(d.createdAt)}</td>
                       <td className="py-3 pr-3">
-                        <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
+                        <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
                       </td>
                       <td className="py-3 pr-5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1.5">
@@ -688,7 +688,7 @@ export default function CalendarPage() {
             </div>
           ) : (
             <table className="w-full border-t border-border text-sm">
-              <thead className="bg-muted/40 text-left text-[11px] font-medium uppercase tracking-wide text-sub">
+              <thead className="bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-sub">
                 <tr>
                   <th className="px-5 py-2">Yazı</th>
                   <th className="py-2 pr-3">Neden</th>
@@ -707,11 +707,11 @@ export default function CalendarPage() {
                     <td className="py-3 pr-3">
                       <div className="flex max-w-[340px] flex-wrap gap-1">
                         {it.signals.slice(0, 3).map((s) => (
-                          <span key={s.kind} title={s.detail} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>
+                          <span key={s.kind} title={s.detail} className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>
                             {s.label}
                           </span>
                         ))}
-                        {it.signals.length > 3 && <span className="text-[11px] text-sub">+{it.signals.length - 3}</span>}
+                        {it.signals.length > 3 && <span className="text-xs text-sub">+{it.signals.length - 3}</span>}
                       </div>
                     </td>
                     <td className="hidden max-w-[200px] py-3 pr-3 text-[13px] text-sub lg:table-cell">
@@ -726,7 +726,7 @@ export default function CalendarPage() {
                     </td>
                     <td className="py-3 pr-3">
                       <div className={`text-[13px] font-semibold ${PRIO[it.priority].cls}`}>{PRIO[it.priority].label}</div>
-                      <div className="text-[11px] tabular-nums text-sub">{it.score} puan</div>
+                      <div className="text-xs tabular-nums text-sub">{it.score} puan</div>
                     </td>
                     <td className="py-3 pr-5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1.5">
@@ -805,7 +805,7 @@ export default function CalendarPage() {
             <div className="space-y-1.5">
               {rOpen.signals.map((s) => (
                 <div key={s.kind} className="flex items-start gap-2 rounded-xl border border-border px-3 py-2">
-                  <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>{s.label}</span>
+                  <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium ${SIG_CLS[s.kind] ?? "bg-muted"}`}>{s.label}</span>
                   <span className="text-[13px]">{s.detail}</span>
                 </div>
               ))}
@@ -837,7 +837,7 @@ export default function CalendarPage() {
             {rp?.busy && <div className="h-40 animate-pulse rounded-xl bg-muted" />}
             {rp?.plan && (
               <div className="space-y-4 rounded-2xl border border-[#BDB4FF] bg-accent/[0.03] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Yenileme planı{rp.demo ? " · demo" : ""}</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-accent">Yenileme planı{rp.demo ? " · demo" : ""}</div>
                 {rp.plan.summary && <p className="text-[13px]">{rp.plan.summary}</p>}
                 {(rp.plan.title || rp.plan.metaDescription) && (
                   <div className="space-y-1 text-[13px]">
@@ -951,7 +951,7 @@ export default function CalendarPage() {
                 ["Üretildi", fmtDate(open.createdAt)],
               ] as const).map(([l, v]) => (
                 <div key={l} className="rounded-xl bg-muted/50 px-3 py-2.5">
-                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-xs text-sub">{l}</div>
                   <div className="text-sm font-semibold tabular-nums">{v}</div>
                 </div>
               ))}
@@ -969,7 +969,7 @@ export default function CalendarPage() {
                     </button>
                   )}
                 </div>
-                <p className="mt-1 text-[11px] text-sub">Bu yalnızca Epicsem takvimindeki plandır. Sitede zamanlamak için editörde Yayınla → tarih seç.</p>
+                <p className="mt-1 text-xs text-sub">Bu yalnızca Epicsem takvimindeki plandır. Sitede zamanlamak için editörde Yayınla → tarih seç.</p>
               </div>
             )}
             {open.publishState === "scheduled" && open.scheduledAt && <div className="rounded-xl bg-accent/5 px-3 py-2 text-[13px]">Sitede {fmtDate(open.scheduledAt)} için zamanlandı.</div>}
@@ -1018,7 +1018,7 @@ export default function CalendarPage() {
                     }}
                     className="flex w-full items-center gap-2 rounded-xl border border-border px-3 py-2 text-left hover:bg-muted/40"
                   >
-                    <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${KIND[e.kind].cls}`}>{KIND[e.kind].label}</span>
+                    <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium ${KIND[e.kind].cls}`}>{KIND[e.kind].label}</span>
                     <span className="truncate text-[13px]">{e.title}</span>
                   </button>
                 ))}
@@ -1035,7 +1035,7 @@ export default function CalendarPage() {
                     <div key={d.id} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[13px] font-medium">{d.article.title || "(başlıksız)"}</div>
-                        <div className="truncate text-[11px] text-sub">{d.plannedFor ? `şu an: ${fmtDay(d.plannedFor)}` : "günü yok"}</div>
+                        <div className="truncate text-xs text-sub">{d.plannedFor ? `şu an: ${fmtDay(d.plannedFor)}` : "günü yok"}</div>
                       </div>
                       <button type="button" disabled={!!busy} onClick={() => patch(d, { plannedFor: dayOpen })} className={BTN2}>
                         Bu güne al
@@ -1077,7 +1077,7 @@ export default function CalendarPage() {
                   ? "Yazılar sitene taslak olarak gönderilir; sitende yayınlarsın."
                   : "Tam otomasyon: yazılar sitende doğrudan yayınlanır."}
             </p>
-            <p className="text-[11px] text-sub">Tarih tahminidir; rastgele saat ayarı ve sıradaki konu sayısı gerçek zamanı değiştirebilir. Her yazı 1 içerik üretimi kotası kullanır.</p>
+            <p className="text-xs text-sub">Tarih tahminidir; rastgele saat ayarı ve sıradaki konu sayısı gerçek zamanı değiştirebilir. Her yazı 1 içerik üretimi kotası kullanır.</p>
           </div>
         )}
       </Drawer>

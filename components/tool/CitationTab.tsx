@@ -48,9 +48,9 @@ function Copy({ label, value }: { label: string; value?: string }) {
       })}
       className="group flex w-full items-start gap-3 rounded-xl border border-border bg-panel px-3 py-2.5 text-left transition hover:border-accent/40"
     >
-      <span className="w-20 shrink-0 pt-0.5 text-[11px] font-medium uppercase tracking-wide text-ink/60">{label}</span>
+      <span className="w-20 shrink-0 pt-0.5 text-xs font-medium uppercase tracking-wide text-ink/60">{label}</span>
       <span className="min-w-0 flex-1 whitespace-pre-line text-xs leading-relaxed text-ink/80">{value}</span>
-      <span className={`shrink-0 text-[11px] font-medium ${ok ? "text-seo-ink" : "text-accent opacity-0 group-hover:opacity-100"}`}>{ok ? "Kopyalandı" : "Kopyala"}</span>
+      <span className={`shrink-0 text-xs font-medium ${ok ? "text-seo-ink" : "text-accent opacity-0 group-hover:opacity-100"}`}>{ok ? "Kopyalandı" : "Kopyala"}</span>
     </button>
   );
 }
@@ -162,9 +162,9 @@ export default function CitationTab({ site }: { site: string }) {
           ["Link doğrulandı", String(linked), "profilde site linki var"],
         ].map(([l, v, s]) => (
           <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
-            <div className="text-[11px] text-ink/60">{l}</div>
+            <div className="text-xs text-ink/60">{l}</div>
             <div className="text-2xl font-medium tabular-nums">{v}</div>
-            <div className="text-[11px] text-ink/60">{s}</div>
+            <div className="text-xs text-ink/60">{s}</div>
           </div>
         ))}
       </div>
@@ -177,7 +177,7 @@ export default function CitationTab({ site }: { site: string }) {
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div>
               <div className="text-sm font-medium">İşletme bilgileri</div>
-              <div className="text-[11px] text-ink/60">Her kayıtta birebir aynı yaz — tutarlılık hem Google hem AI için önemli</div>
+              <div className="text-xs text-ink/60">Her kayıtta birebir aynı yaz — tutarlılık hem Google hem AI için önemli</div>
             </div>
             {!editProfile && (
               <button type="button" onClick={() => setEditProfile(true)} className="text-xs font-medium text-accent hover:underline">
@@ -208,7 +208,7 @@ export default function CitationTab({ site }: { site: string }) {
             </form>
           ) : (
             <div className="space-y-2 p-5">
-              <div className="mb-1 text-[11px] text-ink/60">{BIZ_LABEL[biz]}</div>
+              <div className="mb-1 text-xs text-ink/60">{BIZ_LABEL[biz]}</div>
               <Copy label="Ad" value={profile.name} />
               <Copy label="Site" value={`https://${site}`} />
               <Copy label="Kategori" value={profile.category} />
@@ -224,10 +224,10 @@ export default function CitationTab({ site }: { site: string }) {
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
             <div>
               <div className="text-sm font-medium">Kayıt metinleri</div>
-              <div className="text-[11px] text-ink/60">Formlara kopyala-yapıştır · bilgi bankana dayanır, uydurmaz</div>
+              <div className="text-xs text-ink/60">Formlara kopyala-yapıştır · bilgi bankana dayanır, uydurmaz</div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex rounded-lg border border-border p-0.5 text-[11px] font-medium">
+              <div className="flex rounded-lg border border-border p-0.5 text-xs font-medium">
                 {(["tr", "en"] as const).map((l) => (
                   <button key={l} type="button" onClick={() => setLang(l)} className={`rounded-md px-2 py-0.5 ${lang === l ? "bg-ink text-white" : "text-ink/60"}`}>
                     {l.toUpperCase()}
@@ -247,7 +247,7 @@ export default function CitationTab({ site }: { site: string }) {
                 <Copy label="Uzun" value={t.long?.[lang]} />
                 <Copy label="Kategoriler" value={t.categories?.join(", ")} />
                 <Copy label="Kelimeler" value={t.keywords?.join(", ")} />
-                {t.demo && <p className="text-[11px] text-warn-ink">Demo modu: AI bağlı olmadığı için girdiğin açıklamadan basit metinler oluşturuldu.</p>}
+                {t.demo && <p className="text-xs text-warn-ink">Demo modu: AI bağlı olmadığı için girdiğin açıklamadan basit metinler oluşturuldu.</p>}
               </>
             ) : (
               <p className="py-6 text-center text-sm text-ink/60">{profile.name ? "\"Metinleri yaz\" ile slogan, kısa ve uzun açıklama hazırlansın (1 içerik kotası)." : "Önce işletme bilgilerini kaydet."}</p>
@@ -261,7 +261,7 @@ export default function CitationTab({ site }: { site: string }) {
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
           <div className="mr-auto">
             <div className="text-sm font-medium">Kayıt listesi</div>
-            <div className="text-[11px] text-ink/60">{showAll ? "Tüm kayıtlar" : `${BIZ_LABEL[biz]} için önerilenler`}</div>
+            <div className="text-xs text-ink/60">{showAll ? "Tüm kayıtlar" : `${BIZ_LABEL[biz]} için önerilenler`}</div>
           </div>
           <label className="flex items-center gap-1.5 text-xs text-ink/60">
             <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} className="accent-[#4f00ff]" />
@@ -273,7 +273,7 @@ export default function CitationTab({ site }: { site: string }) {
         </div>
         {groups.map(([g, items]) => (
           <div key={g}>
-            <div className="border-b border-border bg-muted/40 px-5 py-1.5 text-[11px] font-medium uppercase tracking-wide text-ink/60">{GROUP_LABEL[g]}</div>
+            <div className="border-b border-border bg-muted/40 px-5 py-1.5 text-xs font-medium uppercase tracking-wide text-ink/60">{GROUP_LABEL[g]}</div>
             <ul className="divide-y divide-border">
               {items.map((d) => {
                 const r = rows[d.id];
@@ -285,8 +285,8 @@ export default function CitationTab({ site }: { site: string }) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${new URL(d.url).hostname}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="text-sm font-medium">{d.name}</span>
-                        <span className={`rounded px-1.5 py-px text-[11px] font-medium ${d.priority === 3 ? "bg-accent/10 text-accent" : "bg-muted text-ink/60"}`}>{PRIO[d.priority]}</span>
-                        {!d.link && <span className="rounded bg-muted px-1.5 py-px text-[11px] text-ink/60">link vermez</span>}
+                        <span className={`rounded px-1.5 py-px text-xs font-medium ${d.priority === 3 ? "bg-accent/10 text-accent" : "bg-muted text-ink/60"}`}>{PRIO[d.priority]}</span>
+                        {!d.link && <span className="rounded bg-muted px-1.5 py-px text-xs text-ink/60">link vermez</span>}
                       </div>
                       <p className="mt-0.5 text-xs leading-relaxed text-ink/60">{d.why}</p>
                     </div>
@@ -301,14 +301,14 @@ export default function CitationTab({ site }: { site: string }) {
                       {r?.linkFound === false && <span title="Profilde site linki bulunamadı" className="text-xs font-medium text-danger-ink">link yok</span>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <select value={st} onChange={(e) => update(d.id, { status: e.target.value })} className={`rounded-lg border-0 px-2 py-1.5 text-[11px] font-medium ${STATUS[st][1]}`}>
+                      <select value={st} onChange={(e) => update(d.id, { status: e.target.value })} className={`rounded-lg border-0 px-2 py-1.5 text-xs font-medium ${STATUS[st][1]}`}>
                         {Object.entries(STATUS).map(([k, [l]]) => (
                           <option key={k} value={k}>
                             {l}
                           </option>
                         ))}
                       </select>
-                      <a href={d.url} target="_blank" rel="noreferrer" className="whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90">
+                      <a href={d.url} target="_blank" rel="noreferrer" className="whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white hover:opacity-90">
                         Kayda git ↗
                       </a>
                     </div>
@@ -319,7 +319,7 @@ export default function CitationTab({ site }: { site: string }) {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-ink/60">
+      <p className="text-xs text-ink/60">
         Formlar otomatik doldurulmaz: kayıt sitelerinin çoğu bot korumalıdır ve otomatik kayıt spam sayılabilir. Metinleri kopyalayıp kendin yapıştırırsın; profil adresini girince sistem linkin gerçekten durup durmadığını kontrol eder. Liste fikri: backlink-pilot (MIT).
       </p>
     </div>

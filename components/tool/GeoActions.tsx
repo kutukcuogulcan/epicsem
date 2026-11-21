@@ -74,7 +74,7 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
               <span className={`truncate text-[24px] font-semibold leading-8 tabular-nums ${col}`}>{v}</span>
               {suf && <span className="text-sm text-sub">{suf}</span>}
             </div>
-            <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+            <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
           </div>
         ))}
       </div>
@@ -90,13 +90,13 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[a.type]}`}>{ACTION_LABEL[a.type]}</span>
+                  <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${TYPE_CLS[a.type]}`}>{ACTION_LABEL[a.type]}</span>
                   <span className="truncate text-[13px] font-medium">{a.title}</span>
                 </div>
                 <div className="mt-0.5 line-clamp-1 text-xs text-sub">{a.why}</div>
               </div>
               <div className="hidden w-40 shrink-0 md:block">
-                <div className="flex justify-between text-[11px] text-sub">
+                <div className="flex justify-between text-xs text-sub">
                   <span>Etki</span>
                   <span className="tabular-nums">{a.impact} cevap</span>
                 </div>
@@ -104,12 +104,12 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
                   <div className="h-full rounded-full bg-accent" style={{ width: `${(a.impact / maxImpact) * 100}%` }} />
                 </div>
               </div>
-              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[a.effort]}`}>{a.effort}</span>
+              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium ${EFFORT_CLS[a.effort]}`}>{a.effort}</span>
             </button>
           ))}
         </div>
       </div>
-      <p className="text-[11px] text-sub">Plan bu testin cevaplarından hesaplanır, AI kullanmaz. Sonuçlar ölçümdür, garanti değildir; aksiyonlardan sonra testi tekrarlayıp karşılaştır.</p>
+      <p className="text-xs text-sub">Plan bu testin cevaplarından hesaplanır, AI kullanmaz. Sonuçlar ölçümdür, garanti değildir; aksiyonlardan sonra testi tekrarlayıp karşılaştır.</p>
 
       <Drawer
         isOpen={!!open}
@@ -166,7 +166,7 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
               <ol className="space-y-1.5">
                 {open.steps.map((s, i) => (
                   <li key={i} className="flex gap-2.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-semibold text-accent">{i + 1}</span>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">{i + 1}</span>
                     <span className="leading-5">{s}</span>
                   </li>
                 ))}
@@ -186,7 +186,7 @@ export default function GeoActionsTab({ runs, own, competitors, onTab }: { runs:
                       ) : (
                         <div className="truncate font-medium">{e.label}</div>
                       )}
-                      {e.note && <div className="truncate text-[11px] text-sub">{e.note}</div>}
+                      {e.note && <div className="truncate text-xs text-sub">{e.note}</div>}
                     </div>
                     {open.type === "write" && (
                       <Link href={`/editor?new=${encodeURIComponent(e.label)}`} className="shrink-0 text-xs font-medium text-accent hover:underline">

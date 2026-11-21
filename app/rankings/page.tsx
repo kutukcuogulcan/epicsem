@@ -293,7 +293,7 @@ export default function RankingsPage() {
                   <span className={`text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{v}</span>
                   {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <div className="mt-1 h-4 text-[11px] text-sub">{hint}</div>
+                <div className="mt-1 h-4 text-xs text-sub">{hint}</div>
               </div>
             ))}
           </div>
@@ -304,7 +304,7 @@ export default function RankingsPage() {
               <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
                 {actions.slice(0, 3).map((a) => (
                   <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-                    <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                    <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                     <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                     <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                     <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -352,7 +352,7 @@ export default function RankingsPage() {
                         <tr key={k.id} onClick={() => setSel(k.id)} className="cursor-pointer hover:bg-[#fafafa]">
                           <td className="py-2.5 pl-5">
                             <div className="font-medium">{k.keyword}</div>
-                            <div className="text-[11px] text-sub">
+                            <div className="text-xs text-sub">
                               {domains.length > 1 ? `${k.domain} · ` : ""}
                               {k.gl.toUpperCase()}
                               {k.source === "serpbear" ? " · SerpBear" : ""}
@@ -376,7 +376,7 @@ export default function RankingsPage() {
                                 </ResponsiveContainer>
                               </div>
                             ) : (
-                              <span className="text-[11px] text-sub">yeterli veri yok</span>
+                              <span className="text-xs text-sub">yeterli veri yok</span>
                             )}
                           </td>
                           <td className="hidden max-w-[15rem] truncate py-2.5 pr-5 text-xs text-sub lg:table-cell">{k.lastUrl ? k.lastUrl.replace(/^https?:\/\/(www\.)?[^/]+/, "") || "/" : "—"}</td>
@@ -446,7 +446,7 @@ export default function RankingsPage() {
                 ["En iyi sıra", (() => { const ps = (hist[selKw.id] ?? []).map((x) => x.position).filter((x): x is number => x !== null); return ps.length ? String(Math.min(...ps)) : "—"; })()],
               ] as const).map(([l, v]) => (
                 <div key={l} className="rounded-xl border border-border px-3 py-2">
-                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-xs text-sub">{l}</div>
                   <div className="text-lg font-semibold tabular-nums">{v}</div>
                 </div>
               ))}

@@ -95,7 +95,7 @@ export default function FreeCheck() {
           <div className={`${CARD} overflow-hidden`}>
             {r.items.map((i) => (
               <div key={i.key} className="flex items-start gap-3 border-t border-border px-5 py-3 first:border-t-0">
-                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${i.ok ? "bg-seo" : i.partial ? "bg-warn" : "bg-danger"}`}>{i.ok ? "✓" : i.partial ? "!" : "✕"}</span>
+                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${i.ok ? "bg-seo" : i.partial ? "bg-warn" : "bg-danger"}`}>{i.ok ? "✓" : i.partial ? "!" : "✕"}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-medium">{i.label}</div>
                   <div className="text-[12px] text-sub">{i.detail}</div>

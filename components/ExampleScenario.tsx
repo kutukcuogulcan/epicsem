@@ -23,7 +23,7 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
     <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-accent/[0.05] via-panel to-panel px-5 py-8 sm:px-8 sm:py-10">
       <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
       <Reveal className="relative mx-auto max-w-2xl space-y-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-panel px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-accent">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-panel px-3 py-1 text-xs font-medium uppercase tracking-wide text-accent">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           Nasıl çalışır
         </span>
@@ -46,7 +46,7 @@ export default function ExampleScenario({ heading, steps }: { heading: string; s
         ))}
       </ol>
 
-      <p className="relative mt-6 text-center text-[11px] text-ink/60">Kurgusal bir örnektir — gerçek bir müşteriye ya da siteye ait değildir.</p>
+      <p className="relative mt-6 text-center text-xs text-ink/60">Kurgusal bir örnektir — gerçek bir müşteriye ya da siteye ait değildir.</p>
     </section>
   );
 }

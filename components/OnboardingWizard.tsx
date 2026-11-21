@@ -1325,7 +1325,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                             <input type="checkbox" checked={checkedPrompts.has(p.i)} onChange={() => togglePrompt(p.i)} className="mt-0.5" />
                             <span className="flex-1">
                               {p.text}
-                              <span className="block text-[11px] text-ink/45 mt-0.5">
+                              <span className="block text-xs text-ink/45 mt-0.5">
                                 {PERSONA_LABEL[p.persona]} · {p.intent} · {p.form}
                               </span>
                             </span>
@@ -1361,7 +1361,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
           </p>
           <div className="relative w-40 h-40 mx-auto my-4">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-ink text-white text-[11px] font-bold w-14 h-14 flex items-center justify-center text-center px-1 leading-tight">
+              <div className="rounded-full bg-ink text-white text-xs font-bold w-14 h-14 flex items-center justify-center text-center px-1 leading-tight">
                 {brandName.slice(0, 12) || "Marka"}
               </div>
             </div>
@@ -1372,7 +1372,7 @@ export default function OnboardingWizard({ onComplete, onClose, running }: Props
                   className="absolute inset-0 flex items-start justify-center"
                   style={{ transform: `rotate(${(360 / ENGINE_BADGES.length) * i}deg)` }}
                 >
-                  <div className="rounded-full bg-white border border-border shadow-sm text-[11px] font-semibold w-10 h-10 flex items-center justify-center text-center">
+                  <div className="rounded-full bg-white border border-border shadow-sm text-xs font-semibold w-10 h-10 flex items-center justify-center text-center">
                     {label}
                   </div>
                 </div>

@@ -339,7 +339,7 @@ export default function BacklinksPage() {
                 <span className="text-[26px] font-semibold leading-8 tabular-nums">{loading ? "…" : v}</span>
                 {suf && <span className="text-sm text-sub">{suf}</span>}
               </div>
-              <div className="mt-1 h-4 text-[11px] text-sub">{hint}</div>
+              <div className="mt-1 h-4 text-xs text-sub">{hint}</div>
             </div>
           ))}
         </div>
@@ -351,7 +351,7 @@ export default function BacklinksPage() {
         <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
           {actions.slice(0, 3).map((a) => (
             <div key={a.title} className={`${card} flex flex-col p-4`}>
-              <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+              <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
               <h3 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h3>
               <p className="mt-1 text-[13px] text-sub">{a.body}</p>
               <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -439,10 +439,10 @@ export default function BacklinksPage() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={`https://www.google.com/s2/favicons?domain=${d.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                           <span className="font-medium">{d.domain}</span>
-                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">{SRC[d.source]?.l ?? d.source}</span>
-                          {d.spam && <span className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink">spam</span>}
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-sub">{SRC[d.source]?.l ?? d.source}</span>
+                          {d.spam && <span className="rounded-md bg-danger/10 px-1.5 py-0.5 text-xs font-medium text-danger-ink">spam</span>}
                         </div>
-                        {d.anchors[0] && <div className="truncate pl-6 text-[11px] text-sub">“{d.anchors[0]}”</div>}
+                        {d.anchors[0] && <div className="truncate pl-6 text-xs text-sub">“{d.anchors[0]}”</div>}
                       </td>
                       <td className="py-2.5 pr-3">
                         <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${drTone(d.dr)}`}>{d.dr !== null ? Math.round(d.dr) : "—"}</span>
@@ -451,9 +451,9 @@ export default function BacklinksPage() {
                       <td className="hidden py-2.5 pr-3 text-xs text-sub lg:table-cell">{fmtDate(d.firstSeen)}</td>
                       <td className="py-2.5 pr-5">
                         {d.lostAt ? (
-                          <span className="whitespace-nowrap rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger-ink">Kaybedildi</span>
+                          <span className="whitespace-nowrap rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">Kaybedildi</span>
                         ) : (
-                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Canlı</span>
+                          <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Canlı</span>
                         )}
                       </td>
                     </tr>
@@ -542,21 +542,21 @@ export default function BacklinksPage() {
                     <a href={m.url} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-accent">
                       {m.title}
                     </a>
-                    <div className="text-[11px] text-sub">
+                    <div className="text-xs text-sub">
                       {m.domain} · {fmtDate(m.date)}
                     </div>
                   </div>
                   {m.linked === true ? (
-                    <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Linkli</span>
+                    <span className="shrink-0 rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Linkli</span>
                   ) : m.linked === false ? (
                     <span className="flex shrink-0 items-center gap-2">
-                      <span className="rounded-md bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn-ink">Link yok</span>
-                      <button type="button" onClick={() => draftMail("unlinked", { domain: m.domain, url: m.url, title: m.title })} className="text-[11px] font-medium text-accent hover:underline" title="1 AI sorgusu">
+                      <span className="rounded-md bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn-ink">Link yok</span>
+                      <button type="button" onClick={() => draftMail("unlinked", { domain: m.domain, url: m.url, title: m.title })} className="text-xs font-medium text-accent hover:underline" title="1 AI sorgusu">
                         ✦ Link iste
                       </button>
                     </span>
                   ) : (
-                    <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">Kontrol edilmedi</span>
+                    <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Kontrol edilmedi</span>
                   )}
                 </li>
               ))}
@@ -647,7 +647,7 @@ export default function BacklinksPage() {
                       <td className="py-2.5 pr-3">
                         <div className="flex flex-wrap gap-1">
                           {g.linksTo.map((c) => (
-                            <span key={c} className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">
+                            <span key={c} className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">
                               {c}
                             </span>
                           ))}
@@ -673,14 +673,14 @@ export default function BacklinksPage() {
       {mode === "analysis" && data?.notes && data.notes.length > 0 && (
         <div className="space-y-1">
           {data.notes.map((n) => (
-            <p key={n} className="text-[11px] text-sub">
+            <p key={n} className="text-xs text-sub">
               {n}
             </p>
           ))}
         </div>
       )}
       {data?.drLicense && (
-        <p className="text-[11px] text-sub">
+        <p className="text-xs text-sub">
           Domain Rating:{" "}
           <a href="https://ahrefs.com/" target="_blank" rel="noreferrer" className="underline">
             Ahrefs
@@ -809,7 +809,7 @@ export default function BacklinksPage() {
                     <span className="h-2 w-2 rounded-full" style={{ background: SRC[k].c }} />
                     {SRC[k].l}
                   </span>
-                  <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Ücretsiz · açık</span>
+                  <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Ücretsiz · açık</span>
                 </li>
               ))}
               {(["bing", "ahrefs"] as const).map((k) => (
@@ -819,7 +819,7 @@ export default function BacklinksPage() {
                     {SRC[k].l}
                   </span>
                   {data?.sources[k] ? (
-                    <span className="rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink">Bağlı</span>
+                    <span className="rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink">Bağlı</span>
                   ) : (
                     <Link href="/integrations" className="text-[12px] font-medium text-accent hover:underline">
                       Bağla →

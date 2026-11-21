@@ -140,7 +140,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
         description={
           <>
             Son çalışma {fmt(d.lastRunAt)} · {d.brand.domain}
-            {d.demoMode && <span className="ml-2 rounded bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">demo verisi</span>}
+            {d.demoMode && <span className="ml-2 rounded bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn-ink">demo verisi</span>}
           </>
         }
         actions={
@@ -178,7 +178,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-warn/30 bg-warn/5 px-4 py-3">
           <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-warn-ink text-[11px] font-medium text-white">!</span>
+            <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-warn-ink text-xs font-medium text-white">!</span>
             <div>
               <div className="text-sm font-medium text-warn-ink">İzleme duraklatıldı</div>
               <div className="text-xs text-sub">
@@ -209,7 +209,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
             <ScoreRing value={d.visibility * 100} size={40} stroke={4} />
             <div>
               <div className="text-2xl font-medium tabular-nums">{pct(d.visibility)}</div>
-              <div className="text-[11px] text-ink/60">tüm motorlarda</div>
+              <div className="text-xs text-ink/60">tüm motorlarda</div>
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
           <div className="mt-3 text-2xl font-medium tabular-nums">
             {d.prompts.length} <span className="text-sm font-normal text-ink/60">prompt</span>
           </div>
-          <div className="text-[11px] text-ink/60">{d.engines.length} AI motorunda</div>
+          <div className="text-xs text-ink/60">{d.engines.length} AI motorunda</div>
         </div>
       </div>
 
@@ -318,7 +318,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
               })}
             </tbody>
           </table>
-          <p className="border-t border-border px-4 py-2.5 text-[11px] text-ink/60">Duygu, markanın geçtiği cümlelerden kurallarla hesaplanır. Marka geçmeyen cevaplar duyguya katılmaz.</p>
+          <p className="border-t border-border px-4 py-2.5 text-xs text-ink/60">Duygu, markanın geçtiği cümlelerden kurallarla hesaplanır. Marka geçmeyen cevaplar duyguya katılmaz.</p>
         </div>
       )}
 
@@ -344,7 +344,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="font-medium">{s.brand}</span>
-                        {s.domain === d.brand.domain && <span className="rounded bg-accent px-1.5 text-[11px] font-medium text-white">sen</span>}
+                        {s.domain === d.brand.domain && <span className="rounded bg-accent px-1.5 text-xs font-medium text-white">sen</span>}
                       </div>
                     </td>
                     <td className="py-3 pr-4 text-center">

@@ -56,7 +56,7 @@ export default function ProjectSwitcher() {
             <img src={fav(project.domain)} alt="" className="h-4 w-4 shrink-0 rounded" />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium text-ink">{project.name}</span>
-              <span className="block truncate text-[11px] text-sub">{project.domain}</span>
+              <span className="block truncate text-xs text-sub">{project.domain}</span>
             </span>
           </>
         ) : (
@@ -77,24 +77,24 @@ export default function ProjectSwitcher() {
                 <img src={fav(p.domain)} alt="" className="h-4 w-4 shrink-0 rounded" />
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{p.name}</span>
-                  <span className="block truncate text-[11px] text-sub">{p.domain}</span>
+                  <span className="block truncate text-xs text-sub">{p.domain}</span>
                 </span>
               </button>
               {project?.id === p.id && <span className="text-xs text-accent">✓</span>}
-              <button type="button" onClick={() => startEdit(p)} className="hidden rounded px-1 text-[11px] text-sub hover:text-ink group-hover:block">
+              <button type="button" onClick={() => startEdit(p)} className="hidden rounded px-1 text-xs text-sub hover:text-ink group-hover:block">
                 Düzenle
               </button>
             </div>
           ))}
           {suggestions.length > 0 && (
             <>
-              <div className="px-2 pb-1 pt-2 text-[11px] font-medium text-sub">Verisi olan siteler</div>
+              <div className="px-2 pb-1 pt-2 text-xs font-medium text-sub">Verisi olan siteler</div>
               {suggestions.map((s) => (
                 <button key={s} type="button" onClick={() => startNew(s)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-ink/70 hover:bg-muted/60">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={fav(s)} alt="" className="h-4 w-4 shrink-0 rounded opacity-70" />
                   <span className="flex-1 truncate">{s}</span>
-                  <span className="text-[11px] text-accent">proje yap</span>
+                  <span className="text-xs text-accent">proje yap</span>
                 </button>
               ))}
             </>

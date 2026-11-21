@@ -54,9 +54,9 @@ const MAX_PROMPTS = 20;
 const host = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
 
 function Dot({ s }: { s: StepStatus | "skip" }) {
-  if (s === "ready") return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-seo-ink text-[11px] text-white">✓</span>;
+  if (s === "ready") return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-seo-ink text-xs text-white">✓</span>;
   if (s === "running") return <span className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />;
-  if (s === "error") return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-danger-ink text-[11px] text-white">!</span>;
+  if (s === "error") return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-danger-ink text-xs text-white">!</span>;
   return <span className="h-5 w-5 rounded-full border-2 border-border" />;
 }
 
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
                   {starting ? "Başlatılıyor…" : hardFail ? "Tekrar dene" : "Siteyi analiz et"}
                 </button>
               )}
-              <p className="text-center text-[11px] text-sub">Kurulum 3 kurulum adımı kotası kullanır; aynı siteyi 7 gün içinde tekrar kurarsan ücretsizdir.</p>
+              <p className="text-center text-xs text-sub">Kurulum 3 kurulum adımı kotası kullanır; aynı siteyi 7 gün içinde tekrar kurarsan ücretsizdir.</p>
             </form>
             {s && (
               <ul className="space-y-2.5 border-t border-border pt-5">
@@ -409,7 +409,7 @@ export default function OnboardingPage() {
                           <input value={c.name} onChange={(e) => setComps((xs) => xs.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-8 rounded-[8px] border border-transparent bg-transparent px-1 font-medium outline-none hover:border-border focus:border-[#BDB4FF]" />
                           <input value={c.domain} placeholder="alan adı" onChange={(e) => setComps((xs) => xs.map((x, j) => (j === i ? { ...x, domain: e.target.value } : x)))} className="h-8 rounded-[8px] border border-transparent bg-transparent px-1 text-sub outline-none hover:border-border focus:border-[#BDB4FF]" />
                         </div>
-                        {c.reason && <div className="px-1 text-[11px] text-sub">{c.reason}</div>}
+                        {c.reason && <div className="px-1 text-xs text-sub">{c.reason}</div>}
                       </div>
                     </li>
                   ))}
@@ -530,7 +530,7 @@ export default function OnboardingPage() {
                     ["AI sorusu", String(chosen.length)],
                   ] as const).map(([l, v]) => (
                     <div key={l} className="rounded-xl border border-border px-3 py-3">
-                      <div className="text-[11px] text-sub">{l}</div>
+                      <div className="text-xs text-sub">{l}</div>
                       <div className="truncate text-base font-semibold">{v}</div>
                     </div>
                   ))}

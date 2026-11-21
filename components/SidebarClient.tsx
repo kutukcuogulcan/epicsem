@@ -111,7 +111,7 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
                     >
                       <span className={active ? "text-ink" : "text-ink/60"}>{TOOL_ICONS[item.icon]}</span>
                       <span className="truncate">{item.label}</span>
-                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-[11px] font-medium tracking-wide text-accent">{item.badge}</span>}
+                      {item.badge && <span className="ml-auto rounded bg-accent/10 px-1.5 py-px text-xs font-medium tracking-wide text-accent">{item.badge}</span>}
                     </Link>
                   );
                 })}

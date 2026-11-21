@@ -137,7 +137,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <ul className="divide-y divide-border">
             {steps.map((s, i) => (
               <li key={i} className="flex items-center gap-3 px-6 py-3">
-                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${s.done ? "bg-seo-ink text-white" : "border border-[#D5D7DA] text-sub"}`}>
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${s.done ? "bg-seo-ink text-white" : "border border-[#D5D7DA] text-sub"}`}>
                   {s.done ? "✓" : i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {(() => {
                         const st = publishLabel(d);
                         return (
-                          <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                          <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>
                             {st.label}
                           </span>
                         );
@@ -258,7 +258,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       <span className="block truncate font-medium">{FREQ[c.frequency] ?? c.frequency} · {c.postsPerRun} yazı</span>
                       <span className="block text-xs text-sub">Sıradaki: {fmtDate(c.nextRunAt)}</span>
                     </span>
-                    <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "border-seo/30 bg-seo/10 text-seo-ink" : "border-border bg-muted text-sub"}`}>
+                    <span className={`shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium ${c.status === "active" ? "border-seo/30 bg-seo/10 text-seo-ink" : "border-border bg-muted text-sub"}`}>
                       {c.status === "active" ? "Aktif" : "Duraklatıldı"}
                     </span>
                   </li>

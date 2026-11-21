@@ -56,9 +56,9 @@ export default function EntityPresence({ brand, competitors }: { brand: { name: 
                   <tr onClick={() => setOpen(open === r.brand ? null : r.brand)} className="cursor-pointer hover:bg-muted/40">
                     <td className="px-4 py-2.5">
                       <div className="font-medium">
-                        {r.brand} {i === 0 && <span className="ml-1 rounded bg-accent/10 px-1.5 py-px text-[11px] font-medium text-accent">sen</span>}
+                        {r.brand} {i === 0 && <span className="ml-1 rounded bg-accent/10 px-1.5 py-px text-xs font-medium text-accent">sen</span>}
                       </div>
-                      <div className="text-[11px] text-ink/60">{r.domain}</div>
+                      <div className="text-xs text-ink/60">{r.domain}</div>
                     </td>
                     <td className="py-2.5 pr-3 text-xs">
                       {r.wikidata ? (
@@ -68,7 +68,7 @@ export default function EntityPresence({ brand, competitors }: { brand: { name: 
                       ) : (
                         <span className="text-danger-ink">yok</span>
                       )}
-                      {r.wikidata && !r.wikidata.websiteMatch && <span className="ml-1 text-[11px] text-warn-ink">(site eşleşmedi)</span>}
+                      {r.wikidata && !r.wikidata.websiteMatch && <span className="ml-1 text-xs text-warn-ink">(site eşleşmedi)</span>}
                     </td>
                     <td className="py-2.5 pr-3 text-xs">
                       {r.wikipedia.length ? (

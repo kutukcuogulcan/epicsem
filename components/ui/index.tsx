@@ -148,7 +148,7 @@ export function UnderlineTabs({ tabs, value, onChange, className = "" }: { tabs:
             className={`relative flex items-center gap-1.5 whitespace-nowrap pb-3 text-sm font-medium transition-colors ${active === idx ? "text-accent" : "text-sub hover:text-ink"}`}
           >
             {tab.label}
-            {tab.count != null && <span className={`rounded px-1.5 text-[11px] font-medium ${active === idx ? "bg-accent/10 text-accent" : "bg-muted text-sub"}`}>{tab.count}</span>}
+            {tab.count != null && <span className={`rounded px-1.5 text-xs font-medium ${active === idx ? "bg-accent/10 text-accent" : "bg-muted text-sub"}`}>{tab.count}</span>}
             {active === idx && <span className="absolute bottom-0 left-0 h-[2px] w-full bg-accent" />}
           </button>
         ))}
@@ -223,7 +223,7 @@ export function Drawer({
           <div className="flex min-w-0 items-center gap-3">
             {icon}
             <div className="min-w-0">
-              {eyebrow && <div className="text-[11px] font-medium uppercase tracking-wide text-sub">{eyebrow}</div>}
+              {eyebrow && <div className="text-xs font-medium uppercase tracking-wide text-sub">{eyebrow}</div>}
               <h2 className="text-lg font-medium text-ink">{title}</h2>
               {subtitle && <div className="mt-0.5 text-xs text-sub">{subtitle}</div>}
             </div>
@@ -351,7 +351,7 @@ export function ErrorBlock({ message, onRetry, className = "" }: { message: Reac
   if (!message) return null;
   return (
     <div role="alert" className={`flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm ${className}`}>
-      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger-ink text-[11px] font-medium text-white">!</span>
+      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger-ink text-xs font-medium text-white">!</span>
       <div className="min-w-0 flex-1 text-danger-ink">{message}</div>
       {onRetry && (
         <button type="button" onClick={onRetry} className="shrink-0 text-sm font-medium text-danger-ink underline hover:no-underline">

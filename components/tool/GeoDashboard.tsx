@@ -411,33 +411,33 @@ export default function GeoDashboard({
               <div className="mt-0.5 text-xs text-sub">
                 {engines.length} motor · {new Set(runs.map((r) => r.promptText)).size} prompt
               </div>
-              {band.demo && <span className="mt-1 inline-block rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">[DEMO] Bazı cevaplar simüle</span>}
+              {band.demo && <span className="mt-1 inline-block rounded-md bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn-ink">[DEMO] Bazı cevaplar simüle</span>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <div className="rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Rakiplere göre</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">Rakiplere göre</div>
               <div className="mt-1 text-[22px] font-semibold tabular-nums">{comps.length ? `${band.rank}. / ${band.brands}` : "—"}</div>
-              <div className="text-[11px] text-sub">{comps.length ? `Ses payı ${pct(band.sov)}${band.leader ? ` · lider ${band.leader.name}` : " · lidersin"}` : "Rakip ekleyince görünür"}</div>
+              <div className="text-xs text-sub">{comps.length ? `Ses payı ${pct(band.sov)}${band.leader ? ` · lider ${band.leader.name}` : " · lidersin"}` : "Rakip ekleyince görünür"}</div>
             </div>
             <div className="rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Kaybedilen cevap</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">Kaybedilen cevap</div>
               <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.lost ? "text-danger-ink" : "text-ink"}`}>{band.lost}</div>
-              <div className="text-[11px] text-sub">rakip önerildi · {band.empty} cevapta kimse yok</div>
+              <div className="text-xs text-sub">rakip önerildi · {band.empty} cevapta kimse yok</div>
             </div>
             <div className="rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">Duygu</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">Duygu</div>
               <div className={`mt-1 text-[22px] font-semibold tabular-nums ${band.sentiment == null ? "text-ink" : band.sentiment >= 65 ? "text-seo-ink" : band.sentiment >= 50 ? "text-warn-ink" : "text-danger-ink"}`}>{band.sentiment ?? "—"}</div>
-              <div className="text-[11px] text-sub">{band.sentiment == null ? "Anılmadığın için ölçülmedi" : "Anıldığın cevaplarda, 0-100"}</div>
+              <div className="text-xs text-sub">{band.sentiment == null ? "Anılmadığın için ölçülmedi" : "Anıldığın cevaplarda, 0-100"}</div>
             </div>
             <div className="min-w-0 rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">En çok alıntılanan</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">En çok alıntılanan</div>
               <div className="mt-1 truncate text-[15px] font-semibold leading-8" title={band.topSrc?.domain}>{band.topSrc?.domain ?? "—"}</div>
-              <div className="text-[11px] text-sub">{band.topSrc ? `Cevapların ${pct(band.topSrc.share)}'inde` : "Motorlar kaynak göstermedi"}</div>
+              <div className="text-xs text-sub">{band.topSrc ? `Cevapların ${pct(band.topSrc.share)}'inde` : "Motorlar kaynak göstermedi"}</div>
             </div>
           </div>
           <div className="rounded-xl bg-accent/[0.06] p-3.5 lg:col-span-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
             {band.first && band.firstHref ? (
               <>
                 <div className="mt-1 text-[13px] font-semibold leading-snug">&ldquo;{band.first.prompt}&rdquo;</div>
@@ -574,7 +574,7 @@ export default function GeoDashboard({
                   <span key={b.domain} className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full" style={{ background: color(b.brand) }} />
                     {b.brand}
-                    {clean(b.domain) === own && <span className="rounded bg-accent/10 px-1 text-[11px] font-semibold text-accent">siz</span>}
+                    {clean(b.domain) === own && <span className="rounded bg-accent/10 px-1 text-xs font-semibold text-accent">siz</span>}
                   </span>
                 ))}
               </div>
@@ -600,11 +600,11 @@ export default function GeoDashboard({
                   <td className="py-2.5 pl-5">
                     <div className="flex items-center gap-2 font-medium">
                       <span className="w-3 text-xs text-sub">{i + 1}</span>
-                      <span className="flex h-5 w-5 items-center justify-center rounded-md text-[11px] font-semibold text-white" style={{ background: color(s.name) }}>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md text-xs font-semibold text-white" style={{ background: color(s.name) }}>
                         {s.name.charAt(0).toLocaleUpperCase("tr")}
                       </span>
                       <span className="truncate">{s.name}</span>
-                      {s.isOwn && <span className="rounded bg-accent/10 px-1 text-[11px] font-semibold text-accent">siz</span>}
+                      {s.isOwn && <span className="rounded bg-accent/10 px-1 text-xs font-semibold text-accent">siz</span>}
                     </div>
                   </td>
                   <td className="py-2.5">
@@ -649,7 +649,7 @@ export default function GeoDashboard({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={`https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                     <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{s.domain}</span>
-                    <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${t.cls}`}>{t.label}</span>
+                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${t.cls}`}>{t.label}</span>
                     <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:inline-block">
                       <span className="block h-full rounded-full bg-ink/25" style={{ width: `${Math.round((s.share / (sources[0]?.share || 1)) * 100)}%` }} />
                     </span>
@@ -705,11 +705,11 @@ export default function GeoDashboard({
           <div className="grid gap-3 md:grid-cols-3">
             {actions.map((a) => (
               <Card key={a.title} className="flex flex-col p-4">
-                <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                 <h3 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h3>
                 <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                 <div className="mt-auto flex items-center justify-between pt-3">
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${a.impact[1]}`}>{a.impact[0]}</span>
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${a.impact[1]}`}>{a.impact[0]}</span>
                   {a.cta}
                 </div>
               </Card>

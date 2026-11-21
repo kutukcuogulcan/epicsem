@@ -66,7 +66,7 @@ function BrandStack({ brands }: { brands: { name: string; own: boolean; domain?:
           {b.domain ? <img src={`https://www.google.com/s2/favicons?domain=${b.domain}&sz=32`} alt={b.name} className="h-4 w-4 rounded-sm" /> : b.name.charAt(0).toLocaleUpperCase("tr")}
         </span>
       ))}
-      {brands.length > 5 && <span className="ml-1 text-[11px] text-sub">+{brands.length - 5}</span>}
+      {brands.length > 5 && <span className="ml-1 text-xs text-sub">+{brands.length - 5}</span>}
     </span>
   );
 }
@@ -114,7 +114,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
           <h2 className="text-sm font-semibold">Motor × prompt haritası</h2>
           <p className="text-xs text-sub">Her rozet bir AI cevabı. Kırmızıya tıkla: neden kaybettin, ne yazmalısın.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-sub">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-sub">
           {(["won", "mentioned", "lost", "empty"] as CellStatus[]).map((s) => (
             <span key={s} className="flex items-center gap-1.5">
               <span className={`h-2 w-2 rounded-full ${CELL[s].bg}`} />
@@ -139,18 +139,18 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                 className="w-full text-left"
               >
                 <div className="text-[13px] font-medium leading-5">{row.prompt}</div>
-                <div className="mt-0.5 text-[11px] text-sub">{row.topic}</div>
+                <div className="mt-0.5 text-xs text-sub">{row.topic}</div>
                 <dl className="mt-2.5 grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <dt className="text-[11px] text-sub">Görünürlük</dt>
+                    <dt className="text-xs text-sub">Görünürlük</dt>
                     <dd className="mt-0.5"><VisBar v={st.vis} /></dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] text-sub">Ort. sıra</dt>
+                    <dt className="text-xs text-sub">Ort. sıra</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">{st.pos ? `#${st.pos.toFixed(1)}` : "—"}</dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] text-sub">Duygu</dt>
+                    <dt className="text-xs text-sub">Duygu</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">{st.sentiment ?? "—"}</dd>
                   </div>
                 </dl>
@@ -216,7 +216,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                   <div className="truncate font-medium" title={row.prompt}>
                     {row.prompt}
                   </div>
-                  <div className="text-[11px] text-sub">{row.topic}</div>
+                  <div className="text-xs text-sub">{row.topic}</div>
                 </td>
                 <td className="px-2 py-2 text-xs"><VisBar v={st.vis} /></td>
                 <td className="px-2 py-2 text-xs font-semibold tabular-nums">{st.pos ? `#${st.pos.toFixed(1)}` : "—"}</td>

@@ -78,11 +78,11 @@ export default function FactsTab({ runs, brand }: { runs: GeoRunResult[]; brand:
               </div>
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="rounded-lg bg-danger/5 px-3 py-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-danger-ink">AI dedi</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-danger-ink">AI dedi</div>
                   <div className="mt-0.5">{x.claim}</div>
                 </div>
                 <div className="rounded-lg bg-seo/5 px-3 py-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-seo-ink">Bilgi Bankan diyor</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-seo-ink">Bilgi Bankan diyor</div>
                   <div className="mt-0.5">{x.truth}</div>
                 </div>
               </div>

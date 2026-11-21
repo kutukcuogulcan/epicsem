@@ -176,7 +176,7 @@ export default function SiteAuditReport({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(site(result.filename))}&sz=64`} alt="" className="h-6 w-6 rounded" />
             <h2 className="truncate text-xl font-medium">{site(result.filename)}</h2>
-            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">kısmi</span>}
+            {result.filename.includes("kısmi") && <span className="rounded bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn-ink">kısmi</span>}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/60">
             <span>{rows.length} sayfa tarandı</span>
@@ -277,10 +277,10 @@ export default function SiteAuditReport({
                   ))}
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
-                  <div><div className="text-[11px] text-ink/60">İndekslenebilir</div><div className="font-medium tabular-nums">{data.indexable}</div></div>
-                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-[11px] text-ink/60">AI alıntı</div><div className={`font-medium tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo-ink" : s.avgCitability >= 45 ? "text-warn-ink" : "text-danger-ink"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/60">Ort. yanıt</div><div className="font-medium tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
-                  <div><div className="text-[11px] text-ink/60">Ort. boyut</div><div className="font-medium tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
+                  <div><div className="text-xs text-ink/60">İndekslenebilir</div><div className="font-medium tabular-nums">{data.indexable}</div></div>
+                  <div title="Ortalama AI alıntılanabilirlik puanı (Princeton GEO yöntemleri, AI'sız)"><div className="text-xs text-ink/60">AI alıntı</div><div className={`font-medium tabular-nums ${s.avgCitability == null ? "" : s.avgCitability >= 65 ? "text-seo-ink" : s.avgCitability >= 45 ? "text-warn-ink" : "text-danger-ink"}`}>{s.avgCitability != null ? `${s.avgCitability}/100` : "—"}</div></div>
+                  <div><div className="text-xs text-ink/60">Ort. yanıt</div><div className="font-medium tabular-nums">{s.avgResponseMs != null ? `${s.avgResponseMs} ms` : "—"}</div></div>
+                  <div><div className="text-xs text-ink/60">Ort. boyut</div><div className="font-medium tabular-nums">{s.avgHtmlKb != null ? `${s.avgHtmlKb} KB` : "—"}</div></div>
                 </div>
               </div>
             </Card>
@@ -321,7 +321,7 @@ export default function SiteAuditReport({
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${t.score}%`, background: scoreColor(t.score) }} />
                 </div>
-                <div className="mt-1.5 text-[11px] text-ink/60">{t.bad ? `${t.bad} sayfada sorun` : "sorun yok"}</div>
+                <div className="mt-1.5 text-xs text-ink/60">{t.bad ? `${t.bad} sayfada sorun` : "sorun yok"}</div>
               </div>
             ))}
           </div>
@@ -352,14 +352,14 @@ export default function SiteAuditReport({
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{ISSUE_LABEL[it.code] ?? it.code}</span>
-                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${SEV_STYLE[it.sev].badge}`}>{SEVERITY_LABEL[it.sev]}</span>
                             <span className="text-xs text-ink/60">{it.n} sayfa</span>
                           </span>
                           {info && <span className="mt-0.5 block text-sm text-ink/60">{info.steps[0]}</span>}
                         </span>
                         <span className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
                           {info && (
-                            <span className="flex gap-1 text-[11px] font-medium">
+                            <span className="flex gap-1 text-xs font-medium">
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Etki: {info.impact}</span>
                               <span className="rounded bg-muted px-1.5 py-0.5 text-ink/60">Zorluk: {info.effort}</span>
                             </span>
@@ -557,7 +557,7 @@ function CopyCode({ code }: { code: string }) {
   const [ok, setOk] = useState(false);
   return (
     <div className="relative mt-1">
-      <pre className="overflow-x-auto rounded-lg bg-ink py-2.5 pl-3 pr-20 text-[11px] leading-relaxed text-white/90">{code}</pre>
+      <pre className="overflow-x-auto rounded-lg bg-ink py-2.5 pl-3 pr-20 text-xs leading-relaxed text-white/90">{code}</pre>
       <button
         type="button"
         onClick={(e) => {
@@ -567,7 +567,7 @@ function CopyCode({ code }: { code: string }) {
             setTimeout(() => setOk(false), 1500);
           });
         }}
-        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-white/20"
+        className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-xs font-medium text-white hover:bg-white/20"
       >
         {ok ? "Kopyalandı" : "Kopyala"}
       </button>
@@ -611,7 +611,7 @@ function IssueRow({
           {label}
         </td>
         <td className="py-3 pr-3">
-          <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
+          <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${SEV_STYLE[sev].badge}`}>{SEVERITY_LABEL[sev]}</span>
         </td>
         <td className="py-3 pr-3 text-xs text-ink/60 max-md:hidden">{info?.impact ?? "—"}</td>
         <td className="py-3 pr-3 text-right font-medium tabular-nums">{n}</td>
@@ -631,7 +631,7 @@ function IssueRow({
               <div className="space-y-3 text-sm">
                 {info ? (
                   <>
-                    <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
+                    <div className="flex flex-wrap gap-1.5 text-xs font-medium">
                       <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Etki: {info.impact}</span>
                       <span className="rounded bg-panel px-2 py-0.5 text-ink/60 ring-1 ring-border">Zorluk: {info.effort}</span>
                     </div>
@@ -648,7 +648,7 @@ function IssueRow({
                       <ol className="mt-1 space-y-1">
                         {info.steps.map((st, i) => (
                           <li key={i} className="flex gap-2 text-ink/75">
-                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-medium text-accent">{i + 1}</span>
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-medium text-accent">{i + 1}</span>
                             <span>{st}</span>
                           </li>
                         ))}
@@ -676,7 +676,7 @@ function IssueRow({
                         <a href={r.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="block truncate text-xs font-medium text-ink/75 hover:text-accent">
                           {short(r.url)}
                         </a>
-                        {note && <div className="mt-0.5 truncate text-[11px] text-ink/60">{note}</div>}
+                        {note && <div className="mt-0.5 truncate text-xs text-ink/60">{note}</div>}
                       </div>
                     );
                   })}

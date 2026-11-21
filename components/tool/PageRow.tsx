@@ -11,7 +11,7 @@ export function short(u: string) {
 function Stat({ label, value, bad = false }: { label: string; value: React.ReactNode; bad?: boolean }) {
   return (
     <div className="rounded-lg bg-muted/60 px-3 py-2">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-ink/60">{label}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-ink/60">{label}</div>
       <div className={`mt-0.5 text-sm font-medium ${bad ? "text-danger-ink" : "text-ink/80"}`}>{value}</div>
     </div>
   );
@@ -67,7 +67,7 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                 {row.issues.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
                     {row.issues.map((i) => (
-                      <span key={i} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${CRITICAL_ISSUES.has(i) ? "bg-danger/10 text-danger-ink" : "bg-warn/10 text-warn-ink"}`}>{ISSUE_LABEL[i] ?? i}</span>
+                      <span key={i} className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${CRITICAL_ISSUES.has(i) ? "bg-danger/10 text-danger-ink" : "bg-warn/10 text-warn-ink"}`}>{ISSUE_LABEL[i] ?? i}</span>
                     ))}
                   </div>
                 )}
@@ -91,15 +91,15 @@ export default function PageRow({ row, open, onToggle }: { row: BulkImportRow; o
                       {m.geo.citabilityTop.length > 0 && <div className="mt-0.5 text-ink/60">Önce: {m.geo.citabilityTop.join(" · ")}</div>}
                       {!!m.geo.weakPassages?.length && (
                         <div className="mt-2 border-t border-border pt-2">
-                          <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink/60">
+                          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink/60">
                             En zayıf bölümler · {m.geo.passageCount} bölüm, ort. {m.geo.passageAvg}
                           </div>
                           <ul className="space-y-1">
                             {m.geo.weakPassages.map((p) => (
                               <li key={p.heading}>
-                                <span className={`mr-1.5 rounded px-1 py-px text-[11px] font-medium tabular-nums ${p.score >= 65 ? "bg-seo/10 text-seo-ink" : p.score >= 50 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink"}`}>{p.score}</span>
+                                <span className={`mr-1.5 rounded px-1 py-px text-xs font-medium tabular-nums ${p.score >= 65 ? "bg-seo/10 text-seo-ink" : p.score >= 50 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink"}`}>{p.score}</span>
                                 <span className="font-medium text-ink/75">{p.heading}</span>
-                                <span className="block pl-7 text-[11px] text-ink/60">{p.tip}</span>
+                                <span className="block pl-7 text-xs text-ink/60">{p.tip}</span>
                               </li>
                             ))}
                           </ul>

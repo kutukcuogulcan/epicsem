@@ -216,7 +216,7 @@ export default function LocalToolsPage() {
               <span className={`text-[26px] font-semibold leading-8 tabular-nums ${l === "Olumsuz yorum" && neg.length ? "text-danger-ink" : ""}`}>{items === null ? "…" : v}</span>
               {suf && <span className="text-sm text-sub">{suf}</span>}
             </div>
-            <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+            <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
           </div>
         ))}
       </div>
@@ -226,7 +226,7 @@ export default function LocalToolsPage() {
         <div className="grid gap-3 md:grid-cols-3">
           {actions.slice(0, 3).map((a) => (
             <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-              <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+              <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
               <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
               <p className="mt-1 text-[13px] text-sub">{a.body}</p>
               <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -280,7 +280,7 @@ export default function LocalToolsPage() {
                     {reviews && <td className={`py-2.5 pl-5 text-xs tracking-tight ${(i.rating ?? 5) <= 2 ? "text-danger-ink" : (i.rating ?? 0) === 3 ? "text-warn-ink" : "text-[#f59e0b]"}`}>{stars(i.rating)}</td>}
                     <td className={`max-w-[18rem] py-2.5 ${reviews ? "pr-3" : "pl-5 pr-3"}`}>
                       <div className="truncate font-medium">{i.input}</div>
-                      {!project && <div className="text-[11px] text-sub">{i.business}</div>}
+                      {!project && <div className="text-xs text-sub">{i.business}</div>}
                     </td>
                     <td className="hidden max-w-[22rem] py-2.5 pr-3 text-sub md:table-cell">
                       <div className="truncate">{i.output}</div>
@@ -346,7 +346,7 @@ export default function LocalToolsPage() {
                 );
               })}
             </div>
-            <div className="flex justify-between px-5 pb-3 text-[11px] text-sub">
+            <div className="flex justify-between px-5 pb-3 text-xs text-sub">
               <span>{weeks[0].l}</span>
               <span>{weeks[weeks.length - 1].l}</span>
             </div>
@@ -372,7 +372,7 @@ export default function LocalToolsPage() {
                 <button type="button" onClick={() => copy(open.output, `o${open.id}`)} className={BTN1}>
                   {copied === `o${open.id}` ? "Kopyalandı ✓" : "Kopyala"}
                 </button>
-                <span className="text-[11px] text-sub">{open.output.length} karakter{!reviews && open.output.length > 1500 ? " · GBP sınırı 1.500" : ""}</span>
+                <span className="text-xs text-sub">{open.output.length} karakter{!reviews && open.output.length > 1500 ? " · GBP sınırı 1.500" : ""}</span>
               </div>
             </div>
           </div>

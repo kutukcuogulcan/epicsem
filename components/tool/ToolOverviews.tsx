@@ -101,7 +101,7 @@ export function MonitorOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                 return (
                   <tr key={p.id} className="border-t border-border">
                     <td className="max-w-[11rem] truncate px-5 py-2.5 font-medium" title={p.url}>{p.label || short(p.url)}</td>
-                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-[11px] font-medium ${delta > 0 ? "text-seo-ink" : "text-danger-ink"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
+                    <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.score)}`}>{p.score ?? "—"}</span>{delta !== 0 && <span className={`ml-1 text-xs font-medium ${delta > 0 ? "text-seo-ink" : "text-danger-ink"}`}>{delta > 0 ? `+${delta}` : delta}</span>}</td>
                     <td className="py-2.5"><span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(p.ai)}`}>{p.ai ?? "—"}</span></td>
                     <td className="py-2.5 pr-5 text-right">{p.openAlerts ? <span className="rounded-md bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger-ink">{p.openAlerts}</span> : <span className="text-xs text-seo-ink">✓</span>}</td>
                   </tr>
@@ -185,11 +185,11 @@ export function CampaignsOverview({ campaigns, refreshKey = 0 }: { campaigns: Ca
               <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{c.brandName}</div>
-                  <div className="truncate text-[11px] text-ink/60">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
+                  <div className="truncate text-xs text-ink/60">{SRC_TR[c.source ?? "gap"]} · {FREQ_TR[c.frequency] ?? c.frequency}{(c.postsPerRun ?? 1) > 1 ? ` · ${c.postsPerRun} yazı` : ""}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
-                  <div className="mt-0.5 text-[11px] text-ink/60">sonraki: {next(c)}</div>
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-ink/60"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
+                  <div className="mt-0.5 text-xs text-ink/60">sonraki: {next(c)}</div>
                 </div>
               </div>
             ))}
@@ -257,7 +257,7 @@ export function LocalOverview({ refreshKey = 0 }: { refreshKey?: number }) {
           <div className="max-h-52 divide-y divide-border overflow-y-auto">
             {d.recent.map((r) => (
               <div key={r.id} className="px-4 py-2.5">
-                <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center justify-between text-xs">
                   <span className={`rounded px-1.5 py-0.5 font-medium ${r.kind === "gbp-post" ? "bg-accent/10 text-accent" : "bg-seo/10 text-seo-ink"}`}>{r.kind === "gbp-post" ? "Gönderi" : `Yanıt${r.rating ? ` · ${r.rating}★` : ""}`}</span>
                   <span className="text-ink/60">{r.business} · {day(r.createdAt)}</span>
                 </div>
@@ -287,7 +287,7 @@ interface ClientRow {
 }
 
 function Spark({ data }: { data: number[] }) {
-  if (data.length < 2) return <span className="text-[11px] text-ink/45">—</span>;
+  if (data.length < 2) return <span className="text-xs text-ink/45">—</span>;
   const w = 64;
   const h = 20;
   const max = Math.max(...data, 1);
@@ -358,14 +358,14 @@ export function ClientsOverview({ refreshKey = 0 }: { refreshKey?: number }) {
                       <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(c.domain)}&sz=32`} alt="" className="h-4 w-4 rounded" />
                       <div className="min-w-0">
                         <div className="truncate font-medium">{c.name}</div>
-                        <div className="truncate text-[11px] text-ink/60">{c.domain}</div>
+                        <div className="truncate text-xs text-ink/60">{c.domain}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 pr-3">{c.seoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.seoScore)}`}>{c.seoScore}</span> : <Link href={`/audit?url=${c.domain}`} className="text-[11px] font-medium text-accent">Denetle</Link>}</td>
+                  <td className="py-2.5 pr-3">{c.seoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.seoScore)}`}>{c.seoScore}</span> : <Link href={`/audit?url=${c.domain}`} className="text-xs font-medium text-accent">Denetle</Link>}</td>
                   <td className="py-2.5 pr-3">{c.axoScore != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.axoScore)}`}>{c.axoScore}</span> : <span className="text-xs text-ink/45">—</span>}</td>
-                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-[11px] font-medium text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-[11px] text-danger-ink">{c.errors} hata</span> : null}</td>
-                  <td className="py-2.5 pr-3">{c.visibility != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.visibility * 1.25)}`}>%{c.visibility}</span> : <Link href={`/geo?clientId=${c.id}`} className="text-[11px] font-medium text-accent">GEO testi</Link>}</td>
+                  <td className="py-2.5 pr-3">{c.health != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.health)}`}>{c.health}</span> : <Link href="/import" className="text-xs font-medium text-accent">Tara</Link>}{c.errors ? <span className="ml-1 text-xs text-danger-ink">{c.errors} hata</span> : null}</td>
+                  <td className="py-2.5 pr-3">{c.visibility != null ? <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${tone(c.visibility * 1.25)}`}>%{c.visibility}</span> : <Link href={`/geo?clientId=${c.id}`} className="text-xs font-medium text-accent">GEO testi</Link>}</td>
                   <td className="py-2.5 pr-3"><Spark data={c.visibilityTrend.map((x) => x.visibility)} /></td>
                   <td className="py-2.5 pr-5 text-right text-xs text-ink/60">{c.lastActivity ? day(c.lastActivity) : "—"}</td>
                 </tr>

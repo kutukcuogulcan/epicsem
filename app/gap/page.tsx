@@ -407,7 +407,7 @@ export default function GapPage() {
                   <span className={`text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{v}</span>
                   {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+                <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
               </div>
             ))}
           </div>
@@ -417,7 +417,7 @@ export default function GapPage() {
             <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
               {actions.slice(0, 3).map((a) => (
                 <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-                  <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                  <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                   <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                   <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                   <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -469,7 +469,7 @@ export default function GapPage() {
                           <div className="truncate font-medium" title={r.url}>
                             {path(r.url)}
                           </div>
-                          {briefFor(r.url)?.suggestedHeadings.length ? <div className="text-[11px] text-sub">{briefFor(r.url)!.suggestedHeadings.length} kaybedilen soru</div> : null}
+                          {briefFor(r.url)?.suggestedHeadings.length ? <div className="text-xs text-sub">{briefFor(r.url)!.suggestedHeadings.length} kaybedilen soru</div> : null}
                         </td>
                         <td className="py-2.5 pr-3 text-right tabular-nums">{r.seoScore}</td>
                         <td className="py-2.5 pr-3 text-right tabular-nums">{r.aiCrawlScore}</td>
@@ -477,7 +477,7 @@ export default function GapPage() {
                           {r.citedExact} / {r.citedDomain}
                         </td>
                         <td className="py-2.5 pr-5">
-                          <span title={V[r.verdict].hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${V[r.verdict].chip}`}>
+                          <span title={V[r.verdict].hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${V[r.verdict].chip}`}>
                             {V[r.verdict].label}
                           </span>
                         </td>
@@ -505,10 +505,10 @@ export default function GapPage() {
                             <span className="w-4 text-xs tabular-nums text-sub">{i + 1}</span>
                             <span className={`min-w-0 flex-1 truncate ${me ? "font-semibold" : ""}`}>
                               {s.brand}
-                              {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">Siz</span>}
+                              {me && <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-medium text-accent">Siz</span>}
                             </span>
                             {!me && d.own && s.visibility > d.own.visibility && s.domain && (
-                              <button type="button" onClick={() => runWhy(s, d.own)} title="Yapay zekâ ile karşılaştır (1 AI sorgusu)" className="text-[11px] font-medium text-accent hover:underline">
+                              <button type="button" onClick={() => runWhy(s, d.own)} title="Yapay zekâ ile karşılaştır (1 AI sorgusu)" className="text-xs font-medium text-accent hover:underline">
                                 neden?
                               </button>
                             )}
@@ -564,7 +564,7 @@ export default function GapPage() {
                 ["Atıf (sayfa/domain)", `${openRow.citedExact}/${openRow.citedDomain}`],
               ] as const).map(([l, v]) => (
                 <div key={l} className="rounded-xl border border-border px-3 py-2">
-                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-xs text-sub">{l}</div>
                   <div className="text-base font-semibold tabular-nums">{v}</div>
                 </div>
               ))}
@@ -601,7 +601,7 @@ export default function GapPage() {
                   <Link href={`/audit?url=${encodeURIComponent(openRow.url)}`} className={BTN2}>
                     Denetimde gör
                   </Link>
-                  <span className="text-[11px] text-sub">Taslak 1 yazı kotası kullanır, otomatik yayınlanmaz.</span>
+                  <span className="text-xs text-sub">Taslak 1 yazı kotası kullanır, otomatik yayınlanmaz.</span>
                 </div>
                 <ErrorBlock message={generateError} />
                 <PromptBlock bare title="Claude Code ile düzelt" description="Bu sayfanın eksikleriyle hazırlanmış komut; sitenin kod deposundaki Claude Code'a yapıştır." prompt={buildContentBriefPrompt(openBrief, run?.brandName ?? brand.name)} />
@@ -764,7 +764,7 @@ export default function GapPage() {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-sub">Her soru × motor 1 AI sorgusu kullanır. Yalnızca anahtarı tanımlı motorlar gerçekten çalışır.</p>
+            <p className="text-xs text-sub">Her soru × motor 1 AI sorgusu kullanır. Yalnızca anahtarı tanımlı motorlar gerçekten çalışır.</p>
           </div>
         </div>
       </Drawer>

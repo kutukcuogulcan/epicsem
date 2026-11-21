@@ -142,9 +142,9 @@ export default function BingPage() {
               ["URL gönderme kotası", quota ? `${quota.daily} / gün` : "—", quota ? `${quota.monthly} / ay` : ""],
             ].map(([l, v, sub]) => (
               <div key={l} className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-4">
-                <div className="text-[11px] text-ink/60">{l}</div>
+                <div className="text-xs text-ink/60">{l}</div>
                 <div className="text-2xl font-medium tabular-nums">{loading ? "…" : v}</div>
-                {sub && <div className="text-[11px] text-ink/60">{sub}</div>}
+                {sub && <div className="text-xs text-ink/60">{sub}</div>}
               </div>
             ))}
           </div>

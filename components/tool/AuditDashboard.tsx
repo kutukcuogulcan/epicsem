@@ -213,8 +213,8 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               return (
                 <button key={p.key} type="button" onClick={() => setPillarOpen(p)} className="rounded-xl border border-border px-3 py-3 text-left transition-colors hover:border-[#BDB4FF] hover:bg-accent/[0.03]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-sub">{p.label}</span>
-                    <span className="text-[11px] text-sub">{p.short}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-sub">{p.label}</span>
+                    <span className="text-xs text-sub">{p.short}</span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className={`text-[24px] font-semibold tabular-nums ${scoreColor(p.score)}`}>{p.score}</span>
@@ -223,20 +223,20 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: scoreHex(p.score) }} />
                   </div>
-                  <div className="mt-1.5 text-[11px] text-sub">{failing ? `${failing} eksik madde · listeyi aç` : "Tüm maddeler tamam"}</div>
+                  <div className="mt-1.5 text-xs text-sub">{failing ? `${failing} eksik madde · listeyi aç` : "Tüm maddeler tamam"}</div>
                 </button>
               );
             })}
           </div>
           <div className="rounded-xl bg-accent/[0.06] p-3.5 lg:col-span-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
             {top ? (
               <>
                 <div className="mt-1 text-[13px] font-semibold leading-snug">{top.title}</div>
                 <p className="mt-1 line-clamp-2 text-xs text-sub">{top.why || top.recommendation}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[top.effort]}`}>{top.effort}</span>
-                  {gainOf(top.key) > 0 && <span className="text-[11px] font-semibold text-seo-ink">+{gainOf(top.key)} puan</span>}
+                  <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${EFFORT_CLS[top.effort]}`}>{top.effort}</span>
+                  {gainOf(top.key) > 0 && <span className="text-xs font-semibold text-seo-ink">+{gainOf(top.key)} puan</span>}
                   <button type="button" onClick={() => setOpen(top.issue)} className="ml-auto rounded-lg bg-accent px-2.5 py-1 text-[12px] font-medium text-white hover:opacity-90">
                     {top.snippet ? "Hazır kodu al" : "Nasıl düzeltilir"}
                   </button>
@@ -247,7 +247,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
             )}
           </div>
         </div>
-        <p className="mt-3 text-[11px] text-sub">
+        <p className="mt-3 text-xs text-sub">
           Puanlar bu taramanın gerçek sinyallerinden hesaplanır. GEO hazırlığı ölçülmüş AI görünürlüğü değildir; onu GEO testi ölçer.
         </p>
       </Card>
@@ -322,10 +322,10 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <div className="truncate text-xs text-sub">{w.why || w.recommendation}</div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    {w.geo && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">AI görünürlüğü</span>}
-                    <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${EFFORT_CLS[w.effort]}`}>{w.effort}</span>
+                    {w.geo && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-xs font-medium text-violet-700">AI görünürlüğü</span>}
+                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${EFFORT_CLS[w.effort]}`}>{w.effort}</span>
                     {gainOf(w.key) > 0 && <span className="w-14 text-right text-[12px] font-semibold tabular-nums text-seo-ink">+{gainOf(w.key)} puan</span>}
-                    {w.snippet && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-sub">Hazır kod</span>}
+                    {w.snippet && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-sub">Hazır kod</span>}
                   </div>
                 </button>
               ))}
@@ -406,20 +406,20 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                 {shown.map((i, k) => (
                   <tr key={k} onClick={() => setOpen(i)} className="cursor-pointer hover:bg-[#fafafa]">
                     <td className="py-3 pl-5 align-top">
-                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${SEV[i.severity].chip}`}>{SEV[i.severity].label}</span>
+                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${SEV[i.severity].chip}`}>{SEV[i.severity].label}</span>
                     </td>
                     <td className="py-3 pr-3">
                       <div className="font-medium text-ink">
                         {I(i).title}
-                        {I(i).geo && <span className="ml-1.5 rounded bg-violet-50 px-1 py-px align-middle text-[11px] font-medium text-violet-700">AI</span>}
+                        {I(i).geo && <span className="ml-1.5 rounded bg-violet-50 px-1 py-px align-middle text-xs font-medium text-violet-700">AI</span>}
                       </div>
                       {I(i).recommendation && <div className="mt-0.5 line-clamp-1 text-xs text-sub">{I(i).recommendation}</div>}
                     </td>
                     <td className="hidden py-3 pr-3 align-top md:table-cell">
-                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${EFFORT_CLS[I(i).effort]}`}>{I(i).effort}</span>
+                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${EFFORT_CLS[I(i).effort]}`}>{I(i).effort}</span>
                     </td>
                     <td className="hidden py-3 pr-5 align-top sm:table-cell">
-                      <span className="whitespace-nowrap rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">{CATEGORY_LABEL[i.category] ?? i.category}</span>
+                      <span className="whitespace-nowrap rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">{CATEGORY_LABEL[i.category] ?? i.category}</span>
                     </td>
                   </tr>
                 ))}
@@ -447,9 +447,9 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <div className="text-[13px] font-medium">
                       {b.bot} <span className="font-normal text-sub">· {b.engine}</span>
                     </div>
-                    {b.role && <div className="text-[11px] text-sub">{ROLE[b.role] ?? b.role}</div>}
+                    {b.role && <div className="text-xs text-sub">{ROLE[b.role] ?? b.role}</div>}
                   </div>
-                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${b.allowed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{b.allowed ? "İzinli" : "Engelli"}</span>
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${b.allowed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{b.allowed ? "İzinli" : "Engelli"}</span>
                 </div>
               ))}
               <button type="button" onClick={() => setAllBots((v) => !v)} className="w-full border-t border-border px-5 py-2.5 text-left text-xs font-medium text-accent hover:bg-muted/40">
@@ -494,7 +494,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                     <div className="flex items-baseline gap-1">
                       <span className={`text-[22px] font-semibold tabular-nums ${scoreColor(psi.labScore)}`}>{psi.labScore}</span>
                       <span className="text-xs text-sub">/100 performans</span>
-                      {psi.passed !== null && <span className={`ml-auto rounded-md px-2 py-0.5 text-[11px] font-medium ${psi.passed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{psi.passed ? "CWV geçti" : "CWV kaldı"}</span>}
+                      {psi.passed !== null && <span className={`ml-auto rounded-md px-2 py-0.5 text-xs font-medium ${psi.passed ? "bg-seo/10 text-seo-ink" : "bg-danger/10 text-danger-ink"}`}>{psi.passed ? "CWV geçti" : "CWV kaldı"}</span>}
                     </div>
                   )}
                   {psi.metrics
@@ -506,9 +506,9 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
                         <span className="tabular-nums">{m.key === "CLS" ? m.p75!.toFixed(2) : m.p75! >= 1000 ? `${(m.p75! / 1000).toFixed(1)} sn` : `${m.p75} ms`}</span>
                       </div>
                     ))}
-                  {psi.fieldScope === "none" && <p className="text-[11px] text-sub">Bu sayfa için gerçek kullanıcı verisi yok; puan laboratuvar ölçümü.</p>}
+                  {psi.fieldScope === "none" && <p className="text-xs text-sub">Bu sayfa için gerçek kullanıcı verisi yok; puan laboratuvar ölçümü.</p>}
                   {psi.opportunities.slice(0, 3).map((o) => (
-                    <div key={o.title} className="text-[11px] text-sub">
+                    <div key={o.title} className="text-xs text-sub">
                       • {o.title} <span className="tabular-nums">(~{(o.savingsMs / 1000).toFixed(1)} sn)</span>
                     </div>
                   ))}
@@ -527,7 +527,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
             <div className="text-sm font-semibold">Bu sayfaya özel düzeltmeleri yapay zekâ yazsın</div>
             <p className="text-[13px] text-sub">Yeni title, meta açıklama, H1, en üste konacak doğrudan cevap paragrafı, SSS ve her sorun için somut talimat. Sayfada olmayan bilgi uydurulmaz.</p>
           </div>
-          <span className="text-[11px] text-sub">1 AI sorgusu</span>
+          <span className="text-xs text-sub">1 AI sorgusu</span>
           <button type="button" onClick={runAiFix} disabled={aiFix?.busy} className="inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60">
             {aiFix?.busy ? "Yazılıyor…" : aiFix?.r ? "Sonuçları aç" : "AI ile düzeltme yaz"}
           </button>
@@ -611,10 +611,10 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {result.fixes.map((f, i) => (
               <Card key={i} className="flex flex-col p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Hızlı kazanım</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-accent">Hızlı kazanım</div>
                 <h3 className="mt-1.5 text-sm font-semibold">{f.label}</h3>
                 <p className="mt-1 text-[13px] text-sub">{f.note}</p>
-                <pre className="mt-3 max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-2.5 text-[11px] leading-4 text-ink/70">{f.code}</pre>
+                <pre className="mt-3 max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-2.5 text-xs leading-4 text-ink/70">{f.code}</pre>
                 <div className="mt-3 flex justify-end">
                   <button type="button" onClick={() => copy(f.code, `fix-${i}`)} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
                     {copied === `fix-${i}` ? "Kopyalandı ✓" : "Kodu kopyala"}
@@ -668,7 +668,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
             {oi!.snippet && (
               <div>
                 <div className="mb-1 text-xs font-medium text-sub">Hazır kod: {oi!.snippet.label}</div>
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-3 text-[11px] leading-4">{oi!.snippet.code}</pre>
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-3 text-xs leading-4">{oi!.snippet.code}</pre>
                 <button type="button" onClick={() => copy(oi!.snippet!.code, "snip")} className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white">
                   {copied === "snip" ? "Kopyalandı ✓" : "Kodu kopyala"}
                 </button>
@@ -681,7 +681,7 @@ export default function AuditDashboard({ result, history }: { result: SeoAuditRe
               return fix ? (
                 <div>
                   <div className="mb-1 text-xs font-medium text-sub">Hazır kod: {fix.label}</div>
-                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-3 text-[11px] leading-4">{fix.code}</pre>
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#fafafa] p-3 text-xs leading-4">{fix.code}</pre>
                   <button type="button" onClick={() => copy(fix.code, "drawer")} className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-accent px-3 text-sm font-medium text-white">
                     {copied === "drawer" ? "Kopyalandı ✓" : "Kodu kopyala"}
                   </button>

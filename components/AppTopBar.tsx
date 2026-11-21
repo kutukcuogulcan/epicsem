@@ -51,7 +51,7 @@ export default function AppTopBar() {
       {u.demoMode && <span className="badge badge-warning">Demo modu</span>}
       <div className="flex items-center gap-3" title="Bu ayki AI motor sorgusu kullanımı (her ayın başında sıfırlanır)">
         <div className="text-right leading-tight">
-          <div className="text-[11px] text-ink/60">AI motor sorgusu</div>
+          <div className="text-xs text-ink/60">AI motor sorgusu</div>
           <div className="text-xs font-medium text-ink/80">
             {used.toLocaleString("tr-TR")} / {limit.toLocaleString("tr-TR")}
           </div>

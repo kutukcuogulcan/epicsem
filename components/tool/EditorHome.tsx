@@ -235,7 +235,7 @@ export default function EditorHome({
                   <span className={`text-[26px] font-semibold leading-8 tabular-nums ${col}`}>{drafts === null ? "…" : v}</span>
                   {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <div className="mt-1 h-4 text-[11px] text-sub">{hint}</div>
+                <div className="mt-1 h-4 text-xs text-sub">{hint}</div>
               </div>
             ))}
           </div>
@@ -246,7 +246,7 @@ export default function EditorHome({
               <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
                 {actions.slice(0, 3).map((a) => (
                   <div key={a.title} className={`${card} flex flex-col p-4`}>
-                    <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                    <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                     <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                     <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                     <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -295,16 +295,16 @@ export default function EditorHome({
                         <tr key={d.id} onClick={() => onOpen(d.id)} className="cursor-pointer hover:bg-[#fafafa]">
                           <td className="max-w-[26rem] py-2.5 pl-5">
                             <div className="truncate font-medium">{d.article.title || "Başlıksız"}</div>
-                            <div className="truncate text-[11px] text-sub">{source(d.sourceUrl)}</div>
+                            <div className="truncate text-xs text-sub">{source(d.sourceUrl)}</div>
                           </td>
                           <td className="py-2.5 pr-3">
                             {d.geo === null ? <span className="text-xs text-sub">—</span> : <span className={`rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${tone(d.geo)}`}>{d.geo}</span>}
                           </td>
                           <td className="hidden py-2.5 pr-3 text-right text-xs tabular-nums text-sub md:table-cell">{d.words.toLocaleString("tr-TR")}</td>
                           <td className="hidden py-2.5 pr-3 sm:table-cell">
-                            <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
+                            <span title={st.hint} className={`whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
                             {d.publishedPostUrl && st.key !== "draft" && st.key !== "error" && (
-                              <a href={d.publishedPostUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="ml-1.5 text-[11px] text-accent hover:underline">
+                              <a href={d.publishedPostUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="ml-1.5 text-xs text-accent hover:underline">
                                 aç ↗
                               </a>
                             )}

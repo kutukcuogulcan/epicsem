@@ -213,7 +213,7 @@ export default function FeedsPage() {
                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-medium ${KIND[f.kind].color}`}>{KIND[f.kind].icon}</span>
                       <div className="min-w-0">
                         <div className="truncate font-medium">{f.name}</div>
-                        <div className="truncate text-[11px] text-ink/60">{f.config.siteUrl || f.config.query || f.config.url || ""}</div>
+                        <div className="truncate text-xs text-ink/60">{f.config.siteUrl || f.config.query || f.config.url || ""}</div>
                       </div>
                     </div>
                   </td>
@@ -289,17 +289,17 @@ export default function FeedsPage() {
                   <div className="space-y-1.5">
                     <label className={label}>Site adresi</label>
                     <input value={form.siteUrl} onChange={(e) => setForm({ ...form, siteUrl: e.target.value })} placeholder="siteniz.com" className={input} />
-                    <p className="text-[11px] text-ink/60">Bu site için Rakip Boşluğu ya da GEO testin varsa oradaki sorular da eklenir.</p>
+                    <p className="text-xs text-ink/60">Bu site için Rakip Boşluğu ya da GEO testin varsa oradaki sorular da eklenir.</p>
                   </div>
                   <div className="space-y-1.5">
                     <label className={label}>Başlangıç kelimeleri</label>
                     <textarea value={form.seeds} onChange={(e) => setForm({ ...form, seeds: e.target.value })} rows={4} placeholder={"Her satıra bir kelime\nabiye elbise\nnişan elbisesi"} className={input} />
-                    <p className="text-[11px] text-ink/60">Ne kadar çok başlangıç kelimesi, o kadar çok ilgili kelime.</p>
+                    <p className="text-xs text-ink/60">Ne kadar çok başlangıç kelimesi, o kadar çok ilgili kelime.</p>
                   </div>
                   <div className="space-y-1.5">
                     <label className={label}>Rakipler (en fazla 5)</label>
                     <textarea value={form.competitors} onChange={(e) => setForm({ ...form, competitors: e.target.value })} rows={3} placeholder={"rakip1.com\nrakip2.com"} className={input} />
-                    <p className="text-[11px] text-ink/60">Rakiplerin site haritasındaki yazı başlıkları konu olarak eklenir.</p>
+                    <p className="text-xs text-ink/60">Rakiplerin site haritasındaki yazı başlıkları konu olarak eklenir.</p>
                   </div>
                 </>
               )}
@@ -327,7 +327,7 @@ export default function FeedsPage() {
                   <div className="space-y-1.5">
                     <label className={label}>{form.kind === "youtube" ? "Kanal adresi" : "Besleme ya da site adresi"}</label>
                     <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder={form.kind === "youtube" ? "youtube.com/@kanaladi" : "site.com/feed ya da sadece site.com"} className={input} />
-                    {form.kind === "youtube" && <p className="text-[11px] text-ink/60">Videonun başlığı ve açıklaması kullanılır; açıklaması detaylı kanallar daha iyi sonuç verir.</p>}
+                    {form.kind === "youtube" && <p className="text-xs text-ink/60">Videonun başlığı ve açıklaması kullanılır; açıklaması detaylı kanallar daha iyi sonuç verir.</p>}
                   </div>
                   <div className="space-y-1.5">
                     <label className={label}>Filtre (opsiyonel)</label>
@@ -366,7 +366,7 @@ export default function FeedsPage() {
               </div>
               {detail.lastError && <p className="mt-3 rounded-lg bg-danger/5 px-3 py-2 text-xs text-danger-ink">{detail.lastError}</p>}
               {detail.kind === "keyword" && (
-                <p className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-[11px] text-ink/60">Haftada bir kendiliğinden yenilenir, yeni kelimeler eklenir. Arama hacmi ve zorluk için ücretli veri kaynağı gerekir; şimdilik kaynağı gösteriyoruz.</p>
+                <p className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-ink/60">Haftada bir kendiliğinden yenilenir, yeni kelimeler eklenir. Arama hacmi ve zorluk için ücretli veri kaynağı gerekir; şimdilik kaynağı gösteriyoruz.</p>
               )}
 </div>}>
             <div className="flex-1 overflow-y-auto">
@@ -390,10 +390,10 @@ export default function FeedsPage() {
                           ) : (
                             <span className="font-medium">{it.title}</span>
                           )}
-                          {it.publishedAt && <div className="text-[11px] text-ink/60">{new Date(it.publishedAt).toLocaleDateString("tr-TR")}</div>}
+                          {it.publishedAt && <div className="text-xs text-ink/60">{new Date(it.publishedAt).toLocaleDateString("tr-TR")}</div>}
                         </td>
-                        <td className="px-3 py-2 text-[11px] text-ink/60">{it.source ?? "—"}</td>
-                        <td className="px-3 py-2 text-[11px]">{it.used ? <span className="text-seo-ink">✓ yazıldı</span> : <span className="text-ink/60">sırada</span>}</td>
+                        <td className="px-3 py-2 text-xs text-ink/60">{it.source ?? "—"}</td>
+                        <td className="px-3 py-2 text-xs">{it.used ? <span className="text-seo-ink">✓ yazıldı</span> : <span className="text-ink/60">sırada</span>}</td>
                       </tr>
                     ))}
                   </tbody>

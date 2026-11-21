@@ -44,7 +44,7 @@ export default function AuditAgentPanel({ url }: { url: string }) {
           <div className="text-sm font-semibold">Denetim agent&apos;ı: bu site için en önemli 3-5 iş</div>
           <p className="text-[13px] text-sub">Önemli sayfalarını ve rakibinin karşılık gelen sayfasını aynı ölçütle denetler; genel kontrol listesi değil, bu siteye özel öncelik, gerekçe, adımlar ve rakip karşılaştırması çıkarır.</p>
         </div>
-        <span className="text-[11px] text-sub">1-3 dk · 5 AI sorgusu</span>
+        <span className="text-xs text-sub">1-3 dk · 5 AI sorgusu</span>
         <button type="button" onClick={run} disabled={busy} className={BTN1}>{busy ? "Agent çalışıyor…" : r ? "Yeniden çalıştır" : "Agent'ı çalıştır"}</button>
       </div>
       <ErrorBlock message={error} />
@@ -58,7 +58,7 @@ export default function AuditAgentPanel({ url }: { url: string }) {
           <ol className="space-y-3">
             {r.priorities.map((p, i) => (
               <li key={p.title} className="rounded-xl border border-border p-4">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                   <span className="text-sub">{i + 1}.</span>
                   <span className={`rounded-md px-2 py-0.5 ${LVL[p.impact]}`}>Etki: {p.impact}</span>
                   <span className="rounded-md bg-muted px-2 py-0.5 text-sub">Emek: {p.effort}</span>
@@ -70,7 +70,7 @@ export default function AuditAgentPanel({ url }: { url: string }) {
                   <ul className="mt-2 space-y-1 rounded-lg bg-seo/5 px-3 py-2">
                     {p.evidence.map((e) => (
                       <li key={e.url + e.finding}>
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-seo-ink">Denetlenen sayfa · </span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-seo-ink">Denetlenen sayfa · </span>
                         {e.finding}{" "}
                         <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">{short(e.url)}</a>
                       </li>
@@ -82,7 +82,7 @@ export default function AuditAgentPanel({ url }: { url: string }) {
           </ol>
           {r.comparison.length > 0 && (
             <div className="overflow-x-auto">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sub">Rakip karşılaştırması (denetlenen sayfalar)</div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-sub">Rakip karşılaştırması (denetlenen sayfalar)</div>
               <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-sub">

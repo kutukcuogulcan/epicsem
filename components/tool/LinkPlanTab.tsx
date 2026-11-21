@@ -180,7 +180,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
           <button type="button" onClick={() => run(false)} disabled={busy || !site} className={`${BTN1} mt-4`}>
             {busy ? "Rakipler inceleniyor (~1 dk)…" : "Link planını çıkar"}
           </button>
-          <p className="mt-2 text-[11px] text-sub">Rakip analizi ücretsiz · yazı önerileri 1 AI sorgusu · sonuç 7 gün saklanır</p>
+          <p className="mt-2 text-xs text-sub">Rakip analizi ücretsiz · yazı önerileri 1 AI sorgusu · sonuç 7 gün saklanır</p>
         </div>
       </div>
     );
@@ -203,9 +203,9 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
             ["Eksik içerik türü", String(missing.length), missing.map((m) => ASSET_LABEL[m]).join(", ") || "rakiplerde olup sende olmayan tür yok"],
           ] as const).map(([l, v, h]) => (
             <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-sub">{l}</div>
               <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Rakip farkı" && opps.length ? "text-danger-ink" : ""}`}>{v}</div>
-              <div className="truncate text-[11px] text-sub" title={h}>
+              <div className="truncate text-xs text-sub" title={h}>
                 {h}
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
 
         {opps.length > 0 && (
           <div className="mt-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">En iyi 3 fırsat</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-sub">En iyi 3 fırsat</div>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               {opps.slice(0, 3).map((o) => (
                 <div key={o.domain} className="flex flex-col rounded-xl border border-border p-3">
@@ -222,7 +222,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={`https://www.google.com/s2/favicons?domain=${o.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                     <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{o.domain}</span>
-                    {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
+                    {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
                   </div>
                   <p className="mt-1 text-xs text-sub">
                     {o.competitors.length > 1 ? `${o.competitors.length} rakibine` : `${o.competitors[0]} sitesine`} link veriyor, sana vermiyor.
@@ -251,7 +251,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
 
         {plan.ideas[0] && (
           <div className="mt-4 rounded-xl bg-accent/[0.06] p-3.5">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
             {(() => {
               const top = opps.find((o) => o.idea)?.idea ?? plan.ideas[0];
               const askers = opps.filter((o) => o.idea === top).slice(0, 3).map((o) => o.domain);
@@ -270,7 +270,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
             })()}
           </div>
         )}
-        <p className="mt-3 text-[11px] text-sub">
+        <p className="mt-3 text-xs text-sub">
           Rakip linkleri ücretsiz kaynaklardan (Wikipedia, Reddit, Hacker News{plan.competitors.some((c) => c.refDomains.some((r) => r.source === "ahrefs")) ? ", Ahrefs" : ""}) geliyor; gerçek profilin bir kısmıdır. Ahrefs bağlarsan liste büyür.
         </p>
       </div>
@@ -312,12 +312,12 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                 .filter((r) => cSrc === "all" || r.source === cSrc)
                 .map((r) => (
                   <li key={r.url} className="flex flex-wrap items-start gap-3 px-5 py-3">
-                    <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${COMMUNITY[r.source].cls}`}>{r.where ?? COMMUNITY[r.source].label}</span>
+                    <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold ${COMMUNITY[r.source].cls}`}>{r.where ?? COMMUNITY[r.source].label}</span>
                     <div className="min-w-0 flex-1">
                       <a href={r.url} target="_blank" rel="noreferrer" className="line-clamp-2 text-[13px] font-medium hover:text-accent">
                         {r.title}
                       </a>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-sub">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-sub">
                         {r.competitors.map((c) => (
                           <span key={c} className="rounded bg-danger/10 px-1 font-medium text-danger-ink">
                             {c}
@@ -363,7 +363,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
           <p className="text-xs text-sub">Kartı aç → anchor planı, link isteyeceğin siteler, içeriden link verecek sayfaların · &quot;Yazıyı yaz&quot; sihirbazı hazır açar</p>
         </div>
         <div className="flex items-center gap-2">
-          {cachedAt && <span className="text-[11px] text-sub">{new Date(cachedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihli</span>}
+          {cachedAt && <span className="text-xs text-sub">{new Date(cachedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihli</span>}
           <button type="button" onClick={() => run(true)} disabled={busy} className={BTN2} title="Yeniden analiz · 1 AI sorgusu">
             {busy ? "Yenileniyor…" : "Yenile"}
           </button>
@@ -372,7 +372,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {plan.ideas.map((i) => (
           <div key={i.title} className={`${CARD} flex flex-col p-4`}>
-            <span className={`self-start rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[i.type] ?? "bg-muted"}`}>{ASSET_LABEL[i.type]}</span>
+            <span className={`self-start rounded-md px-1.5 py-0.5 text-xs font-medium ${TYPE_CLS[i.type] ?? "bg-muted"}`}>{ASSET_LABEL[i.type]}</span>
             <h3 className="mt-2 text-sm font-semibold leading-5">{i.title}</h3>
             <p className="mt-1 line-clamp-3 text-[13px] text-sub">{i.why}</p>
             <div className="mt-3 space-y-1 text-[12px]">
@@ -429,20 +429,20 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${o.domain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         {o.domain}
-                        {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
+                        {o.dr != null && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-sub">DR {Math.round(o.dr)}</span>}
                       </div>
-                      <div className="pl-6 text-[11px] text-sub">{o.sources.map((x) => SRC_LABEL[x] ?? x).join(", ")}</div>
+                      <div className="pl-6 text-xs text-sub">{o.sources.map((x) => SRC_LABEL[x] ?? x).join(", ")}</div>
                     </td>
                     <td className="py-2.5 pr-3">
                       <div className="flex flex-wrap gap-1">
                         {o.competitors.map((c) => (
-                          <span key={c} className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink">
+                          <span key={c} className="rounded-md bg-danger/10 px-1.5 py-0.5 text-xs font-medium text-danger-ink">
                             {c}
                           </span>
                         ))}
                       </div>
                       {o.targets[0] && (
-                        <a href={o.targets[0]} target="_blank" rel="noreferrer" className="mt-0.5 block max-w-[220px] truncate text-[11px] text-sub hover:text-accent">
+                        <a href={o.targets[0]} target="_blank" rel="noreferrer" className="mt-0.5 block max-w-[220px] truncate text-xs text-sub hover:text-accent">
                           {short(o.targets[0])}
                         </a>
                       )}
@@ -451,7 +451,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                       {o.idea ? (
                         <>
                           <div className="line-clamp-2">{o.idea.title}</div>
-                          <span className={`mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[o.idea.type] ?? "bg-muted"}`}>{ASSET_LABEL[o.idea.type]}</span>
+                          <span className={`mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-xs font-medium ${TYPE_CLS[o.idea.type] ?? "bg-muted"}`}>{ASSET_LABEL[o.idea.type]}</span>
                         </>
                       ) : (
                         <span className="text-sub">Rakibin linklenen sayfasına benzer bir içerik</span>
@@ -501,7 +501,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
               <tr key={c.domain} className="align-top">
                 <td className="py-3 pl-5 pr-3">
                   <div className="font-medium">{c.domain}</div>
-                  <div className="text-[11px] text-sub">{c.pages} sayfa</div>
+                  <div className="text-xs text-sub">{c.pages} sayfa</div>
                 </td>
                 <td className="py-3 pr-3">
                   <div className="flex flex-wrap gap-1">
@@ -509,7 +509,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                       .filter(([k]) => k !== "other")
                       .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
                       .map(([k, v]) => (
-                        <span key={k} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${TYPE_CLS[k as AssetType] ?? "bg-muted"}`}>
+                        <span key={k} className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${TYPE_CLS[k as AssetType] ?? "bg-muted"}`}>
                           {ASSET_LABEL[k as AssetType]} {v}
                         </span>
                       ))}
@@ -520,7 +520,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                   {c.topPages[0] ? (
                     <a href={c.topPages[0].url} target="_blank" rel="noreferrer" className="block truncate hover:text-accent">
                       {short(c.topPages[0].url)}
-                      <span className="ml-1 text-[11px] text-sub">· {c.topPages[0].linkers.length} site</span>
+                      <span className="ml-1 text-xs text-sub">· {c.topPages[0].linkers.length} site</span>
                     </a>
                   ) : (
                     <span className="text-sub">—</span>
@@ -531,7 +531,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
             ))}
           </tbody>
         </table>
-        <p className="px-5 py-3 text-[11px] text-sub">Ücretsiz kaynaklar link profilinin küçük bir kısmını gösterir. Tam liste için Entegrasyonlar&apos;dan Ahrefs bağla ya da rakibin backlink CSV&apos;sini yükle.</p>
+        <p className="px-5 py-3 text-xs text-sub">Ücretsiz kaynaklar link profilinin küçük bir kısmını gösterir. Tam liste için Entegrasyonlar&apos;dan Ahrefs bağla ya da rakibin backlink CSV&apos;sini yükle.</p>
       </div>
 
       <Drawer isOpen={!!open} onClose={() => setOpen(null)} size="xl" eyebrow={open ? `Link planı · ${ASSET_LABEL[open.type]}` : ""} title={open?.title ?? ""} footer={open && (
@@ -572,7 +572,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                   <div key={l} className="flex items-start gap-3 px-3 py-2">
                     <span className="w-28 shrink-0 text-sub">{l}</span>
                     <span className="min-w-0 flex-1">{list.filter(Boolean).map((a) => `“${a}”`).join(", ") || "—"}</span>
-                    <span className={`shrink-0 text-[11px] ${cls}`}>{note}</span>
+                    <span className={`shrink-0 text-xs ${cls}`}>{note}</span>
                   </div>
                 ))}
               </div>
@@ -603,7 +603,7 @@ export default function LinkPlanTab({ site, ownLinkers, onPitch }: { site: strin
                       <a href={x.url} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-accent">
                         {short(x.url)}
                       </a>
-                      <span className="text-[11px] text-sub">Anchor: “{x.anchor}”</span>
+                      <span className="text-xs text-sub">Anchor: “{x.anchor}”</span>
                     </div>
                   ))}
                 </div>

@@ -124,7 +124,7 @@ export default function AiAnswerDemo({
                 {e.name}
               </span>
             ))}
-            <span className="ml-auto text-[11px] font-medium text-ink/45">Temsili animasyon</span>
+            <span className="ml-auto text-xs font-medium text-ink/45">Temsili animasyon</span>
           </div>
 
           <div className="p-5 space-y-4 min-h-[19rem]">
@@ -159,7 +159,7 @@ export default function AiAnswerDemo({
                       {current.sources.map((s, i) => (
                         <span
                           key={s}
-                          className="animate-pop inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] text-ink/60"
+                          className="animate-pop inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-ink/60"
                           style={{ animationDelay: `${i * 120}ms` }}
                         >
                           🔗 {s}

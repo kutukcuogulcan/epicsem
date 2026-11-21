@@ -495,7 +495,7 @@ export default function CampaignsPage() {
                   <span className="text-[26px] font-semibold leading-8 tabular-nums">{v}</span>
                   {suf && <span className="text-sm text-sub">{suf}</span>}
                 </div>
-                <div className="mt-1 h-4 truncate text-[11px] text-sub">{hint}</div>
+                <div className="mt-1 h-4 truncate text-xs text-sub">{hint}</div>
               </div>
             ))}
           </div>
@@ -505,7 +505,7 @@ export default function CampaignsPage() {
             <div className={`grid gap-3 ${["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][Math.min(actions.length, 3)]}`}>
               {actions.slice(0, 3).map((a) => (
                 <div key={a.title} className={`${CARD} flex flex-col p-4`}>
-                  <div className={`text-[11px] font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
+                  <div className={`text-xs font-semibold uppercase tracking-wide ${a.color}`}>{a.kind}</div>
                   <h4 className="mt-1.5 text-sm font-semibold leading-5">{a.title}</h4>
                   <p className="mt-1 text-[13px] text-sub">{a.body}</p>
                   <div className="mt-auto flex justify-end pt-3">{a.cta}</div>
@@ -536,16 +536,16 @@ export default function CampaignsPage() {
                   <tr key={c.id} onClick={() => setSel(c.id)} className="cursor-pointer hover:bg-[#fafafa]">
                     <td className="py-2.5 pl-5">
                       <div className="font-medium">{c.brandName}</div>
-                      <div className="text-[11px] text-sub">{c.brandDomain}</div>
+                      <div className="text-xs text-sub">{c.brandDomain}</div>
                     </td>
                     <td className="hidden py-2.5 pr-3 md:table-cell">
-                      <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">{c.feed ? c.feed.name : SOURCE_LABEL[c.source]}</span>
+                      <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">{c.feed ? c.feed.name : SOURCE_LABEL[c.source]}</span>
                     </td>
                     <td className="py-2.5 pr-3 text-xs">
                       {FREQ_LABEL[c.frequency]} · {c.postsPerRun} {FORMAT_LABEL[c.format].toLocaleLowerCase("tr")}
                     </td>
                     <td className="hidden py-2.5 pr-3 lg:table-cell">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.mode === "publish" ? "bg-danger/10 text-danger-ink" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-sub"}`}>{MODE_LABEL[c.mode ?? "review"]}</span>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.mode === "publish" ? "bg-danger/10 text-danger-ink" : c.mode === "cms-draft" ? "bg-sky-500/10 text-sky-600" : "bg-muted text-sub"}`}>{MODE_LABEL[c.mode ?? "review"]}</span>
                     </td>
                     <td className="py-2.5 pr-3 text-xs">
                       {(() => {
@@ -555,7 +555,7 @@ export default function CampaignsPage() {
                     </td>
                     <td className="py-2.5 pr-3 text-right tabular-nums">{c.drafts}</td>
                     <td className="py-2.5 pr-5">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.status === "active" ? "bg-seo/10 text-seo-ink" : "bg-muted text-sub"}`}>{c.status === "active" ? "Aktif" : "Duraklatıldı"}</span>
                     </td>
                   </tr>
                 ))}
@@ -576,9 +576,9 @@ export default function CampaignsPage() {
                 ["Sonraki", nextRun(selC), selC.lastRunAt ? `son: ${ago(selC.lastRunAt)}` : "henüz çalışmadı"],
               ] as const).map(([l, v, h]) => (
                 <div key={l} className="rounded-xl border border-border px-3 py-2">
-                  <div className="text-[11px] text-sub">{l}</div>
+                  <div className="text-xs text-sub">{l}</div>
                   <div className="text-base font-semibold">{v}</div>
-                  <div className="text-[11px] text-sub">{h}</div>
+                  <div className="text-xs text-sub">{h}</div>
                 </div>
               ))}
             </div>
@@ -604,7 +604,7 @@ export default function CampaignsPage() {
             {selC.connection && <p className="text-xs text-sub">Hedef site: {selC.connection.label} ({selC.connection.platform})</p>}
             {selC.lastDraft && (
               <div className="rounded-xl border border-border p-3">
-                <div className="flex items-center gap-2 text-[11px] text-sub">
+                <div className="flex items-center gap-2 text-xs text-sub">
                   Son taslak · {ago(selC.lastDraft.createdAt)}
                   {selC.lastDraft.citability !== null && (
                     <span className={`rounded px-1.5 py-px font-medium ${selC.lastDraft.citability >= 65 ? "bg-seo/10 text-seo-ink" : selC.lastDraft.citability >= 45 ? "bg-warn/10 text-warn-ink" : "bg-danger/10 text-danger-ink"}`}>AI alıntı {selC.lastDraft.citability}</span>
@@ -646,7 +646,7 @@ export default function CampaignsPage() {
                 Sil
               </button>
             </div>
-            <p className="text-[11px] text-sub">&quot;Şimdi çalıştır&quot; her yazı için 1 içerik kotası kullanır.</p>
+            <p className="text-xs text-sub">&quot;Şimdi çalıştır&quot; her yazı için 1 içerik kotası kullanır.</p>
           </div>
         )}
       </Drawer>
@@ -675,7 +675,7 @@ export default function CampaignsPage() {
                   {SOURCES.map((s) => (
                     <button key={s.id} type="button" onClick={() => set("source", s.id)} className={`rounded-xl border p-3 text-left transition ${form.source === s.id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}>
                       <div className="text-sm font-medium">{s.title}</div>
-                      <div className="mt-0.5 text-[11px] leading-4 text-ink/60">{s.body}</div>
+                      <div className="mt-0.5 text-xs leading-4 text-ink/60">{s.body}</div>
                     </button>
                   ))}
                 </div>
@@ -709,19 +709,19 @@ export default function CampaignsPage() {
                     <button type="button" onClick={loadIdeas} className="text-xs font-medium text-accent hover:underline">Verilerimden öner (ücretsiz)</button>
                   </div>
                   <textarea value={form.keywords} onChange={(e) => set("keywords", e.target.value)} rows={7} placeholder="Her satıra bir anahtar kelime ya da soru" className={`${input} font-mono text-[13px] leading-6`} />
-                  <p className="text-[11px] text-ink/60">Sırayla yazılır, daha önce yazılanlar atlanır. Kuyruğa istediğin zaman ekleyebilirsin.</p>
+                  <p className="text-xs text-ink/60">Sırayla yazılır, daha önce yazılanlar atlanır. Kuyruğa istediğin zaman ekleyebilirsin.</p>
                   {ideas && (
                     <div className="rounded-xl border border-border p-3">
                       {ideas.length === 0 ? (
                         <p className="text-xs text-ink/60">Bu domain için öneri çıkacak veri yok — önce <Link href="/gap" className="font-medium text-accent">Rakip Boşluğu</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.</p>
                       ) : (
                         <>
-                          <div className="mb-2 text-[11px] text-ink/60">Rakip Boşluğu ve GEO promptlarından — eklemek için tıkla:</div>
+                          <div className="mb-2 text-xs text-ink/60">Rakip Boşluğu ve GEO promptlarından — eklemek için tıkla:</div>
                           <div className="flex flex-wrap gap-1.5">
                             {ideas.map((q) => {
                               const added = keywordList.some((k) => k.toLowerCase() === q.toLowerCase());
                               return (
-                                <button key={q} type="button" disabled={added} onClick={() => addIdea(q)} className={`rounded-full border px-2.5 py-1 text-[11px] ${added ? "border-seo/30 bg-seo/5 text-seo-ink" : "border-border hover:border-accent hover:text-accent"}`}>
+                                <button key={q} type="button" disabled={added} onClick={() => addIdea(q)} className={`rounded-full border px-2.5 py-1 text-xs ${added ? "border-seo/30 bg-seo/5 text-seo-ink" : "border-border hover:border-accent hover:text-accent"}`}>
                                   {added ? "✓ " : "+ "}{q}
                                 </button>
                               );
@@ -747,7 +747,7 @@ export default function CampaignsPage() {
                   <ErrorBlock message={feedError} />
                   {feed && (
                     <div className="rounded-xl border border-border">
-                      <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[11px] text-ink/60">
+                      <div className="flex items-center justify-between border-b border-border px-3 py-2 text-xs text-ink/60">
                         <span className="truncate font-medium text-ink/70">{feed.title ?? feed.feedUrl}</span>
                         <span>{feed.total} öğe · {feed.items.filter((i) => !i.used && i.matches).length} yeni</span>
                       </div>
@@ -756,14 +756,14 @@ export default function CampaignsPage() {
                           <li key={it.link} className={`px-3 py-2 ${!it.matches || it.used ? "opacity-45" : ""}`}>
                             <div className="flex items-start justify-between gap-2">
                               <span className="text-xs font-medium leading-5">{it.title}</span>
-                              <span className="shrink-0 text-[11px] text-ink/60">{it.used ? "yazıldı" : !it.matches ? "filtre dışı" : it.publishedAt ? new Date(it.publishedAt).toLocaleDateString("tr-TR") : ""}</span>
+                              <span className="shrink-0 text-xs text-ink/60">{it.used ? "yazıldı" : !it.matches ? "filtre dışı" : it.publishedAt ? new Date(it.publishedAt).toLocaleDateString("tr-TR") : ""}</span>
                             </div>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  <p className="text-[11px] text-ink/60">Her çalışmada en yeni, henüz yazılmamış öğeler alınır. Kaynak yazı kopyalanmaz; bilgi kaynağı olarak okunur.</p>
+                  <p className="text-xs text-ink/60">Her çalışmada en yeni, henüz yazılmamış öğeler alınır. Kaynak yazı kopyalanmaz; bilgi kaynağı olarak okunur.</p>
                 </div>
               )}
 
@@ -799,13 +799,13 @@ export default function CampaignsPage() {
                           </span>
                           <div>
                             <div className="text-sm font-medium">{m.title}</div>
-                            <div className="text-[11px] leading-4 text-ink/60">{m.body}</div>
+                            <div className="text-xs leading-4 text-ink/60">{m.body}</div>
                           </div>
                         </div>
                       </div>
                       <div className="mt-2 flex gap-1.5 pl-6">
                         {m.steps.map(([label, on]) => (
-                          <span key={label} className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-border bg-panel text-ink/70" : "border-dashed border-border text-ink/45"}`}>{label}</span>
+                          <span key={label} className={`rounded-md border px-2 py-0.5 text-xs font-medium ${on ? "border-border bg-panel text-ink/70" : "border-dashed border-border text-ink/45"}`}>{label}</span>
                         ))}
                       </div>
                     </button>
@@ -825,11 +825,11 @@ export default function CampaignsPage() {
                         ))}
                       </select>
                     )}
-                    {form.mode === "publish" && <p className="text-[11px] text-danger-ink">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
+                    {form.mode === "publish" && <p className="text-xs text-danger-ink">Yazılar kontrol edilmeden yayına çıkar. [NEEDS: …] alanları açık kalabilir.</p>}
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
                       <span>
                         <span className="block text-sm font-medium">Kalite kapısı</span>
-                        <span className="block text-[11px] text-ink/60">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, onay kuyruğunda beklet (AI&apos;sız, ücretsiz)</span>
+                        <span className="block text-xs text-ink/60">Alıntılanabilirlik puanı bunun altındaysa siteye gönderme, onay kuyruğunda beklet (AI&apos;sız, ücretsiz)</span>
                       </span>
                       <select value={form.minCitability} onChange={(e) => set("minCitability", Number(e.target.value))} className="rounded-lg border border-border bg-muted px-2 py-1.5 text-sm">
                         {[0, 40, 50, 60, 70].map((v) => <option key={v} value={v}>{v === 0 ? "Kapalı" : `${v}/100`}</option>)}
@@ -849,7 +849,7 @@ export default function CampaignsPage() {
                     <button key={f} type="button" onClick={() => set("format", f)} className={seg(form.format === f)}>{FORMAT_LABEL[f]}</button>
                   ))}
                 </div>
-                <p className="text-[11px] text-ink/60">
+                <p className="text-xs text-ink/60">
                   Makaleler doğrudan cevapla başlar, SSS bölümü içerir ve <Link href="/content" className="text-accent">marka bilgi bankanı</Link> kullanır.
                 </p>
               </div>
@@ -876,21 +876,21 @@ export default function CampaignsPage() {
                     <button key={v} type="button" onClick={() => set("cover", v)} className={seg(form.cover === v)}>{l}</button>
                   ))}
                 </div>
-                {form.cover === "ai" && <p className="text-[11px] text-ink/60">AI görseli için OpenAI anahtarı gerekir; yoksa markalı kapak kullanılır.</p>}
+                {form.cover === "ai" && <p className="text-xs text-ink/60">AI görseli için OpenAI anahtarı gerekir; yoksa markalı kapak kullanılır.</p>}
               </div>
 
               <div className="space-y-2">
                 <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
                   <span>
                     <span className="block text-sm font-medium">İçindekiler</span>
-                    <span className="block text-[11px] text-ink/60">Başlıklardan otomatik liste (ücretsiz)</span>
+                    <span className="block text-xs text-ink/60">Başlıklardan otomatik liste (ücretsiz)</span>
                   </span>
                   <input type="checkbox" checked={form.toc} onChange={(e) => set("toc", e.target.checked)} className="h-4 w-4 accent-[#4f00ff]" />
                 </label>
                 <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
                   <span>
                     <span className="block text-sm font-medium">Öne çıkanlar</span>
-                    <span className="block text-[11px] text-ink/60">Girişten sonra 3–5 maddelik özet</span>
+                    <span className="block text-xs text-ink/60">Girişten sonra 3–5 maddelik özet</span>
                   </span>
                   <input type="checkbox" checked={form.takeaways} onChange={(e) => set("takeaways", e.target.checked)} className="h-4 w-4 accent-[#4f00ff]" />
                 </label>
@@ -903,7 +903,7 @@ export default function CampaignsPage() {
                   <label key={k} className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3 py-2.5">
                     <span>
                       <span className="block text-sm font-medium">{l}</span>
-                      <span className="block text-[11px] text-ink/60">{d}</span>
+                      <span className="block text-xs text-ink/60">{d}</span>
                     </span>
                     <input type="checkbox" checked={form[k]} onChange={(e) => set(k, e.target.checked)} className="h-4 w-4 accent-[#4f00ff]" />
                   </label>

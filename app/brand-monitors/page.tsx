@@ -115,15 +115,15 @@ export default function BrandMonitorsPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={`https://www.google.com/s2/favicons?domain=${r.brandDomain}&sz=32`} alt="" className="h-4 w-4 rounded" />
                         <span className="font-medium">{r.brandName} monitörü</span>
-                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">aktif proje</span>}
+                        {r.brandDomain === project?.domain && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">aktif proje</span>}
                         <span className="hidden text-xs text-ink/60 sm:inline">{r.brandDomain}</span>
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${on ? "border-seo/30 bg-seo/10 text-seo-ink" : "border-border bg-muted text-sub"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
+                      <span className={`rounded-md border px-2 py-0.5 text-xs font-medium ${on ? "border-seo/30 bg-seo/10 text-seo-ink" : "border-border bg-muted text-sub"}`} title={`Son çalışma ${ago(r.lastRunAt)}`}>
                         {on ? "Aktif" : "Duraklatıldı"}
                       </span>
-                      {r.demoMode && <span className="ml-1.5 rounded-md bg-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-warn-ink">demo</span>}
+                      {r.demoMode && <span className="ml-1.5 rounded-md bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn-ink">demo</span>}
                     </td>
                     <td className="py-3 pr-4 text-center tabular-nums">{r.prompts}</td>
                     <td className="hidden py-3 pr-4 text-center tabular-nums text-ink/60 md:table-cell">{r.engines}</td>

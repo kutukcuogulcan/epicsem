@@ -11,7 +11,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 text-sm text-ink/60">
         <div>
           <div className="flex items-center gap-2 font-extrabold text-ink/80">
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent text-white text-[11px] font-extrabold">
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent text-white text-xs font-extrabold">
               E
             </span>
             Epicsem <span className="font-medium text-ink/60">· SEO + GEO/AEO</span>

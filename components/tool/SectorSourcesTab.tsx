@@ -139,7 +139,7 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
             </select>
           </label>
         </div>
-        {guessed && sec && <p className="mt-2 text-[11px] text-sub">Sektörü proje açıklamasından tahmin ettik; yanlışsa değiştir.</p>}
+        {guessed && sec && <p className="mt-2 text-xs text-sub">Sektörü proje açıklamasından tahmin ettik; yanlışsa değiştir.</p>}
 
         {sec ? (
           <>
@@ -152,9 +152,9 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
                 ["Fırsat", scanned ? String(gaps.length) : "—", "rakip var, sen yoksun"],
               ] as const).map(([l, v, h]) => (
                 <div key={l} className="min-w-0 rounded-xl border border-border px-3 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-sub">{l}</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-sub">{l}</div>
                   <div className={`mt-1 text-[24px] font-semibold tabular-nums ${l === "Fırsat" && gaps.length ? "text-danger-ink" : ""}`}>{v}</div>
-                  <div className="truncate text-[11px] text-sub" title={h}>
+                  <div className="truncate text-xs text-sub" title={h}>
                     {h}
                   </div>
                 </div>
@@ -163,7 +163,7 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
 
             {scanned && top && (
               <div className="mt-3 rounded-xl bg-accent/[0.06] p-3.5">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-accent">Önce bunu yap</div>
                 <div className="mt-1 text-[13px] font-semibold">
                   {top.s.label}: {top.rivalHits.map((r) => r.name).join(", ")} burada geçiyor, sen geçmiyorsun
                 </div>
@@ -187,14 +187,14 @@ export default function SectorSourcesTab({ onPitch }: { onPitch: (domain: string
               <button type="button" onClick={scan} disabled={busy || !searchOk} className={BTN1} title={`${brands.length} AI sorgusu`}>
                 {busy ? "Taranıyor (~1-2 dk)…" : scanned ? "Yeniden tara" : "Siteleri tara"}
               </button>
-              <span className="text-[11px] text-sub">
+              <span className="text-xs text-sub">
                 {cachedAt ? `${new Date(cachedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} tarihli tarama · ` : ""}
                 {brands.length} marka × Google araması · {brands.length} AI sorgusu
               </span>
             </div>
             {!searchOk && <p className="mt-2 text-xs text-danger-ink">Tarama için Gemini (Google AI) anahtarı gerekiyor.</p>}
             {err && <p className="mt-2 text-xs text-danger-ink">{err}</p>}
-            <p className="mt-3 text-[11px] text-sub">
+            <p className="mt-3 text-xs text-sub">
               {sec.basis} &quot;Bulunamadı&quot;, Google aramasında sayfa çıkmadı demektir; sitede hiç geçmediğinin kesin kanıtı değildir.
             </p>
           </>
@@ -275,23 +275,23 @@ function Row({
           {s.label}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-1 pl-6">
-          <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${KIND_CLS[s.kind]}`}>{meta.label}</span>
-          <span className="text-[11px] text-sub">{s.host}</span>
+          <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${KIND_CLS[s.kind]}`}>{meta.label}</span>
+          <span className="text-xs text-sub">{s.host}</span>
         </div>
       </td>
       <td className="max-w-[240px] py-2.5 pr-3">
         <div>{s.evidence}</div>
-        {s.engines && <div className="text-[11px] text-sub">{ENGINE_LABEL[s.engines]}</div>}
+        {s.engines && <div className="text-xs text-sub">{ENGINE_LABEL[s.engines]}</div>}
       </td>
       <td className="py-2.5 pr-3">
         {!scanned ? (
           <span className="text-sub">—</span>
         ) : ownPages.length ? (
-          <a href={ownPages[0]} target="_blank" rel="noreferrer" className="inline-flex rounded-md bg-seo/10 px-2 py-0.5 text-[11px] font-medium text-seo-ink hover:underline">
+          <a href={ownPages[0]} target="_blank" rel="noreferrer" className="inline-flex rounded-md bg-seo/10 px-2 py-0.5 text-xs font-medium text-seo-ink hover:underline">
             ✓ Bulundu{ownPages.length > 1 ? ` (${ownPages.length})` : ""}
           </a>
         ) : (
-          <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-sub">Bulunamadı</span>
+          <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-sub">Bulunamadı</span>
         )}
       </td>
       <td className="py-2.5 pr-3">
@@ -300,13 +300,13 @@ function Row({
         ) : rivalHits.length ? (
           <div className="flex flex-wrap gap-1">
             {rivalHits.map((r) => (
-              <a key={r.name} href={r.url} target="_blank" rel="noreferrer" className="rounded-md bg-danger/10 px-1.5 py-0.5 text-[11px] font-medium text-danger-ink hover:underline">
+              <a key={r.name} href={r.url} target="_blank" rel="noreferrer" className="rounded-md bg-danger/10 px-1.5 py-0.5 text-xs font-medium text-danger-ink hover:underline">
                 {r.name}
               </a>
             ))}
           </div>
         ) : (
-          <span className="text-[11px] text-sub">Bulunamadı</span>
+          <span className="text-xs text-sub">Bulunamadı</span>
         )}
       </td>
       <td className="py-2.5 pr-5 text-right">
