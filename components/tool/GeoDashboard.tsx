@@ -108,6 +108,8 @@ export default function GeoDashboard({
 }) {
   const [engine, setEngine] = useState<string>("all");
   const [metric, setMetric] = useState<"visibility" | "shareOfVoice" | "avgPosition">("visibility");
+  // Tek test yerine dönem ortalaması (Peec gibi): AI cevapları her seferinde değişir, tek test yanıltabilir.
+  const [period, setPeriod] = useState<0 | 7 | 30>(0);
   const [history, setHistory] = useState<HistoryRun[]>([]);
 
   useEffect(() => {
@@ -356,7 +358,27 @@ export default function GeoDashboard({
     return { W, H, L, R, T, B, x, y, ticks, isPos };
   }, [series, metric]);
 
-  const kpis: { label: string; value: string; d: number | null; good: "up" | "down"; spark: number[]; fmt: (d: number) => string }[] = [
+  // Dönem ortalaması: [şimdi-gün, şimdi] içindeki testlerin markamıza ait özetlerinin ortalaması; değişim = önceki eşit dönem.
+  const windowAvg = (k: "visibility" | "shareOfVoice" | "avgPosition" | "avgSentiment", from: number, to: number) => {
+    const vals = series.filter((p) => { const t = Date.parse(p.at); return t > from && t <= to; }).map((p) => p.s?.[k]).filter((v): v is number => v != null);
+    return { v: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null, n: vals.length };
+  };
+  const now = Date.now();
+  const span = period * 864e5;
+  const per = (k: "visibility" | "shareOfVoice" | "avgPosition" | "avgSentiment") => {
+    const cur = windowAvg(k, now - span, now);
+    const prev = windowAvg(k, now - 2 * span, now - span);
+    return { v: cur.v, n: cur.n, d: cur.v != null && prev.v != null ? cur.v - prev.v : null };
+  };
+  const periodN = period ? per("visibility").n : 0;
+
+  const kpis: { label: string; value: string; d: number | null; good: "up" | "down"; spark: number[]; fmt: (d: number) => string }[] = period ? [
+    { label: "Görünürlük", value: pct(per("visibility").v), d: per("visibility").d, good: "up", spark: ownSeries("visibility"), fmt: (d) => `${Math.abs(Math.round(d * 100))}` },
+    { label: "Share of Voice", value: pct(per("shareOfVoice").v), d: per("shareOfVoice").d, good: "up", spark: ownSeries("shareOfVoice"), fmt: (d) => `${Math.abs(Math.round(d * 100))}` },
+    { label: "Kazanma oranı", value: "—", d: null, good: "up", spark: [], fmt: () => "" },
+    { label: "Ort. pozisyon", value: num1(per("avgPosition").v), d: per("avgPosition").d, good: "down", spark: ownSeries("avgPosition"), fmt: (d) => Math.abs(d).toFixed(1).replace(".", ",") },
+    { label: "Duygu", value: per("avgSentiment").v == null ? "—" : String(Math.round(per("avgSentiment").v!)), d: per("avgSentiment").d, good: "up", spark: ownSeries("avgSentiment"), fmt: (d) => `${Math.abs(Math.round(d))}` },
+  ] : [
     { label: "Görünürlük", value: pct(me.visibility), d: delta("visibility"), good: "up", spark: ownSeries("visibility"), fmt: (d) => `${Math.abs(Math.round(d * 100))}` },
     { label: "Share of Voice", value: pct(me.sov), d: delta("shareOfVoice"), good: "up", spark: ownSeries("shareOfVoice"), fmt: (d) => `${Math.abs(Math.round(d * 100))}` },
     { label: "Kazanma oranı", value: pct(me.winRate), d: null, good: "up", spark: [], fmt: () => "" },
@@ -442,13 +464,27 @@ export default function GeoDashboard({
           Tüm motorlar
         </button>
         {engines.map((e) => (
-          <button key={e} type="button" onClick={() => setEngine(e)} className={chip(engine === e)}>
+          <button key={e} type="button" onClick={() => { setEngine(e); setPeriod(0); }} className={chip(engine === e)}>
             <span className="h-2 w-2 rounded-full" style={{ background: ENGINE_META[e]?.color ?? "#999" }} />
             {ENGINE_META[e]?.name ?? e}
           </button>
         ))}
         {engines.length === 1 && <span className="text-xs text-sub">Daha fazla motor için Entegrasyonlar&apos;dan anahtar ekle.</span>}
+        <span className="ml-auto flex items-center gap-1.5">
+          {([[0, "Son test"], [7, "7 gün ort."], [30, "30 gün ort."]] as const).map(([v, l]) => (
+            <button key={v} type="button" onClick={() => { setPeriod(v); if (v) setEngine("all"); }} className={chip(period === v)}>
+              {l}
+            </button>
+          ))}
+        </span>
       </div>
+      {period > 0 && (
+        <p className="-mt-2 text-xs text-sub">
+          {periodN
+            ? `Son ${period} gündeki ${periodN} testin ortalaması · tüm motorlar · ok: önceki ${period} güne göre. Kazanma oranı yalnızca tek testte hesaplanır.`
+            : `Son ${period} günde test yok. Marka Monitörleri'nden otomatik ölçümü (ör. Günlük) aç.`}
+        </p>
+      )}
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
