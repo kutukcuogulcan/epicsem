@@ -20,7 +20,7 @@ export interface OpportunityReport {
 
 const MIN_ANSWERS = 3;
 /** Kaçan iç numaraları temizle: "[2] numaralı …", "(0, 1, 3)". */
-const noIdx = (t: string) => t.replace(/(?:\[\d+\]\s*(?:,|ve|and)?\s*)+(?:numaralı\s*)?/g, "").replace(/\s*\((\d+,\s*)*\d+\)/g, "").replace(/\s{2,}/g, " ").trim();
+export const noIdx = (t: string) => t.replace(/(?:\[\d+\]\s*(?:,|ve|and)?\s*)+(?:numaralı\s*)?/g, "").replace(/\s*\((\d+,\s*)*\d+\)/g, "").replace(/\s{2,}/g, " ").trim();
 
 export function buildEvidence(runs: GeoRunResult[], own: BrandRef, rivals: BrandRef[]) {
   const real = runs.filter((r) => !isDemoRun(r));

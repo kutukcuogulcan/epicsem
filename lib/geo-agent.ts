@@ -3,7 +3,7 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod/v4";
 import type { GeoRunResult } from "@/types";
 import type { BrandRef } from "@/lib/geo-loss";
-import { buildEvidence, type OpportunityReport } from "@/lib/geo-opportunities";
+import { buildEvidence, noIdx, type OpportunityReport } from "@/lib/geo-opportunities";
 import { validateOpportunities } from "@/lib/opportunity-check";
 import { fetchPageSummary } from "@/lib/content-fetch";
 import { ownPagesTool } from "@/lib/agent-tools";
@@ -138,8 +138,8 @@ ${brandContext ? `BRAND CONTEXT (only source for brand claims):\n${brandContext.
     const ev = (Array.isArray(src?.evidence) ? src.evidence : [])
       .map((e: any) => ({ url: String(e?.url ?? ""), finding: String(e?.finding ?? "").trim().slice(0, 300) }))
       .filter((e: { url: string; finding: string }) => e.finding.length > 5 && [...readUrls].some((u) => u === e.url || host(u) === host(e.url)));
-    return { ...o, evidence: ev.slice(0, 4) };
+    return { ...o, why: noIdx(o.why), evidence: ev.slice(0, 4) };
   });
-  const list = (v: unknown, n: number) => (Array.isArray(v) ? v : []).map((x) => String(x ?? "").replace(/\[\d+\]\s*/g, "").trim()).filter((x) => x.length > 5).slice(0, n);
+  const list = (v: unknown, n: number) => (Array.isArray(v) ? v : []).map((x) => noIdx(String(x ?? ""))).filter((x) => x.length > 5).slice(0, n);
   return { ...base, model: final.model ?? MODEL, status: opportunities.length ? "ready" : "insufficient-data", summary: list(report.summary, 4), opportunities, risks: list(report.risks, 3), trace };
 }
