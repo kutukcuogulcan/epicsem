@@ -49,8 +49,8 @@ export default function SearchLayersCard({ pillars, geoVisibility, siteUrl }: { 
                   <span className={`w-9 text-right text-sm font-semibold tabular-nums ${t.text}`}>{l.score}</span>
                 </Link>
               ) : (
-                <Link href={l.href} className="text-right text-xs font-medium text-accent hover:underline">
-                  {pending ? "Ölçülüyor…" : l.missing}
+                <Link href={l.key === "sxo" && sxoState === "failed" ? "/integrations" : l.href} className="text-right text-xs font-medium text-accent hover:underline">
+                  {pending ? "Ölçülüyor…" : l.key === "sxo" && sxoState === "failed" ? "Hız için Google anahtarı ekle" : l.missing}
                 </Link>
               )}
             </li>
