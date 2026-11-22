@@ -83,6 +83,7 @@ function ensureSchema(): Promise<void> {
     schemaReady = initSchema()
       .then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)))
       .then(() => sealExistingSecrets().catch((e) => console.error("[db] sır şifreleme göçü başarısız:", e)))
+      .then(() => adoptDemoAccount().catch((e) => console.error("[db] demo hesabı devri başarısız:", e)))
       .catch((e) => {
         schemaReady = null; // bir sonraki istek yeniden denesin; geçici bir bağlantı hatası siteyi restart'a kadar düşürmesin
         throw e;
@@ -110,6 +111,23 @@ async function sealExistingSecrets(): Promise<void> {
     n++;
   }
   await exec(`INSERT INTO _meta (k, v) VALUES ('secrets_sealed_v1', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(n)]);
+}
+
+/**
+ * Bir kerelik: girişsiz dönemde biriken ortak demo hesabını (projeler, GEO testleri, yazılar) gerçek bir
+ * hesaba çevirir. ADOPT_DEMO="e-posta|salt:hash" (scrypt, lib/auth hashPassword biçimi). Demo oturumları
+ * silinir ki eski demo çerezleri bu hesaba girmesin; bu yüzden DEMO_OPEN_ACCESS ile birlikte kapatılmalı.
+ * shortcut: env ile tetiklenir, iş bitince ADOPT_DEMO kaldırılmalı (e-posta zaten varsa hiçbir şey yapmaz).
+ */
+async function adoptDemoAccount(): Promise<void> {
+  const [email, hash] = (process.env.ADOPT_DEMO ?? "").split("|").map((x) => x.trim());
+  if (!email || !/^[0-9a-f]{32}:[0-9a-f]{128}$/.test(hash ?? "")) return;
+  if (await one(`SELECT 1 FROM users WHERE lower(email) = lower($1)`, [email])) return;
+  const demo = await one<any>(`SELECT id FROM users WHERE email = 'demo@epicsem.local'`, []);
+  if (!demo) return;
+  await exec(`DELETE FROM sessions WHERE user_id = $1`, [demo.id]);
+  await exec(`UPDATE users SET email = $1, password_hash = $2 WHERE id = $3`, [email.toLowerCase(), hash, demo.id]);
+  console.log(`[db] demo hesabı ${email} hesabına devredildi (id ${demo.id})`);
 }
 
 async function migrateGeoSummariesV2(): Promise<void> {
