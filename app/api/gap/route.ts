@@ -5,7 +5,7 @@ import { ALL_ENGINES, computeShareOfVoice, computeSourceDistribution, runPromptA
 import { configuredEngines, isDemoMode } from "@/lib/geo-providers";
 import { auditPagesForGap, buildGapMatrix } from "@/lib/gap-analysis";
 import { saveGapRun } from "@/lib/db";
-import { buildContentBriefs } from "@/lib/content-brief";
+import { buildContentBriefs, lostQuestions } from "@/lib/content-brief";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -74,7 +74,11 @@ export async function POST(req: NextRequest) {
     .map((s, i) => ({ ...s, rank: i + 1 }));
   const sourceDistribution = computeSourceDistribution(allRuns, brand, competitors);
   const gapMatrix = buildGapMatrix(audits, allRuns);
-  const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors);
+  // AI'ın kaybedilen sorularda en çok gösterdiği dış sayfayı da denetle (ücretsiz, AI sorgusu yok): sayfa karşılaştırması için.
+  const top = lostQuestions(allRuns, brand, competitors).topUrls.slice(0, 2);
+  const benchmarks = (await Promise.allSettled(top.map((t) => auditPagesForGap([t.url]).then(([audit]) => ({ audit, cites: t.n })))))
+    .flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  const contentBriefs = buildContentBriefs(audits, gapMatrix, allRuns, brand, competitors, benchmarks);
 
   try {
     await saveGapRun(user.id, { brandName: brand.name, brandDomain: brand.domain, demoMode, gapMatrix, summaries, contentBriefs });

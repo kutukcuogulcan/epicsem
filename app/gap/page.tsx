@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EngineId, GapRow, GeoVisibilitySummary } from "@/types";
-import type { ContentBrief } from "@/lib/content-brief";
+import type { ContentBrief, PageFacts } from "@/lib/content-brief";
+import { ENGINE_META } from "@/components/tool/MonitorBits";
 import PromptBlock from "@/components/PromptBlock";
 import UsageMeter from "@/components/UsageMeter";
 import { useAgencyName } from "@/lib/use-agency-name";
@@ -572,6 +573,75 @@ export default function GapPage() {
             {openBrief ? (
               <>
                 <p className="text-sub">{openBrief.reason}</p>
+                {!!openBrief.lostTo?.length && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">Kaybettiğin sorular: AI kimi önerdi, hangi sayfayı gösterdi</div>
+                    <ul className="space-y-2">
+                      {openBrief.lostTo.map((q) => (
+                        <li key={q.question} className="rounded-xl border border-border p-3">
+                          <div className="font-medium">{q.question}</div>
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {q.engines.map((e) => (
+                              <span key={e.engine} className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.winner ? "bg-danger/10 text-danger-ink" : "bg-muted text-sub"}`}>
+                                {ENGINE_META[e.engine]?.name ?? e.engine}: {e.winner ? `${e.winner} önerildi` : "kimse anılmadı"}
+                              </span>
+                            ))}
+                          </div>
+                          {q.sources.length > 0 && (
+                            <div className="mt-2 space-y-0.5 text-xs">
+                              <span className="text-sub">AI&apos;ın gösterdiği sayfalar:</span>
+                              {q.sources.map((src) => (
+                                <a key={src.url} href={src.url} target="_blank" rel="noopener noreferrer" className="block truncate text-accent hover:underline">
+                                  {src.domain}
+                                  {path(src.url) !== "/" ? path(src.url) : ""}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {openBrief.benchmark && (
+                  <div>
+                    <div className="mb-1.5 text-xs font-medium text-sub">
+                      Senin sayfan vs AI&apos;ın en çok gösterdiği sayfa ({openBrief.benchmark.cites} kez gösterildi) · kodla ölçüldü
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border text-sub">
+                            <th className="px-3 py-2 text-left font-medium" />
+                            <th className="px-3 py-2 text-left font-medium">Senin sayfan</th>
+                            <th className="px-3 py-2 text-left font-medium">
+                              <a href={openBrief.benchmark.other.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                                {host(openBrief.benchmark.other.url)}
+                              </a>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {([
+                            ["Kelime", (f: PageFacts) => `~${f.wordCount}`],
+                            ["SSS işaretlemesi", (f: PageFacts) => (f.faq ? "var" : "yok")],
+                            ["Yapılandırılmış veri", (f: PageFacts) => f.schemaTypes.slice(0, 4).join(", ") || "yok"],
+                            ["Yazar", (f: PageFacts) => (f.author == null ? "?" : f.author ? "var" : "yok")],
+                            ["Tarih", (f: PageFacts) => (f.date == null ? "?" : f.date ? "var" : "yok")],
+                            ["Dış kaynak linki", (f: PageFacts) => (f.outboundCitations ?? "?").toString()],
+                            ["AI uygunluk puanı", (f: PageFacts) => `${f.aiCrawlScore}/100`],
+                          ] as const).map(([label, fn]) => (
+                            <tr key={label}>
+                              <td className="px-3 py-1.5 text-sub">{label}</td>
+                              <td className="px-3 py-1.5 font-medium">{fn(openBrief.benchmark!.own)}</td>
+                              <td className="px-3 py-1.5 font-medium">{fn(openBrief.benchmark!.other)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
                 {openBrief.suggestedHeadings.length > 0 && (
                   <div>
                     <div className="mb-1.5 text-xs font-medium text-sub">Kaybedilen sorular: bunları başlık ya da SSS maddesi yap</div>
