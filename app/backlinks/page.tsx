@@ -1,5 +1,6 @@
 "use client";
 
+import AiSourceOutreach from "@/components/tool/AiSourceOutreach";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -277,7 +278,7 @@ export default function BacklinksPage() {
       kind: "Fırsat",
       color: "text-warn-ink",
       title: "Rakiplerine link veren siteleri bul",
-      body: data?.sources.ahrefs ? "Rakiplerine link verip sana vermeyen siteler en kolay ikna edilecek olanlar." : "Bu karşılaştırma için Ahrefs bağlantısı gerekiyor.",
+      body: "AI'ın GEO testinde kaynak gösterdiği siteler (ücretsiz): rakip anılıp senin anılmadığın yerler en değerli fırsatlar." + (data?.sources.ahrefs ? "" : " Rakip link karşılaştırması için Ahrefs gerekir."),
       cta: (
         <button type="button" onClick={() => setTab("gap")} className={BTN2}>
           Fırsatları bul
@@ -596,6 +597,7 @@ export default function BacklinksPage() {
 
       {mode === "analysis" && data?.site && tab === "gap" && (
         <div className="space-y-3">
+          <AiSourceOutreach site={data.site} onPitch={(d, url, comps) => draftMail("gap", { domain: d, url }, { competitors: comps })} />
           <div className={`${card} p-5`}>
             <h2 className="text-sm font-semibold">Rakiplerine link verip sana vermeyen siteler</h2>
             <p className="mt-1 text-xs text-sub">En fazla 4 rakip gir. Birden çok rakibe link veren siteler en üstte; bunlar sana da link vermeye en yatkın olanlar. Ahrefs gerekir, sonuç 24 saat saklanır.</p>
