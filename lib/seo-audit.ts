@@ -4,7 +4,7 @@ import { isBotAllowed, parseRobotsTxt } from "./robots";
 import { generateFaqSchema, generateMetaDescription, generateOrganizationSchema } from "./fix-generator";
 import { auditEeat, auditImages, auditLinks, auditLlmsTxt, auditSitemap, validateSchema } from "./audit-extra";
 import type { AiBotAccess, GeneratedFix, IssueCategory, IssueSeverity, SeoAuditResult, SeoIssueResult } from "@/types";
-import { safeFetch } from "@/lib/safe-fetch";
+import { blockedReason, safeFetch } from "@/lib/safe-fetch";
 
 const FETCH_TIMEOUT_MS = 12000;
 
@@ -46,6 +46,12 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   try {
     const res = await fetchWithTimeout(url);
     statusOk = res.ok;
+    const blocked = blockedReason(res);
+    if (blocked) {
+      // Bot koruma sayfasını sitenin kendisi gibi denetlemek yanlış puan üretir.
+      pushIssue(issues, { category: "crawlability", severity: "critical", title: "Site otomatik erişimi engelliyor", detail: blocked, recommendation: "Sayfa okunamadığı için bu denetim eksik. Site senin ise güvenlik duvarında (ör. Cloudflare) bu araca izin ver." });
+      return buildEmptyResult(url, issues);
+    }
     html = await res.text();
     if (!res.ok) {
       pushIssue(issues, {

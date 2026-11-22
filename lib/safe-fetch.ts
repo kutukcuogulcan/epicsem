@@ -78,3 +78,11 @@ export async function safeFetch(input: string | URL, init: RequestInit = {}, opt
     return out;
   }
 }
+
+/** Site otomatik erişimi engelliyorsa (Cloudflare vb. bot koruması) kullanıcıya gösterilecek açıklama; değilse null. */
+export function blockedReason(res: Response): string | null {
+  if (![401, 403, 429, 503].includes(res.status)) return null;
+  const waf = res.headers.get("cf-mitigated") ? "Cloudflare" : /cloudflare|akamai|incapsula|sucuri|ddos-guard/i.exec(res.headers.get("server") ?? "")?.[0];
+  if (!waf && res.status !== 403) return null;
+  return `Site otomatik erişimi engelliyor (${waf ? `${waf[0].toUpperCase()}${waf.slice(1)} bot koruması` : "erişim reddedildi"}, HTTP ${res.status}). Sayfa okunamadığı için analiz yapılamadı. Site senin ise güvenlik ayarlarında bu araca izin verebilirsin.`;
+}

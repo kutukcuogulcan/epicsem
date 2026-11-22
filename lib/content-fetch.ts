@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { safeFetch } from "@/lib/safe-fetch";
+import { blockedReason, safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Small shared "fetch a real page, extract just enough text to ground a prompt" helper
@@ -70,7 +70,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number = FETCH_TIMEOUT_M
 export async function fetchPageSummary(rawUrl: string): Promise<PageSummary> {
   const url = normalizeUrl(rawUrl);
   const res = await fetchWithTimeout(url);
-  if (!res.ok) throw new Error(`${url} returned HTTP ${res.status}`);
+  if (!res.ok) throw new Error(blockedReason(res) ?? `${url} returned HTTP ${res.status}`);
   const html = await res.text();
   const $ = cheerio.load(html);
 

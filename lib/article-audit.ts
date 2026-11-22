@@ -3,7 +3,7 @@ import * as cheerio from "cheerio";
 import { analyzePassages, citInputFromHtml, passagesFromHtml, scoreCitability, type CitabilityResult, type PassageReport } from "./citability";
 import type { ArticleAuditResult } from "@/types";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
-import { safeFetch } from "@/lib/safe-fetch";
+import { blockedReason, safeFetch } from "@/lib/safe-fetch";
 
 /**
  * Article Writer's engine. Two strict steps, never mixed:
@@ -79,7 +79,7 @@ async function extractPage(rawUrl: string): Promise<ExtractedPage> {
   const url = normalizeUrl(rawUrl);
   const parsed = new URL(url);
   const res = await fetchWithTimeout(url);
-  if (!res.ok) throw new Error(`Sayfa alınamadı: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(blockedReason(res) ?? `Sayfa alınamadı: HTTP ${res.status}`);
   const html = await res.text();
   const $ = cheerio.load(html);
 
