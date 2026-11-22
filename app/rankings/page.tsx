@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import type { RankExplanation, SerpSnap } from "@/lib/rank-explain";
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import { Drawer, TableSkeleton, PageHeader, BTN1, BTN2, CARD } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
@@ -17,6 +18,14 @@ interface Kw {
   source?: string;
 }
 type Hist = Record<number, { position: number | null; at: string }[]>;
+interface WhyData {
+  explanation: RankExplanation | null;
+  top: SerpSnap["top"];
+  paa: string[];
+  aiOverview: boolean;
+  checkedAt?: string;
+  prevAt?: string | null;
+}
 
 function posTone(p: number | null) {
   if (p === null) return "bg-muted text-ink/60";
@@ -42,6 +51,7 @@ export default function RankingsPage() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [why, setWhy] = useState<WhyData | null | "loading">(null);
 
   async function refresh() {
     const r = await fetch("/api/rankings");
@@ -101,6 +111,14 @@ export default function RankingsPage() {
   const [f, setF] = useState<"all" | "top10" | "striking" | "up" | "down" | "none">("all");
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<number | null>(null);
+  useEffect(() => {
+    if (sel == null) return setWhy(null);
+    setWhy("loading");
+    fetch(`/api/rankings/explain?id=${sel}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setWhy(d))
+      .catch(() => setWhy(null));
+  }, [sel]);
   const shown = list
     .filter((k) =>
       f === "top10" ? (k.lastPosition ?? 999) <= 10 : f === "striking" ? striking.includes(k) : f === "up" ? upList.includes(k) : f === "down" ? downList.includes(k) : f === "none" ? unranked.includes(k) : true
@@ -465,6 +483,63 @@ export default function RankingsPage() {
               </div>
             ) : (
               <p className="text-sub">Grafik için en az iki kontrol gerekiyor.</p>
+            )}
+            {why === "loading" ? (
+              <p className="text-sub">Google sonuçları yükleniyor…</p>
+            ) : why?.explanation ? (
+              <>
+                <section className="rounded-xl bg-accent/[0.06] p-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-accent">Neden?</h3>
+                  <ul className="mt-1.5 space-y-1">
+                    {why.explanation.lines.map((l) => (
+                      <li key={l}>{l}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs text-sub">
+                    Google sonuçları {new Date(why.checkedAt ?? "").toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
+                    {why.prevAt ? ` ile ${new Date(why.prevAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} karşılaştırıldı` : " kontrolünden"}.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="mb-1.5 text-xs font-medium text-sub">Google&apos;da şu an ilk 10{why.aiOverview ? " · üstte AI Overview var" : ""}</h3>
+                  <ol className="divide-y divide-border rounded-xl border border-border">
+                    {why.top.map((r) => {
+                      const own = r.d.replace(/^www\./, "") === selKw.domain.replace(/^www\./, "") || r.d.endsWith(`.${selKw.domain.replace(/^www\./, "")}`);
+                      const was = why.explanation!.above.find((x) => x.u === r.u)?.was;
+                      return (
+                        <li key={r.u} className={`flex items-center gap-3 px-3 py-2 ${own ? "bg-accent/[0.06]" : ""}`}>
+                          <span className="w-6 text-right font-semibold tabular-nums text-sub">{r.p}</span>
+                          <div className="min-w-0 flex-1">
+                            <a href={r.u} target="_blank" rel="noreferrer" className={`block truncate font-medium hover:underline ${own ? "text-accent" : "text-ink"}`}>
+                              {r.t || r.d}
+                            </a>
+                            <div className="truncate text-xs text-sub">{r.d}{own ? " · senin sayfan" : ""}</div>
+                          </div>
+                          {why.prevAt && !own && (
+                            <span className={`whitespace-nowrap text-xs font-medium ${was == null ? "text-danger-ink" : was > r.p ? "text-danger-ink" : "text-sub"}`}>
+                              {was == null ? (why.explanation!.above.some((x) => x.u === r.u) ? "yeni" : "") : was !== r.p ? `${was}. → ${r.p}.` : ""}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+                {why.paa.length > 0 && (
+                  <section>
+                    <h3 className="mb-1.5 text-xs font-medium text-sub">Google&apos;da &quot;İnsanlar şunu da soruyor&quot;: bunları sayfanda cevapla</h3>
+                    <ul className="space-y-1">
+                      {why.paa.map((q) => (
+                        <li key={q} className="rounded-lg bg-muted/60 px-3 py-1.5">{q}</li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </>
+            ) : (
+              <p className="rounded-xl bg-muted/60 px-3 py-2 text-xs text-sub">
+                &quot;Neden düştü?&quot; açıklaması bir sonraki SerpApi kontrolünden itibaren çıkar: Google&apos;ın ilk 10&apos;u artık her kontrolde kaydediliyor (ek arama harcamadan).
+              </p>
             )}
             <div>
               <div className="mb-1 text-xs font-medium text-sub">Sıralanan sayfa</div>

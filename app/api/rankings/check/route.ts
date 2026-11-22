@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
       list.slice(i, i + 4).map(async (k) => {
         try {
           const r = await rankOf(k.keyword, k.domain, { gl: k.gl, hl: k.gl === "tr" ? "tr" : "en", apiKey: keys.get(k.userId) });
-          await saveRankCheck(k.id, r.position, r.url);
+          // İlk 10 + AI Overview + PAA aynı yanıttan kaydedilir ("neden düştü" için; ek arama yok).
+          await saveRankCheck(k.id, r.position, r.url, { top: r.top.map((x) => ({ p: x.position, d: x.domain, u: x.link, t: x.title.slice(0, 140) })), ai: r.aiOverview, paa: r.peopleAlsoAsk.slice(0, 6) });
           checked++;
         } catch (e) {
           errors.push(`${k.keyword}: ${e instanceof Error ? e.message : "hata"}`);

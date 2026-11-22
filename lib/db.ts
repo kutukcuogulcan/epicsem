@@ -12,6 +12,7 @@ import type {
   TopicVisibility,
 } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
+import type { SerpSnap } from "@/lib/rank-explain";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import { openSecret, sealSecret } from "./secret-box";
 
@@ -423,6 +424,7 @@ async function initSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_rank_history_kw ON rank_history(keyword_id, checked_at);
     ALTER TABLE rank_keywords ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'serpapi';
+    ALTER TABLE rank_history ADD COLUMN IF NOT EXISTS serp_json TEXT;
     CREATE TABLE IF NOT EXISTS citation_profiles (
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       site TEXT NOT NULL,
@@ -2580,10 +2582,21 @@ export async function deleteRankKeyword(userId: number, id: number): Promise<voi
   await exec(`DELETE FROM rank_keywords WHERE id = $1 AND user_id = $2`, [id, userId]);
 }
 
-export async function saveRankCheck(id: number, position: number | null, url: string | null): Promise<void> {
+export async function saveRankCheck(id: number, position: number | null, url: string | null, serp?: SerpSnap): Promise<void> {
   await ensureSchema();
-  await exec(`INSERT INTO rank_history (keyword_id, position, url) VALUES ($1, $2, $3)`, [id, position, url]);
+  await exec(`INSERT INTO rank_history (keyword_id, position, url, serp_json) VALUES ($1, $2, $3, $4)`, [id, position, url, serp ? JSON.stringify(serp) : null]);
   await exec(`UPDATE rank_keywords SET last_position = $1, last_url = $2, last_checked_at = now() WHERE id = $3`, [position, url, id]);
+}
+
+/** Bir kelimenin Google ilk 10'u kaydedilmiş son iki kontrolü (yeniden eskiye); "neden düştü" için. */
+export async function rankSerps(userId: number, keywordId: number): Promise<{ position: number | null; at: string; serp: SerpSnap }[]> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT h.position, h.checked_at, h.serp_json FROM rank_history h JOIN rank_keywords k ON k.id = h.keyword_id
+      WHERE k.user_id = $1 AND h.keyword_id = $2 AND h.serp_json IS NOT NULL ORDER BY h.checked_at DESC LIMIT 2`,
+    [userId, keywordId]
+  );
+  return rows.map((r) => ({ position: r.position, at: toIso(r.checked_at), serp: JSON.parse(r.serp_json) }));
 }
 
 /** Son 60 günün sıralama geçmişi (anahtar kelime başına). */
