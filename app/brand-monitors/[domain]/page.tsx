@@ -1,5 +1,6 @@
 "use client";
 
+import { confidenceOf } from "@/lib/sample-size";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -158,7 +159,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
             <div>
               <div className="text-sm font-medium">İzleme açık</div>
               <div className="text-xs text-sub">
-                Her {every === 1 ? "gün" : `${every} günde bir`} otomatik çalışır · sonraki çalışma {nextAt.getTime() < Date.now() ? "sıradaki kontrolde" : fmt(nextAt.toISOString())} · her çalışma {queries} AI sorgusu
+                Her {every === 1 ? "gün" : `${every} günde bir`} otomatik çalışır · sonraki çalışma {nextAt.getTime() < Date.now() ? "sıradaki kontrolde" : fmt(nextAt.toISOString())} · her çalışma {queries} AI sorgusu (ayda ~{Math.round((queries * 30) / every)})
                 {sch?.lastError && <span className="text-danger-ink"> · son otomatik çalışma hatası: {sch.lastError}</span>}
               </div>
             </div>
@@ -211,6 +212,11 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
             <div>
               <div className="text-2xl font-medium tabular-nums">{pct(d.visibility)}</div>
               <div className="text-xs text-ink/60">tüm motorlarda</div>
+              {(() => {
+                const all = d.prompts.flatMap((p) => p.responses);
+                const c = confidenceOf(all.filter((r) => r.mentioned).length, all.length);
+                return c ? <div className={`mt-1 text-xs ${c.level === "yeterli" ? "text-ink/60" : "text-warn-ink"}`}>{c.text}</div> : null;
+              })()}
             </div>
           </div>
         </div>

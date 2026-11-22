@@ -7,6 +7,7 @@
  * Hepsi son testin ham koşularından (prompt × motor) AI kullanmadan hesaplanır; trend için
  * önceki testler /api/overview'dan gelir.
  */
+import { confidenceOf } from "@/lib/sample-size";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { GeoRunResult, GeoVisibilitySummary } from "@/types";
@@ -508,6 +509,14 @@ export default function GeoDashboard({
           );
         })}
       </div>
+      {period === 0 && (() => {
+        const c = confidenceOf(fr.filter((r) => r.mentioned).length, fr.length);
+        return c ? (
+          <p className={`-mt-1 text-xs ${c.level === "yeterli" ? "text-sub" : "text-warn-ink"}`}>
+            {c.text}.{c.level !== "yeterli" && " Marka Monitörleri'nde haftalık otomatik testi açarsan sonuçlar zamanla birikir ve kesinleşir."}
+          </p>
+        ) : null;
+      })()}
 
       {/* Trend + sıralama */}
       <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
