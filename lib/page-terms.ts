@@ -13,7 +13,7 @@ const STOP = new Set(
     "var yok sizin sen siz biz bunu bunun buna şunu onun ona size bize ayrıca özellikle genellikle mutlaka sadece kendi " +
     "yapabilirsiniz edebilirsiniz sunar sunuyor sağlar sağlıyor kullanabilirsiniz olabilir olmak yapmak etmek eder yapar " +
     "seçenek seçenekler program programı programlar işletme işletmeler işletmeniz firma şirket kullanıcı kullanıcılar " +
-    "tamamen öne çıkan çıkar oldukça popüler uygun ihtiyaç ihtiyacınıza ihtiyacınız ihtiyaçlarınıza yaygın kullanılan büyük küçük orta " +
+    "tamamen yeterli net öneri öneriler pratik dikkat edilecekler edilmesi gerekenler yüzden bu yüzden tarafsız kaç ayda yılda özet sonuç kısaca örneğin öne çıkan çıkar oldukça popüler uygun ihtiyaç ihtiyacınıza ihtiyacınız ihtiyaçlarınıza yaygın kullanılan büyük küçük orta " +
     "iyi güzel kolay kolaylıkla hızlı ücretli ücretsiz farklı çeşitli önemli genel temel tercih tercihi tercih edilen " +
     "türkiye türk türkiye'de dünya yerli yabancı şekilde şekilde açısından bakımından durumda durumunda gerekir gerekiyor " +
     "the and for with from that this your are you can will have has its also more most best"
