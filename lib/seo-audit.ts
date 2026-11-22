@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 import { AI_BOTS } from "./ai-bots";
 import { isBotAllowed, parseRobotsTxt } from "./robots";
 import { generateFaqSchema, generateMetaDescription, generateOrganizationSchema } from "./fix-generator";
-import { auditEeat, auditImages, auditLinks, auditLlmsTxt, auditSitemap, validateSchema } from "./audit-extra";
+import { auditAiSignals, auditEeat, auditImages, auditLinks, auditLlmsTxt, auditSitemap, validateSchema } from "./audit-extra";
 import type { AiBotAccess, GeneratedFix, IssueCategory, IssueSeverity, SeoAuditResult, SeoIssueResult } from "@/types";
 import { blockedReason, safeFetch } from "@/lib/safe-fetch";
 
@@ -293,12 +293,12 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   });
 
   // ---- 6b. Ek kontroller: sitemap içeriği, llms.txt, şema alanları, görseller, linkler, E-E-A-T ----
-  const [sm, llms, links] = await Promise.all([auditSitemap(parsed.origin, robotsText), auditLlmsTxt(parsed.origin), auditLinks($, url)]);
+  const [sm, llms, links, aiSignals] = await Promise.all([auditSitemap(parsed.origin, robotsText), auditLlmsTxt(parsed.origin), auditLinks($, url), auditAiSignals(parsed.origin, robotsTxtFound ? robotsText : null)]);
   const sitemapFound = sm.found;
   const schemaCheck = validateSchema($);
   const imgs = auditImages($, parsed.origin);
   const eeat = auditEeat($, schemaCheck.nodes, wordCount, links.stats.outboundCitations);
-  for (const i of [...sm.issues, ...llms.issues, ...schemaCheck.issues, ...imgs.issues, ...links.issues, ...eeat.issues]) pushIssue(issues, i);
+  for (const i of [...sm.issues, ...llms.issues, ...aiSignals, ...schemaCheck.issues, ...imgs.issues, ...links.issues, ...eeat.issues]) pushIssue(issues, i);
 
   // ---- 7. AI bot accessibility (AXO) ----
   const aiBotAccess: AiBotAccess[] = AI_BOTS.map((bot) => ({

@@ -1,4 +1,5 @@
 import type { CheerioAPI } from "cheerio";
+import { contentSignalVerdict, lastmodVerdict, soft404Verdict } from "@/lib/audit-signals";
 import type { SeoIssueResult } from "@/types";
 import { safeFetch } from "@/lib/safe-fetch";
 
@@ -297,6 +298,7 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
   }
   const locs = (x: string) => Array.from(x.matchAll(/<loc>\s*(?:<!\[CDATA\[)?\s*([^<\]\s]+)/gi)).map((m) => m[1].trim());
   let urls: string[] = [];
+  const urlsetXml: string[] = []; // lastmod tarihleri için
   if (/<sitemapindex/i.test(xml)) {
     const ch = new URL(origin).hostname.replace(/^www\./i, "");
     const children = locs(xml)
@@ -311,14 +313,23 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
     for (const c of children) {
       try {
         const r = await safeFetch(c, { signal: AbortSignal.timeout(10000), headers: { "User-Agent": UA } });
-        if (r.ok) urls.push(...locs(await r.text()));
+        if (r.ok) {
+          const t = await r.text();
+          urlsetXml.push(t);
+          urls.push(...locs(t));
+        }
       } catch {
         /* geç */
       }
       if (urls.length > 2000) break;
     }
-  } else urls = locs(xml);
+  } else {
+    urls = locs(xml);
+    urlsetXml.push(xml);
+  }
   stats.urls = urls.length;
+  const lm = lastmodVerdict(urlsetXml.flatMap((t) => Array.from(t.matchAll(/<lastmod>\s*([^<\s]+)/gi)).map((m) => m[1])), urls.length);
+  if (lm) issues.push({ category: "crawlability", severity: lm.ok ? "pass" : "info", title: lm.title, detail: lm.detail, recommendation: lm.recommendation });
   // Yalnızca aynı sitenin URL'leri kontrol edilir (başka sunuculara istek atılmaz).
   const host = new URL(origin).hostname.replace(/^www\./i, "");
   urls = urls.filter((u) => {
@@ -356,6 +367,29 @@ export async function auditSitemap(origin: string, robotsText: string | null): P
       recommendation: `Add "Sitemap: ${smUrl}" to robots.txt so every crawler (including AI crawlers that don't use Search Console) can find it.`,
     });
   return { issues, found: true, stats };
+}
+
+/* ------------------------------------------------------------------ */
+/* AI sinyalleri: robots.txt Content-Signal + soft 404                 */
+/* ------------------------------------------------------------------ */
+
+export async function auditAiSignals(origin: string, robotsText: string | null): Promise<SeoIssueResult[]> {
+  const out: SeoIssueResult[] = [];
+  const cs = contentSignalVerdict(robotsText);
+  if (cs) out.push({ category: "ai-crawlability", severity: cs.ok ? "pass" : "info", title: cs.title, detail: cs.detail, recommendation: cs.recommendation });
+  const probe = `${origin}/epicsem-olmayan-sayfa-${Math.random().toString(36).slice(2, 8)}`;
+  // Yönlendirmeler takip edilir: sonu "/" ile biten adrese yönlendirme gibi zararsız adımlar yanlış alarm vermesin.
+  const r = await safeFetch(probe, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": UA } }).catch(() => null);
+  const path = (u: string) => {
+    try {
+      return new URL(u).pathname;
+    } catch {
+      return u;
+    }
+  };
+  const s4 = r ? soft404Verdict(r.status, path(probe), r.url ? path(r.url) : null) : null;
+  if (s4) out.push({ category: "crawlability", severity: s4.ok ? "pass" : "warning", title: s4.title, detail: s4.detail, recommendation: s4.recommendation });
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
