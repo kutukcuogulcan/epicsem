@@ -45,8 +45,29 @@ export function SentimentBar({ value, width = 64 }: { value: number | null; widt
   );
 }
 
+/** Motorun resmi sitesi — logo (favicon) bu siteden alınır. */
+const ENGINE_SITE: Record<string, string> = {
+  openai: "chatgpt.com",
+  anthropic: "claude.ai",
+  google: "gemini.google.com",
+  perplexity: "perplexity.ai",
+  xai: "grok.com",
+  deepseek: "deepseek.com",
+  meta: "meta.ai",
+  microsoft: "copilot.microsoft.com",
+};
+
+/** Motor rozeti: motorun logosu (bilinmeyen motorda baş harf). */
 export function EngineDot({ engine, size = 18 }: { engine: string; size?: number }) {
   const m = ENGINE_META[engine] ?? { name: engine, color: "#94a3b8" };
+  const site = ENGINE_SITE[engine];
+  if (site)
+    return (
+      <span title={m.name} className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-border" style={{ width: size, height: size }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`https://www.google.com/s2/favicons?domain=${site}&sz=64`} alt={m.name} width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} className="rounded-sm" />
+      </span>
+    );
   return (
     <span title={m.name} className="inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white" style={{ width: size, height: size, background: m.color, fontSize: size * 0.5 }}>
       {m.name.charAt(0)}
