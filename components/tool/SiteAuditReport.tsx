@@ -7,6 +7,7 @@ import { ISSUE_INFO, ISSUE_LABEL, ISSUE_SEVERITY, SEVERITY_LABEL, THEMES, pageAd
 import type { BulkImportRow } from "@/types";
 import PageRow, { short } from "./PageRow";
 import { CompareTab, DuplicateGroups, ImagesTab, LinksTab, RedirectsTab } from "./AuditDetailTabs";
+import { prioritizedPages } from "@/lib/page-priority";
 import SiteSignals from "./SiteSignals";
 import ProposalButton from "./ProposalButton";
 import { UnderlineTabs } from "@/components/ui";
@@ -154,11 +155,14 @@ export default function SiteAuditReport({
     return { plan, counts, prev, health, prevHealth: prev?.summary.healthScore ?? null, sev, sevTypes, prevSev, crawled, statusDist, depthDist, indexable, themes, issues, trend };
   }, [rows, runs, currentId, result.filename, s.healthScore]);
 
+  const priorities = useMemo(() => prioritizedPages(rows), [rows]);
   const pageRows = useMemo(() => {
     let list = pageFilter ? rows.filter((r) => r.issues.includes(pageFilter)) : rows;
     if (q.trim()) list = list.filter((r) => r.url.toLowerCase().includes(q.trim().toLowerCase()));
-    return list;
-  }, [rows, pageFilter, q]);
+    // Varsayılan sıra: önce düzeltilmesi gereken sayfalar (sorun yükü × sayfanın önemi).
+    const rank = new Map(priorities.map((p, i) => [p.url, i]));
+    return [...list].sort((x, y) => (rank.get(x.url) ?? 1e9) - (rank.get(y.url) ?? 1e9));
+  }, [rows, pageFilter, q, priorities]);
 
   const total = rows.length || 1;
 
@@ -373,6 +377,42 @@ export default function SiteAuditReport({
               </ol>
             )}
           </Card>
+
+          {priorities.length > 0 && (
+            <Card
+              title="Önce bu sayfaları düzelt"
+              right={<span className="text-xs text-ink/60">sorunların ağırlığı × sayfanın önemi (iç link, derinlik)</span>}
+            >
+              <ol className="divide-y divide-border">
+                {priorities.slice(0, 5).map((p, i) => (
+                  <li key={p.url}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPageFilter(null);
+                        setQ("");
+                        setOpenUrl(p.url);
+                        setTab("pages");
+                      }}
+                      className="flex w-full items-start gap-4 px-5 py-3.5 text-left hover:bg-muted/40"
+                    >
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-medium text-white">{i + 1}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{(() => { try { return new URL(p.url).pathname; } catch { return p.url; } })()}</span>
+                        {p.why && <span className="block text-xs text-ink/60">{p.why}</span>}
+                        <span className="mt-1 flex flex-wrap gap-1">
+                          {p.issues.slice(0, 4).map((it) => (
+                            <span key={it.code} className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${SEV_STYLE[it.sev].badge}`}>{it.label}</span>
+                          ))}
+                          {p.issues.length > 4 && <span className="text-xs text-ink/60">+{p.issues.length - 4}</span>}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
 
           <DuplicateGroups result={result} />
 
