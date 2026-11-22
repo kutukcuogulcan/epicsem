@@ -10,7 +10,6 @@ const bodySchema = z.object({
   clientDomain: z.string().min(1),
   audit: z.any().optional().nullable(),
   geo: z.object({ summaries: z.array(z.any()) }).optional().nullable(),
-  gap: z.object({ gapMatrix: z.array(z.any()), contentBriefs: z.array(z.any()).optional() }).optional().nullable(),
 });
 
 export async function POST(req: NextRequest) {
@@ -31,7 +30,6 @@ export async function POST(req: NextRequest) {
     generatedAt: new Date().toISOString(),
     audit: parsed.audit ?? null,
     geo: parsed.geo ?? null,
-    gap: parsed.gap ?? null,
   });
 
   const chunks: Buffer[] = [];

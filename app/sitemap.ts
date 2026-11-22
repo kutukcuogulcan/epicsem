@@ -7,7 +7,6 @@ import { SITE_URL } from "@/lib/site";
 const TOOL_PAGES = [
   "/audit",
   "/geo",
-  "/gap",
   "/article-writer",
   "/monitor",
   "/campaigns",
@@ -22,7 +21,6 @@ const FEATURE_PAGES = [
   "/ai-gorunurluk-testi",
   "/features/seo-axo-audit",
   "/features/geo-visibility",
-  "/features/gap-analysis",
   "/features/axo-monitoring",
   "/features/bulk-import",
   "/features/content-studio",

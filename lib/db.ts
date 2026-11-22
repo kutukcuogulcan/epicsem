@@ -4,7 +4,6 @@ import type {
   CmsConnection,
   CmsPlatform,
   ContentDraft,
-  GapRow,
   GeneratedArticle,
   GeoRunResult,
   GeoVisibilitySummary,
@@ -1073,73 +1072,8 @@ export async function clientsOverview(userId: number) {
 
 // ---------------- gap runs ----------------
 
-export async function saveGapRun(userId: number, params: {
-  brandName: string;
-  brandDomain: string;
-  demoMode: boolean;
-  gapMatrix: GapRow[];
-  summaries: GeoVisibilitySummary[];
-  /** Persisted (unlike the raw per-prompt GeoRunResult[] this is built from) so a
-   * Campaign — running unattended, days later — can pick a real, already-computed
-   * content gap without re-running the whole GEO fan-out just to get one topic. */
-  contentBriefs: ContentBrief[];
-}): Promise<void> {
-  await ensureSchema();
-  await exec(
-    `INSERT INTO gap_runs (user_id, brand_name, brand_domain, gap_matrix_json, summaries_json, content_briefs_json, demo_mode)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [
-      userId,
-      params.brandName,
-      params.brandDomain,
-      JSON.stringify(params.gapMatrix),
-      JSON.stringify(params.summaries),
-      JSON.stringify(params.contentBriefs),
-      params.demoMode ? 1 : 0,
-    ]
-  );
-}
 
-/** /gap panosu — kullanıcının son Gap Analysis koşuları (eskiden yeniye), satır matrisiyle. */
-export async function listRecentGapRuns(userId: number, limit = 60): Promise<{ id: number; brandName: string; brandDomain: string; demoMode: boolean; gapMatrix: GapRow[]; createdAt: string }[]> {
-  await ensureSchema();
-  const rows = await many<any>(
-    `SELECT * FROM (SELECT id, brand_name, brand_domain, demo_mode, gap_matrix_json, created_at FROM gap_runs WHERE user_id = $1 ORDER BY id DESC LIMIT $2) r ORDER BY id ASC`,
-    [userId, limit]
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    brandName: r.brand_name,
-    brandDomain: r.brand_domain,
-    demoMode: !!r.demo_mode,
-    gapMatrix: JSON.parse(r.gap_matrix_json || "[]"),
-    createdAt: toIso(r.created_at),
-  }));
-}
 
-/** /gap sayfası — bu domain için en son Gap Analysis koşusunun tamamı (özetler, matris, brifler). */
-export async function getLatestGapRun(
-  userId: number,
-  domain: string
-): Promise<{ id: number; brandName: string; brandDomain: string; demoMode: boolean; gapMatrix: GapRow[]; summaries: GeoVisibilitySummary[]; contentBriefs: ContentBrief[]; createdAt: string } | null> {
-  await ensureSchema();
-  const norm = domain.trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "");
-  const row = await one<any>(
-    `SELECT * FROM gap_runs WHERE user_id = $1 AND regexp_replace(regexp_replace(lower(brand_domain), '^(https?://)?(www\\.)?', ''), '/.*$', '') = $2 ORDER BY id DESC LIMIT 1`,
-    [userId, norm]
-  );
-  if (!row) return null;
-  return {
-    id: row.id,
-    brandName: row.brand_name,
-    brandDomain: row.brand_domain,
-    demoMode: !!row.demo_mode,
-    gapMatrix: JSON.parse(row.gap_matrix_json || "[]"),
-    summaries: JSON.parse(row.summaries_json || "[]"),
-    contentBriefs: JSON.parse(row.content_briefs_json || "[]"),
-    createdAt: toIso(row.created_at),
-  };
-}
 
 /** Most recent Gap Analysis content briefs for this brand domain — what a Campaign
  * draws its next topic from. Null when Gap Analysis has never been run for it. */

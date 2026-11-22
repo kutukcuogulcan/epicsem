@@ -185,7 +185,7 @@ export async function answer(userId: number, message: string, site: string | nul
       blocks.push({ type: "list", items: topSources.map((s: any) => s.domain) });
     }
     blocks.push({ type: "text", text: "**Ne yapmalı:** zayıf konular için soruya doğrudan cevap veren (cevap-önce, SSS'li, schema'lı) sayfalar yayınla ve yukarıdaki kaynaklarda (rehber siteler, karşılaştırma yazıları, forumlar) markanın geçmesini sağla." });
-    blocks.push({ type: "actions", items: [{ label: "GEO panosu", href: "/geo" }, { label: "Rakip Boşluğu", href: "/gap" }, { label: "Editör'de yeni yazı", href: "/editor" }] });
+    blocks.push({ type: "actions", items: [{ label: "GEO panosu", href: "/geo" }, { label: "Editör'de yeni yazı", href: "/editor" }] });
     return { intent: "geo", blocks };
   }
 
@@ -201,7 +201,7 @@ export async function answer(userId: number, message: string, site: string | nul
         intent: "content",
         blocks: [
           { type: "text", text: d.geo && d.geo.topics.length ? `**${site}** için AI testinde zayıf bir konu çıkmadı. Yeni yazı fikirleri için **Rakip Boşluğu** çalıştır — rakiplerin anılıp senin anılmadığın soruları başlığa çevirir.` : `Yazı fikri çıkarmak için **${site}** adına **Rakip Boşluğu** sonucu lazım — rakiplerin anılıp senin anılmadığın soruları başlığa çevirir. (Ya da ilk önce siteyi tara; zayıf sayfaları gösteririm.)` || `İçerik fikri çıkarmak için **${site}** adına Rakip Boşluğu ya da GEO testi sonucu lazım.` },
-          { type: "actions", items: [{ label: "Rakip Boşluğu", href: "/gap" }, { label: "GEO testi", href: "/geo" }] },
+          { type: "actions", items: [{ label: "GEO testi", href: "/geo" }] },
         ],
       };
     }

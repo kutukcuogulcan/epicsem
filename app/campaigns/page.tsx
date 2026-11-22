@@ -45,7 +45,6 @@ const SOURCES: { id: Source; title: string; body: string; icon: string }[] = [
   { id: "feed", title: "Kayıtlı besleme", body: "Kendini yenileyen kelime, haber, RSS ya da YouTube beslemesi.", icon: "≋" },
   { id: "keywords", title: "Anahtar kelimeler", body: "Hedeflediğin kelimeleri yaz, sırayla makaleye dönüşsün.", icon: "#" },
   { id: "rss", title: "RSS beslemesi", body: "Sektör blogu ya da haber sitesi yeni yazı yayınladıkça kendi yorumunla yaz.", icon: "◉" },
-  { id: "gap", title: "Rakip Boşluğu", body: "AI motorlarında kaybettiğin gerçek sorulardan içerik üret.", icon: "◎" },
 ];
 const SOURCE_LABEL: Record<Source, string> = { gap: "Rakip Boşluğu", rss: "RSS", keywords: "Anahtar kelime", feed: "Besleme" };
 const MODES: { id: Mode; title: string; body: string; steps: [string, boolean][] }[] = [
@@ -105,7 +104,7 @@ function nextRun(c: Campaign) {
 
 function HowItWorks() {
   const steps = [
-    ["Konuları verirsin", "Anahtar kelime listesi, besleme ya da Rakip Boşluğu."],
+    ["Konuları verirsin", "Anahtar kelime listesi ya da besleme."],
     ["Epicsem yazar", "Seçtiğin takvimde (ör. haftada 1) sıradaki konuyu SEO + GEO uyumlu yazıya çevirir."],
     ["Sen onaylarsın", "Yazı Takvim ve Onay'a düşer; onaylayınca yayınlanır ya da sitene gider."],
   ];
@@ -429,9 +428,9 @@ export default function CampaignsPage() {
     actions.push({
       kind: "Büyüt",
       color: "text-accent",
-      title: "Rakip Boşluğu'ndan otomatik yazı",
-      body: "AI motorlarında kaybettiğin gerçek sorular, en hızlı görünürlük kazandıran konulardır.",
-      cta: <button type="button" onClick={() => openNew("gap")} className={BTN2}>Autoblog kur</button>,
+      title: "GEO'da kaybettiğin sorulardan otomatik yazı",
+      body: "AI motorlarında kaybettiğin gerçek sorular, en hızlı görünürlük kazandıran konulardır. Kelime listesinde \"Verilerimden öner\" ile ekle.",
+      cta: <button type="button" onClick={() => openNew("keywords")} className={BTN2}>Autoblog kur</button>,
     });
 
   return (
@@ -441,7 +440,7 @@ export default function CampaignsPage() {
         description={
           list.length
             ? `${active.length} aktif autoblog · haftada ~${Math.round(weekly)} yazı · toplam ${totalDrafts} taslak`
-            : "Anahtar kelime listesi, besleme ya da Rakip Boşluğu'ndan düzenli SEO + GEO uyumlu yazı üretir. Onayını bekler, sitene taslak gönderir ya da yayınlar."
+            : "Anahtar kelime listesi ya da beslemeden düzenli SEO + GEO uyumlu yazı üretir. Onayını bekler, sitene taslak gönderir ya da yayınlar."
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -713,10 +712,10 @@ export default function CampaignsPage() {
                   {ideas && (
                     <div className="rounded-xl border border-border p-3">
                       {ideas.length === 0 ? (
-                        <p className="text-xs text-ink/60">Bu domain için öneri çıkacak veri yok — önce <Link href="/gap" className="font-medium text-accent">Rakip Boşluğu</Link> ya da <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.</p>
+                        <p className="text-xs text-ink/60">Bu domain için öneri çıkacak veri yok — önce bir <Link href="/geo" className="font-medium text-accent">GEO testi</Link> çalıştır.</p>
                       ) : (
                         <>
-                          <div className="mb-2 text-xs text-ink/60">Rakip Boşluğu ve GEO promptlarından — eklemek için tıkla:</div>
+                          <div className="mb-2 text-xs text-ink/60">GEO promptlarından — eklemek için tıkla:</div>
                           <div className="flex flex-wrap gap-1.5">
                             {ideas.map((q) => {
                               const added = keywordList.some((k) => k.toLowerCase() === q.toLowerCase());
@@ -769,8 +768,8 @@ export default function CampaignsPage() {
 
               {form.source === "gap" && (
                 <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs leading-5 text-ink/60">
-                  Bu domainin <strong>son Rakip Boşluğu</strong> sonucundaki içerik brief&apos;leri sırayla yazılır: AI motorlarının sorduğu ama markanın kaybettiği sorular, eksik başlıklar ve içerik boşlukları.
-                  Henüz çalıştırmadıysan önce <Link href="/gap" className="font-medium text-accent">Rakip Boşluğu</Link>&apos;na git.
+                  Bu kampanya eski <strong>Rakip Boşluğu</strong> sonucundaki brief&apos;lerden yazıyor. Rakip Boşluğu kaldırıldı, yeni brief gelmeyecek:
+                  kaynağı &quot;Anahtar kelimeler&quot;e çevirip &quot;Verilerimden öner&quot; ile GEO sorularını ekle.
                 </div>
               )}
 

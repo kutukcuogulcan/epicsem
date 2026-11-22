@@ -19,7 +19,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/brand-monitors", label: "Marka Monitörleri", icon: "brandmon", badge: "YENİ" },
       { href: "/geo", label: "GEO Görünürlük", icon: "geo" },
-      { href: "/gap", label: "Rakip Boşluğu", icon: "gap" },
       { href: "/rankings", label: "Sıralama Takibi", icon: "rankings" },
       { href: "/import", label: "Site Gezgini", icon: "import" },
       { href: "/monitor", label: "Sayfa İzleme", icon: "monitor" },

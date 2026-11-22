@@ -54,7 +54,6 @@ const GROUPS = [
     items: [
       { label: "SEO + AXO Audit", href: "/audit", body: "Title/meta, başlıklar, structured data, robots.txt & sitemap — ve GPTBot, ClaudeBot, PerplexityBot gibi AI crawler'ların sayfaya erişip erişemediği.", landingHref: "/features/seo-axo-audit" },
       { label: "GEO/AEO Visibility", href: "/geo", body: "ChatGPT, Claude, Gemini, Perplexity'e gerçek promptlar gönder; marka anılıyor mu, rakiplere göre nerede, hangi kaynaklar referans gösteriliyor gör — Türkçe ve İngilizce promptları ayrı test edebilirsin.", landingHref: "/features/geo-visibility" },
-      { label: "Rakip Boşluğu", href: "/gap", body: "Denetim sonucu ile GEO sonucunu çaprazlar: teknik olarak sağlam ama hiç anılmayan sayfaları bulur.", landingHref: "/features/gap-analysis" },
       { label: "Article Writer", href: "/article-writer", body: "Tek bir sayfayı derinlemesine denetler — title, meta, canonical, alt text, internal link fırsatları, FAQ/Article schema — ve bulunan boşluklara göre somut makale önerileri üretir." },
     ],
   },
@@ -75,7 +74,7 @@ const GROUPS = [
     description: "Birden fazla müşteri yönetiyorsan, her birinin markasını bir kere kaydet, her yerde tekrar kullan.",
     tone: "text-seo-ink",
     items: [
-      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO/gap koşularında tekrar kullan, kendi ajans adınla PDF rapor indir.", landingHref: "/features/clients" },
+      { label: "Clients", href: "/clients", body: "Her müşterinin marka/rakip bilgisini kaydet, audit/GEO koşularında tekrar kullan, kendi ajans adınla PDF rapor indir.", landingHref: "/features/clients" },
       { label: "Sınırsız motor", href: "/geo", body: "OpenAI, Anthropic, Google, Perplexity hepsi dahil — hangi modelin müşterin için önemli olduğunu test etmek için motor başına ek ücret yok." },
     ],
   },
@@ -102,11 +101,11 @@ const FAQ = [
   },
   {
     q: "Ajans olarak birden fazla müşteri yönetebilir miyim?",
-    a: "Evet. Clients sayfasından her müşterinin marka/rakip bilgisini bir kere kaydedip audit, GEO ve gap analizlerinde tekrar tekrar kullanabilirsin.",
+    a: "Evet. Clients sayfasından her müşterinin marka/rakip bilgisini bir kere kaydedip audit ve GEO testlerinde tekrar tekrar kullanabilirsin.",
   },
   {
     q: "Verilerim nerede saklanıyor?",
-    a: "Kendi hesabına bağlı Postgres veritabanında — her koşu (audit, GEO testi, gap analizi) kendi hesabınla ilişkilendirilir, başka kullanıcılar göremez.",
+    a: "Kendi hesabına bağlı Postgres veritabanında — her koşu (audit, GEO testi) kendi hesabınla ilişkilendirilir, başka kullanıcılar göremez.",
   },
 ];
 

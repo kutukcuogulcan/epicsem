@@ -49,7 +49,7 @@ const createSchema = z
       .min(1, "Domain gerekli")
       .transform((d) => d.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").toLowerCase()),
     frequency: z.enum(["daily", "weekly", "monthly"]).default("weekly"),
-    source: z.enum(["gap", "rss", "keywords", "feed"]).default("gap"),
+    source: z.enum(["gap", "rss", "keywords", "feed"]).default("keywords"),
     mode: z.enum(["review", "cms-draft", "publish"]).default("review"),
     options: z
       .object({

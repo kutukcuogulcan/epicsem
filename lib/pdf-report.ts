@@ -1,6 +1,5 @@
 import PDFDocument from "pdfkit";
-import type { GapRow, GeoVisibilitySummary, SeoAuditResult } from "@/types";
-import type { ContentBrief } from "./content-brief";
+import type { GeoVisibilitySummary, SeoAuditResult } from "@/types";
 import { pillarScores, type PillarSummary } from "./audit-insights";
 
 /**
@@ -23,7 +22,6 @@ export interface ReportInput {
   generatedAt: string;
   audit?: SeoAuditResult | null;
   geo?: { summaries: GeoVisibilitySummary[] } | null;
-  gap?: { gapMatrix: GapRow[]; contentBriefs?: ContentBrief[] } | null;
 }
 
 const LEFT = 48;
@@ -186,50 +184,6 @@ export function buildReportPdf(input: ReportInput): PDFKit.PDFDocument {
       doc.moveDown(0.4);
     }
     resetX();
-  }
-
-  // ---- Gap matrix ----
-  if (input.gap && input.gap.gapMatrix.length > 0) {
-    sectionTitle("Rakip Boşluğu");
-    doc.font("Helvetica").fontSize(9.5);
-    for (const row of input.gap.gapMatrix) {
-      const verdictColor =
-        row.verdict === "blocked" ? DANGER : row.verdict === "cited" ? SEO_GREEN : row.verdict === "invisible" ? ACCENT : WARN;
-      const verdictLabel =
-        row.verdict === "blocked"
-          ? "Blocked from AI"
-          : row.verdict === "cited"
-            ? "Cited"
-            : row.verdict === "invisible"
-              ? "Strong but invisible"
-              : "Needs work";
-      doc.fillColor(INK).font("Helvetica-Bold").text(row.url, LEFT, doc.y, { width: 480 });
-      doc.font("Helvetica").fillColor(MUTED).fontSize(9).text(
-        `SEO ${row.seoScore} · AXO ${row.aiCrawlScore} · ${row.blockedBots} blocked bot(s) · cited ${row.citedExact}x (page) / ${row.citedDomain}x (domain)`,
-        LEFT,
-        doc.y,
-        { width: 480 }
-      );
-      doc.fillColor(verdictColor).font("Helvetica-Bold").fontSize(9).text(verdictLabel, LEFT, doc.y);
-      doc.font("Helvetica").fontSize(9.5);
-      doc.moveDown(0.5);
-      resetX();
-    }
-
-    if (input.gap.contentBriefs && input.gap.contentBriefs.length > 0) {
-      doc.moveDown(0.3);
-      resetX();
-      doc.fillColor(INK).font("Helvetica-Bold").fontSize(11).text("Content briefs", LEFT, doc.y);
-      doc.font("Helvetica").fontSize(9);
-      for (const brief of input.gap.contentBriefs) {
-        doc.moveDown(0.3);
-        resetX();
-        doc.fillColor(INK).font("Helvetica-Bold").fontSize(9.5).text(brief.url, LEFT, doc.y, { width: 480 });
-        doc.font("Helvetica").fillColor(MUTED).text(brief.reason, LEFT, doc.y, { width: 480 });
-        for (const gap of brief.contentGaps) doc.fillColor(MUTED).text(`  · ${gap}`, LEFT, doc.y, { width: 480 });
-        for (const h of brief.suggestedHeadings.slice(0, 4)) doc.fillColor(ACCENT).text(`  · ${h}`, LEFT, doc.y, { width: 480 });
-      }
-    }
   }
 
   // ---- Footer on every page ----

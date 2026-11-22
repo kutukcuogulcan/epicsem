@@ -76,7 +76,6 @@ async function check(page, path, keys = [], extra, { okEmpty = false } = {}) {
   await check("Sıralama Takibi", "/api/rankings", ["keywords"]);
   await check("Site Gezgini", "/api/import/runs", ["runs"]);
   await check("Site Optimizasyonu", "/api/audit/runs", ["runs"]);
-  await check("Rakip Boşluğu", "/api/gap/runs", []);
   await check("Sayfa İzleme", "/api/monitor", ["pages"]);
   await check("Entegrasyonlar", "/api/integrations", []);
   await check("Müşteriler", "/api/clients", ["clients"]);

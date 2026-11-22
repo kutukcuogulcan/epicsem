@@ -28,8 +28,7 @@ export default function PromptsPage() {
             </p>
             <p className="text-ink/60 text-xs max-w-3xl mt-2">
               Bunlar kendinizin dolduracağı statik şablonlardır. Kendi gerçek bulgularınızla önceden doldurulmuş bir
-              prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> ya da bir{" "}
-              <a href="/gap" className="text-accent hover:underline">gap analysis</a> çalıştırın — ikisinde de o
+              prompt için önce bir <a href="/audit" className="text-accent hover:underline">audit</a> çalıştırın — o
               spesifik sonuçtan bir tane üreten bir &quot;Fix with Claude Code&quot; butonu var.
             </p>
           </>

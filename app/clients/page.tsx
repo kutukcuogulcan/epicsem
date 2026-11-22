@@ -217,7 +217,6 @@ export default function ClientsPage() {
               <div className="flex gap-3 pt-1 text-xs">
                 <Link href={`/audit?clientId=${c.id}`} className="text-accent hover:underline">Audit</Link>
                 <Link href={`/geo?clientId=${c.id}`} className="text-accent hover:underline">GEO testi</Link>
-                <Link href={`/gap?clientId=${c.id}`} className="text-accent hover:underline">Gap analizi</Link>
               </div>
             </div>
           ))}

@@ -91,8 +91,8 @@ export default function ContentStudioLandingPage() {
         breadcrumbLabel="Content Studio"
         eyebrow="CONTENT STUDIO"
         title={<>Kaybettiğiniz her prompt, <span className="text-accent">yayına hazır bir içerik fikri</span> olabilir.</>}
-        body={<>Rakip Boşluğu&apos;nun bulduğu &quot;bu sayfaların hiçbirinde anılmıyorsunuz&quot; sonuçları, Content Studio&apos;da gerçek verilere dayanan bir WordPress veya Shopify taslağına dönüşür — hiçbir istatistik uydurulmaz, dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.</>}
-        primaryCta={{ href: "/gap", label: "Rakip Boşluğu'ndan başlayın" }}
+        body={<>GEO testinin bulduğu &quot;bu sorularda anılmıyorsunuz&quot; sonuçları, Content Studio&apos;da gerçek verilere dayanan bir WordPress veya Shopify taslağına dönüşür — hiçbir istatistik uydurulmaz, dayanaksız bir bilgi varsa açıkça <code>[NEEDS: ...]</code> olarak işaretlenir.</>}
+        primaryCta={{ href: "/geo", label: "GEO testinden başlayın" }}
         secondaryCta={{ href: "/content", label: "Content Studio'ya git" }}
         image={{ src: "/screenshots/content-studio-form.png", alt: "Epicsem Content Studio — CMS bağlantı formu", path: "epicsem.app/content", width: 1399, height: 423 }}
       />
@@ -112,9 +112,9 @@ export default function ContentStudioLandingPage() {
       <FAQSection items={FAQ_ITEMS} />
 
       <FeatureCTA
-        title="Bir Rakip Boşluğu analizi çalıştırıp ilk brief'inizi çıkarın"
+        title="Bir GEO testi çalıştırıp ilk brief'inizi çıkarın"
         body="Hesap açmadan, ücretsiz test modunda deneyebilirsiniz."
-        cta={{ href: "/gap", label: "Rakip Boşluğu'nu başlat" }}
+        cta={{ href: "/geo", label: "GEO testini başlat" }}
       />
     </div>
   );

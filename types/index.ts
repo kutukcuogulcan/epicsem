@@ -167,15 +167,6 @@ export interface UrlStat {
 
 export type GapVerdict = "blocked" | "invisible" | "cited" | "needs-work";
 
-export interface GapRow {
-  url: string;
-  seoScore: number;
-  aiCrawlScore: number;
-  blockedBots: number;
-  citedExact: number;
-  citedDomain: number;
-  verdict: GapVerdict;
-}
 
 /** One row from an imported Screaming Frog CSV, after mapping + issue detection. */
 export interface BulkImportRow {
