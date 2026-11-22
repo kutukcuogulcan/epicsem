@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   };
   const brief: string[] = [`Target length: ${WORDS[b.length] ?? WORDS.medium} in bodyMarkdown.`, `Tone: ${TONE[b.tone] ?? TONE.professional}.`];
   if (!faqOn) brief.push("Do NOT add an FAQ section.");
-  if (typeof b.note === "string" && b.note.trim()) brief.push(`EDITOR NOTE: ${b.note.trim().slice(0, 700)}`);
+  if (typeof b.note === "string" && b.note.trim()) brief.push(`EDITOR NOTE: ${b.note.trim().slice(0, 1200)}`);
   if (typeof b.experience === "string" && b.experience.trim())
     brief.push(`FIRST-HAND EXPERIENCE from the brand team (real; use it in the article as a concrete example or short quote where it fits, keep every number and detail exactly, attribute it to the ${String(b.brandName ?? "brand").trim() || "brand"} team; do not invent more): ${b.experience.trim().slice(0, 1500)}`);
   if (b.table) brief.push("Include at least one useful markdown table (comparison, checklist or summary) where it genuinely helps.");

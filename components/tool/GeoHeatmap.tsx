@@ -52,6 +52,9 @@ function rowStats(row: Row, own: BrandRef, rivals: BrandRef[]) {
   };
 }
 
+/** Bu soruda tüm motorların yaptığı web aramaları (fan-out), tekrarsız. */
+const rowQueries = (row: Row) => [...new Set([...row.cells.values()].flatMap((c) => c.run.searchQueries ?? []))];
+
 function BrandStack({ brands }: { brands: { name: string; own: boolean; domain?: string }[] }) {
   if (!brands.length) return <span className="text-xs text-sub">Marka anılmadı</span>;
   return (
@@ -180,7 +183,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                 </span>
               </div>
               {row.lost > 0 && (
-                <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a))} className="mt-2.5 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white">
+                <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a), rowQueries(row))} className="mt-2.5 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white">
                   Yazıyı yaz
                 </Link>
               )}
@@ -243,7 +246,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                 })}
                 <td className="py-2 pr-5 text-right">
                   {row.lost > 0 ? (
-                    <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a))} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
+                    <Link href={writeGapHref(row.prompt, own, [...row.cells.values()].map((c) => c.a), rowQueries(row))} className="inline-flex h-7 items-center rounded-lg bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90">
                       Yazıyı yaz
                     </Link>
                   ) : (
@@ -312,7 +315,7 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
               {open.a.status !== "won" && (
                 <>
                   <Link
-                    href={writeGapHref(open.run.promptText, own, [...open.row.cells.values()].map((c) => c.a))}
+                    href={writeGapHref(open.run.promptText, own, [...open.row.cells.values()].map((c) => c.a), rowQueries(open.row))}
                     className="mt-3 inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-white hover:opacity-90"
                   >
                     Bu boşluğu kapatacak yazıyı yaz
@@ -327,6 +330,21 @@ export default function GeoHeatmap({ runs, own, rivals }: { runs: GeoRunResult[]
                 </>
               )}
             </section>
+
+            {!!open.run.searchQueries?.length && (
+              <section>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-sub">{name(open.run.engine)} bunu cevaplarken şunları aradı</h3>
+                <p className="mt-1 text-xs text-sub">Kaynakları bu aramalardan seçti. Yazın bu alt soruları da cevaplarsa seçilme şansı artar.</p>
+                <ul className="mt-2 space-y-1">
+                  {open.run.searchQueries.map((q) => (
+                    <li key={q} className="flex gap-2 rounded-lg bg-muted/60 px-3 py-1.5 text-[13px]">
+                      <span aria-hidden className="text-sub">⌕</span>
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             {open.a.sources.length > 0 && (
               <section>

@@ -94,6 +94,8 @@ export interface GeoRunResult {
   sentiment: number | null;
   responseText: string;
   citations: { url: string; domain: string; isOwnDomain: boolean }[];
+  /** Motorun cevabı hazırlarken yaptığı web aramaları (fan-out). Eski kayıtlarda ve demo cevaplarda yok. */
+  searchQueries?: string[];
 }
 
 export interface GeoVisibilitySummary {

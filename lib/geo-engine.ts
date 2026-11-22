@@ -53,6 +53,7 @@ export async function runPromptAcrossEngines(
       let text: string;
       let model: string;
       let sources: string[] = [];
+      let queries: string[] = [];
 
       if (demo || !provider.isConfigured()) {
         const sim = simulateResponse(promptText, engineId, brand.name, brand.domain, competitors);
@@ -64,6 +65,7 @@ export async function runPromptAcrossEngines(
           text = res.text;
           model = res.model;
           sources = res.sources ?? [];
+          queries = res.queries ?? [];
         } catch (err) {
           // Canlı çağrı başarısızsa bu motor-prompt sonucu atlanır (sahte veri yazılmaz).
           console.error(`[geo] ${engineId} çağrısı başarısız:`, err instanceof Error ? err.message : err);
@@ -86,6 +88,7 @@ export async function runPromptAcrossEngines(
         sentiment: analyzed.sentiment,
         responseText: text,
         citations: analyzed.citations,
+        ...(queries.length ? { searchQueries: queries } : {}),
       };
     })
   );

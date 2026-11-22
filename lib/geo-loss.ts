@@ -110,15 +110,17 @@ export function analyzeRun(r: GeoRunResult, own: BrandRef, rivals: BrandRef[]): 
 }
 
 /** Yazı sihirbazını bu boşluk için hazır açan editör bağlantısı. */
-export function writeGapHref(prompt: string, own: BrandRef, a: Pick<LossAnalysis, "rivals" | "sources" | "status">[]): string {
+/** queries: motorların bu soruyu cevaplarken yaptığı web aramaları (fan-out) — yazı bunları da cevaplamalı. */
+export function writeGapHref(prompt: string, own: BrandRef, a: Pick<LossAnalysis, "rivals" | "sources" | "status">[], queries: string[] = []): string {
   const rivals = [...new Set(a.flatMap((x) => x.rivals.map((r) => r.name)))].slice(0, 3);
   const sources = [...new Set(a.flatMap((x) => x.sources))].slice(0, 4);
   const parts = [
     `Bu yazı, AI asistanlarına sorulan "${prompt}" sorusunda ${own.name} markasının anılması için yazılıyor.`,
     rivals.length ? `Şu an AI bu soruda ${rivals.join(", ")} öneriyor; adil bir karşılaştırma bölümü ve tablo ekle, rakipler hakkında bilgi uydurma.` : `Şu an AI bu soruda kimseyi önermiyor; ilk net cevabı ver.`,
     `İlk paragrafta soruyu 2-3 cümlede doğrudan cevapla, ${own.name} çözümünü gerçek bilgiyle anlat, sonunda SSS bölümü olsun.`,
+    queries.length ? `AI bu soruyu cevaplarken şunları aradı; her birini yazıda bir başlık ya da paragrafla cevapla: ${queries.slice(0, 8).join(" | ")}.` : "",
     sources.length ? `AI'ın bu soruda baktığı kaynaklar: ${sources.join(", ")}.` : "",
   ].filter(Boolean);
   const kw = prompt.replace(/[?!.]+$/, "").slice(0, 100);
-  return `/editor?write=1&kw=${encodeURIComponent(kw)}&title=${encodeURIComponent(prompt.slice(0, 200))}&note=${encodeURIComponent(parts.join(" ").slice(0, 700))}`;
+  return `/editor?write=1&kw=${encodeURIComponent(kw)}&title=${encodeURIComponent(prompt.slice(0, 200))}&note=${encodeURIComponent(parts.join(" ").slice(0, 1200))}`;
 }

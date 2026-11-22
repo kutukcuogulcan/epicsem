@@ -74,7 +74,7 @@ export default function EditorHome({
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search);
     if (qs.get("write") !== "1" || !qs.get("kw")) return;
-    setPreset({ keyword: qs.get("kw")!.slice(0, 100), title: qs.get("title")?.slice(0, 200) || undefined, note: qs.get("note")?.slice(0, 700) || undefined, plan: parsePlan(qs.get("plan")) });
+    setPreset({ keyword: qs.get("kw")!.slice(0, 100), title: qs.get("title")?.slice(0, 200) || undefined, note: qs.get("note")?.slice(0, 1200) || undefined, plan: parsePlan(qs.get("plan")) });
     setNewOpen(true);
     window.history.replaceState(null, "", "/editor");
   }, []);

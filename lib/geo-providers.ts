@@ -1,5 +1,6 @@
 import type { EngineId } from "@/types";
 import { geminiGenerate } from "@/lib/gemini";
+import { extractSearchQueries } from "@/lib/search-queries";
 import { resolveRedirect } from "@/lib/community-search";
 
 export interface ProviderResponse {
@@ -9,7 +10,10 @@ export interface ProviderResponse {
   truncated?: boolean;
   /** Cevabın web aramasıyla gösterdiği gerçek kaynak adresleri (search: true iken). */
   sources?: string[];
+  /** Motorun cevabı hazırlarken kendi yaptığı web aramaları ("fan-out" sorguları; search: true iken). */
+  queries?: string[];
 }
+
 
 /** Optional per-call overrides — used by generation-only call sites (topic/prompt
  * generation; never the real GEO-test engine queries, which must keep using each engine's
@@ -106,7 +110,7 @@ class OpenAiProvider implements LlmProvider {
       const parts = (Array.isArray(d.output) ? d.output : []).filter((o: any) => o?.type === "message").flatMap((o: any) => (Array.isArray(o.content) ? o.content : []));
       const text = parts.filter((c: any) => c?.type === "output_text").map((c: any) => String(c.text ?? "")).join("");
       const sources = uniq(parts.flatMap((c: any) => (Array.isArray(c?.annotations) ? c.annotations : [])).filter((a: any) => a?.type === "url_citation").map((a: any) => String(a.url ?? "")));
-      return { text, model, sources, truncated: d.status === "incomplete" };
+      return { text, model, sources, queries: extractSearchQueries("openai", d), truncated: d.status === "incomplete" };
     }
     // Yeni GPT (akıl yürüten) modelleri `temperature` kabul etmiyor; bir kez reddeden modele bir daha gönderilmez.
     const send = (withTemp: boolean) =>
@@ -228,7 +232,7 @@ class AnthropicProvider implements LlmProvider {
     // Yalnızca metin blokları (arama sorgusu / sonuç blokları metne karışmasın); kaynaklar = cevapta alıntılananlar.
     const text = blocks.filter((c) => c?.type === "text").map((c) => String(c.text ?? "")).join("");
     const sources = uniq(blocks.flatMap((c) => (Array.isArray(c?.citations) ? c.citations : [])).map((c: any) => String(c?.url ?? "")));
-    return { text, model, truncated: data.stop_reason === "max_tokens", ...(options?.search ? { sources } : {}) };
+    return { text, model, truncated: data.stop_reason === "max_tokens", ...(options?.search ? { sources, queries: extractSearchQueries("anthropic", data) } : {}) };
   }
 }
 
@@ -258,7 +262,7 @@ class GoogleProvider implements LlmProvider {
     // Google araması kaynakları yönlendirme bağlantısı olarak gelir; gerçek adrese çözülür.
     const chunks: { web?: { uri?: string } }[] = data.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
     const sources = uniq((await Promise.all(chunks.slice(0, 15).map((c) => resolveRedirect(String(c.web?.uri ?? ""))))).map((u) => u ?? ""));
-    return { text, model, sources, truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
+    return { text, model, sources, queries: extractSearchQueries("google", data), truncated: data.candidates?.[0]?.finishReason === "MAX_TOKENS" };
   }
 }
 
