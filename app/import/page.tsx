@@ -1,5 +1,6 @@
 "use client";
 
+import SiteUrlsCard from "@/components/tool/SiteUrlsCard";
 import { useEffect, useState } from "react";
 import type { BulkImportResult } from "@/types";
 import PromptBlock from "@/components/PromptBlock";
@@ -160,6 +161,8 @@ export default function ImportPage() {
       )}
 
       <ErrorBlock message={error} />
+
+      {project?.domain && <SiteUrlsCard site={project.domain} />}
 
       {runs === null && !result && (
         <div className="space-y-3 animate-pulse">

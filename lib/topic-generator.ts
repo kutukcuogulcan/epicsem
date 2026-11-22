@@ -82,7 +82,7 @@ function demoCandidates(brand: BrandProfileInput): TopicCandidate[] {
   });
 }
 
-function buildPrompt(brand: BrandProfileInput, country: string, language: "tr" | "en", sectorSeeds: string[]): string {
+function buildPrompt(brand: BrandProfileInput, country: string, language: "tr" | "en", sectorSeeds: string[], siteSections: string[] = []): string {
   const lang = language === "en" ? "English" : "Turkish";
   const system = [
     `You are a GEO (Generative Engine Optimization) strategist. You design the topic`,
@@ -113,6 +113,9 @@ function buildPrompt(brand: BrandProfileInput, country: string, language: "tr" |
     })}`,
     `Market: ${country}, Language: ${lang}`,
     `Sector seeds: ${JSON.stringify(sectorSeeds)}`,
+    ...(siteSections.length
+      ? [`Site sections and pages (from the site's real sitemap, most pages first — this is what the brand actually offers; make sure the main product/service areas here get product or problem topics, ignore corporate/legal pages): ${JSON.stringify(siteSections)}`]
+      : []),
     `Generate up to 14 topic candidates.`,
     ``,
     `Respond with ONLY a JSON object, no markdown fences, no commentary, matching exactly:`,
@@ -209,7 +212,9 @@ export async function generateTopicsForBrand(
   brand: BrandProfileInput,
   country: string,
   language: "tr" | "en" = "tr",
-  sectorSeeds: string[] = []
+  sectorSeeds: string[] = [],
+  /** Sitenin site haritasından çıkan gerçek bölüm ve sayfa adları (lib/site-sections). */
+  siteSections: string[] = []
 ): Promise<TopicGenerationResult> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) {
@@ -223,7 +228,7 @@ export async function generateTopicsForBrand(
     };
   }
 
-  const prompt = buildPrompt(brand, country, language, sectorSeeds);
+  const prompt = buildPrompt(brand, country, language, sectorSeeds, siteSections);
   // Kart: Topic üretimi (≤15 sn) — kullanıcı Adım 2'deyken bitmesi gerekiyor, o yüzden
   // hızlı model (Haiku / Gemini Flash / GPT-mini) ile; hızlı katman yoksa normal sağlayıcı.
   const { parsed, model } = await runForJsonObject(async (extra) => {

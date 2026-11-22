@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { discoverSiteUrls } from "@/lib/site-urls";
+import { sectionSeeds, sectionsFromUrls } from "@/lib/site-sections";
 import {
   failRemainingOnboardingSteps,
   getOnboardingDomainCache,
@@ -248,6 +250,10 @@ type PromptsResult = { prompts: SlotFilledPrompt[]; brandedPrompts: SlotFilledPr
 export async function generateTopics(profile: GenerationProfile): Promise<TopicGenerationResult> {
   const pack = matchSectorPack(profile.industry, profile.description);
   const sectorSeeds = renderTopicSeeds(pack, profile.industry);
+  // Sitenin bütün adresleri (sitemap) → bölümler: konular yalnızca ana sayfadan değil, sitenin tamamından.
+  // Okunamazsa (bot koruması, zaman aşımı) eskisi gibi devam eder.
+  const site = await discoverSiteUrls(profile.brand.domain, 20_000).catch(() => null);
+  const siteSections = site?.urls.length ? sectionSeeds(sectionsFromUrls(site.urls, new URL(site.origin).hostname).sections) : [];
   return generateTopicsForBrand(
     {
       name: profile.brand.name,
@@ -259,7 +265,8 @@ export async function generateTopics(profile: GenerationProfile): Promise<TopicG
     },
     profile.country,
     profile.language,
-    sectorSeeds
+    sectorSeeds,
+    siteSections
   );
 }
 
