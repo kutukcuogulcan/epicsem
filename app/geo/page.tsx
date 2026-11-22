@@ -639,12 +639,14 @@ export default function GeoPage() {
         </div>
 
         <div className="flex items-center justify-between gap-4 bg-muted/50 px-6 py-4">
-          <span className="text-xs text-ink/60">
-            {prompts.length} prompt × {engines.length} motor = <b className="text-ink/70">{prompts.length * engines.length}</b> sorgu
+          <span className={`text-xs ${prompts.length > 20 ? "font-medium text-danger-ink" : "text-ink/60"}`}>
+            {prompts.length > 20
+              ? `${prompts.length} prompt var; bir testte en fazla 20 çalışır. Fazlasını sil ya da ikinci teste bırak.`
+              : <>{prompts.length} prompt × {engines.length} motor = <b className="text-ink/70">{prompts.length * engines.length}</b> sorgu</>}
           </span>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || prompts.length > 20}
             className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-medium shadow-md shadow-accent/25 hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "Çalışıyor…" : "Testi çalıştır →"}
