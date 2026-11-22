@@ -33,7 +33,7 @@ const bodySchema = z.object({
   prompts: z
     .array(z.union([z.string().min(3).transform((text) => ({ text, topic: "Genel" })), promptSchema]))
     .min(1)
-    .max(10),
+    .max(20),
   engines: z.array(z.enum(["openai", "anthropic", "google", "perplexity", "deepseek", "xai", "meta", "microsoft"])).default(ALL_ENGINES),
 });
 

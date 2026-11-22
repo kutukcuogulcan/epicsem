@@ -18,6 +18,7 @@ interface BrandRow {
 }
 
 const PROMPTS_PER_TOPIC = 2;
+const MAX_PROMPTS = 20; // GEO testi en fazla 20 soru (app/api/geo/route.ts)
 
 const STEPS = [
   { key: "crawl", label: "Site taranıyor" },
@@ -123,11 +124,14 @@ export default function QuickGeoAnalyze({
             .map((c: any) => ({ name: c.name, domain: c.domain }));
           const selected: string[] = s.topicsResult?.autoSelected ?? [];
           const all: { topic: string; text: string }[] = s.promptsResult?.prompts ?? [];
+          // Önce seçili konular, sonra kalan konular: her konudan 2 soru, toplam en fazla 20 (daha çok konuya yayılır).
+          const order = [...selected, ...[...new Set(all.map((p) => p.topic))].filter((t) => !selected.includes(t))];
           const picked: string[] = [];
-          for (const t of selected) {
-            all.filter((p) => p.topic === t).slice(0, PROMPTS_PER_TOPIC).forEach((p) => picked.push(`${p.topic}: ${p.text}`));
+          for (const t of order) {
+            if (picked.length >= MAX_PROMPTS) break;
+            all.filter((p) => p.topic === t).slice(0, PROMPTS_PER_TOPIC).forEach((p) => picked.length < MAX_PROMPTS && picked.push(`${p.topic}: ${p.text}`));
           }
-          const promptsText = (picked.length ? picked : all.slice(0, 10).map((p) => `${p.topic}: ${p.text}`)).join("\n");
+          const promptsText = (picked.length ? picked : all.slice(0, MAX_PROMPTS).map((p) => `${p.topic}: ${p.text}`)).join("\n");
           const crawl = s.crawlResult?.siteCrawl;
           const pageUrls: string[] = (crawl?.criticalPageUrls?.length ? crawl.criticalPageUrls : [brand.domain]).slice(0, 5);
           setHandedOff(true);

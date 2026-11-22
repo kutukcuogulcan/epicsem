@@ -22,7 +22,7 @@ async function rerun(userId: number, domain: string) {
     prompts.push({ text: r.promptText, topic: r.topic || "Genel" });
   }
   const engines = [...new Set(last.runs.map((r) => r.engine))] as EngineId[];
-  const res = await executeGeoRun(userId, { brand: last.brand, competitors: last.competitors, prompts: prompts.slice(0, 10), engines });
+  const res = await executeGeoRun(userId, { brand: last.brand, competitors: last.competitors, prompts: prompts.slice(0, 20), engines });
   return { domain, prompts: prompts.length, engines: engines.length, demoMode: res.demoMode };
 }
 
