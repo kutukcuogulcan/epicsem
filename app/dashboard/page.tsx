@@ -14,6 +14,7 @@ import {
   listGeoBrands,
   listGeoRunsForOverview,
   listMonitorSchedules,
+  getLatestAuditForHost,
 } from "@/lib/db";
 import OverviewPanel from "@/components/OverviewPanel";
 import UsageMeter from "@/components/UsageMeter";
@@ -21,6 +22,8 @@ import DashboardActivityChart from "@/components/DashboardActivityChart";
 import { Card, CardHeader, StatCard } from "@/components/ui";
 import { ScoreRing } from "@/components/tool/MonitorBits";
 import { publishLabel } from "@/lib/publish-state";
+import SearchLayersCard from "@/components/SearchLayersCard";
+import { pillarScores } from "@/lib/audit-insights";
 
 export const metadata = {
   title: "Genel Bakış — Epicsem",
@@ -68,6 +71,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const schedule = monitor ? schedules.find((s) => norm(s.brandDomain) === norm(monitor.brandDomain)) ?? null : null;
   const selectedBrand = brand ? geoBrands.find((b) => b.brandDomain === brand) : domain ? geoBrands.find((b) => b.brandDomain === domain) : undefined;
   const overviewRuns = selectedBrand ? await listGeoRunsForOverview(user.id, selectedBrand.brandDomain, 90) : [];
+  // 5 katman: son denetimin sütunları + son gerçek (demo olmayan) GEO testindeki görünürlük.
+  const audit = domain ? await getLatestAuditForHost(user.id, domain).catch(() => null) : null;
+  const lastReal = [...overviewRuns].reverse().find((r) => !r.demoMode);
+  const ownVis = lastReal?.summaries.find((s) => norm(s.domain) === domain)?.visibility ?? null;
 
   const settingsFilled = ["description", "audience", "products"].filter((k) => String((settings as Record<string, unknown>)[k] ?? "").trim()).length >= 2;
   const steps = [
@@ -177,6 +184,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <StatCard label="Yayınlanan" value={published} hint={scheduled ? `${scheduled} zamanlandı` : cms.length ? `${cms.length} site bağlı` : "Site bağlı değil"} />
         <StatCard label="Autoblog" value={activeCampaigns ? `${activeCampaigns} aktif` : "Kapalı"} hint={nextRun ? `Sıradaki: ${fmtDate(nextRun)}` : "Planlı yazı yok"} />
       </div>
+
+      {domain && <SearchLayersCard pillars={audit ? pillarScores(audit.result).pillars : null} geoVisibility={ownVis} siteUrl={`https://${domain}`} />}
 
       {/* Son yazılar + Autoblog */}
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
