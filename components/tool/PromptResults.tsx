@@ -9,7 +9,9 @@
  *  - RunProgress: test çalışırken prompt × motor ilerleme görünümü
  */
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Drawer } from "@/components/ui";
+import { writeGapHref } from "@/lib/geo-loss";
 import { ENGINE_META, EngineDot, ScoreRing, SentimentBar, netSentiment, sentimentLabel } from "@/components/tool/MonitorBits";
 
 export interface PromptResponse {
@@ -21,6 +23,8 @@ export interface PromptResponse {
   text: string;
   mentions: string[];
   citations: { url: string; domain: string; isOwnDomain: boolean }[];
+  /** Motorun cevabı hazırlarken yaptığı web aramaları (fan-out). */
+  searchQueries?: string[];
 }
 export interface PromptGroup {
   text: string;
@@ -46,6 +50,7 @@ export interface RawRun {
   sentiment: number | null;
   responseText: string;
   citations: { url: string; domain: string; isOwnDomain: boolean }[];
+  searchQueries?: string[];
 }
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function groupRuns(runs: RawRun[], brandNames: string[]): PromptGroup[] {
@@ -64,6 +69,7 @@ export function groupRuns(runs: RawRun[], brandNames: string[]): PromptGroup[] {
       text: r.responseText,
       mentions: mentionsIn(r.responseText),
       citations: (r.citations ?? []).slice(0, 8),
+      searchQueries: r.searchQueries,
     }));
     const firsts = new Map<string, number>();
     for (const r of responses) {
@@ -89,6 +95,18 @@ export function groupRuns(runs: RawRun[], brandNames: string[]): PromptGroup[] {
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
+
+/** Takip edilen markalar arasında kendi markanın cevaptaki sırası (GEO haritasıyla aynı ölçü; ham "position" kalın yazılan her ifadeyi sayıyordu). */
+function trackedRank(text: string, mentions: string[], own: string): number | null {
+  const low = text.toLocaleLowerCase("tr");
+  const order = mentions
+    .map((n) => ({ n, at: low.indexOf(n.toLocaleLowerCase("tr")) }))
+    .filter((x) => x.at >= 0)
+    .sort((a, b) => a.at - b.at)
+    .map((x) => x.n.toLocaleLowerCase("tr"));
+  const i = order.indexOf(own.toLocaleLowerCase("tr"));
+  return i >= 0 ? i + 1 : null;
+}
 
 /** Cevap metninde markaları işaretler: kendi markan mor, rakipler kırmızı. */
 function highlight(text: string, names: string[], own: string) {
@@ -241,6 +259,51 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                 </div>
               </div>
             )}
+            {(() => {
+              const lost = open.responses.filter((r) => !r.mentioned);
+              const queries = [...new Set(open.responses.flatMap((r) => r.searchQueries ?? []))].slice(0, 8);
+              const rivals = open.leader && open.leader !== brandName ? open.leader : null;
+              return (
+                <section className="rounded-xl bg-accent/[0.06] p-4 text-sm">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-accent">Bu soruda durum</h3>
+                  <p className="mt-1">
+                    {lost.length === 0
+                      ? open.responses.length === 1
+                        ? `${ENGINE_META[open.responses[0].engine]?.name ?? open.responses[0].engine} cevabında anılıyorsun.`
+                        : `${open.responses.length} motorun hepsinde anılıyorsun.`
+                      : `${open.responses.length} motorun ${lost.length} tanesinde anılmıyorsun (${lost.map((r) => ENGINE_META[r.engine]?.name ?? r.engine).join(", ")}).`}
+                    {rivals && ` Bu soruda en sık ilk sırada anılan: ${rivals}.`}
+                  </p>
+                  {queries.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-sub">AI bu soruyu cevaplarken şunları aradı (yazın bunları da cevaplamalı):</div>
+                      <ul className="mt-1 flex flex-wrap gap-1.5">
+                        {queries.map((q) => (
+                          <li key={q} className="rounded-md bg-panel px-2 py-0.5 text-xs">{q}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {lost.length > 0 && (
+                    <Link
+                      href={writeGapHref(
+                        open.text,
+                        { name: brandName, domain: "" },
+                        open.responses.map((r) => ({
+                          status: r.mentioned ? ("mentioned" as const) : r.mentions.length ? ("lost" as const) : ("empty" as const),
+                          rivals: r.mentions.filter((m) => m !== brandName).map((name, i) => ({ name, rank: i + 1 })),
+                          sources: [...new Set(r.citations.map((c) => c.domain))],
+                        })),
+                        queries
+                      )}
+                      className="mt-3 inline-flex h-8 items-center rounded-lg bg-accent px-3 text-xs font-medium text-white hover:opacity-90"
+                    >
+                      Bu soruda anılmak için yazı yaz
+                    </Link>
+                  )}
+                </section>
+              );
+            })()}
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-seo" /> Cevaplar <span className="font-normal text-sub">({open.responses.length})</span>
@@ -257,13 +320,24 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                             <span className="font-medium text-ink">{ENGINE_META[r.engine]?.name ?? r.engine}</span>
                             {r.model && <span className="hidden sm:inline">{r.model}</span>}
                             {r.mentioned ? (
-                              <span className="rounded-md bg-seo/10 px-1.5 text-xs font-medium text-seo-ink">{r.position ? `${r.position}. sırada` : "geçiyor"}</span>
+                              <span className="rounded-md bg-seo/10 px-1.5 text-xs font-medium text-seo-ink">{(() => {
+                                  const k = trackedRank(r.text, r.mentions, brandName);
+                                  return k ? `${k}. sırada` : "geçiyor";
+                                })()}</span>
                             ) : (
                               <span className="rounded-md bg-danger/10 px-1.5 text-xs font-medium text-danger-ink">geçmiyor</span>
                             )}
                           </div>
                           <p className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${exp ? "" : "line-clamp-2"}`}>{highlight(r.text, open.mentions, brandName)}</p>
                           {r.mentions.length > 0 && <div className="mt-1 text-xs text-sub">Geçen markalar: {r.mentions.join(", ")}</div>}
+                          {exp && !!r.searchQueries?.length && (
+                            <div className="mt-2 space-y-0.5">
+                              <div className="text-xs font-medium text-sub">Cevabı hazırlarken aradı</div>
+                              {r.searchQueries.map((q) => (
+                                <div key={q} className="truncate text-xs text-ink/80">⌕ {q}</div>
+                              ))}
+                            </div>
+                          )}
                           {exp && r.citations.length > 0 && (
                             <div className="mt-2 space-y-0.5">
                               <div className="text-xs font-medium text-sub">Kaynaklar</div>

@@ -65,6 +65,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ domain: st
       text: r.responseText,
       mentions: mentionsIn(r),
       citations: r.citations.slice(0, 8),
+      searchQueries: r.searchQueries,
     })),
   }));
 

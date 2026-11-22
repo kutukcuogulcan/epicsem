@@ -16,6 +16,7 @@ interface Resp {
   text: string;
   mentions: string[];
   citations: { url: string; domain: string; isOwnDomain: boolean }[];
+  searchQueries?: string[];
 }
 interface Prompt {
   text: string;
