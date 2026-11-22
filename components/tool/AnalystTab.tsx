@@ -97,7 +97,63 @@ export default function AnalystTab(props: { domain: string; brand: string }) {
     <div className="space-y-3">
       <ChangeCard domain={props.domain} />
       <Opportunities {...props} />
+      <PageTermsCard domain={props.domain} />
     </div>
+  );
+}
+
+/** Peec'in "ürün sayfasına şunu ekle" önerisinin karşılığı: AI cevaplarında sık geçip sayfada geçmeyen kavramlar (ücretsiz). */
+function PageTermsCard({ domain }: { domain: string }) {
+  const [url, setUrl] = useState(`https://${domain}`);
+  const [res, setRes] = useState<{ url: string; answers: number; checked: number; missing: { term: string; docs: number }[]; needsGeo?: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function run() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch(`/api/geo/page-terms?domain=${encodeURIComponent(domain)}&url=${encodeURIComponent(url)}`);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Kontrol edilemedi");
+      setRes(j);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Kontrol edilemedi");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Card>
+      <CardHeader title="Sayfan AI'ın konuştuğu konuları kapsıyor mu?" subtitle="Son GEO testindeki AI cevaplarında sık geçen kavramlardan sayfanda olmayanlar. Ücretsiz, AI kullanmaz." />
+      <div className="flex flex-wrap gap-2">
+        <input value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-panel px-3 text-sm outline-none focus:border-accent" placeholder="https://site.com/urun" />
+        <button type="button" onClick={run} disabled={busy || !url.trim()} className={BTN1}>
+          {busy ? "Okunuyor…" : "Kontrol et"}
+        </button>
+      </div>
+      <ErrorBlock message={err} />
+      {res?.needsGeo && <p className="mt-3 text-sm text-sub">Önce bu marka için gerçek bir GEO testi çalıştır.</p>}
+      {res && !res.needsGeo && (
+        <div className="mt-3 text-sm">
+          {res.missing.length ? (
+            <>
+              <p className="text-sub">
+                {res.answers} AI cevabında sık geçen {res.checked} kavramdan şunlar sayfanda yok. Ürününde/hizmetinde gerçekten varsa sayfaya ekle; yoksa ekleme (uydurma bilgi AI&apos;ın güvenini düşürür).
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {res.missing.map((m) => (
+                  <li key={m.term} className="rounded-md bg-accent/[0.07] px-2 py-1 text-[13px]">
+                    {m.term} <span className="text-xs text-sub">· {m.docs} cevapta</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="text-seo-ink">AI cevaplarında sık geçen {res.checked} kavramın hepsi sayfanda geçiyor.</p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
