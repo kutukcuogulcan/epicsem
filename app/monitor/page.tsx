@@ -1,5 +1,6 @@
 "use client";
 
+import type { PageChange, PageSnap } from "@/lib/page-diff";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Link from "next/link";
@@ -11,6 +12,8 @@ interface MonitorCheck {
   aiCrawlScore: number;
   blockedBots: string[];
   createdAt: string;
+  snapshot?: PageSnap | null;
+  changes?: PageChange[];
 }
 
 interface MonitoredPage {
@@ -419,6 +422,46 @@ export default function MonitorPage() {
             ) : (
               <p className="text-sub">Henüz kontrol edilmedi.</p>
             )}
+            {(() => {
+              const hist = [...(trendData[selPage.id] ?? [])].reverse();
+              const withChanges = hist.filter((c) => c.changes?.length);
+              const tracked = hist.some((c) => c.snapshot);
+              const color = { kötü: "text-danger-ink", iyi: "text-seo-ink", bilgi: "text-ink" } as const;
+              const mark = { kötü: "▼", iyi: "▲", bilgi: "•" } as const;
+              return (
+                <section>
+                  <div className="mb-1.5 text-xs font-medium text-sub">Ne değişti?</div>
+                  {trendLoading === selPage.id ? (
+                    <p className="text-sub">Yükleniyor…</p>
+                  ) : withChanges.length ? (
+                    <ol className="space-y-3">
+                      {withChanges.slice(0, 8).map((c) => (
+                        <li key={c.id} className="rounded-xl border border-border px-3 py-2">
+                          <div className="text-xs text-sub">{new Date(c.createdAt).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+                          <ul className="mt-1 space-y-0.5">
+                            {c.changes!.map((ch) => (
+                              <li key={ch.text} className={`flex gap-2 ${color[ch.verdict]}`}>
+                                <span aria-hidden>{mark[ch.verdict]}</span>
+                                <span>
+                                  {ch.text}
+                                  {ch.critical && <span className="ml-1.5 rounded bg-danger/10 px-1.5 text-xs font-medium text-danger-ink">kritik</span>}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sub">
+                      {tracked
+                        ? "Son kontrollerde başlık, açıklama, içerik, şema, noindex ve AI bot erişiminde değişiklik yok."
+                        : "Değişiklik takibi bir sonraki kontrolden itibaren başlar (başlık, açıklama, içerik uzunluğu, şema, noindex, canonical, AI botları)."}
+                    </p>
+                  )}
+                </section>
+              );
+            })()}
             <div>
               <div className="mb-1.5 text-xs font-medium text-sub">Puan geçmişi</div>
               {trendLoading === selPage.id ? (

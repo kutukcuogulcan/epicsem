@@ -1,4 +1,5 @@
 import { runSeoAudit } from "./seo-audit";
+import { diffSnaps, snapOf } from "@/lib/page-diff";
 import { safeFetch } from "@/lib/safe-fetch";
 import {
   createAlert,
@@ -40,11 +41,19 @@ export async function checkMonitoredPage(page: MonitoredPage): Promise<CheckResu
   const newlyBlocked = blockedBots.filter((b) => !previousBlocked.has(b));
   const newlyUnblocked = (previous?.blockedBots ?? []).filter((b) => !currentBlocked.has(b));
 
-  await saveMonitorCheck(page.id, audit.score, audit.aiCrawlScore, blockedBots);
+  const snapshot = snapOf(audit);
+  // Önceki kontrolde anlık görüntü yoksa (eski kayıt) yalnızca bot engelleri karşılaştırılabilir.
+  const changes = previous?.snapshot
+    ? diffSnaps(previous.snapshot, snapshot)
+    : previous && newlyBlocked.length
+      ? [{ text: `robots.txt şu AI botlarını yeni engelledi: ${newlyBlocked.join(", ")}. Bu motorlar sayfayı artık okuyamaz.`, verdict: "kötü" as const, critical: true }]
+      : [];
+  await saveMonitorCheck(page.id, audit.score, audit.aiCrawlScore, blockedBots, snapshot, changes);
 
   let alertRaised = false;
-  if (previous && newlyBlocked.length > 0) {
-    const message = `⚠️ ${page.label ?? page.url}: ${newlyBlocked.join(", ")} newly blocked in robots.txt (was allowed as of the last check). If this wasn't deliberate, this page just went dark to those AI engines.`;
+  const critical = changes.filter((c) => c.critical);
+  if (critical.length) {
+    const message = `⚠️ ${page.label ?? page.url}: ${critical.map((c) => c.text).join(" ")}`;
     await createAlert(page.id, message);
     alertRaised = true;
     await sendSlackAlert(page.slackWebhook, message);
@@ -69,7 +78,7 @@ async function sendSlackAlert(pageWebhook: string | null, message: string) {
     await safeFetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: `Epicsem AXO alert — ${message}` }),
+      body: JSON.stringify({ text: `Epicsem sayfa izleme — ${message}` }),
     });
   } catch (err) {
     console.error("Slack alert delivery failed:", err);

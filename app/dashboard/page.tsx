@@ -166,7 +166,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <Link href="/monitor" className="flex items-center justify-between gap-4 rounded-2xl border border-danger/30 bg-danger/5 px-5 py-3 text-sm hover:bg-danger/10">
           <span>
             <span className="font-medium text-danger-ink">{summary.activeAlerts} bekleyen uyarı</span>
-            <span className="text-sub"> — izlenen bir sayfada AI tarayıcı engeli tespit edildi</span>
+            <span className="text-sub"> — izlenen sayfalarda kritik değişiklik var (noindex, başlık, içerik ya da AI bot engeli)</span>
           </span>
           <span className="font-medium text-danger-ink">Detaylar →</span>
         </Link>

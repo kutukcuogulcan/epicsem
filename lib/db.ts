@@ -13,6 +13,7 @@ import type {
 } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
 import type { SerpSnap } from "@/lib/rank-explain";
+import type { PageChange, PageSnap } from "@/lib/page-diff";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import { openSecret, sealSecret } from "./secret-box";
 
@@ -235,6 +236,8 @@ async function initSchema(): Promise<void> {
       FOREIGN KEY (monitored_page_id) REFERENCES monitored_pages(id)
     );
     CREATE INDEX IF NOT EXISTS idx_monitor_checks_page ON monitor_checks(monitored_page_id);
+    ALTER TABLE monitor_checks ADD COLUMN IF NOT EXISTS snapshot_json TEXT;
+    ALTER TABLE monitor_checks ADD COLUMN IF NOT EXISTS changes_json TEXT;
 
     CREATE TABLE IF NOT EXISTS alerts (
       id SERIAL PRIMARY KEY,
@@ -1154,6 +1157,9 @@ export interface MonitorCheck {
   aiCrawlScore: number;
   blockedBots: string[];
   createdAt: string;
+  /** Sayfanın anlık görüntüsü ve bir önceki kontrole göre değişiklikler (eski kayıtlarda yok). */
+  snapshot?: PageSnap | null;
+  changes?: PageChange[];
 }
 
 function rowToMonitorCheck(row: any): MonitorCheck {
@@ -1164,6 +1170,8 @@ function rowToMonitorCheck(row: any): MonitorCheck {
     aiCrawlScore: row.ai_crawl_score,
     blockedBots: JSON.parse(row.blocked_bots_json),
     createdAt: toIso(row.created_at),
+    snapshot: row.snapshot_json ? JSON.parse(row.snapshot_json) : null,
+    changes: row.changes_json ? JSON.parse(row.changes_json) : [],
   };
 }
 
@@ -1176,11 +1184,11 @@ export async function getLatestMonitorCheck(pageId: number): Promise<MonitorChec
   return row ? rowToMonitorCheck(row) : null;
 }
 
-export async function saveMonitorCheck(pageId: number, score: number, aiCrawlScore: number, blockedBots: string[]): Promise<void> {
+export async function saveMonitorCheck(pageId: number, score: number, aiCrawlScore: number, blockedBots: string[], snapshot?: PageSnap, changes?: PageChange[]): Promise<void> {
   await ensureSchema();
   await exec(
-    `INSERT INTO monitor_checks (monitored_page_id, score, ai_crawl_score, blocked_bots_json) VALUES ($1, $2, $3, $4)`,
-    [pageId, score, aiCrawlScore, JSON.stringify(blockedBots)]
+    `INSERT INTO monitor_checks (monitored_page_id, score, ai_crawl_score, blocked_bots_json, snapshot_json, changes_json) VALUES ($1, $2, $3, $4, $5, $6)`,
+    [pageId, score, aiCrawlScore, JSON.stringify(blockedBots), snapshot ? JSON.stringify(snapshot) : null, changes ? JSON.stringify(changes) : null]
   );
 }
 

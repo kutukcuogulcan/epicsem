@@ -111,6 +111,7 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
   }
 
   const canonical = $('link[rel="canonical"]').attr("href") || null;
+  const metaRobots = [$('meta[name="robots"]').attr("content"), $('meta[name="googlebot"]').attr("content")].filter(Boolean).join(", ") || null;
   if (!canonical) {
     pushIssue(issues, {
       category: "meta",
@@ -342,6 +343,7 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     meta: {
       title,
       description,
+      metaRobots,
       h1Count,
       wordCount,
       hasSchema,

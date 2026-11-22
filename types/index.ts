@@ -40,6 +40,8 @@ export interface SeoAuditResult {
     aiBotAccess: AiBotAccess[];
     htmlLang: string | null;
     hreflangs: string[];
+    /** meta robots / googlebot içeriği (ör. "noindex, follow"); eski kayıtlarda yok. */
+    metaRobots?: string | null;
     /** Ek kontroller (eski kayıtlarda yok). */
     images?: { total: number; noAlt: number; noSize: number; lazy: number };
     links?: { internal: number; external: number; checked: number; broken: string[]; redirects: number; outboundCitations: number };
