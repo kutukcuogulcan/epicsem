@@ -29,6 +29,7 @@ import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights"
 import GeoActionsTab from "@/components/tool/GeoActions";
 import GeoReadinessTab from "@/components/tool/GeoReadiness";
 import GeoPerceptionTab from "@/components/tool/GeoPerception";
+import GeoFanoutTab from "@/components/tool/GeoFanout";
 import ImpactTab from "@/components/tool/ImpactTab";
 import FactsTab from "@/components/tool/FactsTab";
 import AnalystTab from "@/components/tool/AnalystTab";
@@ -134,7 +135,7 @@ function parsePromptLine(line: string): PromptInput {
 }
 
 
-const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity", "perception", "readiness"] as const;
+const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity", "perception", "readiness", "fanout"] as const;
 type ResultsTab = (typeof RESULTS_TABS)[number];
 
 export default function GeoPage() {
@@ -687,7 +688,7 @@ export default function GeoPage() {
         const GROUPS = [
           { label: "Özet", subs: [["overview", "Özet"]] },
           { label: "Aksiyonlar", subs: [["analyst", "Analist"], ["actions", "Aksiyon planı"], ["readiness", "AI ajan hazırlığı"], ["opportunities", "Fırsatlar"], ["facts", "Yanlış bilgi"], ["impact", "Etki"]] },
-          { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["library", "Prompt kütüphanesi"]] },
+          { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["fanout", "AI'ın aramaları"], ["library", "Prompt kütüphanesi"]] },
           { label: "Rakipler ve kaynaklar", count: competitorRefs.length || null, subs: [["rivals", "Rakipler"], ["sources", "Kaynaklar"], ["urls", "URL'ler"]] },
           { label: "Marka algısı", subs: [["perception", "Algı"], ["sentiment", "Duygu"]] },
           { label: "Diğer", subs: [["visibility", "Görünürlük"], ["entity", "Bilgi grafı"]] },
@@ -730,6 +731,7 @@ export default function GeoPage() {
           <GeoOverview refreshKey={overviewKey} onNewTest={() => setTestOpen(true)} />
         ))}
       {resultsTab === "readiness" && <GeoReadinessTab />}
+      {resultsTab === "fanout" && runs && <GeoFanoutTab runs={runs} />}
       {resultsTab === "perception" && runs && <GeoPerceptionTab runs={runs} own={ownRef} competitors={competitorRefs} />}
       {resultsTab === "library" && <SavedPromptsPanel brand={brand} competitors={competitors.filter((c) => c.name && c.domain)} engines={engines} />}
       {resultsTab === "entity" &&
