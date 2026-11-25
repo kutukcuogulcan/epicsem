@@ -12,6 +12,8 @@ export interface ReadinessCheck {
   detail: string;
   why: string;
   fix: string;
+  /** Yalnızca kendi site için: yapıştırılacak hazır kod (sitedeki gerçek bilgilerden; bilinmeyen alanlar [NEEDS: …]). */
+  code?: { file: string; text: string };
 }
 
 export interface DomainReadiness {

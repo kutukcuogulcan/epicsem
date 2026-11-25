@@ -18,4 +18,6 @@ assert.ok(r.bots.some((b) => b.bot.userAgent === "Applebot-Extended"));
 assert.equal(r.pages.find((p) => p.path === "/blog/a").hits, 1);
 assert.equal(r.pages.find((p) => p.path === "/blog/b").status, 403); // yalnız engel görüldüyse ilk durum kalır
 assert.deepEqual(r.referrals.map((x) => x.source).sort(), ["ChatGPT", "Perplexity"]);
+const cf = parseAiLog(JSON.stringify({ ClientRequestURI: "/a?x=1", EdgeResponseStatus: 200, EdgeStartTimestamp: 1795599843000000000, ClientRequestReferer: "https://chatgpt.com/", ClientRequestUserAgent: "Mozilla/5.0 (compatible; GPTBot/1.2)" }));
+assert.equal(cf.parsed, 1); assert.equal(cf.bots[0].bot.userAgent, "GPTBot"); assert.equal(cf.from.slice(0, 10), "2026-11-25");
 console.log("ai-log ok");

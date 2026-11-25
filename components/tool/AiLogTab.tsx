@@ -24,7 +24,7 @@ export default function AiLogTab() {
     setErr(null);
     try {
       const rep = parseAiLog(await f.text());
-      if (!rep.parsed) setErr("Bu dosyada Apache/Nginx erişim kaydı satırı bulunamadı (\"combined\" biçimi gerekir).");
+      if (!rep.parsed) setErr("Bu dosyada Apache/Nginx (\"combined\") ya da Cloudflare Logpush (JSON) kaydı satırı bulunamadı.");
       setR(rep.parsed ? rep : null);
       setName(f.name);
     } catch {
@@ -37,7 +37,7 @@ export default function AiLogTab() {
   const picker = (
     <label className={`${r ? BTN2 : BTN1} cursor-pointer`}>
       {busy ? "Okunuyor…" : r ? "Başka dosya" : "Erişim kaydı yükle"}
-      <input type="file" accept=".log,.txt,text/plain" className="sr-only" onChange={(e) => load(e.target.files?.[0])} />
+      <input type="file" accept=".log,.txt,.json,.ndjson,text/plain,application/json" className="sr-only" onChange={(e) => load(e.target.files?.[0])} />
     </label>
   );
 
@@ -50,7 +50,7 @@ export default function AiLogTab() {
         </p>
         <div className="mt-4 flex justify-center">{picker}</div>
         {err && <p className="mt-3 text-[13px] text-danger-ink">{err}</p>}
-        <p className="mt-4 text-[11px] text-sub">Dosya bilgisayarından çıkmaz, tarayıcında okunur. Apache/Nginx “combined” biçimi; hosting panelinde genelde “Raw Access Logs” adıyla bulunur.</p>
+        <p className="mt-4 text-[11px] text-sub">Dosya bilgisayarından çıkmaz, tarayıcında okunur. Apache/Nginx “combined” ya da Cloudflare Logpush (JSON) biçimi; hosting panelinde genelde “Raw Access Logs” adıyla bulunur.</p>
       </div>
     );
 

@@ -218,6 +218,17 @@ export default function GeoReadinessTab() {
                           <div className="ml-6 mt-1.5 space-y-1 text-[12px]">
                             <p className="text-sub">{c.why}</p>
                             <p className="rounded-lg bg-accent/5 px-2.5 py-1.5">{c.fix}</p>
+                            {c.code && (
+                              <div className="overflow-hidden rounded-lg border border-border">
+                                <div className="flex items-center justify-between bg-muted/60 px-2.5 py-1 text-[11px] text-sub">
+                                  <span>{c.code.file}</span>
+                                  <button type="button" onClick={() => navigator.clipboard?.writeText(c.code!.text)} className="font-medium text-accent hover:underline">
+                                    Kopyala
+                                  </button>
+                                </div>
+                                <pre className="max-h-64 overflow-auto whitespace-pre-wrap px-2.5 py-2 font-mono text-[11px] leading-relaxed">{c.code.text}</pre>
+                              </div>
+                            )}
                           </div>
                         )}
                       </details>

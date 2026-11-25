@@ -55,6 +55,20 @@ const findBot = (ua: string) => {
   const u = ua.toLowerCase();
   return BOTS.find((x) => u.includes(x.ua))?.b ?? null;
 };
+/** Cloudflare Logpush (NDJSON) satırı → combined biçimindeki alanlar. */
+function fromJson(line: string): string[] | null {
+  try {
+    const j = JSON.parse(line);
+    const path = j.ClientRequestURI ?? j.ClientRequestPath;
+    const st = j.EdgeResponseStatus ?? j.OriginResponseStatus;
+    if (!path || !st) return null;
+    const t = j.EdgeStartTimestamp ?? j.EdgeEndTimestamp ?? "";
+    const time = typeof t === "number" ? new Date(t > 1e15 ? t / 1e6 : t > 1e12 ? t : t * 1000).toISOString() : String(t);
+    return ["", time.replace("T", ":").slice(0, 19), String(path), String(st), j.ClientRequestReferer ?? "", j.ClientRequestUserAgent ?? ""];
+  } catch {
+    return null;
+  }
+}
 const BLOCK = new Set([401, 403, 429]);
 const cleanPath = (p: string) => p.split("#")[0].replace(/\?.*$/, "") || "/";
 
@@ -69,7 +83,7 @@ export function parseAiLog(text: string): AiLogReport {
   for (const line of text.split(/\r?\n/)) {
     if (!line) continue;
     lines++;
-    const m = LINE.exec(line);
+    const m = line[0] === "{" ? fromJson(line) : LINE.exec(line);
     if (!m) continue;
     parsed++;
     const [, time, rawPath, st, referer = "", ua = ""] = m;

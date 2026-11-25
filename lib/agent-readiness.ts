@@ -47,6 +47,39 @@ const C = (level: ReadinessCheck["level"], tier: ReadinessCheck["tier"], id: str
   fix,
 });
 
+const AI_ALLOW = ["OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User", "Claude-SearchBot", "Claude-User", "Googlebot", "Bingbot", "Applebot", "DuckAssistBot"];
+
+/** Başarısız kontrollere sitedeki gerçek bilgilerle hazır kod ekler. Uydurma yok: bilinmeyen alan [NEEDS: …]. */
+function addCode(checks: ReadinessCheck[], ctx: { origin: string; brand: string; $: cheerio.CheerioAPI; blockedBots: string[] }) {
+  const { origin, brand, $ } = ctx;
+  const desc = ($('meta[name="description"]').attr("content") ?? "").trim();
+  const links = [
+    ...new Map(
+      $("nav a[href], header a[href]")
+        .map((_, a) => ({ href: $(a).attr("href") ?? "", text: $(a).text().replace(/\s+/g, " ").trim() }))
+        .get()
+        .filter((l) => l.text && l.text.length < 60 && (l.href.startsWith("/") || l.href.startsWith(origin)) && !/^\/?(#|$)/.test(l.href))
+        .map((l) => [new URL(l.href, origin).href, l.text] as const)
+    ),
+  ].slice(0, 15);
+  const json = (o: unknown) => JSON.stringify(o, null, 2);
+  const code: Record<string, { file: string; text: string }> = {
+    robots_txt: { file: "/robots.txt", text: `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml` },
+    ai_agent_access: { file: "/robots.txt (ekle)", text: `${(ctx.blockedBots.length ? ctx.blockedBots : AI_ALLOW).map((b) => `User-agent: ${b}`).join("\n")}\nAllow: /` },
+    organization_schema: {
+      file: "<head> içine",
+      text: `<script type="application/ld+json">\n${json({ "@context": "https://schema.org", "@type": "Organization", name: brand, url: origin, logo: "[NEEDS: logo adresi]", ...(desc ? { description: desc } : {}), sameAs: ["[NEEDS: sosyal medya / Wikipedia adresleri]"] })}\n</script>`,
+    },
+    llms_txt: { file: "/llms.txt", text: `# ${brand}\n\n> ${desc || "[NEEDS: markayı 1-2 cümlede anlatan özet]"}\n\n## Sayfalar\n${links.length ? links.map(([u, t]) => `- [${t}](${u})`).join("\n") : `- [Ana sayfa](${origin}/)`}` },
+    a2a_agent_card: {
+      file: "/.well-known/agent-card.json",
+      text: json({ name: `${brand} asistanı`, description: desc || "[NEEDS: ajanın ne yaptığı]", url: "[NEEDS: ajanın A2A uç noktası]", version: "1.0.0", capabilities: { streaming: false }, defaultInputModes: ["text/plain"], defaultOutputModes: ["text/plain"], skills: [{ id: "[NEEDS: yetenek-kimliği]", name: "[NEEDS: ör. Ürün arama]", description: "[NEEDS: yeteneğin açıklaması]" }] }),
+    },
+    api_catalog: { file: "/.well-known/api-catalog (application/linkset+json)", text: json({ linkset: [{ anchor: "[NEEDS: API kök adresi]", "service-desc": [{ href: "[NEEDS: OpenAPI dosyası adresi]", type: "application/json" }], "service-doc": [{ href: "[NEEDS: API dokümanı adresi]", type: "text/html" }] }] }) },
+  };
+  for (const c of checks) if (c.outcome !== "pass" && code[c.id]) c.code = code[c.id];
+}
+
 export async function checkDomain(domain: string, brand: string, own: boolean): Promise<DomainReadiness> {
   const host = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
   const base: DomainReadiness = { domain: host, brand, own, level: 0, next: null, checks: [], checkedAt: new Date().toISOString() };
@@ -168,6 +201,8 @@ export async function checkDomain(domain: string, brand: string, own: boolean): 
   // ---- 5. Satın alabilir ----
   checks.push(C(5, "gate", "agentic_commerce", "Ajan ticareti uç noktası", okJson(ucp), okJson(ucp) ? "Bulundu" : "yok",
     "AI asistanlarının senin adına sepete ekleyip ödeme yapabilmesini sağlar (ChatGPT/Gemini alışveriş).", "E-ticaret sitesiysen ajan ticareti protokolünü (UCP/ACP) destekleyen ödeme altyapısını değerlendir."));
+
+  if (own && homeOk) addCode(checks, { origin, brand, $, blockedBots });
 
   // Seviye hesabı
   let level = 0;
