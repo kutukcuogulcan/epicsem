@@ -9,6 +9,22 @@ import { discoverSiteUrls } from "@/lib/site-urls";
  * rakip adımından geçmiyordu). Sihirbazla aynı kod: AI web aramasıyla önerir, kod her sitenin açıldığını
  * doğrular. 1 AI sorgusu. Hata olursa sessizce vazgeçer (proje rakipsiz kalır, elle eklenebilir).
  */
+/** Aday alt markaları şirketin kendi sitesiyle doğrulayıp projeye yazar (proje alt markası boşsa). AI çağrısı yok. */
+export async function saveVerifiedAliases(userId: number, clientId: number, domain: string, candidates: string[]): Promise<number> {
+  try {
+    if (!candidates.length) return 0;
+    const [page, site] = await Promise.all([fetchPageSummary(`https://${domain}`), discoverSiteUrls(domain, 15_000).catch(() => null)]);
+    const cur = await getClient(userId, clientId);
+    if (!cur || cur.aliases.length) return 0;
+    const aliases = verifyOwnBrands(candidates, cur.name, `${page.title ?? ""} ${page.metaDescription ?? ""} ${page.bodyText}`, site?.urls ?? []);
+    if (aliases.length) await updateClient(userId, clientId, { aliases });
+    return aliases.length;
+  } catch (e) {
+    console.error("[alias-verify]", domain, e instanceof Error ? e.message : e);
+    return 0;
+  }
+}
+
 export async function autofillCompetitors(userId: number, clientId: number, domain: string, max = 6): Promise<number> {
   try {
     const page = await fetchPageSummary(`https://${domain}`);

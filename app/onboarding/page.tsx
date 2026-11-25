@@ -79,6 +79,7 @@ export default function OnboardingPage() {
   const [industry, setIndustry] = useState("");
   const [products, setProducts] = useState("");
   const [comps, setComps] = useState<Comp[]>([]);
+  const ownBrands = useRef<string[]>([]); // rakip adımından gelen alt marka adayları (sunucuda siteyle doğrulanır)
   const [newComp, setNewComp] = useState({ name: "", domain: "" });
   const [prompts, setPrompts] = useState<P[]>([]);
   const [topicSel, setTopicSel] = useState<string[]>([]);
@@ -149,6 +150,7 @@ export default function OnboardingPage() {
       filled.current.comps = true;
       const list = (s.competitorsResult?.competitors ?? []).filter((c: any) => c.name && !/DEMO/.test(c.name));
       setComps(list.slice(0, 10).map((c: any, i: number) => ({ name: c.name, domain: c.domain ?? "", reason: c.reason, on: i < 5 && !!c.domain })));
+      ownBrands.current = Array.isArray(s.competitorsResult?.ownBrands) ? s.competitorsResult.ownBrands : [];
     }
     if (s.promptsStatus === "ready" && !filled.current.prompts) {
       filled.current.prompts = true;
@@ -205,7 +207,7 @@ export default function OnboardingPage() {
     const competitors = chosenComps.slice(0, 6).map((c) => ({ name: c.name.trim(), domain: host(c.domain) }));
     try {
       // 1 Proje
-      const pr = await fetch("/api/project", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...brand, competitors }) });
+      const pr = await fetch("/api/project", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...brand, competitors, ownBrands: ownBrands.current }) });
       const pd = await pr.json();
       if (!pr.ok) throw new Error(pd.error ?? "Proje oluşturulamadı");
       mark("project", "ready", pd.existed ? "Bu site zaten bir projeydi; o seçildi." : undefined);

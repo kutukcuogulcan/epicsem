@@ -191,6 +191,8 @@ export interface CompetitorsResult {
   /** Kart: Web aramalı rakip bulma — rakipler gerçekten web aramasıyla mı bulundu. */
   webSearch?: boolean;
   stats?: { proposed: number; verified: number; droppedUnreachable: string[]; droppedDuplicate: string[] };
+  /** Şirketin kendi alt markaları (AI önerisi, doğrulanmamış; proje kaydında siteye karşı doğrulanır). */
+  ownBrands?: string[];
 }
 
 /** Kart step "Tarama" — split out of discoverBrandFromUrl so it can be its own tracked job.
@@ -313,7 +315,7 @@ export async function runCompetitorsStep(
 ): Promise<CompetitorsResult> {
   const multiPageText = siteCrawl ? combinedCrawlText(siteCrawl) : undefined;
   const r = await discoverCompetitors({ domain, homeSummary: buildHomeSummary(page, multiPageText), country, language });
-  return { competitors: r.competitors, demoMode: r.demoMode, model: r.model, webSearch: r.webSearch, stats: r.stats };
+  return { competitors: r.competitors, demoMode: r.demoMode, model: r.model, webSearch: r.webSearch, stats: r.stats, ownBrands: r.ownBrands ?? [] };
 }
 
 export async function discoverBrandFromUrl(rawUrl: string, language: "tr" | "en" = "tr"): Promise<DiscoveredBrand> {

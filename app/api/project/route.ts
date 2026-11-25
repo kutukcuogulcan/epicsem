@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { autofillCompetitors } from "@/lib/competitor-autofill";
+import { autofillCompetitors, saveVerifiedAliases } from "@/lib/competitor-autofill";
 import { isDemoMode } from "@/lib/geo-providers";
 import { cookies } from "next/headers";
 import { z } from "zod";
@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest) {
 }
 
 const brand = z.object({ name: z.string().trim().min(1).max(80), domain: z.string().trim().min(3).max(120) });
-const createSchema = z.object({ name: z.string().trim().min(1).max(80), domain: z.string().trim().min(3).max(120), competitors: z.array(brand).max(8).default([]) });
+const createSchema = z.object({ name: z.string().trim().min(1).max(80), domain: z.string().trim().min(3).max(120), competitors: z.array(brand).max(8).default([]), ownBrands: z.array(z.string().trim().max(60)).max(15).optional() });
 
 export async function POST(req: NextRequest) {
   const user = await requireUser();
@@ -89,6 +89,8 @@ export async function POST(req: NextRequest) {
     (await cookies()).set(COOKIE, String(c.id), { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
     // Rakipsiz açılan projeye rakipleri arka planda yaz (sunucu sürekli çalışıyor; cevabı bekletmez).
     if (!c.competitors.length && !isDemoMode()) void autofillCompetitors(user.id, c.id, norm(p.domain));
+    // Kurulum sihirbazının rakip adımından gelen alt marka adayları: siteyle doğrulanıp yazılır (AI çağrısı yok).
+    else if (p.ownBrands?.length) void saveVerifiedAliases(user.id, c.id, norm(p.domain), p.ownBrands);
     return NextResponse.json({ active: toProject(c) });
   } catch (e) {
     console.error("[api/project] POST failed:", e);
