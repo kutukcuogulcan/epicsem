@@ -22,6 +22,7 @@ const schema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
   domain: z.string().trim().min(3).max(120).optional(),
   competitors: z.array(z.object({ name: z.string().trim().min(1).max(80), domain: z.string().trim().min(3).max(120) })).max(8).optional(),
+  aliases: z.array(z.string().trim().min(2).max(60)).max(12).optional(),
   settings: z.object({
     description: str(1500),
     language: str(10),
@@ -54,7 +55,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: readableZodError(e) }, { status: 400 });
   }
   try {
-    if (b.name || b.domain || b.competitors) await updateClient(user.id, p.id, { name: b.name, domain: b.domain, competitors: b.competitors });
+    if (b.name || b.domain || b.competitors || b.aliases) await updateClient(user.id, p.id, { name: b.name, domain: b.domain, competitors: b.competitors, aliases: b.aliases ? [...new Set(b.aliases)] : undefined });
     // Ayarlar sayfası göndermediği alanları (ör. Backlinkler'de seçilen sektör) silmesin.
     await saveClientSettings(user.id, p.id, { ...b.settings, sector: b.settings.sector ?? p.settings?.sector });
     return NextResponse.json({ project: await getActiveProject(user.id) });

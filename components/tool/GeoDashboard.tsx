@@ -22,6 +22,7 @@ import { analyzeRun, isDemoRun, writeGapHref } from "@/lib/geo-loss";
 interface BrandRef {
   name: string;
   domain: string;
+  aliases?: string[];
 }
 interface HistoryRun {
   id: number;
@@ -127,7 +128,7 @@ export default function GeoDashboard({
   const own = clean(brand.domain);
   const comps = competitors.filter((c) => c.name && c.domain);
   const compDomains = comps.map((c) => clean(c.domain));
-  const tracked: BrandRef[] = useMemo(() => [{ name: brand.name, domain: own }, ...comps.map((c) => ({ name: c.name, domain: clean(c.domain) }))], [brand.name, own, comps]);
+  const tracked: BrandRef[] = useMemo(() => [{ name: brand.name, domain: own, aliases: brand.aliases }, ...comps.map((c) => ({ name: c.name, domain: clean(c.domain) }))], [brand.name, brand.aliases, own, comps]);
   const color = (name: string) => {
     const i = tracked.findIndex((b) => trLower(b.name) === trLower(name));
     if (i >= 0) return PALETTE[i % PALETTE.length];
@@ -227,7 +228,7 @@ export default function GeoDashboard({
   // ---- Ne yapmalı? ----
   const actions = useMemo(() => {
     const out: { kind: string; color: string; title: string; body: string; impact: [string, string]; cta: React.ReactNode }[] = [];
-    const ops = findOpportunities(fr, { name: brand.name, domain: own }, comps);
+    const ops = findOpportunities(fr, { name: brand.name, domain: own, aliases: brand.aliases }, comps);
     const lost = ops.find((o) => o.kind === "competitor-owned") ?? ops.find((o) => o.kind === "unclaimed");
     if (lost) {
       const lostCount = ops.filter((o) => o.kind === "competitor-owned" || o.kind === "unclaimed").length;
@@ -289,7 +290,7 @@ export default function GeoDashboard({
 
   // ---- Özet bandı (tüm motorlar, son test) ----
   const band = useMemo(() => {
-    const ownRef = { name: brand.name, domain: own };
+    const ownRef = { name: brand.name, domain: own, aliases: brand.aliases };
     const an = runs.map((r) => analyzeRun(r, ownRef, comps));
     const n = runs.length || 1;
     // Hiç anılmayan rakipler de sıralamada sayılır (aksi halde "1./3" 4 markalı tablonun yanında çelişir).
@@ -458,7 +459,7 @@ export default function GeoDashboard({
         </div>
       </Card>
 
-      <GeoHeatmap runs={runs} own={{ name: brand.name, domain: own }} rivals={comps} />
+      <GeoHeatmap runs={runs} own={{ name: brand.name, domain: own, aliases: brand.aliases }} rivals={comps} />
 
       {/* Motor filtresi */}
       <div className="flex flex-wrap items-center gap-2 pb-1">

@@ -15,6 +15,8 @@ export interface Project {
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
+  /** Alt markalar / ürün adları (Purina → Pro Plan, Felix…). */
+  aliases?: string[];
 }
 
 interface Ctx {

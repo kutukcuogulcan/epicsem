@@ -11,6 +11,8 @@ import { rankTrackedBrands } from "@/lib/text-match";
 export interface BrandRef {
   name: string;
   domain: string;
+  /** Alt markalar / ürün adları; cevapta geçerse marka anılmış sayılır. */
+  aliases?: string[];
 }
 
 export type CellStatus = "won" | "mentioned" | "lost" | "empty";

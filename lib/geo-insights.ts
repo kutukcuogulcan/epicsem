@@ -11,6 +11,7 @@ import type { GeoRunResult } from "@/types";
 export interface BrandRef {
   name: string;
   domain: string;
+  aliases?: string[];
 }
 
 const cleanDomain = (d: string) => d.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "").toLowerCase();

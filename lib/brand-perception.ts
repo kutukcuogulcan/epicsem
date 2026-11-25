@@ -87,13 +87,14 @@ function grams(s: string, drop: Set<string>): string[] {
   return [...out];
 }
 
-export function buildPerception(runs: GeoRunResult[], brands: { name: string }[]): BrandPerception[] {
-  const nameTokens = new Set(brands.flatMap((b) => fold(b.name).split(/\s+/)));
+export function buildPerception(runs: GeoRunResult[], brands: { name: string; aliases?: string[] }[]): BrandPerception[] {
+  // Marka adı ve alt markaları (Pro Plan, Felix…) ifade sayılmaz; alt marka geçen cümle de markanın cümlesidir.
+  const nameTokens = new Set(brands.flatMap((b) => [b.name, ...(b.aliases ?? [])].flatMap((n) => fold(n).split(/\s+/))));
   const per = brands.map((b) => {
-    const nm = fold(b.name);
+    const names = [b.name, ...(b.aliases ?? [])].map(fold);
     const docs: { grams: string[]; sent: string[] }[] = [];
     for (const r of runs) {
-      const ss = sentences(r.responseText).filter((s) => fold(s).includes(nm));
+      const ss = sentences(r.responseText).filter((s) => names.some((nm) => fold(s).includes(nm)));
       if (!ss.length) continue;
       docs.push({ grams: [...new Set(ss.flatMap((s) => grams(s, nameTokens)))], sent: ss });
     }

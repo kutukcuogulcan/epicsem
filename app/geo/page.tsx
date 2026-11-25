@@ -117,6 +117,8 @@ function fmtRate(n: number): string {
 interface BrandRow {
   name: string;
   domain: string;
+  /** Alt markalar (projeden): GEO testine ve ekrandaki hesaplara gider. */
+  aliases?: string[];
 }
 
 interface PromptInput {
@@ -209,7 +211,7 @@ export default function GeoPage() {
     loadedFor.current = key;
     if (project) {
       setClientId(project.id);
-      setBrand({ name: project.name, domain: project.domain });
+      setBrand({ name: project.name, domain: project.domain, aliases: project.aliases ?? [] });
       setCompetitors(project.competitors.length ? project.competitors : [{ name: "", domain: "" }]);
     }
     if (switched) {
@@ -444,7 +446,7 @@ export default function GeoPage() {
   // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
   // of making you read them out of the comparison table below.
   const ownSummary = summaries?.find((s) => s.domain === brand.domain) ?? summaries?.[0] ?? null;
-  const ownRef = useMemo(() => ({ name: ownSummary?.brand ?? brand.name, domain: ownSummary?.domain ?? brand.domain }), [ownSummary, brand]);
+  const ownRef = useMemo(() => ({ name: ownSummary?.brand ?? brand.name, domain: ownSummary?.domain ?? brand.domain, aliases: brand.aliases }), [ownSummary, brand]);
   const competitorRefs = useMemo(
     () => (summaries ?? []).filter((s) => s.domain !== ownRef.domain).map((s) => ({ name: s.brand, domain: s.domain })),
     [summaries, ownRef]

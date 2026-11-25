@@ -2,7 +2,7 @@
 // "yüksek protein", "eksiksiz", "sorunsuz" olumsuz değil; "fiyatı yüksek", "yavaş destek" olumsuz.
 // Çalıştır: node --experimental-strip-types scripts/check-brand-perception.mjs
 import assert from "node:assert/strict";
-import { isNegativeUse } from "../lib/brand-perception.ts";
+import { buildPerception, isNegativeUse } from "../lib/brand-perception.ts";
 
 const s1 = ["Pro Plan, sindirim sorunu olan kediler için özel formül sunar.", "Pro Plan sindirim sorunu yaşayan köpeklere iyi gelir."];
 assert.equal(isNegativeUse("sindirim sorunu", s1), false, "çözdüğü sorun olumsuz değil");
@@ -23,4 +23,9 @@ assert.equal(isNegativeUse("sorunları aza", hills), false);
 assert.equal(isNegativeUse("şişkinlik sorunları", ["Hill's şişkinlik sorunları için formüle edilmiştir."]), false);
 assert.equal(isNegativeUse("pahalı seçeneklerden", ["Royal Canin ırka özel; fakat bu grupta en pahalı seçeneklerden."]), true);
 assert.equal(isNegativeUse("tokluk zayıf", ["Hill's Science Plan Kısırlaştırılmış: Lif düşük, tokluk için en zayıf seçenek."]), true, "gerçek eleştiri olumsuz kalır");
+// Alt markalar: "Pro Plan" geçen cümle Purina'nın cümlesidir; "pro plan" ifade olarak çıkmaz.
+const run = (t) => ({ engine: "openai", model: "m", promptText: "q", topic: "", branded: false, mentioned: true, position: 1, sentiment: 70, responseText: t, citations: [] });
+const per = buildPerception([run("Pro Plan böbrek dostu formül sunar."), run("Pro Plan böbrek dostu ve veteriner onaylı.")], [{ name: "Purina", aliases: ["Pro Plan"] }])[0];
+assert.equal(per.mentions, 2);
+assert.ok(per.terms.some((x) => x.term === "böbrek dostu") && !per.terms.some((x) => /pro|plan/.test(x.term)), per.terms.map((x) => x.term).join(", "));
 console.log("check-brand-perception: ok");

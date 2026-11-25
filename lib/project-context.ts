@@ -12,6 +12,7 @@ export interface ActiveProject {
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
+  aliases: string[];
   settings: ProjectSettings;
 }
 
@@ -21,7 +22,7 @@ export async function getActiveProject(userId: number, domain?: string | null): 
   if (domain) {
     // Belirli bir site için (ör. Autoblog cron'u): o siteye ait projeyi bul.
     const m = (await listClients(userId)).find((c) => norm(c.domain) === norm(domain));
-    if (m) return { id: m.id, name: m.name, domain: norm(m.domain), competitors: m.competitors, settings: await getClientSettings(userId, m.id) };
+    if (m) return { id: m.id, name: m.name, domain: norm(m.domain), competitors: m.competitors, aliases: m.aliases ?? [], settings: await getClientSettings(userId, m.id) };
     return null;
   }
   let id = NaN;
@@ -32,7 +33,7 @@ export async function getActiveProject(userId: number, domain?: string | null): 
   }
   const c = (id ? await getClient(userId, id) : null) ?? (await listClients(userId))[0] ?? null;
   if (!c) return null;
-  return { id: c.id, name: c.name, domain: norm(c.domain), competitors: c.competitors, settings: await getClientSettings(userId, c.id) };
+  return { id: c.id, name: c.name, domain: norm(c.domain), competitors: c.competitors, aliases: c.aliases ?? [], settings: await getClientSettings(userId, c.id) };
 }
 
 const TONE: Record<string, string> = {

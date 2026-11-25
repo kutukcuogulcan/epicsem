@@ -63,6 +63,7 @@ export default function ProjectSettingsPage() {
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [comps, setComps] = useState<Comp[]>([]);
+  const [aliases, setAliases] = useState("");
   const [s, setS] = useState<Settings>({});
   const [initial, setInitial] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -72,7 +73,8 @@ export default function ProjectSettingsPage() {
   // Ton/hitap daha önce kaydedilmediyse ve bu oturumda elle seçilmediyse "Siteden doldur" önerisi uygulanır.
   const [voiceSet, setVoiceSet] = useState(false);
 
-  const snapshot = (n: string, d: string, c: Comp[], st: Settings) => JSON.stringify({ n, d, c, st });
+  const snapshot = (n: string, d: string, c: Comp[], st: Settings, a = "") => JSON.stringify({ n, d, c, st, a });
+  const aliasList = (t: string) => [...new Set(t.split(/[,\n]/).map((x) => x.trim()).filter((x) => x.length >= 2))].slice(0, 12);
 
   const load = useCallback(async () => {
     setErr(null);
@@ -88,8 +90,9 @@ export default function ProjectSettingsPage() {
         setName(p.name);
         setDomain(p.domain);
         setComps(p.competitors ?? []);
+        setAliases((p.aliases ?? []).join(", "));
         setS(st);
-        setInitial(snapshot(p.name, p.domain, p.competitors ?? [], st));
+        setInitial(snapshot(p.name, p.domain, p.competitors ?? [], st, (p.aliases ?? []).join(", ")));
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Ayarlar alınamadı");
@@ -102,7 +105,7 @@ export default function ProjectSettingsPage() {
     if (ready) load();
   }, [ready, project?.id, load]);
 
-  const dirty = loaded && initial !== snapshot(name, domain, comps, s);
+  const dirty = loaded && initial !== snapshot(name, domain, comps, s, aliases);
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => setS((x) => ({ ...x, [k]: v }));
 
   async function save() {
@@ -112,11 +115,11 @@ export default function ProjectSettingsPage() {
       const r = await fetch("/api/project/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), domain: domain.trim(), competitors: comps.filter((c) => c.name.trim() && c.domain.trim()), settings: s }),
+        body: JSON.stringify({ name: name.trim(), domain: domain.trim(), competitors: comps.filter((c) => c.name.trim() && c.domain.trim()), aliases: aliasList(aliases), settings: s }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Kaydedilemedi");
-      setInitial(snapshot(name, domain, comps, s));
+      setInitial(snapshot(name, domain, comps, s, aliases));
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       refresh();
@@ -310,6 +313,17 @@ export default function ProjectSettingsPage() {
                 </Field>
               </div>
             </div>
+          </Card>
+
+          <Card>
+            <CardHeader title="Alt markalar ve ürün adları" subtitle="AI cevabında bunlardan biri geçerse markan anılmış sayılır (ör. Purina için Pro Plan, Felix, Gourmet). Virgülle ayır." />
+            <textarea
+              value={aliases}
+              onChange={(e) => setAliases(e.target.value)}
+              rows={2}
+              placeholder="Pro Plan, Felix, Gourmet"
+              className="mt-3 w-full rounded-[10px] border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-[#BDB4FF]"
+            />
           </Card>
 
           <Card>

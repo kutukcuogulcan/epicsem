@@ -12,6 +12,7 @@ import type { GeoRunResult } from "@/types";
 export interface BrandRef {
   name: string;
   domain: string;
+  aliases?: string[];
 }
 export type ActionType = "write" | "listicle" | "community" | "counter" | "own-page" | "entity" | "sentiment";
 export interface GeoAction {

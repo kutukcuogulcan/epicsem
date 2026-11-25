@@ -317,6 +317,7 @@ async function initSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_clients_user ON clients(user_id);
+    ALTER TABLE clients ADD COLUMN IF NOT EXISTS aliases_json TEXT NOT NULL DEFAULT '[]';
   `);
 
   await p.query(
@@ -1300,6 +1301,8 @@ export interface Client {
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
+  /** Markanın alt markaları / ürün adları (Purina → Pro Plan, Felix…): AI cevabında geçerse marka anılmış sayılır. */
+  aliases: string[];
   notes: string | null;
   createdAt: string;
 }
@@ -1311,6 +1314,7 @@ function rowToClient(row: any): Client {
     name: row.name,
     domain: row.domain,
     competitors: JSON.parse(row.competitors_json),
+    aliases: row.aliases_json ? JSON.parse(row.aliases_json) : [],
     notes: row.notes,
     createdAt: toIso(row.created_at),
   };
@@ -2883,13 +2887,13 @@ export async function listBrandMonitors(userId: number): Promise<BrandMonitorRow
 }
 
 /** Proje (müşteri) bilgilerini güncelle — sahiplik kontrollü. */
-export async function updateClient(userId: number, id: number, params: { name?: string; domain?: string; competitors?: { name: string; domain: string }[] }): Promise<Client | null> {
+export async function updateClient(userId: number, id: number, params: { name?: string; domain?: string; competitors?: { name: string; domain: string }[]; aliases?: string[] }): Promise<Client | null> {
   await ensureSchema();
   const cur = await getClient(userId, id);
   if (!cur) return null;
   const row = await one<any>(
-    `UPDATE clients SET name = $1, domain = $2, competitors_json = $3 WHERE id = $4 AND user_id = $5 RETURNING *`,
-    [params.name ?? cur.name, params.domain ?? cur.domain, JSON.stringify(params.competitors ?? cur.competitors), id, userId]
+    `UPDATE clients SET name = $1, domain = $2, competitors_json = $3, aliases_json = $4 WHERE id = $5 AND user_id = $6 RETURNING *`,
+    [params.name ?? cur.name, params.domain ?? cur.domain, JSON.stringify(params.competitors ?? cur.competitors), JSON.stringify(params.aliases ?? cur.aliases), id, userId]
   );
   return row ? rowToClient(row) : null;
 }

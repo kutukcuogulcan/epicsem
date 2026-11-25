@@ -22,7 +22,11 @@ async function rerun(userId: number, domain: string) {
     prompts.push({ text: r.promptText, topic: r.topic || "Genel" });
   }
   const engines = [...new Set(last.runs.map((r) => r.engine))] as EngineId[];
-  const res = await executeGeoRun(userId, { brand: last.brand, competitors: last.competitors, prompts: prompts.slice(0, 20), engines });
+  // Projenin güncel rakipleri ve alt markaları (son testten sonra eklenmiş olabilir) kullanılır.
+  const proj = await getActiveProject(userId, domain).catch(() => null);
+  const brand = { ...last.brand, aliases: proj?.aliases ?? [] };
+  const competitors = proj?.competitors.length ? proj.competitors : last.competitors;
+  const res = await executeGeoRun(userId, { brand, competitors, prompts: prompts.slice(0, 20), engines });
   return { domain, prompts: prompts.length, engines: engines.length, demoMode: res.demoMode };
 }
 

@@ -19,6 +19,8 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { quotaExceededMessage, refundQuota, reserveQuota } from "@/lib/usage-guard";
 
 const brandSchema = z.object({ name: z.string().min(1), domain: z.string().min(1) });
+// Kendi marka: alt markalar (Pro Plan, Felix…) da anılma sayılır (lib/text-match brand.aliases).
+const ownBrandSchema = brandSchema.extend({ aliases: z.array(z.string().min(2).max(60)).max(12).optional() });
 
 const promptSchema = z.object({
   text: z.string().min(3),
@@ -26,7 +28,7 @@ const promptSchema = z.object({
 });
 
 const bodySchema = z.object({
-  brand: brandSchema,
+  brand: ownBrandSchema,
   competitors: z.array(brandSchema).max(6).default([]),
   // Accepts either a plain string (legacy/simple callers, defaults to "Genel") or a
   // {text, topic} object — the /geo page parses "Konu: prompt metni" lines into the latter.

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { autofillCompetitors } from "@/lib/competitor-autofill";
+import { isDemoMode } from "@/lib/geo-providers";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
@@ -22,8 +24,9 @@ export interface Project {
   name: string;
   domain: string;
   competitors: { name: string; domain: string }[];
+  aliases: string[];
 }
-const toProject = (c: Client): Project => ({ id: c.id, name: c.name, domain: norm(c.domain), competitors: c.competitors });
+const toProject = (c: Client): Project => ({ id: c.id, name: c.name, domain: norm(c.domain), competitors: c.competitors, aliases: c.aliases ?? [] });
 
 export async function GET() {
   const user = await requireUser();
@@ -84,6 +87,8 @@ export async function POST(req: NextRequest) {
     }
     const c = await createClient(user.id, { name: p.name, domain: norm(p.domain), competitors: p.competitors.map((x) => ({ name: x.name, domain: norm(x.domain) })) });
     (await cookies()).set(COOKIE, String(c.id), { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+    // Rakipsiz açılan projeye rakipleri arka planda yaz (sunucu sürekli çalışıyor; cevabı bekletmez).
+    if (!c.competitors.length && !isDemoMode()) void autofillCompetitors(user.id, c.id, norm(p.domain));
     return NextResponse.json({ active: toProject(c) });
   } catch (e) {
     console.error("[api/project] POST failed:", e);
@@ -91,7 +96,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-const patchSchema = createSchema.partial().extend({ id: z.number() });
+const patchSchema = createSchema.partial().extend({ id: z.number(), aliases: z.array(z.string().trim().min(2).max(60)).max(12).optional() });
 
 export async function PATCH(req: NextRequest) {
   const user = await requireUser();
@@ -106,6 +111,7 @@ export async function PATCH(req: NextRequest) {
     name: p.name,
     domain: p.domain ? norm(p.domain) : undefined,
     competitors: p.competitors?.map((x) => ({ name: x.name, domain: norm(x.domain) })),
+    aliases: p.aliases ? [...new Set(p.aliases.filter((a) => a.toLocaleLowerCase("tr") !== (p.name ?? "").toLocaleLowerCase("tr")))] : undefined,
   });
   if (!c) return NextResponse.json({ error: "Proje bulunamadı." }, { status: 404 });
   return NextResponse.json({ active: toProject(c) });
