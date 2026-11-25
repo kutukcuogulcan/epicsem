@@ -127,7 +127,25 @@ function highlight(text: string, names: string[], own: string) {
   });
 }
 
-export default function PromptResults({ prompts, brandName, runAt, emptyText = "Bu filtrede prompt yok." }: { prompts: PromptGroup[]; brandName: string; runAt?: string | null; emptyText?: string }) {
+type Hist = { n: number; hits: number; tests: number };
+const pKey = (t: string) => t.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr"); // lib/db promptKey ile aynı
+
+export default function PromptResults({ prompts, brandName, runAt, domain, emptyText = "Bu filtrede prompt yok." }: { prompts: PromptGroup[]; brandName: string; runAt?: string | null; domain?: string; emptyText?: string }) {
+  // Görünürlük: son 30 gündeki bütün testlerin toplamı (tek testte 2 motor yalnız 0/50/100 verir).
+  const [hist, setHist] = useState<Record<string, Hist>>({});
+  useEffect(() => {
+    if (!domain) return;
+    fetch(`/api/geo/prompt-history?domain=${encodeURIComponent(domain)}&days=30`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setHist(d?.history ?? {}))
+      .catch(() => setHist({}));
+  }, [domain, runAt]);
+  const vis = (p: PromptGroup) => {
+    const h = engine === "all" ? hist[pKey(p.text)] : undefined; // motor filtresinde yalnız bu test
+    const n = Math.max(h?.n ?? 0, p.responses.length);
+    const hits = h && h.n >= p.responses.length ? h.hits : p.responses.filter((r) => r.mentioned).length;
+    return { rate: n ? hits / n : 0, hits, n, tests: h?.tests ?? 1 };
+  };
   const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "branded" | "discovery">("all");
   const [engine, setEngine] = useState("all");
@@ -192,7 +210,17 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
                 </td>
                 <td className="hidden py-3 pr-4 text-xs text-sub md:table-cell">{p.topic}</td>
                 <td className="py-3 pr-4 text-center">
-                  <ScoreRing value={p.visibility * 100} />
+                  {(() => {
+                    const v = vis(p);
+                    return (
+                      <div className="inline-flex flex-col items-center" title={`Son 30 günde ${v.tests} testte ${v.n} cevabın ${v.hits} tanesinde anıldın`}>
+                        <ScoreRing value={v.rate * 100} />
+                        <span className={`mt-0.5 whitespace-nowrap text-[11px] ${v.n < 5 ? "text-warn-ink" : "text-sub"}`}>
+                          {v.hits}/{v.n} cevap{v.n < 5 ? " · az veri" : ""}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="py-3 pr-4">
                   <SentimentBar value={p.sentiment} />
@@ -233,7 +261,7 @@ export default function PromptResults({ prompts, brandName, runAt, emptyText = "
           <div className="space-y-5">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-border px-3 py-1 text-xs text-sub">
-                Görünürlük <b className="font-medium text-ink">{pct(open.visibility)}</b>
+                Görünürlük <b className="font-medium text-ink">{pct(vis(open).rate)}</b> · {vis(open).hits}/{vis(open).n} cevap, {vis(open).tests} test (30 gün)
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-xs text-sub">
                 Duygu <b className="font-medium text-ink">{sentimentLabel(open.sentiment)}</b>

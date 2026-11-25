@@ -1111,6 +1111,7 @@ export default function GeoPage() {
           prompts={groupRuns(runs, [brand.name, ...competitors.map((c) => c.name), ...(summaries ?? []).map((x) => x.brand)])}
           brandName={brand.name}
           runAt={restoredAt}
+          domain={brand.domain}
         />
       )}
 

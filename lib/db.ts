@@ -903,6 +903,44 @@ export async function listGeoRunsForOverview(userId: number, brandDomain: string
   }));
 }
 
+export interface PromptHistory {
+  n: number;
+  hits: number;
+  tests: number;
+}
+/** Prompt başına son N günün bütün GEO testleri toplamı (tek testte 2 motor = 0/50/100 sorunu). Demo koşuları gerçek koşu varsa sayılmaz. */
+export async function listPromptHistory(userId: number, brandDomain: string, days = 30): Promise<Record<string, PromptHistory>> {
+  await ensureSchema();
+  const rows = await many<any>(
+    `SELECT demo_mode, runs_json FROM geo_runs
+      WHERE user_id = $1 AND brand_domain = $2 AND runs_json IS NOT NULL AND created_at >= now() - ($3 || ' days')::interval
+      ORDER BY id DESC LIMIT 60`,
+    [userId, brandDomain, String(days)]
+  );
+  const real = rows.some((r) => !r.demo_mode);
+  const out: Record<string, PromptHistory> = {};
+  for (const r of rows) {
+    if (real && r.demo_mode) continue;
+    let runs: { promptText?: string; mentioned?: boolean }[] = [];
+    try {
+      runs = JSON.parse(r.runs_json);
+    } catch {
+      continue;
+    }
+    const seen = new Set<string>();
+    for (const x of runs) {
+      const k = promptKey(x.promptText ?? "");
+      if (!k) continue;
+      const h = (out[k] ??= { n: 0, hits: 0, tests: 0 });
+      h.n++;
+      if (x.mentioned) h.hits++;
+      if (!seen.has(k)) (seen.add(k), h.tests++);
+    }
+  }
+  return out;
+}
+export const promptKey = (t: string) => t.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr");
+
 /** SEO Asistanı için: bir alan adının son iki GEO koşusu (özet + konu kırılımı + kaynaklar). */
 export async function getLatestGeoRuns(userId: number, brandDomain: string, limit = 2): Promise<{ id: number; createdAt: string; brandName: string; summaries: GeoVisibilitySummary[]; topics: { topic: string; visibility: number; mentionedCount: number; totalCount: number }[]; sources: SourceDomainStat[] }[]> {
   await ensureSchema();

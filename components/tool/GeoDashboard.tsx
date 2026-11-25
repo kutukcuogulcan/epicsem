@@ -739,7 +739,7 @@ export default function GeoDashboard({
           <p className="text-xs text-sub">İnsanların AI&apos;a sorduğu sorular · satıra tıkla → AI&apos;ın gerçek cevabı</p>
         </div>
       </div>
-      <PromptResults prompts={groupRuns(fr, tracked.map((b) => b.name))} brandName={brand.name} runAt={runAt} />
+      <PromptResults prompts={groupRuns(fr, tracked.map((b) => b.name))} brandName={brand.name} runAt={runAt} domain={engine === "all" ? brand.domain : undefined} />
     </div>
   );
 }
