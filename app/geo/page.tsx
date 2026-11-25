@@ -27,6 +27,8 @@ import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
 import { BattlecardsTab, OpportunitiesTab } from "@/components/tool/GeoInsights";
 import GeoActionsTab from "@/components/tool/GeoActions";
+import GeoReadinessTab from "@/components/tool/GeoReadiness";
+import GeoPerceptionTab from "@/components/tool/GeoPerception";
 import ImpactTab from "@/components/tool/ImpactTab";
 import FactsTab from "@/components/tool/FactsTab";
 import AnalystTab from "@/components/tool/AnalystTab";
@@ -132,7 +134,7 @@ function parsePromptLine(line: string): PromptInput {
 }
 
 
-const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity"] as const;
+const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity", "perception", "readiness"] as const;
 type ResultsTab = (typeof RESULTS_TABS)[number];
 
 export default function GeoPage() {
@@ -684,10 +686,11 @@ export default function GeoPage() {
         // 12 sekme 5 gruba indirildi (impeccable critique): grup sekmesi + gerekirse alt seçim.
         const GROUPS = [
           { label: "Özet", subs: [["overview", "Özet"]] },
-          { label: "Aksiyonlar", subs: [["analyst", "Analist"], ["actions", "Aksiyon planı"], ["opportunities", "Fırsatlar"], ["facts", "Yanlış bilgi"], ["impact", "Etki"]] },
+          { label: "Aksiyonlar", subs: [["analyst", "Analist"], ["actions", "Aksiyon planı"], ["readiness", "AI ajan hazırlığı"], ["opportunities", "Fırsatlar"], ["facts", "Yanlış bilgi"], ["impact", "Etki"]] },
           { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["library", "Prompt kütüphanesi"]] },
           { label: "Rakipler ve kaynaklar", count: competitorRefs.length || null, subs: [["rivals", "Rakipler"], ["sources", "Kaynaklar"], ["urls", "URL'ler"]] },
-          { label: "Diğer", subs: [["visibility", "Görünürlük"], ["sentiment", "Duygu"], ["entity", "Bilgi grafı"]] },
+          { label: "Marka algısı", subs: [["perception", "Algı"], ["sentiment", "Duygu"]] },
+          { label: "Diğer", subs: [["visibility", "Görünürlük"], ["entity", "Bilgi grafı"]] },
         ] as const;
         const g = Math.max(0, GROUPS.findIndex((x) => x.subs.some(([k]) => k === resultsTab)));
         return (
@@ -726,6 +729,8 @@ export default function GeoPage() {
         ) : (
           <GeoOverview refreshKey={overviewKey} onNewTest={() => setTestOpen(true)} />
         ))}
+      {resultsTab === "readiness" && <GeoReadinessTab />}
+      {resultsTab === "perception" && runs && <GeoPerceptionTab runs={runs} own={ownRef} competitors={competitorRefs} />}
       {resultsTab === "library" && <SavedPromptsPanel brand={brand} competitors={competitors.filter((c) => c.name && c.domain)} engines={engines} />}
       {resultsTab === "entity" &&
         (brand.name ? (
@@ -733,7 +738,7 @@ export default function GeoPage() {
         ) : (
           <EmptyBlock title="Önce bir marka seç" description="Sol alttan proje seç ya da yeni test başlat." />
         ))}
-      {!summaries && !loading && !["overview", "library", "entity", "impact"].includes(resultsTab) && (
+      {!summaries && !loading && !["overview", "library", "entity", "impact", "readiness"].includes(resultsTab) && (
         <Card>
           <EmptyBlock
             title="Bu proje için test sonucu yok"
@@ -747,7 +752,7 @@ export default function GeoPage() {
         </Card>
       )}
 
-      {restoredAt && summaries && !["overview", "library", "entity", "impact"].includes(resultsTab) && (
+      {restoredAt && summaries && !["overview", "library", "entity", "impact", "readiness"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/60">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
