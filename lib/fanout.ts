@@ -45,7 +45,7 @@ export function aggregateFanout(runs: GeoRunResult[]): FanoutQuery[] {
     .sort((a, b) => b.count - a.count || a.query.localeCompare(b.query));
 }
 
-/** Her arama için sitedeki en iyi örtüşen adres (slug kelimeleri). score = arama kelimelerinin yüzde kaçı adreste geçiyor. */
+/** Her arama için sitedeki en iyi örtüşen adres (slug kelimeleri). eşleşme = arama kök kelimelerinden en az 3ü (kısa aramada hepsi) adreste geçiyor. */
 export function matchUrls(queries: string[], urls: string[], brandTokens: string[]): ({ url: string; score: number } | null)[] {
   const brand = new Set(brandTokens.map(fold));
   // shortcut: ilk 50.000 adres ve yalnızca URL yolu (sayfa başlığı değil); büyük sitelerde başlık indeksine geç
@@ -65,9 +65,10 @@ export function matchUrls(queries: string[], urls: string[], brandTokens: string
       if (!d.stems.size) continue;
       const hit = ts.filter((s) => d.stems.has(s)).length;
       if (!hit) continue;
-      const score = hit / ts.length;
+      // uzun aramalarda 3 kök kelime örtüşmesi yeter (her ayrıntı adreste olmaz)
+      const score = Math.min(1, hit / Math.min(ts.length, 3));
       if (!best || score > best.score || (score === best.score && d.u.length < best.url.length)) best = { url: d.u, score };
     }
-    return best && best.score >= 0.6 ? { url: best.url, score: Math.round(best.score * 100) } : null;
+    return best && best.score >= 0.99 ? { url: best.url, score: Math.round(best.score * 100) } : null;
   });
 }

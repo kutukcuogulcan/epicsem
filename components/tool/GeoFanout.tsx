@@ -26,7 +26,8 @@ export default function GeoFanoutTab({ runs }: { runs: GeoRunResult[] }) {
   const rows = base.map((q, i) => ({ ...q, match: site?.matches[i] ?? null }));
   const known = !!site && site.urlCount > 0;
   const gaps = known ? rows.filter((r) => !r.match) : [];
-  const topGaps = [...gaps].sort((a, b) => b.count - a.count || a.ownMentionRate - b.ownMentionRate).slice(0, 3);
+  // Yazı önerisi: sık aranan, kısa (≤7 kelime) ve markanın kaybettiği aramalar önce
+  const topGaps = gaps.filter((g) => g.query.split(/\s+/).length <= 7).sort((a, b) => b.count - a.count || a.ownMentionRate - b.ownMentionRate || a.query.length - b.query.length).slice(0, 3);
   const pct = (n: number) => `%${Math.round(n * 100)}`;
 
   return (
