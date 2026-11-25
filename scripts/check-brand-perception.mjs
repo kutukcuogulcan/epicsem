@@ -12,4 +12,8 @@ assert.equal(isNegativeUse("sorunsuz", ["Paraşüt sorunsuz çalışır."]), fal
 assert.equal(isNegativeUse("fiyatı yüksek", ["Pro Plan'ın fiyatı yüksek bulunabilir."]), true);
 assert.equal(isNegativeUse("yavaş destek", ["X'in yavaş destek ekibi kullanıcıları zorluyor."]), true);
 assert.equal(isNegativeUse("sorun yaşanıyor", ["X ile entegrasyonda sorun yaşanıyor.", "X'te senkronizasyon sorunları sık görülür."]), true, "markaya yönelik sorun olumsuz");
+// Gerçek Purina cevaplarındaki koşul kalıbı (sorun varsa / oluyorsa: önerilen ürün).
+assert.equal(isNegativeUse("sindirim sorunu", ["- Hassas mide / yumuşak dışkı / sindirim sorunu varsa: Royal Canin Digestive Care veya Purina Sensitive."]), false);
+assert.equal(isNegativeUse("sorunu varsa", ["- Sindirim sorunu varsa: Purina Sensitive."]), false);
+assert.equal(isNegativeUse("birlikte sorun", ["- Tüy + deri birlikte sorun oluyorsa: Purina Sensitive Skin & Stomach."]), false);
 console.log("check-brand-perception: ok");

@@ -28,22 +28,26 @@ const NEG = /(?<![\p{L}])(pahalı\p{L}*|şikayet\p{L}*|şikâyet\p{L}*|yavaş\p{
 const PRICE_HIGH = /(fiyat\p{L}*|ücret\p{L}*|maliyet\p{L}*)\s+(\p{L}+\s+)?yüksek|yüksek\s+(fiyat|ücret|maliyet)/iu;
 // "sindirim sorunu OLAN kediler İÇİN", "tüy dökülmesi sorununa KARŞI" → ürünün çözdüğü sorun; markaya yönelik eleştiri değil.
 const SOLVES = /^\p{L}*\s*(?:\p{L}+\s+){0,2}(olan|olanlar|yaşayan|yaşayanlar|çeken|için|karşı|çözüm|giderir|gidermek|azaltır|azaltmak|önler|önlemek|destekler|desteklemek|yardımcı|iyi gelir|formül|uygun|hassas)/iu;
+// Koşul kalıbı: "sindirim sorunu varsa: X", "sorun oluyorsa: Y" → hangi ürünün o sorun için önerildiğini anlatır.
+const CONDITIONAL = /(?<![\p{L}])(varsa|oluyorsa|olursa|yaşıyorsa|yaşanıyorsa|yaşanırsa|görülüyorsa|görülürse|çekiyorsa)(?![\p{L}])/iu;
 
 /** İfade, geçtiği marka cümlelerinin çoğunda markayı eleştiriyor mu (ürünün çözdüğü bir sorunu anlatmıyor mu). */
 export function isNegativeUse(term: string, sentences: string[]): boolean {
   if (PRICE_HIGH.test(term)) return true;
   if (!NEG.test(term)) return false;
-  const uses = sentences.filter((s) => fold(s).includes(term));
+  const uses = sentences.filter((s) => plain(s).includes(term));
   if (!uses.length) return true;
   const solving = uses.filter((s) => {
-    const low = fold(s);
+    const low = plain(s);
     const after = low.slice(low.indexOf(term) + term.length);
-    return SOLVES.test(after.trimStart());
+    return SOLVES.test(after.trimStart()) || CONDITIONAL.test(`${term} ${after.trimStart().split(/\s+/).slice(0, 2).join(" ")}`);
   }).length;
   return solving * 2 < uses.length; // çoğunluk çözüm bağlamındaysa olumsuz sayılmaz
 }
 
 const fold = (s: string) => s.toLocaleLowerCase("tr");
+/** İfade aramaları için: kesme işaretli ekler atılır (Hill's → hill, Purina'nın → purina), grams() ile aynı biçim. */
+const plain = (s: string) => fold(s).replace(/['’]\p{L}+/gu, "");
 const sentences = (t: string) =>
   t
     .replace(/\[(.*?)\]\(.*?\)/g, "$1")
@@ -54,6 +58,7 @@ const sentences = (t: string) =>
 
 function grams(s: string, drop: Set<string>): string[] {
   const w = fold(s)
+    .replace(/['’]\p{L}+/gu, "") // Purina'nın → purina
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .split(/\s+/)
     .filter((x) => x.length > 2 && !STOP.has(x) && !drop.has(x) && !/^\d+$/.test(x));
@@ -99,13 +104,13 @@ export function buildPerception(runs: GeoRunResult[], brands: { name: string }[]
         term: t.term,
         score: Math.round(t.share * 100),
         negative: isNegativeUse(t.term, p.docs.flatMap((d) => d.sent)),
-        example: p.docs.flatMap((d) => d.sent).find((s) => fold(s).includes(t.term))?.slice(0, 220) ?? "",
+        example: p.docs.flatMap((d) => d.sent).find((s) => plain(s).includes(t.term))?.slice(0, 220) ?? "",
       }));
     // Olumsuz ifadeleri ayırt edici olmasalar da göster
     const negs = [...p.df.entries()]
       .filter(([term]) => term.includes(" ") && isNegativeUse(term, p.docs.flatMap((d) => d.sent)) && !terms.some((t) => t.term === term || t.term.includes(term)))
       .slice(0, 4)
-      .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => fold(s).includes(term))?.slice(0, 220) ?? "" }));
+      .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => plain(s).includes(term))?.slice(0, 220) ?? "" }));
     return { brand: p.brand, mentions: p.docs.length, terms: [...terms, ...negs] };
   });
 }
