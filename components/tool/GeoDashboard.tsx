@@ -16,6 +16,7 @@ import { findOpportunities } from "@/lib/geo-insights";
 import { ENGINE_META } from "@/components/tool/MonitorBits";
 import PromptResults, { groupRuns } from "@/components/tool/PromptResults";
 import GeoHeatmap from "@/components/tool/GeoHeatmap";
+import GeoHealthStrip from "@/components/tool/GeoHealthStrip";
 import { analyzeRun, isDemoRun, writeGapHref } from "@/lib/geo-loss";
 
 interface BrandRef {
@@ -105,7 +106,7 @@ export default function GeoDashboard({
   competitors: BrandRef[];
   summaries: GeoVisibilitySummary[] | null;
   runAt: string | null;
-  onTab: (tab: "sources" | "visibility" | "opportunities" | "prompts" | "actions") => void;
+  onTab: (tab: "sources" | "visibility" | "opportunities" | "prompts" | "actions" | "readiness" | "perception" | "fanout") => void;
 }) {
   const [engine, setEngine] = useState<string>("all");
   const [metric, setMetric] = useState<"visibility" | "shareOfVoice" | "avgPosition">("visibility");
@@ -726,6 +727,10 @@ export default function GeoDashboard({
           </div>
         </>
       )}
+
+      <div className="pt-5">
+        <GeoHealthStrip runs={fr} brand={brand} competitors={comps} onTab={onTab} />
+      </div>
 
       {/* Promptlar */}
       <div className="flex items-end justify-between pt-5">
