@@ -64,6 +64,7 @@ export default function ProjectSettingsPage() {
   const [domain, setDomain] = useState("");
   const [comps, setComps] = useState<Comp[]>([]);
   const [aliases, setAliases] = useState("");
+  const [finding, setFinding] = useState(false);
   const [s, setS] = useState<Settings>({});
   const [initial, setInitial] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -340,7 +341,35 @@ export default function ProjectSettingsPage() {
               }
             />
             <div className="mt-4 space-y-2">
-              {comps.length === 0 && <p className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-sm text-sub">Henüz rakip yok.</p>}
+              {comps.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-sm text-sub">
+                  Henüz rakip yok.{" "}
+                  {project && (
+                    <button
+                      type="button"
+                      disabled={finding}
+                      onClick={async () => {
+                        setFinding(true);
+                        setErr(null);
+                        try {
+                          const r = await fetch("/api/project/competitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: project.id }) });
+                          const d = await r.json();
+                          if (!r.ok) throw new Error(d.error ?? "Rakipler bulunamadı");
+                          await load();
+                          refresh();
+                        } catch (e) {
+                          setErr(e instanceof Error ? e.message : "Rakipler bulunamadı");
+                        } finally {
+                          setFinding(false);
+                        }
+                      }}
+                      className="font-medium text-accent hover:underline disabled:opacity-50"
+                    >
+                      {finding ? "Rakipler aranıyor… (~30 sn)" : "Otomatik bul (1 AI sorgusu)"}
+                    </button>
+                  )}
+                </div>
+              )}
               {comps.map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
