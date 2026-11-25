@@ -27,27 +27,44 @@ const STOP = new Set(
 const NEG = /(?<![\p{L}])(pahalı\p{L}*|şikayet\p{L}*|şikâyet\p{L}*|yavaş\p{L}*|(?:sorun|problem|eksik|hata|kesinti)(?![\p{L}]*s[ıiuü]z)\p{L}*|olumsuz\p{L}*|kötü\p{L}*|zayıf\p{L}*|karmaşık\p{L}*|gizli|güvensiz\p{L}*|riskli|expensive|slow|complaints?|poor|bad|issues?|lacks?|limited)(?![\p{L}])/iu;
 const PRICE_HIGH = /(fiyat\p{L}*|ücret\p{L}*|maliyet\p{L}*)\s+(\p{L}+\s+)?yüksek|yüksek\s+(fiyat|ücret|maliyet)/iu;
 // "sindirim sorunu OLAN kediler İÇİN", "tüy dökülmesi sorununa KARŞI" → ürünün çözdüğü sorun; markaya yönelik eleştiri değil.
-const SOLVES = /^\p{L}*\s*(?:\p{L}+\s+){0,2}(olan|olanlar|yaşayan|yaşayanlar|çeken|için|karşı|çözüm|giderir|gidermek|azaltır|azaltmak|önler|önlemek|destekler|desteklemek|yardımcı|iyi gelir|formül|uygun|hassas)/iu;
+// İfadeden sonraki birkaç kelimede çözüm anlatan kök: "…sorunu (FLUTD) geçmişi OLAN kediler", "…sorunlarını AZALTır", "…İÇİN formül".
+const SOLVES = /(?<![\p{L}])(olan|olanlar|olanlara|yaşayan|yaşayanlar|çeken|için|karşı|çözüm|gider|azalt|aza indir|indir|önle|destek|yardımcı|iyi gel|formül|hassas|koru)/iu;
 // Koşul kalıbı: "sindirim sorunu varsa: X", "sorun oluyorsa: Y" → hangi ürünün o sorun için önerildiğini anlatır.
 const CONDITIONAL = /(?<![\p{L}])(varsa|oluyorsa|olursa|yaşıyorsa|yaşanıyorsa|yaşanırsa|görülüyorsa|görülürse|çekiyorsa)(?![\p{L}])/iu;
+
+/** İfadenin cümledeki yeri. İfadeler dolgu kelimeleri atılarak kurulur ("sorunları en aza" → "sorunları aza"),
+ * o yüzden kelimeler arasında en fazla 2 kelime boşluğa izin verilir. */
+function locate(low: string, term: string): { end: number } | null {
+  const i = low.indexOf(term);
+  if (i >= 0) return { end: i + term.length };
+  const esc = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = new RegExp(term.split(" ").map(esc).join("(?:\\s+\\S+){0,2}?\\s+"), "u").exec(low);
+  return m ? { end: m.index + m[0].length } : null;
+}
 
 /** İfade, geçtiği marka cümlelerinin çoğunda markayı eleştiriyor mu (ürünün çözdüğü bir sorunu anlatmıyor mu). */
 export function isNegativeUse(term: string, sentences: string[]): boolean {
   if (PRICE_HIGH.test(term)) return true;
   if (!NEG.test(term)) return false;
-  const uses = sentences.filter((s) => plain(s).includes(term));
+  const uses = sentences.map(plain).filter((low) => locate(low, term));
   if (!uses.length) return true;
-  const solving = uses.filter((s) => {
-    const low = plain(s);
-    const after = low.slice(low.indexOf(term) + term.length);
-    return SOLVES.test(after.trimStart()) || CONDITIONAL.test(`${term} ${after.trimStart().split(/\s+/).slice(0, 2).join(" ")}`);
+  const solving = uses.filter((low) => {
+    const after = low.slice(locate(low, term)!.end);
+    // Son kelime yalnızca bölünmüşse (aza|ltır) pencereye girer; "yavaş destek" gibi ifadenin kendi kelimesi sayılmaz.
+    const tail = after.match(/^\p{L}*/u)?.[0] ?? "";
+    const window = `${tail ? `${term.split(" ").pop()}${tail}` : ""} ${after.slice(tail.length).trim().split(" ").slice(0, 4).join(" ")}`;
+    return SOLVES.test(window) || CONDITIONAL.test(`${term} ${window}`);
   }).length;
   return solving * 2 < uses.length; // çoğunluk çözüm bağlamındaysa olumsuz sayılmaz
 }
 
 const fold = (s: string) => s.toLocaleLowerCase("tr");
-/** İfade aramaları için: kesme işaretli ekler atılır (Hill's → hill, Purina'nın → purina), grams() ile aynı biçim. */
-const plain = (s: string) => fold(s).replace(/['’]\p{L}+/gu, "");
+/** İfade aramaları için grams() ile aynı biçim: kesme işaretli ekler (Hill's → hill) ve noktalama atılır. */
+const plain = (s: string) =>
+  fold(s)
+    .replace(/['’]\p{L}+/gu, "")
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ");
 const sentences = (t: string) =>
   t
     .replace(/\[(.*?)\]\(.*?\)/g, "$1")
@@ -104,13 +121,13 @@ export function buildPerception(runs: GeoRunResult[], brands: { name: string }[]
         term: t.term,
         score: Math.round(t.share * 100),
         negative: isNegativeUse(t.term, p.docs.flatMap((d) => d.sent)),
-        example: p.docs.flatMap((d) => d.sent).find((s) => plain(s).includes(t.term))?.slice(0, 220) ?? "",
+        example: p.docs.flatMap((d) => d.sent).find((s) => locate(plain(s), t.term))?.slice(0, 220) ?? "",
       }));
     // Olumsuz ifadeleri ayırt edici olmasalar da göster
     const negs = [...p.df.entries()]
       .filter(([term]) => term.includes(" ") && isNegativeUse(term, p.docs.flatMap((d) => d.sent)) && !terms.some((t) => t.term === term || t.term.includes(term)))
       .slice(0, 4)
-      .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => plain(s).includes(term))?.slice(0, 220) ?? "" }));
+      .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => locate(plain(s), term))?.slice(0, 220) ?? "" }));
     return { brand: p.brand, mentions: p.docs.length, terms: [...terms, ...negs] };
   });
 }
