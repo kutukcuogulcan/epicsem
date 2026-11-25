@@ -1,0 +1,15 @@
+// Marka algısı: ürünün çözdüğü sorun ("sindirim sorunu olan kediler için") olumsuz sayılmaz;
+// "yüksek protein", "eksiksiz", "sorunsuz" olumsuz değil; "fiyatı yüksek", "yavaş destek" olumsuz.
+// Çalıştır: node --experimental-strip-types scripts/check-brand-perception.mjs
+import assert from "node:assert/strict";
+import { isNegativeUse } from "../lib/brand-perception.ts";
+
+const s1 = ["Pro Plan, sindirim sorunu olan kediler için özel formül sunar.", "Pro Plan sindirim sorunu yaşayan köpeklere iyi gelir."];
+assert.equal(isNegativeUse("sindirim sorunu", s1), false, "çözdüğü sorun olumsuz değil");
+assert.equal(isNegativeUse("yüksek protein", ["Pro Plan yüksek protein içerir."]), false);
+assert.equal(isNegativeUse("eksiksiz beslenme", ["Pro Plan eksiksiz beslenme sağlar."]), false);
+assert.equal(isNegativeUse("sorunsuz", ["Paraşüt sorunsuz çalışır."]), false);
+assert.equal(isNegativeUse("fiyatı yüksek", ["Pro Plan'ın fiyatı yüksek bulunabilir."]), true);
+assert.equal(isNegativeUse("yavaş destek", ["X'in yavaş destek ekibi kullanıcıları zorluyor."]), true);
+assert.equal(isNegativeUse("sorun yaşanıyor", ["X ile entegrasyonda sorun yaşanıyor.", "X'te senkronizasyon sorunları sık görülür."]), true, "markaya yönelik sorun olumsuz");
+console.log("check-brand-perception: ok");

@@ -23,7 +23,25 @@ const STOP = new Set(
     /\s+/
   )
 );
-const NEG = /(?<![\p{L}])(pahalı\p{L}*|yüksek|şikayet\p{L}*|şikâyet\p{L}*|yavaş\p{L}*|sorun\p{L}*|problem\p{L}*|olumsuz\p{L}*|kötü\p{L}*|eksik\p{L}*|zayıf\p{L}*|karmaşık\p{L}*|gizli|kesinti\p{L}*|güvensiz\p{L}*|riskli|hata\p{L}*|expensive|slow|complaints?|poor|bad|issues?|lacks?|limited)(?![\p{L}])/iu;
+// Olumsuz sözlük. "-sız/-siz" ile olumluya dönenler (eksiksiz, sorunsuz, hatasız) eşleşmez; "yüksek" yalnızca fiyatla birlikte olumsuz.
+const NEG = /(?<![\p{L}])(pahalı\p{L}*|şikayet\p{L}*|şikâyet\p{L}*|yavaş\p{L}*|(?:sorun|problem|eksik|hata|kesinti)(?![\p{L}]*s[ıiuü]z)\p{L}*|olumsuz\p{L}*|kötü\p{L}*|zayıf\p{L}*|karmaşık\p{L}*|gizli|güvensiz\p{L}*|riskli|expensive|slow|complaints?|poor|bad|issues?|lacks?|limited)(?![\p{L}])/iu;
+const PRICE_HIGH = /(fiyat\p{L}*|ücret\p{L}*|maliyet\p{L}*)\s+(\p{L}+\s+)?yüksek|yüksek\s+(fiyat|ücret|maliyet)/iu;
+// "sindirim sorunu OLAN kediler İÇİN", "tüy dökülmesi sorununa KARŞI" → ürünün çözdüğü sorun; markaya yönelik eleştiri değil.
+const SOLVES = /^\p{L}*\s*(?:\p{L}+\s+){0,2}(olan|olanlar|yaşayan|yaşayanlar|çeken|için|karşı|çözüm|giderir|gidermek|azaltır|azaltmak|önler|önlemek|destekler|desteklemek|yardımcı|iyi gelir|formül|uygun|hassas)/iu;
+
+/** İfade, geçtiği marka cümlelerinin çoğunda markayı eleştiriyor mu (ürünün çözdüğü bir sorunu anlatmıyor mu). */
+export function isNegativeUse(term: string, sentences: string[]): boolean {
+  if (PRICE_HIGH.test(term)) return true;
+  if (!NEG.test(term)) return false;
+  const uses = sentences.filter((s) => fold(s).includes(term));
+  if (!uses.length) return true;
+  const solving = uses.filter((s) => {
+    const low = fold(s);
+    const after = low.slice(low.indexOf(term) + term.length);
+    return SOLVES.test(after.trimStart());
+  }).length;
+  return solving * 2 < uses.length; // çoğunluk çözüm bağlamındaysa olumsuz sayılmaz
+}
 
 const fold = (s: string) => s.toLocaleLowerCase("tr");
 const sentences = (t: string) =>
@@ -80,12 +98,12 @@ export function buildPerception(runs: GeoRunResult[], brands: { name: string }[]
       .map((t) => ({
         term: t.term,
         score: Math.round(t.share * 100),
-        negative: NEG.test(t.term),
+        negative: isNegativeUse(t.term, p.docs.flatMap((d) => d.sent)),
         example: p.docs.flatMap((d) => d.sent).find((s) => fold(s).includes(t.term))?.slice(0, 220) ?? "",
       }));
     // Olumsuz ifadeleri ayırt edici olmasalar da göster
     const negs = [...p.df.entries()]
-      .filter(([term]) => NEG.test(term) && term.includes(" ") && !terms.some((t) => t.term === term || t.term.includes(term)))
+      .filter(([term]) => term.includes(" ") && isNegativeUse(term, p.docs.flatMap((d) => d.sent)) && !terms.some((t) => t.term === term || t.term.includes(term)))
       .slice(0, 4)
       .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => fold(s).includes(term))?.slice(0, 220) ?? "" }));
     return { brand: p.brand, mentions: p.docs.length, terms: [...terms, ...negs] };
