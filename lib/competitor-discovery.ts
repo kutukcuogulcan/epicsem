@@ -44,6 +44,8 @@ export interface CompetitorDiscoveryResult {
   demoMode: boolean;
   /** Model kaç aday döndürdü / kaçı doğrulamadan geçti — debug ve kabul testi için. */
   stats: { proposed: number; verified: number; droppedUnreachable: string[]; droppedDuplicate: string[] };
+  /** Şirketin kendi alt markaları / ürün serileri (AI önerisi, DOĞRULANMAMIŞ — lib/alias-verify ile siteye karşı kontrol edilir). */
+  ownBrands?: string[];
 }
 
 export interface CompetitorDiscoveryInput {
@@ -75,9 +77,10 @@ function buildPrompt(input: CompetitorDiscoveryInput): string {
     `Task: First determine precisely what business this company is in from the summary above (be literal and specific — e.g. "digital marketing agency", not "software").`,
     `Then SEARCH THE WEB for this company's DIRECT competitors in the ${input.country} market: companies selling the same kind of product/service to the same kind of customer. Do NOT include companies from adjacent categories (e.g. an ERP/accounting software vendor is NOT a competitor of a marketing agency), marketplaces, directories, news sites, or the company itself.`,
     `Return up to ${MAX_CANDIDATES} competitors. For each: the company name, its OFFICIAL website domain (as you found it on the web — never guess), a one-sentence reason in ${lang} explaining why it competes directly, and a confidence between 0 and 1 that it is a true direct competitor.`,
+    `Also list up to 10 of THIS company's OWN sub-brands / product lines that customers may name instead of the company (e.g. Nestlé Purina → "Pro Plan", "Felix"). Only brands this company itself owns; never competitors; empty list if none.`,
     ``,
     `Respond with ONLY a JSON object, no markdown fences, no commentary:`,
-    `{"industry": "...", "competitors": [{"name": "...", "domain": "example.com", "reason": "...", "confidence": 0.0}]}`,
+    `{"industry": "...", "competitors": [{"name": "...", "domain": "example.com", "reason": "...", "confidence": 0.0}], "own_brands": ["..."]}`,
   ].join("\n");
 }
 
@@ -393,8 +396,13 @@ export async function discoverCompetitors(input: CompetitorDiscoveryInput): Prom
   const candidates = parseCandidates(raw.text);
   const { list, droppedUnreachable, droppedDuplicate } = await verifyCandidates(candidates, input.domain);
 
+  const ownBrands = (() => {
+    const v = extractJsonObject(raw.text).own_brands;
+    return Array.isArray(v) ? v.map((x: unknown) => String(x ?? "").trim()).filter(Boolean).slice(0, 15) : [];
+  })();
   return {
     competitors: list,
+    ownBrands,
     model: raw.model,
     webSearch,
     demoMode: false,
