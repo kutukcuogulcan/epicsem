@@ -30,6 +30,7 @@ import GeoActionsTab from "@/components/tool/GeoActions";
 import GeoReadinessTab from "@/components/tool/GeoReadiness";
 import GeoPerceptionTab from "@/components/tool/GeoPerception";
 import GeoFanoutTab from "@/components/tool/GeoFanout";
+import AiLogTab from "@/components/tool/AiLogTab";
 import ImpactTab from "@/components/tool/ImpactTab";
 import FactsTab from "@/components/tool/FactsTab";
 import AnalystTab from "@/components/tool/AnalystTab";
@@ -135,7 +136,7 @@ function parsePromptLine(line: string): PromptInput {
 }
 
 
-const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity", "perception", "readiness", "fanout"] as const;
+const RESULTS_TABS = ["overview", "analyst", "actions", "impact", "facts", "visibility", "sentiment", "prompts", "sources", "urls", "rivals", "opportunities", "library", "entity", "perception", "readiness", "fanout", "botlog"] as const;
 type ResultsTab = (typeof RESULTS_TABS)[number];
 
 export default function GeoPage() {
@@ -691,7 +692,7 @@ export default function GeoPage() {
           { label: "Promptlar", count: runs ? new Set(runs.map((r) => r.promptText)).size : null, subs: [["prompts", "Sonuçlar"], ["fanout", "AI'ın aramaları"], ["library", "Prompt kütüphanesi"]] },
           { label: "Rakipler ve kaynaklar", count: competitorRefs.length || null, subs: [["rivals", "Rakipler"], ["sources", "Kaynaklar"], ["urls", "URL'ler"]] },
           { label: "Marka algısı", subs: [["perception", "Algı"], ["sentiment", "Duygu"]] },
-          { label: "Diğer", subs: [["visibility", "Görünürlük"], ["entity", "Bilgi grafı"]] },
+          { label: "Diğer", subs: [["visibility", "Görünürlük"], ["entity", "Bilgi grafı"], ["botlog", "AI bot ziyaretleri"]] },
         ] as const;
         const g = Math.max(0, GROUPS.findIndex((x) => x.subs.some(([k]) => k === resultsTab)));
         return (
@@ -732,6 +733,7 @@ export default function GeoPage() {
         ))}
       {resultsTab === "readiness" && <GeoReadinessTab />}
       {resultsTab === "fanout" && runs && <GeoFanoutTab runs={runs} />}
+      {resultsTab === "botlog" && <AiLogTab />}
       {resultsTab === "perception" && runs && <GeoPerceptionTab runs={runs} own={ownRef} competitors={competitorRefs} />}
       {resultsTab === "library" && <SavedPromptsPanel brand={brand} competitors={competitors.filter((c) => c.name && c.domain)} engines={engines} />}
       {resultsTab === "entity" &&
@@ -740,7 +742,7 @@ export default function GeoPage() {
         ) : (
           <EmptyBlock title="Önce bir marka seç" description="Sol alttan proje seç ya da yeni test başlat." />
         ))}
-      {!summaries && !loading && !["overview", "library", "entity", "impact", "readiness"].includes(resultsTab) && (
+      {!summaries && !loading && !["overview", "library", "entity", "impact", "readiness", "botlog"].includes(resultsTab) && (
         <Card>
           <EmptyBlock
             title="Bu proje için test sonucu yok"
@@ -754,7 +756,7 @@ export default function GeoPage() {
         </Card>
       )}
 
-      {restoredAt && summaries && !["overview", "library", "entity", "impact", "readiness"].includes(resultsTab) && (
+      {restoredAt && summaries && !["overview", "library", "entity", "impact", "readiness", "botlog"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/60">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
