@@ -75,12 +75,12 @@ const tokens = (s: string) =>
     .split(/\s+/)
     .filter((w) => w.length >= 4);
 
-/** Başlığın kelimelerinin yarısından fazlası sayfada geçiyor mu. Türkçe ekler için ilk 5 harf aranır (böbrek → böbreği). */
+/** Başlığın kelimelerinin en az yarısı sayfada geçiyor mu ("Analitik Bileşenler" ↔ "Analitik Katkılar"). Türkçe ekler için ilk 5 harf aranır (böbrek → böbreği). */
 export function covered(heading: string, text: string): boolean {
   const t = tokens(heading);
   if (!t.length) return true;
   const low = trLower(text);
-  return t.filter((w) => low.includes(w.slice(0, 5))).length * 2 > t.length;
+  return t.filter((w) => low.includes(w.slice(0, 5))).length * 2 >= t.length;
 }
 
 export function missingHeadings(rival: PageOutline, own: PageOutline): string[] {
