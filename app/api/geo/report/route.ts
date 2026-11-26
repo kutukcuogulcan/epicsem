@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { getLatestGeoRunFull } from "@/lib/db";
+import { getGeoRunForCompare, getLatestGeoRunFull } from "@/lib/db";
+import { diffRuns } from "@/lib/geo-diff";
+import { toCells } from "@/lib/geo-change";
 import { getActiveProject } from "@/lib/project-context";
 import { buildGeoReport } from "@/lib/geo-report";
 
@@ -14,5 +16,8 @@ export async function GET() {
   // Proje ayarlarındaki güncel rakipler ve alt markalar; yoksa testteki rakipler.
   const own = { name: geo.brand.name, domain: geo.brand.domain, aliases: p?.aliases ?? [] };
   const rivals = p?.competitors.length ? p.competitors : geo.competitors;
-  return NextResponse.json({ report: buildGeoReport(geo.runs, own, rivals), brand: own.name, createdAt: geo.createdAt, demo: geo.demoMode });
+  // Önceki testle fark (aynı soru × motor çiftleri; tercihen ≥6 gün önceki test). Kodla, AI yok.
+  const prev = await getGeoRunForCompare(user.id, geo.brand.domain, geo.createdAt);
+  const diff = prev ? diffRuns(toCells(prev.runs, own, rivals), toCells(geo.runs, own, rivals)) : null;
+  return NextResponse.json({ report: buildGeoReport(geo.runs, own, rivals), brand: own.name, createdAt: geo.createdAt, demo: geo.demoMode, prevAt: prev?.createdAt ?? null, diff });
 }

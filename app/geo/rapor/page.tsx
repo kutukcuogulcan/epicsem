@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { GeoReport } from "@/lib/geo-report";
+import type { RunDiff } from "@/lib/geo-diff";
 import { EngineDot } from "@/components/tool/MonitorBits";
 import { BTN1, BTN2, Card, CardHeader, EmptyBlock, ErrorBlock, PageHeader, PageSkeleton } from "@/components/ui";
 import { writeGapHref } from "@/lib/geo-loss";
@@ -17,7 +18,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 /** "AI neden seni önermiyor?" — son GEO testinin bulguları tek sayfada; tarayıcıdan PDF olarak kaydedilebilir. */
 export default function GeoReportPage() {
-  const [d, setD] = useState<{ report: GeoReport | null; brand?: string; createdAt?: string; demo?: boolean } | null>(null);
+  const [d, setD] = useState<{ report: GeoReport | null; brand?: string; createdAt?: string; demo?: boolean; prevAt?: string | null; diff?: RunDiff | null } | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const load = () => {
@@ -62,6 +63,8 @@ export default function GeoReportPage() {
         </div>
         {r.confidence && r.confidence.level !== "yeterli" && <p className="mt-3 text-sm text-sub">{r.confidence.text}</p>}
       </Card>
+
+      {d.diff && d.prevAt && <Changes diff={d.diff} prevAt={d.prevAt} />}
 
       {r.actions.length > 0 && (
         <Card>
@@ -234,5 +237,60 @@ function Terms({ title, items, negative }: { title: string; items: GeoReport["pe
         <p className="mt-1.5 text-sm text-sub">{negative ? "En az 2 cevapta tekrar eden olumsuz ifade yok." : "Markana özgü tekrar eden ifade yok."}</p>
       )}
     </div>
+  );
+}
+
+const fmt = (iso: string) => new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+
+function Changes({ diff, prevAt }: { diff: RunDiff; prevAt: string }) {
+  const delta = Math.round((diff.visibilityAfter - diff.visibilityBefore) * 100);
+  const none = !diff.gained.length && !diff.lost.length;
+  return (
+    <Card>
+      <CardHeader
+        title={`${fmt(prevAt)} testine göre ne değişti?`}
+        subtitle={`İki testte de sorulan ${diff.compared} soru × motor karşılaştırıldı; yeni eklenen ya da çıkarılan sorular sayılmadı. AI cevapları testten teste oynar: tek cevaplık değişim eğilim değildir.`}
+      />
+      {!diff.compared ? (
+        <p className="mt-3 text-sm text-sub">İki testte ortak soru yok; karşılaştırılamadı.</p>
+      ) : (
+        <>
+          <p className="mt-3 text-sm text-ink">
+            Görünürlük {pct(diff.visibilityBefore)} → <b>{pct(diff.visibilityAfter)}</b>{" "}
+            <span className={delta > 0 ? "text-seo-ink" : delta < 0 ? "text-danger-ink" : "text-sub"}>({delta > 0 ? "+" : ""}{delta} puan)</span>
+            {none && " · hiçbir cevapta durum değişmedi."}
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {[
+              { title: `Kazanılan (${diff.gained.length})`, items: diff.gained.map((g) => ({ ...g, extra: "" })), cls: "text-seo-ink" },
+              { title: `Kaybedilen (${diff.lost.length})`, items: diff.lost.map((l) => ({ ...l, extra: l.rivals.length ? `şimdi: ${l.rivals.join(", ")}` : "" })), cls: "text-danger-ink" },
+            ].map((col) => (
+              <div key={col.title}>
+                <p className={`text-xs font-medium ${col.cls}`}>{col.title}</p>
+                <ul className="mt-1.5 space-y-1.5">
+                  {col.items.slice(0, 8).map((x, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="mt-0.5"><EngineDot engine={x.engine} size={16} /></span>
+                      <span>
+                        <span className="text-ink">{x.prompt}</span>
+                        <span className="block text-xs text-sub">{STATUS[x.from].label} → {STATUS[x.to].label}{x.extra ? ` · ${x.extra}` : ""}</span>
+                      </span>
+                    </li>
+                  ))}
+                  {!col.items.length && <li className="text-sm text-sub">Yok</li>}
+                  {col.items.length > 8 && <li className="text-xs text-sub">+{col.items.length - 8} daha</li>}
+                </ul>
+              </div>
+            ))}
+          </div>
+          {diff.rivals.length > 0 && (
+            <p className="mt-3 text-sm text-sub">
+              Rakipler: {diff.rivals.slice(0, 5).map((x) => `${x.name} ${x.before}→${x.after}`).join(" · ")} cevap
+            </p>
+          )}
+          {diff.newSources.length > 0 && <p className="mt-1 text-sm text-sub">AI'ın bu kez baktığı yeni kaynaklar: {diff.newSources.slice(0, 6).join(", ")}</p>}
+        </>
+      )}
+    </Card>
   );
 }

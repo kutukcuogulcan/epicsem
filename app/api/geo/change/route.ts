@@ -4,6 +4,7 @@ import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { getGeoOpportunities, getGeoRunForCompare, getLatestGeoRunFull, saveGeoOpportunities } from "@/lib/db";
 import { generateChange, type ChangeReport } from "@/lib/geo-change";
 import { QuotaError } from "@/lib/ai-small";
+import { getActiveProject } from "@/lib/project-context";
 
 export const maxDuration = 120;
 
@@ -30,7 +31,9 @@ export async function POST(req: NextRequest) {
   if (!last || !last.runs.length) return NextResponse.json({ error: "Önce bir GEO testi çalıştır." }, { status: 400 });
   try {
     const prev = await getGeoRunForCompare(user.id, last.brand.domain, last.createdAt);
-    const report = await generateChange(user.id, last, prev, last.brand, last.competitors.filter((c) => c.name));
+    // Alt markalar (Pro Plan, Felix…) projeden: rapor ve panoyla aynı sayım.
+    const aliases = (await getActiveProject(user.id, last.brand.domain))?.aliases ?? [];
+    const report = await generateChange(user.id, last, prev, { ...last.brand, aliases }, last.competitors.filter((c) => c.name));
     await saveGeoOpportunities(user.id, last.brand.domain, keyOf(last.createdAt), report);
     return NextResponse.json({ report });
   } catch (e) {
