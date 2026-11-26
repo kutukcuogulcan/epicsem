@@ -10,7 +10,7 @@ const runs = [
   run("openai", "en iyi kedi maması", "Royal Canin ve Pro Plan öne çıkar.", false),
   run("anthropic", "en iyi kedi maması", "Pro Plan iyidir.", true),
   run("openai", "kısırlaştırılmış kedi maması", "Royal Canin Sterilised önerilir.", false, [{ url: "https://petlebi.com/x", domain: "petlebi.com" }], ["kısır kedi maması"]),
-  run("anthropic", "kısırlaştırılmış kedi maması", "Royal Canin iyi bir seçimdir.", false, [{ url: "https://petlebi.com/y", domain: "petlebi.com" }, { url: "https://www.royalcanin.com/tr/kedi", domain: "www.royalcanin.com" }]),
+  run("anthropic", "kısırlaştırılmış kedi maması", "Royal Canin iyi bir seçimdir.", false, [{ url: "https://petlebi.com/y", domain: "petlebi.com" }, { url: "https://www.royalcanin.com/tr/kedi?utm_source=openai", domain: "www.royalcanin.com" }]),
 ];
 const r = buildGeoReport(runs, own, rivals);
 assert.equal(r.answers, 4);

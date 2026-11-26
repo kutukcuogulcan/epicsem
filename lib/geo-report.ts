@@ -36,6 +36,9 @@ export interface GeoReport {
   actions: { title: string; why: string }[];
 }
 
+/** OpenAI linklere ?utm_source=openai ekler; aynı sayfa tek sayılsın. */
+const noUtm = (u: string) => u.replace(/([?&])utm_[^=&]+=[^&]*/g, "$1").replace(/[?&]+$/, "").replace(/\?&/, "?");
+
 export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: BrandRef[]): GeoReport {
   const real = runs.filter((r) => r.responseText);
   const analyzed = real.map((r) => ({ r, a: analyzeRun(r, own, rivals) }));
@@ -110,7 +113,7 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     const pages = new Map<string, number>();
     let citedIn = 0;
     for (const { r } of analyzed) {
-      const urls = [...new Set(r.citations.filter((c) => dom && cleanDomain(c.domain || c.url) === dom).map((c) => c.url))];
+      const urls = [...new Set(r.citations.filter((c) => dom && cleanDomain(c.domain || c.url) === dom).map((c) => noUtm(c.url)))];
       if (urls.length) citedIn++;
       urls.forEach((u) => pages.set(u, (pages.get(u) ?? 0) + 1));
     }
