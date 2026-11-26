@@ -1,5 +1,5 @@
 import type { GeoRunResult } from "@/types";
-import { rankTrackedBrands } from "@/lib/text-match";
+import { rankTrackedBrands } from "./text-match.ts";
 
 /**
  * GEO sonucu — "neden kaybettik?" analizi (AI'sız, ücretsiz, istemcide çalışır).

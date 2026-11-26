@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UnderlineTabs, Drawer, ErrorBlock, PageHeader, Card, EmptyBlock, BTN1, BTN2 } from "@/components/ui";
 import { useProject } from "@/components/ProjectProvider";
@@ -494,6 +495,7 @@ export default function GeoPage() {
         }
         actions={
           <div className="flex items-center gap-2">
+            {runs?.length ? <Link href="/geo/rapor" className={BTN2}>Rapor</Link> : null}
             <button type="button" onClick={() => setManualOpen(true)} className={BTN2}>
               Ayarlar
             </button>

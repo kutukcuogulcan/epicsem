@@ -180,3 +180,9 @@ html, body { overflow-x: clip; }
   color: #0a0d12;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Rapor sayfaları "PDF olarak kaydet": yan menü, üst çubuk ve uyarılar yazdırılmaz. */
+@media print {
+  .app-shell > :not(.app-main), .app-main > :not(:last-child) { display: none !important; }
+  .app-main > :last-child { max-width: none; padding: 0; }
+}

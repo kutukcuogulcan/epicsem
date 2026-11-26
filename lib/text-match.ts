@@ -68,7 +68,8 @@ export function rankTrackedBrands(text: string, brands: { name: string; aliases?
   const t = trLower(text);
   const found: { name: string; at: number }[] = [];
   brands.forEach((b, i) => {
-    const hit = i === 0 ? ownMentioned : brandMentioned(text, b);
+    // Kendi marka: kayıtlı analiz sonucu; alt marka tanımlıysa metne de bakılır (alt marka sonradan eklenmişse eski testlerde de sayılır).
+    const hit = i === 0 ? ownMentioned || (!!b.aliases?.length && brandMentioned(text, b)) : brandMentioned(text, b);
     if (!hit) return;
     const names = [b.name, ...(b.aliases ?? [])].map(trLower);
     const pos = names.map((n) => t.indexOf(n)).filter((x) => x >= 0);
