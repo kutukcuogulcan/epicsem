@@ -26,6 +26,8 @@ export interface GeoReport {
   winRate: number;
   confidence: Confidence | null;
   brands: { name: string; own: boolean; visibility: number; firsts: number }[];
+  /** Konu bazında (en zayıftan güçlüye): senin görünürlüğün, ilk sıra oranın ve konuda en çok anılan rakip. */
+  topics: { topic: string; answers: number; visibility: number; winRate: number; leader: { name: string; visibility: number } | null }[];
   lost: LostQuestion[];
   wonQuestions: string[];
   gapSources: { domain: string; count: number; rivals: string[] }[];
@@ -66,6 +68,24 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
       return { name: b.name, own: i === 0, visibility: vis / n, firsts };
     })
     .sort((x, y) => y.visibility - x.visibility);
+
+  // Konu bazında
+  const byT = new Map<string, typeof analyzed>();
+  for (const x of analyzed) byT.set(x.r.topic || "Genel", [...(byT.get(x.r.topic || "Genel") ?? []), x]);
+  const topics = [...byT.entries()]
+    .map(([topic, xs]) => {
+      const count = new Map<string, number>();
+      for (const { a } of xs) for (const rv of a.rivals) count.set(rv.name, (count.get(rv.name) ?? 0) + 1);
+      const top = [...count.entries()].sort((a, b) => b[1] - a[1])[0];
+      return {
+        topic,
+        answers: xs.length,
+        visibility: xs.filter((x) => x.a.ownRank).length / xs.length,
+        winRate: xs.filter((x) => x.a.ownRank === 1).length / xs.length,
+        leader: top ? { name: top[0], visibility: top[1] / xs.length } : null,
+      };
+    })
+    .sort((a, b) => a.visibility - b.visibility || a.winRate - b.winRate);
 
   // Soru bazında
   const byQ = new Map<string, typeof analyzed>();
@@ -167,6 +187,7 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     winRate: wins / n,
     confidence: confidenceOf(hits, analyzed.length),
     brands,
+    topics,
     lost,
     wonQuestions,
     gapSources,

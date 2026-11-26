@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { buildGeoReport } from "../lib/geo-report.ts";
 
-const run = (engine, promptText, responseText, mentioned, citations = [], searchQueries = []) => ({ engine, model: "m", promptText, responseText, mentioned, position: null, sentiment: null, citations, searchQueries });
+const run = (engine, promptText, responseText, mentioned, citations = [], searchQueries = []) => ({ engine, model: "m", promptText, topic: promptText.startsWith("kıs") ? "Kısır" : "", responseText, mentioned, position: null, sentiment: null, citations, searchQueries });
 const own = { name: "Purina", domain: "purina.com.tr", aliases: ["Pro Plan"] };
 const rivals = [{ name: "Royal Canin", domain: "royalcanin.com" }];
 const runs = [
@@ -25,6 +25,7 @@ assert.equal(r.brands[0].name, "Royal Canin");
 assert.equal(r.ownCitedIn, 0);
 assert.ok(r.actions.some((a) => a.title.includes("petlebi.com")));
 assert.ok(r.actions.some((a) => a.title.includes("kısırlaştırılmış")));
+assert.deepEqual(r.topics.map((t) => [t.topic, t.visibility, t.leader?.name]), [["Kısır", 0, "Royal Canin"], ["Genel", 1, "Royal Canin"]], "en zayıf konu önce; konusuz soru Genel");
 assert.equal(r.leader.name, "Royal Canin");
 assert.equal(r.leader.aheadIn, 3, "Purina'nın önünde ya da Purina yokken anıldığı cevaplar");
 assert.equal(r.leader.citedIn, 1);

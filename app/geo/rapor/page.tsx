@@ -115,6 +115,28 @@ export default function GeoReportPage() {
         </table>
       </Card>
 
+      {r.topics.length > 1 && (
+        <Card>
+          <CardHeader title="Konulara göre" subtitle="En zayıf konu önce. Lider: o konuda en çok cevapta anılan rakip." />
+          <table className="mt-3 w-full text-sm">
+            <thead className="text-left text-xs text-sub">
+              <tr><th className="py-1.5 font-medium">Konu</th><th className="font-medium">Cevap</th><th className="font-medium">Görünürlük</th><th className="font-medium">İlk sırada</th><th className="font-medium">Lider rakip</th></tr>
+            </thead>
+            <tbody>
+              {r.topics.map((t) => (
+                <tr key={t.topic} className="border-t border-border">
+                  <td className="py-2 text-ink">{t.topic}</td>
+                  <td className="tabular-nums text-sub">{t.answers}</td>
+                  <td className="tabular-nums">{pct(t.visibility)}</td>
+                  <td className="tabular-nums">{pct(t.winRate)}</td>
+                  <td className="text-sub">{t.leader ? `${t.leader.name} ${pct(t.leader.visibility)}` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
       {r.leader && r.leader.aheadIn > 0 && (
         <Card>
           <CardHeader
