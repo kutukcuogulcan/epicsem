@@ -185,4 +185,6 @@ html, body { overflow-x: clip; }
 @media print {
   .app-shell > :not(.app-main), .app-main > :not(:last-child) { display: none !important; }
   .app-main > :last-child { max-width: none; padding: 0; }
+  tr, li { break-inside: avoid; }
+  thead { display: table-header-group; }
 }
