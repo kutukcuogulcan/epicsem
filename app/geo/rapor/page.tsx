@@ -116,7 +116,10 @@ export default function GeoReportPage() {
                 {r.leader.pages.map((pg) => (
                   <li key={pg.url} className="flex justify-between gap-3">
                     <a href={pg.url} target="_blank" rel="noopener noreferrer" className="truncate text-accent hover:underline">{pg.url.replace(/^https?:\/\/(www\.)?/, "")}</a>
-                    <span className="shrink-0 tabular-nums text-sub">{pg.count} cevap</span>
+                    <span className="flex shrink-0 gap-3">
+                      <span className="tabular-nums text-sub">{pg.count} cevap</span>
+                      <Link href={`/geo/karsilastir?rival=${encodeURIComponent(pg.url)}`} className="text-accent hover:underline print:hidden">Karşılaştır</Link>
+                    </span>
                   </li>
                 ))}
               </ul>
