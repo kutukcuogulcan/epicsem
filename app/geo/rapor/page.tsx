@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import type { GeoReport } from "@/lib/geo-report";
 import type { RunDiff } from "@/lib/geo-diff";
 import { EngineDot } from "@/components/tool/MonitorBits";
-import { BTN1, BTN2, Card, CardHeader, EmptyBlock, ErrorBlock, PageHeader, PageSkeleton } from "@/components/ui";
+import { BTN1, BTN2, INPUT, Card, CardHeader, EmptyBlock, ErrorBlock, PageHeader, PageSkeleton } from "@/components/ui";
 import { writeGapHref } from "@/lib/geo-loss";
+import { useAgencyName } from "@/lib/use-agency-name";
 
 const pct = (x: number) => `%${Math.round(x * 100)}`;
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -20,6 +21,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 export default function GeoReportPage() {
   const [d, setD] = useState<{ report: GeoReport | null; brand?: string; createdAt?: string; demo?: boolean; prevAt?: string | null; diff?: RunDiff | null } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [agency, setAgency] = useAgencyName();
 
   const load = () => {
     setErr(null);
@@ -47,12 +49,18 @@ export default function GeoReportPage() {
         title={`${d.brand}: AI görünürlük raporu`}
         description={`${new Date(d.createdAt!).toLocaleDateString("tr-TR")} tarihli testin ${r.questions} sorusu ve ${r.answers} cevabından kodla çıkarıldı (AI kullanılmadı).${d.demo ? " Demo verisi içerir." : ""}`}
         actions={
-          <div className="flex gap-2 print:hidden">
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <input value={agency} onChange={(e) => setAgency(e.target.value)} placeholder="Ajans adın (PDF'te görünür)" aria-label="Ajans adı" className={`${INPUT} h-8 w-52`} />
             <Link href="/geo" className={BTN2}>GEO'ya dön</Link>
             <button className={BTN1} onClick={() => window.print()}>PDF olarak kaydet</button>
           </div>
         }
       />
+
+      <p className="hidden text-sm text-sub print:block">
+        {agency.trim() ? `Hazırlayan: ${agency.trim()} · ` : ""}
+        {new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+      </p>
 
       <Card>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
