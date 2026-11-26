@@ -30,6 +30,8 @@ export interface GeoReport {
   wonQuestions: string[];
   gapSources: { domain: string; count: number; rivals: string[] }[];
   ownCitedIn: number;
+  /** En çok ilk sırada çıkan rakip: senin önüne geçtiği cevaplar ve AI'ın kaynak gösterdiği sayfaları. */
+  leader: { name: string; firsts: number; aheadIn: number; citedIn: number; ahead: { question: string; engine: string; ownRank: number | null }[]; pages: { url: string; count: number }[] } | null;
   perception: { positives: PerceptionTerm[]; negatives: PerceptionTerm[] };
   actions: { title: string; why: string }[];
 }
@@ -99,6 +101,29 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
   const gapSources = [...gap.entries()].map(([domain, e]) => ({ domain, count: e.count, rivals: [...e.rivals].slice(0, 3) })).sort((a, b) => b.count - a.count).slice(0, 8);
   const ownCitedIn = analyzed.filter((x) => x.a.ownCited).length;
 
+  const top = brands.find((b) => !b.own && b.firsts > 0);
+  let leader: GeoReport["leader"] = null;
+  if (top) {
+    const dom = cleanDomain(rivals.find((r) => r.name === top.name)?.domain ?? "");
+    const rankOf = (a: (typeof analyzed)[number]["a"]) => a.rivals.find((x) => x.name === top.name)?.rank;
+    const aheadX = analyzed.filter(({ a }) => rankOf(a) != null && (a.ownRank == null || rankOf(a)! < a.ownRank));
+    const pages = new Map<string, number>();
+    let citedIn = 0;
+    for (const { r } of analyzed) {
+      const urls = [...new Set(r.citations.filter((c) => dom && cleanDomain(c.domain || c.url) === dom).map((c) => c.url))];
+      if (urls.length) citedIn++;
+      urls.forEach((u) => pages.set(u, (pages.get(u) ?? 0) + 1));
+    }
+    leader = {
+      name: top.name,
+      firsts: top.firsts,
+      aheadIn: aheadX.length,
+      citedIn,
+      ahead: aheadX.map(({ r, a }) => ({ question: r.promptText, engine: r.engine, ownRank: a.ownRank })).slice(0, 10),
+      pages: [...pages.entries()].map(([url, count]) => ({ url, count })).sort((a, b) => b.count - a.count).slice(0, 8),
+    };
+  }
+
   const per = buildPerception(real, [own, ...rivals.slice(0, 5)])[0];
   const perception = { positives: per.terms.filter((t) => !t.negative).slice(0, 6), negatives: per.terms.filter((t) => t.negative).slice(0, 4) };
 
@@ -115,6 +140,12 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     actions.push({
       title: `AI'ın baktığı sitelerde anıl: ${gapSources.slice(0, 3).map((s) => s.domain).join(", ")}`,
       why: `Kaybettiğin cevaplarda AI en çok bu kaynaklara dayandı; bu kaynaklarla yazılan cevaplarda markan anılmadı${gapSources[0].rivals.length ? `, ${gapSources[0].domain} kaynaklı cevaplarda ${gapSources[0].rivals.join(", ")} öne çıktı` : ""}.`,
+    });
+  // Lider rakibin önde olduğu cevap sayısı kaybedilen cevaplardan fazlaysa asıl sorun sıralamadır: başa al.
+  if (leader && leader.aheadIn && leader.citedIn > ownCitedIn)
+    actions[leader.aheadIn > analyzed.length - hits ? "unshift" : "push"]({
+      title: `${leader.name} sayfalarının karşılığını yayınla`,
+      why: `${leader.name} ${leader.aheadIn} cevapta senden önce geldi; AI ${leader.citedIn} cevapta onun sitesini kaynak gösterdi, seninkini ${ownCitedIn} cevapta.${leader.pages.length ? ` En çok kaynak gösterilen sayfası: ${leader.pages[0].url}` : ""}`,
     });
   if (!ownCitedIn && analyzed.length)
     actions.push({ title: "Kendi siten hiç kaynak gösterilmedi", why: `${analyzed.length} cevabın hiçbirinde ${cleanDomain(own.domain)} kaynak olarak geçmedi: soruları cevap-önce, SSS ve kaynaklarla yanıtlayan sayfalar AI'ın alıntılayabileceği biçimde değil.` });
@@ -133,6 +164,7 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     wonQuestions,
     gapSources,
     ownCitedIn,
+    leader,
     perception,
     actions: actions.slice(0, 6),
   };

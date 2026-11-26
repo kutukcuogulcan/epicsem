@@ -103,6 +103,39 @@ export default function GeoReportPage() {
         </table>
       </Card>
 
+      {r.leader && r.leader.aheadIn > 0 && (
+        <Card>
+          <CardHeader
+            title={`${r.leader.name} neden önde?`}
+            subtitle={`${r.leader.firsts} cevapta ilk sırada, ${r.leader.aheadIn} cevapta senden önce. AI ${r.leader.citedIn} cevapta ${r.leader.name} sitesini kaynak gösterdi, senin siteni ${r.ownCitedIn} cevapta.`}
+          />
+          {r.leader.pages.length > 0 && (
+            <>
+              <p className="mt-3 text-xs font-medium text-sub">AI'ın kaynak gösterdiği {r.leader.name} sayfaları</p>
+              <ul className="mt-1 space-y-1 text-sm">
+                {r.leader.pages.map((pg) => (
+                  <li key={pg.url} className="flex justify-between gap-3">
+                    <a href={pg.url} target="_blank" rel="noopener noreferrer" className="truncate text-accent hover:underline">{pg.url.replace(/^https?:\/\/(www\.)?/, "")}</a>
+                    <span className="shrink-0 tabular-nums text-sub">{pg.count} cevap</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <p className="mt-3 text-xs font-medium text-sub">Senden önce geldiği cevaplar</p>
+          <ul className="mt-1 space-y-1">
+            {r.leader.ahead.map((x, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5"><EngineDot engine={x.engine} size={16} /></span>
+                <span className="text-ink">{x.question}</span>
+                <span className="ml-auto shrink-0 text-sub">{x.ownRank ? `sen ${x.ownRank}.` : "sen yoksun"}</span>
+              </li>
+            ))}
+          </ul>
+          {r.leader.aheadIn > r.leader.ahead.length && <p className="mt-1 text-xs text-sub">+{r.leader.aheadIn - r.leader.ahead.length} cevap daha</p>}
+        </Card>
+      )}
+
       {r.lost.length > 0 && (
         <Card>
           <CardHeader title={`Kaybettiğin sorular (${r.lost.length})`} subtitle="En az bir motorda anılmadığın sorular; motor motor kimin öne çıktığı ve AI'ın ne aradığı." />

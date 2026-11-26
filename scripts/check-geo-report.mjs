@@ -10,7 +10,7 @@ const runs = [
   run("openai", "en iyi kedi maması", "Royal Canin ve Pro Plan öne çıkar.", false),
   run("anthropic", "en iyi kedi maması", "Pro Plan iyidir.", true),
   run("openai", "kısırlaştırılmış kedi maması", "Royal Canin Sterilised önerilir.", false, [{ url: "https://petlebi.com/x", domain: "petlebi.com" }], ["kısır kedi maması"]),
-  run("anthropic", "kısırlaştırılmış kedi maması", "Royal Canin iyi bir seçimdir.", false, [{ url: "https://petlebi.com/y", domain: "petlebi.com" }, { url: "https://royalcanin.com", domain: "royalcanin.com" }]),
+  run("anthropic", "kısırlaştırılmış kedi maması", "Royal Canin iyi bir seçimdir.", false, [{ url: "https://petlebi.com/y", domain: "petlebi.com" }, { url: "https://www.royalcanin.com/tr/kedi", domain: "www.royalcanin.com" }]),
 ];
 const r = buildGeoReport(runs, own, rivals);
 assert.equal(r.answers, 4);
@@ -25,5 +25,10 @@ assert.equal(r.brands[0].name, "Royal Canin");
 assert.equal(r.ownCitedIn, 0);
 assert.ok(r.actions.some((a) => a.title.includes("petlebi.com")));
 assert.ok(r.actions.some((a) => a.title.includes("kısırlaştırılmış")));
+assert.equal(r.leader.name, "Royal Canin");
+assert.equal(r.leader.aheadIn, 3, "Purina'nın önünde ya da Purina yokken anıldığı cevaplar");
+assert.equal(r.leader.citedIn, 1);
+assert.deepEqual(r.leader.pages, [{ url: "https://www.royalcanin.com/tr/kedi", count: 1 }]);
+assert.ok(r.actions[0].title.startsWith("Royal Canin"), "önde olduğu 3 cevap > kaybedilen 2 cevap → ilk iş");
 assert.equal(buildGeoReport([], own, rivals).answers, 0);
 console.log("check-geo-report: ok");
