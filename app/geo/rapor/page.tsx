@@ -43,7 +43,7 @@ export default function GeoReportPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
-        title={`AI neden ${d.brand}'i önermiyor?`}
+        title={`${d.brand}: AI görünürlük raporu`}
         description={`${new Date(d.createdAt!).toLocaleDateString("tr-TR")} tarihli testin ${r.questions} sorusu ve ${r.answers} cevabından kodla çıkarıldı (AI kullanılmadı).${d.demo ? " Demo verisi içerir." : ""}`}
         actions={
           <div className="flex gap-2 print:hidden">
@@ -195,7 +195,7 @@ function Terms({ title, items, negative }: { title: string; items: GeoReport["pe
           ))}
         </ul>
       ) : (
-        <p className="mt-1.5 text-sm text-sub">{negative ? "Olumsuz ifade bulunmadı." : "—"}</p>
+        <p className="mt-1.5 text-sm text-sub">{negative ? "En az 2 cevapta tekrar eden olumsuz ifade yok." : "Markana özgü tekrar eden ifade yok."}</p>
       )}
     </div>
   );

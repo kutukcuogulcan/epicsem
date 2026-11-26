@@ -126,7 +126,9 @@ export function buildPerception(runs: GeoRunResult[], brands: { name: string; al
       }));
     // Olumsuz ifadeleri ayırt edici olmasalar da göster
     const negs = [...p.df.entries()]
-      .filter(([term]) => term.includes(" ") && isNegativeUse(term, p.docs.flatMap((d) => d.sent)) && !terms.some((t) => t.term === term || t.term.includes(term)))
+      // en az 2 cevapta geçen; aynı olumsuz kelimeyi taşıyan ifadelerden yalnızca ilki ("genelde pahalı", "pahalı ürünler" → bir tane)
+      .filter(([term, c]) => c >= 2 && term.includes(" ") && isNegativeUse(term, p.docs.flatMap((d) => d.sent)) && !terms.some((t) => t.term === term || t.term.includes(term)))
+      .filter(([term], i, arr) => !arr.slice(0, i).some(([t]) => NEG.exec(t)?.[0] === NEG.exec(term)?.[0]))
       .slice(0, 4)
       .map(([term, c]) => ({ term, score: Math.round((c / n) * 100), negative: true, example: p.docs.flatMap((d) => d.sent).find((s) => locate(plain(s), term))?.slice(0, 220) ?? "" }));
     return { brand: p.brand, mentions: p.docs.length, terms: [...terms, ...negs] };
