@@ -76,6 +76,7 @@ export default function GeoReportPage() {
                 <div>
                   <p className="text-sm font-medium text-ink">{a.title}</p>
                   <p className="text-sm text-sub">{a.why}</p>
+                  {a.href && <Link href={a.href} className="mt-0.5 inline-block text-sm font-medium text-accent hover:underline print:hidden">{a.href.startsWith("/editor") ? "Yazısını yaz →" : a.href.startsWith("/geo/karsilastir") ? "Sayfaları karşılaştır →" : "Ulaşma planı →"}</Link>}
                 </div>
               </li>
             ))}

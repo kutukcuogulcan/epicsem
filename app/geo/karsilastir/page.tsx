@@ -14,6 +14,19 @@ interface Result {
   suggestions: string[];
 }
 
+/** Editörü bu sayfanın güncel taslağı için açar; bilgi uydurma yasağı nota yazılır. */
+const draftHref = (res: Result) => {
+  const own = res.own!;
+  const note = [
+    `Bu taslak ${own.url} sayfasının yeni sürümü için yazılıyor. AI asistanları bu konuda rakibin ${res.rival.url} sayfasını kaynak gösteriyor.`,
+    `Rakipte olup bu sayfada karşılığı olmayan bölümler: ${res.missing.join(" | ")}. Her birini ayrı başlıkla ekle, ama yalnızca ürün gerçekten bu bilgiye sahipse; bilgi uydurma, eksik bilgiyi [NEEDS: …] olarak bırak.`,
+    `Sayfanın mevcut başlıkları: ${own.headings.map((h) => h.text).slice(0, 12).join(" | ")}.`,
+    "İlk paragraf ürünü 2-3 cümlede doğrudan anlatsın; sonunda SSS olsun.",
+  ].join(" ");
+  const title = own.h1 || own.title;
+  return `/editor?write=1&kw=${encodeURIComponent(title.slice(0, 100))}&title=${encodeURIComponent(title.slice(0, 200))}&note=${encodeURIComponent(note.slice(0, 1200))}`;
+};
+
 const short = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "");
 
 /** Rakip sayfası ↔ kendi sayfan: AI'ın kaynak gösterdiği rakip sayfasında olup seninkinde olmayanlar. */
@@ -122,6 +135,9 @@ function Compare() {
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink">
                   {res.missing.map((h) => <li key={h}>{h}</li>)}
                 </ul>
+              )}
+              {res.missing.length > 0 && (
+                <Link href={draftHref(res)} className={`${BTN1} mt-4 print:hidden`}>Eksik bölümlerle taslak yaz</Link>
               )}
             </Card>
           )}

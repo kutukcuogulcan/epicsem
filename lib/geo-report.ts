@@ -1,5 +1,5 @@
 import type { GeoRunResult } from "../types";
-import { analyzeRun, cleanDomain, type BrandRef } from "./geo-loss.ts";
+import { analyzeRun, cleanDomain, writeGapHref, type BrandRef } from "./geo-loss.ts";
 import { confidenceOf, type Confidence } from "./sample-size.ts";
 import { buildPerception, type PerceptionTerm } from "./brand-perception.ts";
 
@@ -33,7 +33,8 @@ export interface GeoReport {
   /** En çok ilk sırada çıkan rakip: senin önüne geçtiği cevaplar ve AI'ın kaynak gösterdiği sayfaları. */
   leader: { name: string; firsts: number; aheadIn: number; citedIn: number; ahead: { question: string; engine: string; ownRank: number | null }[]; pages: { url: string; count: number }[] } | null;
   perception: { positives: PerceptionTerm[]; negatives: PerceptionTerm[] };
-  actions: { title: string; why: string }[];
+  /** href: işi başlatan sayfa (yazı editörü, karşılaştırma, kaynaklar). */
+  actions: { title: string; why: string; href?: string }[];
 }
 
 /** OpenAI linklere ?utm_source=openai ekler; aynı sayfa tek sayılsın. */
@@ -137,18 +138,21 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     actions.push({
       title: `"${q.question}" sorusunu doğrudan cevaplayan bir sayfa yayınla`,
       why: `${q.total} motorun ${q.lost} tanesinde anılmadın${winners.length ? `; öne çıkan: ${winners.join(", ")}` : ""}.${q.searches.length ? ` AI bunu ararken şunlara baktı: ${q.searches.slice(0, 3).join(" · ")}.` : ""}`,
+      href: writeGapHref(q.question, own, q.engines.map((e) => ({ status: e.status, rivals: e.winner ? [{ name: e.winner, rank: 1 }] : [], sources: q.sources })), q.searches),
     });
   }
   if (gapSources.length)
     actions.push({
       title: `AI'ın baktığı sitelerde anıl: ${gapSources.slice(0, 3).map((s) => s.domain).join(", ")}`,
       why: `Kaybettiğin cevaplarda AI en çok bu kaynaklara dayandı; bu kaynaklarla yazılan cevaplarda markan anılmadı${gapSources[0].rivals.length ? `, ${gapSources[0].domain} kaynaklı cevaplarda ${gapSources[0].rivals.join(", ")} öne çıktı` : ""}.`,
+      href: "/backlinks",
     });
   // Lider rakibin önde olduğu cevap sayısı kaybedilen cevaplardan fazlaysa asıl sorun sıralamadır: başa al.
   if (leader && leader.aheadIn && leader.citedIn > ownCitedIn)
     actions[leader.aheadIn > analyzed.length - hits ? "unshift" : "push"]({
       title: `${leader.name} sayfalarının karşılığını yayınla`,
       why: `${leader.name} ${leader.aheadIn} cevapta senden önce geldi; AI ${leader.citedIn} cevapta onun sitesini kaynak gösterdi, seninkini ${ownCitedIn} cevapta.${leader.pages.length ? ` En çok kaynak gösterilen sayfası: ${leader.pages[0].url}` : ""}`,
+      href: leader.pages.length ? `/geo/karsilastir?rival=${encodeURIComponent(leader.pages[0].url)}` : undefined,
     });
   if (!ownCitedIn && analyzed.length)
     actions.push({ title: "Kendi siten hiç kaynak gösterilmedi", why: `${analyzed.length} cevabın hiçbirinde ${cleanDomain(own.domain)} kaynak olarak geçmedi: soruları cevap-önce, SSS ve kaynaklarla yanıtlayan sayfalar AI'ın alıntılayabileceği biçimde değil.` });

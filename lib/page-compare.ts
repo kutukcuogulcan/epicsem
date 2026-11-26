@@ -44,7 +44,7 @@ export function outline(html: string, url: string): PageOutline {
   const headings: PageOutline["headings"] = [];
   const seen = new Set<string>();
   $("h1, h2, h3").each((_, e) => {
-    const text = $(e).text().replace(/\s+/g, " ").trim();
+    const text = $(e).text().replace(/[\u200b-\u200d\ufeff]/g, "").replace(/\s+/g, " ").trim(); // görünmez boşluklar (Purina H1'i)
     const key = trLower(text);
     if (!text || text.length > 140 || seen.has(key)) return;
     seen.add(key);
