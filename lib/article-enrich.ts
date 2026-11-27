@@ -36,6 +36,8 @@ export interface ResearchResult {
   /** Arama niyeti: bilgi / karşılaştırma / satın alma / nasıl yapılır. */
   intent: string | null;
   model: string;
+  /** Harcanan web aramalı AI çağrısı (1; doğrulanan bilgi azsa ikinci tur ile 2). Çağıran kotadan bu kadar düşer. */
+  calls: number;
 }
 
 /** Yalnızca herkese açık alan adları (IP, localhost, iç ağ adresi değil). */
@@ -110,7 +112,7 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   } catch {
     return null;
   }
-  const raw: ResearchFact[] = (Array.isArray(parsed.facts) ? parsed.facts : [])
+  const toFacts = (arr: unknown): ResearchFact[] => (Array.isArray(arr) ? arr : [])
     .map((f: any) => {
       const url = String(f?.url ?? "").trim();
       const origin = String(f?.origin ?? f?.source ?? "").trim().slice(0, 80);
@@ -121,15 +123,37 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
     .slice(0, 6);
   // Kaynak sayfası açılıyor mu ve bilginin rakamı o sayfada gerçekten geçiyor mu? (Yanlış sayfaya bağlanmış bilgi atılır.)
   // 403: bazı siteler botlara kapalı — doğrulanamaz, kabul edilir.
-  const checks = await Promise.all(raw.map((f) => pageTextOf(f.url)));
-  const facts = raw.filter((f, i) => checks[i].status === 403 || checks[i].unverifiable || (checks[i].text != null && factOnPage(f.fact, checks[i].text!))).slice(0, 5);
+  const verify = async (raw: ResearchFact[]) => {
+    const checks = await Promise.all(raw.map((f) => pageTextOf(f.url)));
+    return raw.filter((f, i) => checks[i].status === 403 || checks[i].unverifiable || (checks[i].text != null && factOnPage(f.fact, checks[i].text!)));
+  };
+  let facts = await verify(toFacts(parsed.facts));
+  let calls = 1;
+  // Doğrulamadan az bilgi geçtiyse yazı tek kaynağa yaslanmasın: farklı kurumlardan ikinci tur (+1 çağrı).
+  if (facts.length < 3) {
+    const usedHosts = [...new Set(facts.map((f) => hostOf(f.url)))];
+    const usedOrgs = [...new Set(facts.map((f) => f.origin || f.source).filter(Boolean))];
+    const r2 = await runWebSearchPrompt(`SEARCH THE WEB. Topic: "${topic}"${tr ? " (Turkish audience)" : ""}.
+Find 3–4 MORE specific, recent statistics about this topic from DIFFERENT organizations${usedOrgs.length ? ` than ${usedOrgs.join(", ")}` : ""}${usedHosts.length ? ` and not on ${usedHosts.join(", ")}` : ""}. Same rules: neutral authoritative sources (regulators, statistics institutes, universities, associations, research firms, news), never companies selling in this field${rivals.length ? ` such as ${rivals.map((c) => c.name || c.domain).join(", ")}` : ""}. Use the ORIGINAL page of the organization that produced the number, the exact URL where the number appears. Never invent a URL or a number.
+Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","origin":"organization that produced the number","url":"https://..."}]}`).catch(() => null);
+    if (r2) {
+      calls = 2;
+      try {
+        const more = await verify(toFacts(extractJsonObject(r2.text).facts).filter((f) => !facts.some((x) => x.url === f.url)));
+        facts = [...facts, ...more];
+      } catch {
+        /* ikinci tur bozuk JSON: ilk turla devam */
+      }
+    }
+  }
+  facts = facts.slice(0, 5);
   const ytUrl = String(parsed.youtube?.url ?? "");
   const yt = ytUrl ? await verifyYoutube(ytUrl) : null;
   const youtube = yt && !isRival("", yt.title) ? yt : null;
   const imageQueries = (Array.isArray(parsed.imageQueries) ? parsed.imageQueries : []).map((q: unknown) => String(q).trim().slice(0, 60)).filter(Boolean).slice(0, 2);
   const list = (v: unknown, n: number, len: number) => (Array.isArray(v) ? v : []).map((x) => String(x ?? "").trim().slice(0, len)).filter((x) => x.length > 2).slice(0, n);
   const intent = String(parsed.intent ?? "").trim().slice(0, 60) || null;
-  return { facts, youtube, imageQueries, coverage: list(parsed.coverage, 8, 120), questions: list(parsed.questions, 6, 160), intent, model: r.model };
+  return { facts, youtube, imageQueries, coverage: list(parsed.coverage, 8, 120), questions: list(parsed.questions, 6, 160), intent, model: r.model, calls };
 }
 
 /** Araştırma sonucunu yazı talimatına çevirir. */

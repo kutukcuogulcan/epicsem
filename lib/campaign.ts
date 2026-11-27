@@ -176,7 +176,7 @@ export async function runCampaign(campaign: Campaign, opts: { cron?: boolean } =
           const rq = await checkQuota(campaign.userId, "engineQueries", 1);
           if (rq.allowed) {
             research = await researchTopic(t.label, campaign.options.language ?? "tr", { brand: campaign.brandName, competitors: rivals }).catch(() => null);
-            if (research) await consumeQuota(campaign.userId, "engineQueries", 1).catch(() => {});
+            if (research) await consumeQuota(campaign.userId, "engineQueries", research.calls).catch(() => {});
           }
         }
         const rb = researchBrief(research, campaign.options.language ?? "tr");

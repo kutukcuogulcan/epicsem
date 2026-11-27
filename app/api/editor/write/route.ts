@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     if (q.allowed) {
       research = await researchTopic(String(b.title ?? "").trim() || topic, language, { brand: brand.name, competitors: project?.competitors ?? [] }).catch(() => null);
       if (research) {
-        await consumeQuota(user.id, "engineQueries", 1).catch(() => {});
+        await consumeQuota(user.id, "engineQueries", research.calls).catch(() => {});
         const rb = researchBrief(research, language);
         if (rb) brief.push(rb);
       }
