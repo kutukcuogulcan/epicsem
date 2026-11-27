@@ -187,7 +187,7 @@ function sourcesBrief(r: ResearchResult, language: string): string {
         : `- ${f.fact} — ${f.source || hostOf(f.url)} (${f.url})`
     )
     .join("\n");
-  return `VERIFIED SOURCES (found by web search and checked). Use 2–4 of these facts where they fit, citing each inline as a markdown link to its URL, e.g. "...%38 arttı ([${tr ? "kaynak" : "source"}](URL))". These are the ONLY statistics you may state; do not invent other numbers:\n${lines}`;
+  return `VERIFIED SOURCES (found by web search; each was checked to appear on its page). Use EVERY one of these facts at least once in the most relevant section — a cited fact is what makes AI engines quote the article — citing each inline as a markdown link to its URL, e.g. "...%38 arttı ([${tr ? "kaynak" : "source"}](URL))". These are the ONLY statistics you may state; do not invent other numbers:\n${lines}`;
 }
 
 export interface OpenverseImage {
