@@ -1,4 +1,5 @@
 import { runWebSearchPrompt } from "./competitor-discovery";
+import { hostOf, isOriginHost } from "./source-origin";
 import { extractJsonObject } from "./llm-json";
 import { statusOf } from "./audit-extra";
 import { fetchPageSummary } from "./content-fetch";
@@ -20,6 +21,10 @@ export interface ResearchFact {
   fact: string;
   source: string;
   url: string;
+  /** Rakamı üreten kurum (araştırmanın beyanı). */
+  origin?: string;
+  /** Adres o kurumun sitesi değilse: aktaran sitenin alan adı. */
+  via?: string;
 }
 export interface ResearchResult {
   facts: ResearchFact[];
@@ -76,12 +81,12 @@ export async function researchTopic(topic: string, language = "tr", opts: { bran
   const prompt = `SEARCH THE WEB. Topic: "${topic}"${tr ? " (Turkish audience; prefer Turkish or international authoritative sources)" : ""}.
 The article is published by ${opts.brand ? `the brand "${opts.brand}"` : "a business"}. Its sources must NOT be companies that sell products or services in this field (they are its competitors${rivals.length ? `, e.g. ${rivals.map((c) => c.name || c.domain).join(", ")}` : ""}). Prefer government and regulator sites, statistics institutes, universities, industry associations and news / trade publications.
 Find:
-1. 3–5 specific, recent facts or statistics about this topic, each from such a neutral, authoritative source page. Use the exact page URL where the fact appears.
+1. 3–5 specific, recent facts or statistics about this topic, each from such a neutral, authoritative source page. Use the exact page URL where the fact appears. Prefer the ORIGINAL page of the organization that produced the number (e.g. a Pew Research statistic → pewresearch.org), not a blog or news aggregator quoting it. Set "origin" to the organization that produced the number.
 2. ONE relevant, high-quality YouTube video that explains this topic (a real youtube.com/watch URL you actually found)${opts.brand ? `, preferably from ${opts.brand}'s own channel; never one from or promoting a competing company` : ""}.
 3. What the top-ranking pages and AI answers for this topic cover: 5–8 short subtopics they all include (so a new article is not missing anything), the 4–6 questions people really ask about it (Google "People also ask", forums), and the search intent in 2–4 words (e.g. "informational how-to", "commercial comparison").
 4. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
 Never invent a URL or a number. If unsure, leave it out.
-Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""],"coverage":["subtopic"],"questions":["question?"],"intent":""}`;
+Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","origin":"organization that produced the number","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""],"coverage":["subtopic"],"questions":["question?"],"intent":""}`;
   const r = await runWebSearchPrompt(prompt);
   if (!r) return null;
   let parsed: Record<string, any>;
@@ -91,7 +96,12 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
     return null;
   }
   const raw: ResearchFact[] = (Array.isArray(parsed.facts) ? parsed.facts : [])
-    .map((f: any) => ({ fact: String(f?.fact ?? "").trim().slice(0, 300), source: String(f?.source ?? "").trim().slice(0, 80), url: String(f?.url ?? "").trim() }))
+    .map((f: any) => {
+      const url = String(f?.url ?? "").trim();
+      const origin = String(f?.origin ?? f?.source ?? "").trim().slice(0, 80);
+      // Rakamı üreten kurumun sitesi değilse (aktaran blog), yazıda "X'e göre (aktaran: site)" diye atıf yapılır.
+      return { fact: String(f?.fact ?? "").trim().slice(0, 300), source: String(f?.source ?? "").trim().slice(0, 80), url, origin, via: isOriginHost(origin, url) ? undefined : hostOf(url) };
+    })
     .filter((f: ResearchFact) => f.fact && publicUrl(f.url) && !isRival(f.url, f.source))
     .slice(0, 6);
   // Kaynak sayfaları gerçekten açılıyor mu? (403/405 bazı siteler botlara kapalı; onları kabul et)
@@ -118,8 +128,15 @@ export function researchBrief(r: ResearchResult | null, language = "tr"): string
 }
 
 function sourcesBrief(r: ResearchResult, language: string): string {
-  const lines = r.facts.map((f) => `- ${f.fact} — ${f.source || new URL(f.url).hostname} (${f.url})`).join("\n");
-  return `VERIFIED SOURCES (found by web search and checked). Use 2–4 of these facts where they fit, citing each inline as a markdown link to its URL, e.g. "...%38 arttı ([${language === "tr" ? "kaynak" : "source"}](URL))". These are the ONLY statistics you may state; do not invent other numbers:\n${lines}`;
+  const tr = language === "tr";
+  const lines = r.facts
+    .map((f) =>
+      f.via
+        ? `- ${f.fact} — produced by ${f.origin}, found on ${f.via} (${f.url}). SECONDARY: cite it as "${f.origin}${tr ? " verilerine göre (aktaran: " : " data (via "}[${f.via}](${f.url}))", never as if ${f.via} were the original.`
+        : `- ${f.fact} — ${f.source || hostOf(f.url)} (${f.url})`
+    )
+    .join("\n");
+  return `VERIFIED SOURCES (found by web search and checked). Use 2–4 of these facts where they fit, citing each inline as a markdown link to its URL, e.g. "...%38 arttı ([${tr ? "kaynak" : "source"}](URL))". These are the ONLY statistics you may state; do not invent other numbers:\n${lines}`;
 }
 
 export interface OpenverseImage {
