@@ -139,8 +139,8 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   };
   let facts = await verify(toFacts(parsed.facts));
   let calls = 1;
-  // Doğrulamadan az bilgi geçtiyse yazı tek kaynağa yaslanmasın: farklı kurumlardan ikinci tur (+1 çağrı).
-  if (facts.length < 3) {
+  // Doğrulamadan az bilgi geçtiyse ya da hepsi tek siteden geliyorsa yazı tek kaynağa yaslanmasın: farklı kurumlardan ikinci tur (+1 çağrı).
+  if (facts.length < 3 || new Set(facts.map((f) => hostOf(f.url))).size < 2) {
     const usedHosts = [...new Set(facts.map((f) => hostOf(f.url)))];
     const usedOrgs = [...new Set(facts.map((f) => f.origin || f.source).filter(Boolean))];
     const r2 = await runWebSearchPrompt(`SEARCH THE WEB. Topic: "${topic}"${tr ? " (Turkish audience)" : ""}.
