@@ -19,5 +19,5 @@ export async function GET() {
   // Önceki testle fark (aynı soru × motor çiftleri; tercihen ≥6 gün önceki test). Kodla, AI yok.
   const prev = await getGeoRunForCompare(user.id, geo.brand.domain, geo.createdAt);
   const diff = prev ? diffRuns(toCells(prev.runs, own, rivals), toCells(geo.runs, own, rivals)) : null;
-  return NextResponse.json({ report: buildGeoReport(geo.runs, own, rivals), brand: own.name, createdAt: geo.createdAt, demo: geo.demoMode, prevAt: prev?.createdAt ?? null, diff });
+  return NextResponse.json({ report: buildGeoReport(geo.runs, own, rivals), brand: own.name, domain: geo.brand.domain, createdAt: geo.createdAt, demo: geo.demoMode, prevAt: prev?.createdAt ?? null, diff });
 }

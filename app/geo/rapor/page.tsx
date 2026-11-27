@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { actionLabel, type GeoReport } from "@/lib/geo-report";
 import type { RunDiff } from "@/lib/geo-diff";
 import { EngineDot } from "@/components/tool/MonitorBits";
+import { Opportunities } from "@/components/tool/AnalystTab";
 import { BTN1, BTN2, INPUT, Card, CardHeader, EmptyBlock, ErrorBlock, PageHeader, PageSkeleton } from "@/components/ui";
 import { writeGapHref } from "@/lib/geo-loss";
 import { useAgencyName } from "@/lib/use-agency-name";
@@ -19,7 +20,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 /** "AI neden seni önermiyor?" — son GEO testinin bulguları tek sayfada; tarayıcıdan PDF olarak kaydedilebilir. */
 export default function GeoReportPage() {
-  const [d, setD] = useState<{ report: GeoReport | null; brand?: string; createdAt?: string; demo?: boolean; prevAt?: string | null; diff?: RunDiff | null } | null>(null);
+  const [d, setD] = useState<{ report: GeoReport | null; brand?: string; domain?: string; createdAt?: string; demo?: boolean; prevAt?: string | null; diff?: RunDiff | null } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [agency, setAgency] = useAgencyName();
 
@@ -47,7 +48,7 @@ export default function GeoReportPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title={`${d.brand}: AI görünürlük raporu`}
-        description={`${new Date(d.createdAt!).toLocaleDateString("tr-TR")} tarihli testin ${r.questions} sorusu ve ${r.answers} cevabından kodla çıkarıldı (AI kullanılmadı).${d.demo ? " Demo verisi içerir." : ""}`}
+        description={`${new Date(d.createdAt!).toLocaleDateString("tr-TR")} tarihli testin ${r.questions} sorusu ve ${r.answers} cevabından. En üstte AI analistinin yorumu, altında cevaplardan kodla sayılan veriler.${d.demo ? " Demo verisi içerir." : ""}`}
         actions={
           <div className="flex flex-wrap gap-2 print:hidden">
             <input value={agency} onChange={(e) => setAgency(e.target.value)} placeholder="Ajans adın (PDF'te görünür)" aria-label="Ajans adı" className={`${INPUT} h-8 w-52`} />
@@ -73,11 +74,14 @@ export default function GeoReportPage() {
         {!r.sourcedAnswers && <p className="mt-1 text-sm text-sub">Bu testte hiçbir cevap kaynak göstermedi (motorlar web'de arama yapmadan cevapladı); kaynak ve rakip sayfası bulguları bu yüzden boş. Web aramalı motorlarla (ChatGPT, Gemini, Perplexity) yeni test kaynakları da gösterir.</p>}
       </Card>
 
+      {/* AI analisti: önceliklendirilmiş işler ve brief'ler (daha önce üretildiyse kayıttan gelir, yeni sorgu harcanmaz). */}
+      {d.domain && <Opportunities domain={d.domain} brand={d.brand ?? ""} />}
+
       {d.diff && d.prevAt && <Changes diff={d.diff} prevAt={d.prevAt} />}
 
       {r.actions.length > 0 && (
         <Card>
-          <CardHeader title="Önce bunları yap" subtitle="Sıralama veriden: en çok kaybettiğin sorular ve kaynaklar önce." />
+          <CardHeader title="Veriden çıkan işler" subtitle="Cevaplardan kodla sayıldı: en çok kaybettiğin sorular ve kaynaklar önce." />
           <ol className="mt-3 space-y-3">
             {r.actions.map((a, i) => (
               <li key={i} className="flex gap-3">
