@@ -20,6 +20,6 @@ assert.ok(covered("BÖBREK SAĞLIĞINI DESTEKLER", own.text), "ekli biçimler sa
 assert.deepEqual(missingHeadings(rival, own), ["MÜKEMMEL LEZZET", "Ürünlerimiz ile ilgili sorularınız mı var?", "Analitik bileşenler"].filter((h) => !covered(h, own.text)));
 assert.ok(missingHeadings(rival, own).includes("Analitik bileşenler"));
 
-const urls = ["https://www.purina.com.tr/kedi/urunler", "https://www.purina.com.tr/pro-plan-veterinary-diets/kedi/nf-renal-function", "https://www.purina.com.tr/blog/kedi-oyunlari"];
+const urls = ["https://www.purina.com.tr/sozlesme/renal-kedi.pdf", "https://www.purina.com.tr/kedi/urunler", "https://www.purina.com.tr/pro-plan-veterinary-diets/kedi/nf-renal-function", "https://www.purina.com.tr/blog/kedi-oyunlari"];
 assert.equal(suggestOwnUrls(rival, urls)[0], urls[1]);
 console.log("check-page-compare: ok");

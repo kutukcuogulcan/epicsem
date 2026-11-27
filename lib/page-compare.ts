@@ -94,6 +94,7 @@ export function suggestOwnUrls(rival: Pick<PageOutline, "url" | "h1" | "title" |
   const top = rival.headings.slice(0, 4).map((h) => h.text).join(" ");
   const want = new Set([...tokens(new URL(rival.url).pathname.replace(/[-_/]/g, " ")), ...tokens(rival.h1), ...tokens(rival.title), ...tokens(top)].map((w) => w.slice(0, 5)));
   return ownUrls
+    .filter((u) => !/\.(pdf|docx?|xlsx?|jpe?g|png|zip)(\?|$)/i.test(u)) // yalnızca sayfalar
     .map((u) => {
       let path = u;
       try {

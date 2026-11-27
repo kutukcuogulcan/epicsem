@@ -129,7 +129,7 @@ function Compare() {
             <Card>
               <CardHeader
                 title={res.missing.length ? `Rakipte olup sende karşılığı olmayan başlıklar (${res.missing.length})` : "Rakibin bütün başlıklarının sende karşılığı var"}
-                subtitle="Rakip başlığının kelimeleri senin sayfanda geçmiyorsa listelenir. Aynı bilgiyi farklı kelimelerle veriyorsan sayfan bunu zaten karşılıyor olabilir; ürününde gerçekten olanı ekle."
+                subtitle="Rakip başlığının kelimeleri senin sayfanda geçmiyorsa listelenir. Rakibin kendi ürün adlarını (ör. kart ya da ürün serisi adları) atla; aynı bilgiyi farklı kelimelerle veriyorsan sayfan bunu zaten karşılıyor olabilir. Yalnızca ürününde gerçekten olanı ekle."
               />
               {res.missing.length > 0 && (
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink">
