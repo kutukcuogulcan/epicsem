@@ -1207,6 +1207,12 @@ export async function addMonitoredPage(userId: number, url: string, label?: stri
   return rowToMonitoredPage(row);
 }
 
+/** Yoksa izlemeye ekler; varsa dokunmaz (kullanıcının etiketi/Slack adresi silinmesin). Yeni projede ana sayfa için. */
+export async function ensureMonitoredPage(userId: number, url: string, label: string): Promise<void> {
+  await ensureSchema();
+  await exec(`INSERT INTO monitored_pages (user_id, url, label) VALUES ($1, $2, $3) ON CONFLICT (user_id, url) DO NOTHING`, [userId, url, label]);
+}
+
 export async function listMonitoredPages(userId: number): Promise<MonitoredPage[]> {
   await ensureSchema();
   const rows = await many<any>(`SELECT * FROM monitored_pages WHERE user_id = $1 ORDER BY id DESC`, [userId]);

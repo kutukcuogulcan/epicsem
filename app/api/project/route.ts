@@ -4,7 +4,7 @@ import { isDemoMode } from "@/lib/geo-providers";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { createClient, getClient, listClients, listKnownSites, updateClient, type Client } from "@/lib/db";
+import { createClient, ensureMonitoredPage, getClient, listClients, listKnownSites, updateClient, type Client } from "@/lib/db";
 import { readableZodError } from "@/lib/zod-error";
 
 /**
@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
     const c = await createClient(user.id, { name: p.name, domain: norm(p.domain), competitors: p.competitors.map((x) => ({ name: x.name, domain: norm(x.domain) })) });
     (await cookies()).set(COOKIE, String(c.id), { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
     // Rakipsiz açılan projeye rakipleri arka planda yaz (sunucu sürekli çalışıyor; cevabı bekletmez).
+    // Ücretsiz izleme kendiliğinden başlasın: ana sayfa Sayfa İzleme'ye eklenir (AI harcamaz; zamanlayıcı kontrol eder).
+    void ensureMonitoredPage(user.id, `https://${norm(p.domain)}/`, `${p.name} ana sayfa`).catch(() => undefined);
     if (!c.competitors.length && !isDemoMode()) void autofillCompetitors(user.id, c.id, norm(p.domain));
     // Kurulum sihirbazının rakip adımından gelen alt marka adayları: siteyle doğrulanıp yazılır (AI çağrısı yok).
     else if (p.ownBrands?.length) void saveVerifiedAliases(user.id, c.id, norm(p.domain), p.ownBrands);
