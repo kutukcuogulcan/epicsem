@@ -50,27 +50,27 @@ export async function runSeoAudit(rawUrl: string): Promise<SeoAuditResult> {
     if (blocked) {
       // Bot koruma sayfasını sitenin kendisi gibi denetlemek yanlış puan üretir.
       pushIssue(issues, { category: "crawlability", severity: "critical", title: "Site otomatik erişimi engelliyor", detail: blocked, recommendation: "Sayfa okunamadığı için bu denetim eksik. Site senin ise güvenlik duvarında (ör. Cloudflare) bu araca izin ver." });
-      return buildEmptyResult(url, issues);
+      return buildEmptyResult(url, issues, blocked);
     }
     html = await res.text();
     if (!res.ok) {
       pushIssue(issues, {
         category: "crawlability",
         severity: "critical",
-        title: `Page returned HTTP ${res.status}`,
-        detail: `Fetching ${url} did not return a 200 OK response.`,
-        recommendation: "Ensure the URL resolves correctly and returns a 200 status for both users and crawlers.",
+        title: `Sayfa HTTP ${res.status} döndürdü`,
+        detail: `${url} adresi 200 OK yerine HTTP ${res.status} döndürdü.`,
+        recommendation: "Adresin hem ziyaretçiler hem tarayıcılar için 200 döndürdüğünden emin ol.",
       });
     }
   } catch (err) {
     pushIssue(issues, {
       category: "crawlability",
       severity: "critical",
-      title: "Page could not be fetched",
-      detail: err instanceof Error ? err.message : "Unknown fetch error",
-      recommendation: "Confirm the domain is reachable, not blocked by a firewall/WAF, and DNS resolves publicly.",
+      title: "Sayfa açılamadı",
+      detail: err instanceof Error ? err.message : "Bilinmeyen bağlantı hatası",
+      recommendation: "Adresin erişilebilir olduğunu, güvenlik duvarına takılmadığını ve alan adının çözüldüğünü kontrol et.",
     });
-    return buildEmptyResult(url, issues);
+    return buildEmptyResult(url, issues, `Sayfa açılamadı: ${err instanceof Error ? err.message : "bağlantı hatası"}`);
   }
 
   const $ = cheerio.load(html);
@@ -387,9 +387,10 @@ function computeAiCrawlScore(aiBotAccess: AiBotAccess[], hasSchema: boolean, has
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-function buildEmptyResult(url: string, issues: SeoIssueResult[]): SeoAuditResult {
+function buildEmptyResult(url: string, issues: SeoIssueResult[], unreadable: string): SeoAuditResult {
   return {
     url,
+    unreadable,
     score: 0,
     aiCrawlScore: 0,
     issues,

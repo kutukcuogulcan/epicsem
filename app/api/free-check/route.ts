@@ -92,9 +92,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const r = await runSeoAudit(`https://${u.hostname}/`);
-    if (!r.score && r.issues.some((i) => /could not be fetched|returned HTTP/.test(i.title))) {
-      return NextResponse.json({ error: "Site açılamadı ya da botlara kapalı. Adresi kontrol edip tekrar dene." }, { status: 502 });
-    }
+    if (r.unreadable) return NextResponse.json({ error: `${r.unreadable} Adresi kontrol edip tekrar dene.` }, { status: 502 });
     const result = summarize(host, r);
     cache.set(host, { at: Date.now(), r: result });
     if (cache.size > 500) cache.delete(cache.keys().next().value!);

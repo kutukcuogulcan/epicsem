@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const limitResult = rateLimit(`audit:${user.id}`, 30, 60 * 60 * 1000);
   if (!limitResult.allowed) {
     return NextResponse.json(
-      { error: "Rate limit reached — up to 30 audits per hour. Try again shortly." },
+      { error: "Saatte en fazla 30 denetim yapılabilir. Biraz sonra tekrar dene." },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
     );
   }
@@ -23,11 +23,13 @@ export async function POST(req: NextRequest) {
   try {
     parsed = bodySchema.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Body must be { url: string }" }, { status: 400 });
+    return NextResponse.json({ error: "Geçerli bir adres gir." }, { status: 400 });
   }
 
   try {
     const result = await runSeoAudit(parsed.url);
+    // Okunamayan sayfaya 0 puan verilmez ve geçmişe yazılmaz (ortalama ve trend bozulmasın).
+    if (result.unreadable) return NextResponse.json({ error: result.unreadable }, { status: 422 });
     let previousRun = null;
     try {
       await saveAuditRun(user.id, result);
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...result, previousRun });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Audit failed" },
+      { error: err instanceof Error ? err.message : "Denetim başarısız oldu" },
       { status: 500 }
     );
   }

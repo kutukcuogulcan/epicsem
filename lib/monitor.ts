@@ -28,10 +28,14 @@ export interface CheckResult {
   newlyBlocked: string[];
   newlyUnblocked: string[];
   alertRaised: boolean;
+  /** Bu kontrolde sayfa okunamadı; kayıt yazılmadı. */
+  unreadable?: string;
 }
 
 export async function checkMonitoredPage(page: MonitoredPage): Promise<CheckResult> {
   const audit = await runSeoAudit(page.url);
+  // Sayfa okunamadıysa (bot koruması, ağ hatası) boş sonucu önceki kayıtla kıyaslamak sahte "başlık/H1 kayboldu" uyarısı üretir.
+  if (audit.unreadable) return { pageId: page.id, url: page.url, score: audit.score, aiCrawlScore: audit.aiCrawlScore, blockedBots: [], newlyBlocked: [], newlyUnblocked: [], alertRaised: false, unreadable: audit.unreadable };
   const blockedBots = audit.meta.aiBotAccess.filter((b) => !b.allowed).map((b) => b.bot);
 
   const previous = await getLatestMonitorCheck(page.id);

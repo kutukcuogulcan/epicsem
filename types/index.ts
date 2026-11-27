@@ -22,6 +22,8 @@ export interface SeoIssueResult {
 
 export interface SeoAuditResult {
   url: string;
+  /** Sayfa okunamadıysa (bot koruması, ağ hatası) nedeni; o zaman puanlar ölçüm değildir, gösterilmez ve kaydedilmez. */
+  unreadable?: string;
   score: number;
   aiCrawlScore: number;
   issues: SeoIssueResult[];

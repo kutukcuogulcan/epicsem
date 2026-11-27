@@ -66,6 +66,10 @@ export async function runAuditAgent(userId: number, main: SeoAuditResult, brand:
       if (audited.size > MAX_AUDITS) return `Sınır: en fazla ${MAX_AUDITS} sayfa denetlenebilir. Elindekiyle raporu yaz.`;
       try {
         const r = await runSeoAudit(url);
+        if (r.unreadable) {
+          trace.push(`Okuyamadı: ${url}`);
+          return `Sayfa okunamadı (${r.unreadable}). Bu sayfa hakkında tahmin yürütme.`;
+        }
         audited.add(r.url);
         trace.push(`Denetledi: ${r.url} (puan ${r.score})`);
         return auditDigest(r);
