@@ -16,6 +16,7 @@ import type { SerpSnap } from "@/lib/rank-explain";
 import type { PageChange, PageSnap } from "@/lib/page-diff";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import { openSecret, sealSecret } from "./secret-box";
+import { recountWithAliases } from "@/lib/alias-recount";
 
 /**
  * Persistence layer — Postgres via `pg` (node-postgres), connected through DATABASE_URL.
@@ -2895,7 +2896,31 @@ export async function updateClient(userId: number, id: number, params: { name?: 
     `UPDATE clients SET name = $1, domain = $2, competitors_json = $3, aliases_json = $4 WHERE id = $5 AND user_id = $6 RETURNING *`,
     [params.name ?? cur.name, params.domain ?? cur.domain, JSON.stringify(params.competitors ?? cur.competitors), JSON.stringify(params.aliases ?? cur.aliases), id, userId]
   );
+  if (row && params.aliases?.length && JSON.stringify(params.aliases) !== JSON.stringify(cur.aliases)) {
+    const c = rowToClient(row);
+    await recountGeoRunsWithAliases(userId, c.domain, c.name, c.aliases ?? []).catch((e) => console.error("[aliases] eski testler yeniden sayılamadı", e));
+  }
   return row ? rowToClient(row) : null;
+}
+
+/** Alt markalar değişince o markanın kayıtlı GEO testlerinde "anıldı" bilgisini yeniden sayar (pano, geçmiş, monitörler aynı sayıyı göstersin). */
+async function recountGeoRunsWithAliases(userId: number, domain: string, name: string, aliases: string[]): Promise<void> {
+  const d = domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const rows = await many<any>(
+    `SELECT id, brand_name, brand_domain, runs_json, summaries_json, topic_breakdown_json FROM geo_runs
+      WHERE user_id = $1 AND brand_domain IN ($2, $3) AND runs_json IS NOT NULL ORDER BY id DESC LIMIT 200`,
+    [userId, d, `www.${d}`]
+  );
+  for (const r of rows) {
+    const out = recountWithAliases(
+      { runs: JSON.parse(r.runs_json), summaries: JSON.parse(r.summaries_json || "[]"), topics: JSON.parse(r.topic_breakdown_json || "[]") },
+      { name: r.brand_name || name, domain: r.brand_domain, aliases }
+    );
+    if (out)
+      await one(`UPDATE geo_runs SET runs_json = $1, summaries_json = $2, topic_breakdown_json = $3 WHERE id = $4 AND user_id = $5 RETURNING id`, [
+        JSON.stringify(out.runs), JSON.stringify(out.summaries), JSON.stringify(out.topics), r.id, userId,
+      ]);
+  }
 }
 
 // ---------------- Marka Monitörü otomatik çalıştırma ----------------
