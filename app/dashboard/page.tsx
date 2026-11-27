@@ -80,8 +80,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const steps = [
     { done: !!proj, title: "Proje oluştur", body: "Siteni ve rakiplerini ekle.", href: "/project", cta: "Proje ekle" },
     { done: settingsFilled, title: "Markanı tanıt", body: "Ton, hedef kitle ve ürünler — AI bunlarla yazar.", href: "/project", cta: "Ayarları doldur" },
-    { done: !!monitor, title: "İlk GEO testini çalıştır", body: "ChatGPT, Gemini ve Perplexity'de görünüyor musun?", href: "/geo", cta: "Testi başlat" },
-    { done: !!schedule?.active, title: "Monitörü otomatiğe al", body: "Görünürlüğü her gün ya da hafta kendiliğinden ölç.", href: monitor ? `/brand-monitors/${encodeURIComponent(monitor.brandDomain)}` : "/brand-monitors", cta: "İzlemeyi aç" },
+    { done: !!monitor, title: "İlk GEO testini çalıştır", body: "ChatGPT, Gemini ve Perplexity'de görünüyor musun?", href: "/geo", cta: "Testi başlat", next: { href: "/geo/rapor", cta: "Raporu aç" } },
+    { done: !!schedule?.active, title: "Monitörü otomatiğe al", body: "Görünürlüğü her hafta kendiliğinden ölç. Her test soru × motor kadar AI sorgusu harcar.", href: monitor ? `/brand-monitors/${encodeURIComponent(monitor.brandDomain)}` : "/brand-monitors", cta: "İzlemeyi aç" },
     { done: projDrafts.length > 0, title: "İlk yazını yaz", body: "Anahtar kelimeden konuya, plandan yazıya.", href: "/editor", cta: "Yazı yaz" },
     { done: projCampaigns.length > 0, title: "Autoblog kur", body: "Yazılar düzenli olarak kendiliğinden üretilsin.", href: "/campaigns", cta: "Autoblog kur" },
     { done: cms.length > 0, title: "Siteni bağla", body: "WordPress ya da Shopify'a tek tıkla yayınla.", href: "/content", cta: "Bağla" },
@@ -151,10 +151,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   <div className={`text-sm font-medium ${s.done ? "text-sub line-through decoration-sub/40" : "text-ink"}`}>{s.title}</div>
                   {!s.done && <div className="text-xs text-sub">{s.body}</div>}
                 </div>
-                {!s.done && (
+                {!s.done ? (
                   <Link href={s.href} className={btnSecondary}>
                     {s.cta}
                   </Link>
+                ) : (
+                  s.next && (
+                    <Link href={s.next.href} className="text-sm font-medium text-accent hover:underline">
+                      {s.next.cta} →
+                    </Link>
+                  )
                 )}
               </li>
             ))}
