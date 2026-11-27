@@ -89,6 +89,7 @@ export default function OnboardingPage() {
   // Kurulum seçenekleri ve ilerleme
   const [doAudit, setDoAudit] = useState(true);
   const [doGeo, setDoGeo] = useState(true);
+  const [geoOk, setGeoOk] = useState(false);
   const [setup, setSetup] = useState<{ k: string; l: string; s: StepStatus; note?: string }[] | null>(null);
   const [finished, setFinished] = useState(false);
 
@@ -196,6 +197,7 @@ export default function OnboardingPage() {
   async function finish() {
     const items = [
       { k: "project", l: "Proje", s: "running" as StepStatus },
+      { k: "monitor", l: "Ana sayfa izlemeye alındı (ücretsiz)", s: "pending" as StepStatus },
       { k: "settings", l: "Marka bilgileri", s: "pending" as StepStatus },
       { k: "prompts", l: `${chosen.length} AI sorusu takipte`, s: "pending" as StepStatus },
       ...(doAudit ? [{ k: "audit", l: "İlk site denetimi (ücretsiz)", s: "pending" as StepStatus }] : []),
@@ -211,6 +213,8 @@ export default function OnboardingPage() {
       const pd = await pr.json();
       if (!pr.ok) throw new Error(pd.error ?? "Proje oluşturulamadı");
       mark("project", "ready", pd.existed ? "Bu site zaten bir projeydi; o seçildi." : undefined);
+      // Sunucu yeni projede ana sayfayı Sayfa İzleme'ye ekler (api/project); mevcut projede dokunulmaz.
+      mark("monitor", "ready", pd.existed ? "Sayfa İzleme'den kontrol edebilirsin." : "AI botu engellenirse ya da sayfa bozulursa uyarı alırsın.");
       // 2 Ayarlar
       mark("settings", "running");
       const sr = await fetch("/api/project/settings", {
@@ -243,19 +247,18 @@ export default function OnboardingPage() {
       }
       // 5 GEO
       if (doGeo && ids.length) {
-        mark("geo", "running");
-        let ok = 0;
-        let lastErr = "";
-        for (let i = 0; i < ids.length; i++) {
-          setSetup((xs) => (xs ? xs.map((x) => (x.k === "geo" ? { ...x, note: `${i + 1}/${ids.length} soru soruluyor…` } : x)) : xs));
-          const gr = await fetch("/api/saved-prompts/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: ids[i], engines: ENGINES }) });
-          if (gr.ok) ok++;
-          else {
-            lastErr = (await gr.json().catch(() => ({}))).error ?? "hata";
-            if (gr.status === 402) break;
-          }
-        }
-        mark("geo", ok ? "ready" : "error", ok ? `${ok} soru AI motorlarına soruldu` : lastErr);
+        // Tek tam test (/api/geo): sonuç GEO panosu, Genel Bakış, monitörler ve rapora kaydedilir.
+        // shortcut: soru listesindeki satır bazlı görünürlük bu testten doldurulmaz; satırdan "Çalıştır" ile güncellenir.
+        mark("geo", "running", `${Math.min(chosen.length, MAX_PROMPTS)} soru bağlı AI motorlarına soruluyor; birkaç dakika sürebilir…`);
+        const gr = await fetch("/api/geo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brand, competitors, prompts: chosen.slice(0, MAX_PROMPTS).map((p) => ({ text: p.text, topic: p.topic.slice(0, 60) || "Genel" })), engines: ENGINES }),
+        });
+        const gd = await gr.json().catch(() => ({}));
+        const n = Array.isArray(gd.runs) ? gd.runs.length : 0;
+        setGeoOk(gr.ok && n > 0);
+        mark("geo", gr.ok && n ? "ready" : "error", gr.ok && n ? `${n} AI cevabı alındı ve kaydedildi` : gd.error ?? "Test çalıştırılamadı");
         window.dispatchEvent(new Event("epicsem:usage-changed"));
       }
       setFinished(true);
@@ -577,8 +580,8 @@ export default function OnboardingPage() {
                     <button type="button" onClick={() => router.push("/dashboard")} className={`${BTN1} flex-1`}>
                       Panele git
                     </button>
-                    <button type="button" onClick={() => router.push("/geo")} className={`${BTN2} flex-1`}>
-                      GEO sonuçlarını gör
+                    <button type="button" onClick={() => router.push(geoOk ? "/geo/rapor" : "/geo")} className={`${BTN2} flex-1`}>
+                      {geoOk ? "AI raporunu gör" : "GEO'ya git"}
                     </button>
                   </div>
                 )}

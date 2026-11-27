@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const limitResult = rateLimit(`geo:${user.id}`, 15, 60 * 60 * 1000);
   if (!limitResult.allowed) {
     return NextResponse.json(
-      { error: "Rate limit reached — up to 15 GEO tests per hour. Try again shortly." },
+      { error: "Saatte en fazla 15 GEO testi yapılabilir. Biraz sonra tekrar dene." },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
     );
   }
