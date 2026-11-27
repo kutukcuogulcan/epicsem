@@ -89,7 +89,8 @@ function grams(s: string, drop: Set<string>): string[] {
 
 export function buildPerception(runs: GeoRunResult[], brands: { name: string; aliases?: string[] }[]): BrandPerception[] {
   // Marka adı ve alt markaları (Pro Plan, Felix…) ifade sayılmaz; alt marka geçen cümle de markanın cümlesidir.
-  const nameTokens = new Set(brands.flatMap((b) => [b.name, ...(b.aliases ?? [])].flatMap((n) => fold(n).split(/\s+/))));
+  // Ad parçaları noktalama/boşlukla ayrılır: "arabam.com" → arabam, com (grams() da böyle böler).
+  const nameTokens = new Set(brands.flatMap((b) => [b.name, ...(b.aliases ?? [])].flatMap((n) => fold(n).split(/[^\p{L}\p{N}]+/u).filter(Boolean))));
   const per = brands.map((b) => {
     const names = [b.name, ...(b.aliases ?? [])].map(fold);
     const docs: { grams: string[]; sent: string[] }[] = [];

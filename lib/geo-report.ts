@@ -32,6 +32,8 @@ export interface GeoReport {
   wonQuestions: string[];
   gapSources: { domain: string; count: number; rivals: string[] }[];
   ownCitedIn: number;
+  /** Kaynak gösteren cevap sayısı; 0 ise motorlar web'e bakmadan (eğitim verisinden) cevaplamış demektir. */
+  sourcedAnswers: number;
   /** En çok ilk sırada çıkan rakip: senin önüne geçtiği cevaplar ve AI'ın kaynak gösterdiği sayfaları. */
   leader: { name: string; firsts: number; aheadIn: number; citedIn: number; ahead: { question: string; engine: string; ownRank: number | null }[]; pages: { url: string; count: number }[] } | null;
   perception: { positives: PerceptionTerm[]; negatives: PerceptionTerm[] };
@@ -177,8 +179,9 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
       why: `${leader.name} ${leader.aheadIn} cevapta senden önce geldi; AI ${leader.citedIn} cevapta onun sitesini kaynak gösterdi, seninkini ${ownCitedIn} cevapta.${leader.pages.length ? ` En çok kaynak gösterilen sayfası: ${leader.pages[0].url}` : ""}`,
       href: leader.pages.length ? `/geo/karsilastir?rival=${encodeURIComponent(leader.pages[0].url)}` : undefined,
     });
-  if (!ownCitedIn && analyzed.length)
-    actions.push({ title: "Kendi siten hiç kaynak gösterilmedi", why: `${analyzed.length} cevabın hiçbirinde ${cleanDomain(own.domain)} kaynak olarak geçmedi: soruları cevap-önce, SSS ve kaynaklarla yanıtlayan sayfalar AI'ın alıntılayabileceği biçimde değil.` });
+  const sourcedAnswers = analyzed.filter((x) => x.a.sources.length).length;
+  if (!ownCitedIn && sourcedAnswers)
+    actions.push({ title: "Kendi siten hiç kaynak gösterilmedi", why: `Kaynak gösteren ${sourcedAnswers} cevabın hiçbirinde ${cleanDomain(own.domain)} kaynak olarak geçmedi: soruları cevap-önce, SSS ve kaynaklarla yanıtlayan sayfalar AI'ın alıntılayabileceği biçimde değil.` });
   if (perception.negatives.length)
     actions.push({ title: `Olumsuz algıyı kontrol et: ${perception.negatives.map((t) => `"${t.term}"`).join(", ")}`, why: "AI bu ifadeleri markanın geçtiği cümlelerde kullanıyor (cümlede başka markalar da olabilir; örneklere bak). Doğruysa çözümü anlatan, değilse düzelten içerik yayınla." });
 
@@ -195,6 +198,7 @@ export function buildGeoReport(runs: GeoRunResult[], own: BrandRef, rivals: Bran
     wonQuestions,
     gapSources,
     ownCitedIn,
+    sourcedAnswers,
     leader,
     perception,
     actions: actions.slice(0, 6),

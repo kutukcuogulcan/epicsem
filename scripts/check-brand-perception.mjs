@@ -28,4 +28,9 @@ const run = (t) => ({ engine: "openai", model: "m", promptText: "q", topic: "", 
 const per = buildPerception([run("Pro Plan böbrek dostu formül sunar."), run("Pro Plan böbrek dostu ve veteriner onaylı.")], [{ name: "Purina", aliases: ["Pro Plan"] }])[0];
 assert.equal(per.mentions, 2);
 assert.ok(per.terms.some((x) => x.term === "böbrek dostu") && !per.terms.some((x) => /pro|plan/.test(x.term)), per.terms.map((x) => x.term).join(", "));
+{
+  const t = "arabam.com ilan sayısı en yüksek platformdur.";
+  const out = buildPerception([1, 2, 3].map(() => ({ responseText: t })), [{ name: "arabam.com" }]);
+  assert.ok(!out[0].terms.some((x) => /\b(arabam|com)\b/.test(x.term)), "alan adı biçimli marka adı ifade sayılmaz: " + out[0].terms.map((x) => x.term));
+}
 console.log("check-brand-perception: ok");

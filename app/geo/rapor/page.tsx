@@ -67,9 +67,10 @@ export default function GeoReportPage() {
           <Stat label="Görünürlük" value={pct(r.visibility)} hint={r.confidence ? `±${r.confidence.margin} puan` : undefined} />
           <Stat label="İlk sırada" value={pct(r.winRate)} hint="cevapların" />
           <Stat label="Kaybedilen soru" value={`${r.lost.length}/${r.questions}`} />
-          <Stat label="Kendi siten kaynak" value={`${r.ownCitedIn}/${r.answers}`} hint="cevapta" />
+          <Stat label="Kendi siten kaynak" value={r.sourcedAnswers ? `${r.ownCitedIn}/${r.sourcedAnswers}` : "—"} hint={r.sourcedAnswers ? "kaynaklı cevapta" : "motorlar kaynak göstermedi"} />
         </div>
         {r.confidence && r.confidence.level !== "yeterli" && <p className="mt-3 text-sm text-sub">{r.confidence.text}</p>}
+        {!r.sourcedAnswers && <p className="mt-1 text-sm text-sub">Bu testte hiçbir cevap kaynak göstermedi (motorlar web'de arama yapmadan cevapladı); kaynak ve rakip sayfası bulguları bu yüzden boş. Web aramalı motorlarla (ChatGPT, Gemini, Perplexity) yeni test kaynakları da gösterir.</p>}
       </Card>
 
       {d.diff && d.prevAt && <Changes diff={d.diff} prevAt={d.prevAt} />}
