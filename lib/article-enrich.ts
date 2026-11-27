@@ -1,7 +1,6 @@
 import { runWebSearchPrompt } from "./competitor-discovery";
-import { hostOf, isOriginHost } from "./source-origin";
+import { factOnPage, hostOf, isOriginHost } from "./source-origin";
 import { extractJsonObject } from "./llm-json";
-import { statusOf } from "./audit-extra";
 import { fetchPageSummary } from "./content-fetch";
 import * as cheerio from "cheerio";
 import { getLatestCrawlPages } from "./db";
@@ -65,6 +64,22 @@ async function verifyYoutube(url: string): Promise<{ title: string; url: string;
   }
 }
 
+/** Kaynak sayfasının görünen metni (doğrulama için); açılmazsa text null. */
+async function pageTextOf(url: string): Promise<{ status: number; text: string | null; unverifiable?: boolean }> {
+  try {
+    const r = await safeFetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; EpicsemBot/1.0)" } }, { timeoutMs: 9000, maxBytes: 4_000_000 });
+    if (!r.ok) return { status: r.status, text: null };
+    const ct = r.headers.get("content-type") ?? "";
+    // shortcut: PDF vb. metni okunmaz; 403 gibi doğrulanamaz sayılıp kabul edilir (çoğu asıl rapor). PDF okuyucu eklenince doğrulanır.
+    if (!/html|text|xml|json/.test(ct)) return { status: r.status, text: null, unverifiable: true };
+    const $ = cheerio.load(await r.text());
+    $("script, style, noscript").remove();
+    return { status: r.status, text: $("body").text().replace(/\s+/g, " ") };
+  } catch {
+    return { status: 0, text: null };
+  }
+}
+
 /** Web aramasıyla kaynaklı bilgiler + video. Web aramalı sağlayıcı yoksa null (yazı kaynaksız yazılır). */
 export async function researchTopic(topic: string, language = "tr", opts: { brand?: string; competitors?: { name: string; domain: string }[] } = {}): Promise<ResearchResult | null> {
   const tr = language === "tr";
@@ -104,9 +119,10 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
     })
     .filter((f: ResearchFact) => f.fact && publicUrl(f.url) && !isRival(f.url, f.source))
     .slice(0, 6);
-  // Kaynak sayfaları gerçekten açılıyor mu? (403/405 bazı siteler botlara kapalı; onları kabul et)
-  const codes = await Promise.all(raw.map((f) => statusOf(f.url, 7000)));
-  const facts = raw.filter((_, i) => (codes[i] >= 200 && codes[i] < 400) || codes[i] === 403).slice(0, 5);
+  // Kaynak sayfası açılıyor mu ve bilginin rakamı o sayfada gerçekten geçiyor mu? (Yanlış sayfaya bağlanmış bilgi atılır.)
+  // 403: bazı siteler botlara kapalı — doğrulanamaz, kabul edilir.
+  const checks = await Promise.all(raw.map((f) => pageTextOf(f.url)));
+  const facts = raw.filter((f, i) => checks[i].status === 403 || checks[i].unverifiable || (checks[i].text != null && factOnPage(f.fact, checks[i].text!))).slice(0, 5);
   const ytUrl = String(parsed.youtube?.url ?? "");
   const yt = ytUrl ? await verifyYoutube(ytUrl) : null;
   const youtube = yt && !isRival("", yt.title) ? yt : null;

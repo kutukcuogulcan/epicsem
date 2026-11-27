@@ -12,3 +12,14 @@ assert.equal(isOriginHost("World Health Organization", "https://www.who.int/news
 assert.equal(isOriginHost("Bilgi Teknolojileri ve İletişim Kurumu", "https://www.btk.gov.tr/raporlar"), false, "bilinen sınır: kısaltması adından türemiyor");
 assert.equal(isOriginHost("", "https://x.com"), true, "kurum bilinmiyorsa iddia yok");
 console.log("check-source-origin: ok");
+{
+  const { factNumbers, factOnPage } = await import("../lib/source-origin.ts");
+  assert.deepEqual(factNumbers("Chen ve Koudas'a göre ChatGPT sorguların %28'ine marka ekliyor (2025)."), ["28"]);
+  assert.deepEqual(factNumbers("32.556 marka bilgisinin %9,2'si yanlış"), ["32.556", "9,2"]);
+  assert.equal(factOnPage("sorguların %28'ine marka ekliyor", "we find that 28% of queries add a brand"), true);
+  assert.equal(factOnPage("sorguların %28'ine marka ekliyor", "Abstract: a 2016 study of query logs with 1,280 users"), false, "1,280 içindeki 28 sayılmaz");
+  assert.equal(factOnPage("Gemini %83,7 oranında anıyor", "Gemini mentioned brands in 83.7% of answers"), true, "virgül/nokta eşdeğer");
+  assert.equal(factOnPage("32.556 marka bilgisi incelendi", "We analyzed 32,556 brand facts"), true);
+  assert.equal(factOnPage("Kullanıcı sayısı arttı", "herhangi bir metin"), true, "rakamsız bilgi doğrulanamaz, kabul");
+  console.log("check-source-origin (rakam doğrulama): ok");
+}

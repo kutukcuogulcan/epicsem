@@ -31,3 +31,29 @@ export function isOriginHost(origin: string, url: string): boolean {
   const label = host.split(".").slice(0, -1).join(".");
   return tokens.some((t) => label.includes(t)) || (initials.length >= 2 && label.split(".").includes(initials)) || (words.length === 1 && label.includes(words[0]));
 }
+
+/** Bilgideki ayırt edici rakamlar (%28, 1.609, 32.556 — tek haneliler ve yıllar hariç). */
+export function factNumbers(fact: string): string[] {
+  const out = new Set<string>();
+  for (const m of fact.matchAll(/(?:%\s?)?\d+(?:[.,]\d+)*(?:\s?%)?/g)) {
+    const raw = m[0];
+    const n = raw.replace(/[%\s]/g, "");
+    const digits = n.replace(/[.,]/g, "");
+    if (digits.length < 2 || (/^(19|20)\d\d$/.test(n) && !raw.includes("%"))) continue;
+    out.add(n);
+  }
+  return [...out];
+}
+
+/** Bilginin rakamlarından en az biri kaynak sayfanın metninde geçiyor mu (rakamsız bilgi doğrulanamaz, kabul edilir).
+ * "32.556" ↔ "32,556" ↔ "32556" ve "83,7" ↔ "83.7" eşdeğer sayılır. */
+export function factOnPage(fact: string, pageText: string): boolean {
+  const nums = factNumbers(fact);
+  if (!nums.length) return true;
+  const text = pageText.replace(/ /g, " ");
+  return nums.some((n) => {
+    const parts = n.split(/[.,]/);
+    const re = new RegExp(`(?<![\\d.,])${parts.join("[.,]?")}(?![\\d]|[.,]\\d)`);
+    return re.test(text);
+  });
+}
