@@ -11,5 +11,6 @@ export async function GET(req: NextRequest) {
   if (!ok) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
   const owner = await demoOwnerUser();
   await createSessionCookie(owner.id, 3650);
-  return NextResponse.redirect(new URL("/dashboard", req.url));
+  // Göreli yönlendirme: Render'ın arkasında req.url iç adres (localhost:10000) olur.
+  return new NextResponse(null, { status: 303, headers: { Location: "/dashboard" } });
 }
