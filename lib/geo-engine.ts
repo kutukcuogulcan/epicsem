@@ -12,6 +12,7 @@ import { PROVIDERS, isDemoMode } from "./geo-providers";
 import { simulateResponse } from "./geo-demo";
 import { analyzeResponse, extractCitations } from "./geo-analyze";
 import { brandMentioned, rankTrackedBrands } from "./text-match";
+import { isRetailSource } from "./source-type";
 
 export interface BrandInput {
   name: string;
@@ -190,8 +191,10 @@ const EDITORIAL_HINTS = [
 export function classifyDomain(domain: string, brandDomain: string, competitorDomains: string[]): SourceDomainType {
   const clean = domain.replace(/^www\./i, "");
   const own = brandDomain.replace(/^www\./i, "");
-  if (clean === own) return "You";
-  if (competitorDomains.some((c) => clean === c.replace(/^www\./i, ""))) return "Competitor";
+  // Alt alan adları da sahibine aittir (vetcenter.purina.com.tr → Sen).
+  const sameSite = (d: string) => !!d && (clean === d || clean.endsWith("." + d));
+  if (sameSite(own)) return "You";
+  if (competitorDomains.some((c) => sameSite(c.replace(/^www\./i, "")))) return "Competitor";
   if (GOVERNMENT_HINTS.some((g) => clean.endsWith(g))) return "Government";
   if (REFERENCE_HINTS.some((r) => clean.endsWith(r))) return "Reference";
   if (UGC_DOMAINS.some((u) => clean.endsWith(u))) return "UGC";
@@ -244,10 +247,12 @@ export function computeSourceDistribution(
   const competitorDomains = competitors.map((c) => c.domain);
   const counts = new Map<string, number>();
   const chatsCitedIn = new Map<string, Set<number>>();
+  const urlsOf = new Map<string, string[]>();
 
   runs.forEach((run, runIdx) => {
     for (const citation of run.citations) {
       counts.set(citation.domain, (counts.get(citation.domain) ?? 0) + 1);
+      urlsOf.set(citation.domain, [...(urlsOf.get(citation.domain) ?? []), citation.url]);
       if (!chatsCitedIn.has(citation.domain)) chatsCitedIn.set(citation.domain, new Set());
       chatsCitedIn.get(citation.domain)!.add(runIdx);
     }
@@ -261,7 +266,7 @@ export function computeSourceDistribution(
       return {
         domain,
         count,
-        type: classifyDomain(domain, brand.domain, competitorDomains),
+        type: ((t) => (t === "Corporate" && isRetailSource(domain, urlsOf.get(domain) ?? []) ? "Retail" : t))(classifyDomain(domain, brand.domain, competitorDomains)) as SourceDomainType,
         citationShare: count / totalCitations,
         citationRate: chatsCited ? count / chatsCited : 0,
         chatsCited,

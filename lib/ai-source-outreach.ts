@@ -65,6 +65,7 @@ export function outreachPlan(type: SourceDomainType, page: { rivals: string[]; y
     UGC: "Başlıkta açık bir marka hesabıyla, reklam değil gerçekten yardım eden bir cevap yaz; şikâyet sitesiyse şikâyetlere çözümle yanıt ver.",
     Reference: "Tarafsız, kaynaklı bilgi ekle (kurallara uy, kendi markanı tanıtma); referans siteler AI için güvenilir kaynak.",
     Government: "Resmi listede (ör. lisans, entegratör, onaylı sağlayıcı) yer almanın şartlarını kontrol et ve başvur.",
+    Retail: "Mağaza / pazar yeri: ürünün burada listeleniyor mu, açıklaması ve yorumları güncel mi kontrol et; AI fiyat ve stok bilgisini buradan alıyor.",
     Corporate: "Şirket sitesi: senin rakibin olan bir ürünse atla; değilse iş ortaklığı, entegrasyon dizini ya da ortak içerik için iletişime geç.",
     Competitor: "Rakip sitesi; buradan link beklenmez.",
     You: "Kendi siten.",

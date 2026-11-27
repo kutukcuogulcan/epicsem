@@ -9,7 +9,7 @@ interface Item extends AiSource {
   plan: { status: OutreachStatus; label: string; action: string };
 }
 
-const TYPE_TR: Record<string, string> = { Editorial: "Editoryal", UGC: "Forum / topluluk", Reference: "Referans", Government: "Kamu", Corporate: "Kurumsal", Other: "Diğer", Competitor: "Rakip", You: "Sen" };
+const TYPE_TR: Record<string, string> = { Editorial: "Editoryal", UGC: "Forum / topluluk", Reference: "Referans", Government: "Kamu", Corporate: "Kurumsal", Retail: "E-ticaret", Other: "Diğer", Competitor: "Rakip", You: "Sen" };
 const STATUS_CLS: Record<OutreachStatus, string> = {
   "rakip-var-sen-yok": "bg-danger/10 text-danger-ink",
   "kimse-yok": "bg-warn/10 text-warn-ink",

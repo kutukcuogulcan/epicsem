@@ -122,7 +122,7 @@ export interface TopicVisibility {
 /** Kart: Overview/Domain/URL metrics spec §8 — "Biz, Rakip, Kurumsal, Editoryal, Kamu/Kurum,
  * UGC, Referans, Diğer" (8 categories). English keys here map to the Turkish labels shown in
  * the UI (see DOMAIN_TYPE_LABEL in app/geo/page.tsx). */
-export type SourceDomainType = "You" | "Competitor" | "Corporate" | "Editorial" | "Government" | "Reference" | "UGC" | "Other";
+export type SourceDomainType = "You" | "Competitor" | "Corporate" | "Retail" | "Editorial" | "Government" | "Reference" | "UGC" | "Other";
 
 export interface SourceDomainStat {
   domain: string;

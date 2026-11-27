@@ -85,7 +85,7 @@ function ensureSchema(): Promise<void> {
     schemaReady = initSchema()
       .then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)))
       .then(() => sealExistingSecrets().catch((e) => console.error("[db] sır şifreleme göçü başarısız:", e)))
-      .then(() => migrateGeoRebuildV1().catch((e) => console.error("[db] geo yeniden hesaplama göçü başarısız:", e)))
+      .then(() => migrateGeoRebuildV2().catch((e) => console.error("[db] geo yeniden hesaplama göçü başarısız:", e)))
       .catch((e) => {
         schemaReady = null; // bir sonraki istek yeniden denesin; geçici bir bağlantı hatası siteyi restart'a kadar düşürmesin
         throw e;
@@ -141,12 +141,12 @@ async function migrateGeoSummariesV2(): Promise<void> {
   await exec(`INSERT INTO _meta (k, v) VALUES ('geo_summaries_v2', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(n)]);
 }
 
-/** Bir kerelik: rakipleri/alt markaları testten sonra eklenmiş projelerin eski testlerini yeniden kur (rebuildGeoRuns). */
-async function migrateGeoRebuildV1(): Promise<void> {
-  if (await one(`SELECT v FROM _meta WHERE k = 'geo_rebuild_v1'`)) return;
+/** Bir kerelik: eski testleri güncel rakipler, alt markalar ve kaynak tipleriyle (E-ticaret, alt alan adları) yeniden kur. v2: kaynak tipleri. */
+async function migrateGeoRebuildV2(): Promise<void> {
+  if (await one(`SELECT v FROM _meta WHERE k = 'geo_rebuild_v2'`)) return;
   const clients = await many<any>(`SELECT * FROM clients WHERE competitors_json IS NOT NULL AND competitors_json <> '[]'`);
   for (const r of clients) await rebuildGeoRuns(r.user_id, rowToClient(r)).catch(() => undefined);
-  await exec(`INSERT INTO _meta (k, v) VALUES ('geo_rebuild_v1', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(clients.length)]);
+  await exec(`INSERT INTO _meta (k, v) VALUES ('geo_rebuild_v2', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(clients.length)]);
 }
 
 async function initSchema(): Promise<void> {

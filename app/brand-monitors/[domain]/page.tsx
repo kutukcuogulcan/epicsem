@@ -47,7 +47,7 @@ type Tab = "prompts" | "visibility" | "sentiment" | "rivals" | "sources";
 const TABS: Tab[] = ["prompts", "visibility", "sentiment", "rivals", "sources"];
 const fmt = (iso: string) => new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const pct = (x: number) => `${Math.round(x * 100)}%`;
-const SOURCE_TYPE: Record<string, string> = { You: "Sen", Competitor: "Rakip", Corporate: "Kurumsal", Editorial: "Editoryal", Government: "Kamu", Reference: "Referans", UGC: "Forum/UGC", Other: "Diğer" };
+const SOURCE_TYPE: Record<string, string> = { You: "Sen", Competitor: "Rakip", Corporate: "Kurumsal", Retail: "E-ticaret", Editorial: "Editoryal", Government: "Kamu", Reference: "Referans", UGC: "Forum/UGC", Other: "Diğer" };
 
 export default function MonitorDetailPage({ params }: { params: Promise<{ domain: string }> }) {
   const { domain } = use(params);

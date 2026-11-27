@@ -75,6 +75,7 @@ const DOMAIN_TYPE_COLOR: Record<SourceDomainType, string> = {
   You: "bg-seo",
   Competitor: "bg-danger",
   Corporate: "bg-blue-400",
+  Retail: "bg-pink-400",
   Editorial: "bg-orange-400",
   Government: "bg-slate-500",
   Reference: "bg-accent",
@@ -86,6 +87,7 @@ const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
   You: "Siz",
   Competitor: "Rakip",
   Corporate: "Kurumsal",
+  Retail: "E-ticaret",
   Editorial: "Editoryal",
   Government: "Kamu/Kurum",
   Reference: "Referans",
@@ -93,7 +95,7 @@ const DOMAIN_TYPE_LABEL: Record<SourceDomainType, string> = {
   Other: "Diğer",
 };
 
-const DOMAIN_TYPE_ORDER: SourceDomainType[] = ["You", "Competitor", "Corporate", "Editorial", "Government", "Reference", "UGC", "Other"];
+const DOMAIN_TYPE_ORDER: SourceDomainType[] = ["You", "Competitor", "Corporate", "Retail", "Editorial", "Government", "Reference", "UGC", "Other"];
 
 // 11-category URL-type taxonomy (Kart §8).
 const URL_TYPE_LABEL: Record<UrlType, string> = {
