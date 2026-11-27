@@ -82,7 +82,7 @@ const emptyForm = {
   takeaways: true,
   internalLinks: true,
   media: true,
-  research: false,
+  research: true, // yazı başına +1 AI sorgusu; kaynaksız otomatik yazılar genel kalıyor (editör sihirbazıyla aynı varsayılan)
   quality: true,
   minCitability: 50,
 };
