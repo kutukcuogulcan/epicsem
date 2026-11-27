@@ -49,7 +49,7 @@ export default function AppTopBar() {
   return (
     <div className="hidden md:flex h-14 items-center justify-end gap-4 border-b border-border bg-panel px-6">
       {u.demoMode && <span className="badge badge-warning">Demo modu</span>}
-      <div className="flex items-center gap-3" title="Bu ayki AI motor sorgusu kullanımı (her ayın başında sıfırlanır)">
+      <Link href="/billing" className="flex items-center gap-3 rounded-lg px-2 py-1 hover:bg-muted" title="Bu ayki AI motor sorgusu kullanımı (her ayın başında sıfırlanır) — ayrıntılar">
         <div className="text-right leading-tight">
           <div className="text-xs text-ink/60">AI motor sorgusu</div>
           <div className="text-xs font-medium text-ink/80">
@@ -59,7 +59,7 @@ export default function AppTopBar() {
         <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
           <div className={`h-full ${barTone}`} style={{ width: `${pct}%` }} />
         </div>
-      </div>
+      </Link>
     </div>
   );
 }

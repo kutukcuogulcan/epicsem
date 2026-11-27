@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getUsageCount, getUserPlan } from "@/lib/db";
-import { limitsForPlan, planLabel } from "@/lib/plans";
+import { guestPoolLimits, limitsForPlan, planLabel } from "@/lib/plans";
+import { guestPoolUserId } from "@/lib/auth";
 import { isDemoMode } from "@/lib/geo-providers";
 
 /** Powers components/UsageMeter.tsx — read-only, no side effects. */
@@ -26,5 +27,7 @@ export async function GET() {
     contentGenerations: { used: contentUsed, limit: limits.contentGenerations },
     promptSuggestions: { used: suggestUsed, limit: limits.promptSuggestions },
     onboardingSetup: { used: onboardingUsed, limit: limits.onboardingSetup },
+    // Misafir alanları ayrıca bütün deneme alanlarının ortak aylık havuzundan düşer.
+    pool: plan === "guest" ? { used: await getUsageCount(await guestPoolUserId(), "pool:engineQueries"), limit: guestPoolLimits().engineQueries } : null,
   });
 }
