@@ -1,4 +1,5 @@
-import { brandMentioned, trLower } from "./text-match";
+import { brandMentioned, trLower } from "./text-match.ts";
+import { isRetailSource } from "./source-type.ts";
 import type { GeoRunResult } from "@/types";
 
 /**
@@ -72,6 +73,9 @@ export interface Battlecard {
 export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitors: BrandRef[]): Battlecard[] {
   const total = runs.length || 1;
   const groups = groupByPrompt(runs);
+  // Takip edilen markaların kendi siteleri (alt alan adlarıyla) "ulaşılacak kaynak" sayılmaz.
+  const tracked = [own, ...competitors].map((b) => cleanDomain(b.domain)).filter(Boolean);
+  const isTracked = (d: string) => tracked.some((t) => d === t || d.endsWith("." + t));
   return competitors.map((comp) => {
     const theyWin: Battlecard["theyWin"] = [];
     const weWin: Battlecard["weWin"] = [];
@@ -101,7 +105,7 @@ export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitor
           tw.push(r.engine);
           for (const c of r.citations) {
             const d = cleanDomain(c.domain);
-            if (d === cleanDomain(own.domain)) continue;
+            if (isTracked(d)) continue;
             srcCount.set(d, (srcCount.get(d) ?? 0) + 1);
           }
         } else if (us && !them) ww.push(r.engine);
@@ -129,7 +133,12 @@ export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitor
     const ugc = theirSources.find((s) => /reddit|youtube|eksisozluk|ekşisözlük|quora|sikayetvar|forum/i.test(s.domain));
     if (ugc) actions.push(`Rakibin cevaplarında ${ugc.domain} sık alıntılanıyor — orada markanın görünür olması (yorum, içerik, topluluk) gerekiyor.`);
     const editorial = theirSources.find((s) => s !== ugc);
-    if (editorial) actions.push(`${editorial.domain} rakibi alıntılıyor; bu siteye haber/içerik ortaklığı ya da listeye girme için ulaş.`);
+    if (editorial)
+      actions.push(
+        isRetailSource(editorial.domain, [])
+          ? `${editorial.domain} (mağaza/pazar yeri) rakibin cevaplarında kaynak; ürünlerinin burada listelendiğini, açıklama ve yorumlarının güncel olduğunu kontrol et.`
+          : `${editorial.domain} rakibi alıntılıyor; bu siteye haber/içerik ortaklığı ya da listeye girme için ulaş.`
+      );
     if (theirDomainCited > 0 && !actions.some((a) => a.includes("karşılaştırma"))) actions.push(`Rakibin kendi sitesi ${theirDomainCited} kez kaynak gösterildi — senin ilgili sayfalarının Site Taraması'ndaki alıntılanabilirlik puanını yükselt.`);
     if (bothBehind > bothAhead) actions.push("İkinizin de geçtiği cevaplarda rakip daha önce anılıyor — ürün sayfalarına net fiyat, özellik ve karşılaştırma bilgisi ekle.");
     if (!actions.length) actions.push("Bu rakibe karşı önde görünüyorsun — kazandığın sorulardaki içerikleri güncel tut.");
