@@ -85,6 +85,7 @@ function ensureSchema(): Promise<void> {
     schemaReady = initSchema()
       .then(() => migrateGeoSummariesV2().catch((e) => console.error("[db] geo özet göçü başarısız:", e)))
       .then(() => sealExistingSecrets().catch((e) => console.error("[db] sır şifreleme göçü başarısız:", e)))
+      .then(() => migrateGeoRebuildV1().catch((e) => console.error("[db] geo yeniden hesaplama göçü başarısız:", e)))
       .catch((e) => {
         schemaReady = null; // bir sonraki istek yeniden denesin; geçici bir bağlantı hatası siteyi restart'a kadar düşürmesin
         throw e;
@@ -138,6 +139,14 @@ async function migrateGeoSummariesV2(): Promise<void> {
     }
   }
   await exec(`INSERT INTO _meta (k, v) VALUES ('geo_summaries_v2', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(n)]);
+}
+
+/** Bir kerelik: rakipleri/alt markaları testten sonra eklenmiş projelerin eski testlerini yeniden kur (rebuildGeoRuns). */
+async function migrateGeoRebuildV1(): Promise<void> {
+  if (await one(`SELECT v FROM _meta WHERE k = 'geo_rebuild_v1'`)) return;
+  const clients = await many<any>(`SELECT * FROM clients WHERE competitors_json IS NOT NULL AND competitors_json <> '[]'`);
+  for (const r of clients) await rebuildGeoRuns(r.user_id, rowToClient(r)).catch(() => undefined);
+  await exec(`INSERT INTO _meta (k, v) VALUES ('geo_rebuild_v1', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`, [String(clients.length)]);
 }
 
 async function initSchema(): Promise<void> {
@@ -2896,30 +2905,36 @@ export async function updateClient(userId: number, id: number, params: { name?: 
     `UPDATE clients SET name = $1, domain = $2, competitors_json = $3, aliases_json = $4 WHERE id = $5 AND user_id = $6 RETURNING *`,
     [params.name ?? cur.name, params.domain ?? cur.domain, JSON.stringify(params.competitors ?? cur.competitors), JSON.stringify(params.aliases ?? cur.aliases), id, userId]
   );
-  if (row && params.aliases?.length && JSON.stringify(params.aliases) !== JSON.stringify(cur.aliases)) {
-    const c = rowToClient(row);
-    await recountGeoRunsWithAliases(userId, c.domain, c.name, c.aliases ?? []).catch((e) => console.error("[aliases] eski testler yeniden sayılamadı", e));
-  }
+  const changed = (params.aliases && JSON.stringify(params.aliases) !== JSON.stringify(cur.aliases)) || (params.competitors && JSON.stringify(params.competitors) !== JSON.stringify(cur.competitors));
+  if (row && changed) await rebuildGeoRuns(userId, rowToClient(row)).catch((e) => console.error("[geo] eski testler yeniden hesaplanamadı", e));
   return row ? rowToClient(row) : null;
 }
 
-/** Alt markalar değişince o markanın kayıtlı GEO testlerinde "anıldı" bilgisini yeniden sayar (pano, geçmiş, monitörler aynı sayıyı göstersin). */
-async function recountGeoRunsWithAliases(userId: number, domain: string, name: string, aliases: string[]): Promise<void> {
-  const d = domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+/**
+ * Rakipler ya da alt markalar değişince o markanın kayıtlı GEO testleri, testin kendi hesabıyla (geo-engine)
+ * yeniden kurulur: "anıldı" (alt markalarla), marka özeti/ses payı/sıra, konu ve kaynak dağılımı.
+ * Böylece pano, Genel Bakış geçmişi, monitörler ve rapor aynı markaları ve aynı sayıları gösterir.
+ */
+async function rebuildGeoRuns(userId: number, c: Client): Promise<void> {
+  const { summarizeVisibility, computeShareOfVoice, summarizeByTopic, computeSourceDistribution } = await import("./geo-engine");
+  const d = c.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
   const rows = await many<any>(
-    `SELECT id, brand_name, brand_domain, runs_json, summaries_json, topic_breakdown_json FROM geo_runs
+    `SELECT id, brand_name, brand_domain, runs_json FROM geo_runs
       WHERE user_id = $1 AND brand_domain IN ($2, $3) AND runs_json IS NOT NULL ORDER BY id DESC LIMIT 200`,
     [userId, d, `www.${d}`]
   );
+  const comps = c.competitors.filter((x) => x.name && x.domain);
   for (const r of rows) {
-    const out = recountWithAliases(
-      { runs: JSON.parse(r.runs_json), summaries: JSON.parse(r.summaries_json || "[]"), topics: JSON.parse(r.topic_breakdown_json || "[]") },
-      { name: r.brand_name || name, domain: r.brand_domain, aliases }
+    const own = { name: r.brand_name || c.name, domain: r.brand_domain, aliases: c.aliases ?? [] };
+    const runs = recountWithAliases(JSON.parse(r.runs_json), own);
+    if (!runs.length) continue;
+    const summaries = computeShareOfVoice(summarizeVisibility(runs, [own, ...comps]))
+      .sort((a, b) => b.visibility - a.visibility)
+      .map((x, i) => ({ ...x, rank: i + 1 }));
+    await exec(
+      `UPDATE geo_runs SET runs_json = $1, summaries_json = $2, topic_breakdown_json = $3, source_distribution_json = $4, competitors_json = $5 WHERE id = $6 AND user_id = $7`,
+      [JSON.stringify(runs), JSON.stringify(summaries), JSON.stringify(summarizeByTopic(runs)), JSON.stringify(computeSourceDistribution(runs, own, comps)), JSON.stringify(comps), r.id, userId]
     );
-    if (out)
-      await one(`UPDATE geo_runs SET runs_json = $1, summaries_json = $2, topic_breakdown_json = $3 WHERE id = $4 AND user_id = $5 RETURNING id`, [
-        JSON.stringify(out.runs), JSON.stringify(out.summaries), JSON.stringify(out.topics), r.id, userId,
-      ]);
   }
 }
 
