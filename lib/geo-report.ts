@@ -39,6 +39,9 @@ export interface GeoReport {
   actions: { title: string; why: string; href?: string }[];
 }
 
+/** Bir işin bağlantı metni (href'in gittiği sayfaya göre). */
+export const actionLabel = (href: string) => (href.startsWith("/editor") ? "Yazısını yaz →" : href.startsWith("/geo/karsilastir") ? "Sayfaları karşılaştır →" : "Ulaşma planı →");
+
 /** OpenAI linklere ?utm_source=openai ekler; aynı sayfa tek sayılsın. */
 const noUtm = (u: string) => u.replace(/([?&])utm_[^=&]+=[^&]*/g, "$1").replace(/[?&]+$/, "").replace(/\?&/, "?");
 

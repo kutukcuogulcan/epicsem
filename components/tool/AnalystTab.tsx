@@ -9,6 +9,7 @@ import type { ContentBrief } from "@/lib/geo-brief";
 import { briefToWriterLink } from "@/lib/brief-link";
 import type { ChangeReport } from "@/lib/geo-change";
 import type { AgentReport } from "@/lib/geo-agent";
+import { actionLabel, type GeoReport } from "@/lib/geo-report";
 
 
 const CAT: Record<Opportunity["category"], string> = {
@@ -92,9 +93,36 @@ function ChangeCard({ domain }: { domain: string }) {
 }
 
 /** GEO analisti: son testin gerçek cevaplarından öncelikli fırsatlar (lib/geo-opportunities). */
+/** Ücretsiz rapordan (lib/geo-report) ilk 3 iş: AI harcayan analizlerden önce, kodla çıkan öncelikler. */
+function ReportCard() {
+  const [actions, setActions] = useState<GeoReport["actions"] | null>(null);
+  useEffect(() => {
+    fetch("/api/geo/report")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setActions(d?.report?.actions ?? []))
+      .catch(() => setActions([]));
+  }, []);
+  if (!actions?.length) return null;
+  return (
+    <Card>
+      <CardHeader title="Önce bunları yap" subtitle="Son testin cevaplarından kodla çıkarıldı (AI kullanılmadı)." action={<Link href="/geo/rapor" className={BTN2}>Tam rapor</Link>} />
+      <ol className="mt-3 space-y-2.5">
+        {actions.slice(0, 3).map((a, i) => (
+          <li key={i} className="text-sm">
+            <p className="font-medium text-ink">{i + 1}. {a.title}</p>
+            <p className="text-sub">{a.why}</p>
+            {a.href && <Link href={a.href} className="text-accent hover:underline">{actionLabel(a.href)}</Link>}
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
 export default function AnalystTab(props: { domain: string; brand: string }) {
   return (
     <div className="space-y-3">
+      <ReportCard />
       <ChangeCard domain={props.domain} />
       <Opportunities {...props} />
       <PageTermsCard domain={props.domain} />

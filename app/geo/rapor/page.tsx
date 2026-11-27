@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { GeoReport } from "@/lib/geo-report";
+import { actionLabel, type GeoReport } from "@/lib/geo-report";
 import type { RunDiff } from "@/lib/geo-diff";
 import { EngineDot } from "@/components/tool/MonitorBits";
 import { BTN1, BTN2, INPUT, Card, CardHeader, EmptyBlock, ErrorBlock, PageHeader, PageSkeleton } from "@/components/ui";
@@ -84,7 +84,7 @@ export default function GeoReportPage() {
                 <div>
                   <p className="text-sm font-medium text-ink">{a.title}</p>
                   <p className="text-sm text-sub">{a.why}</p>
-                  {a.href && <Link href={a.href} className="mt-0.5 inline-block text-sm font-medium text-accent hover:underline print:hidden">{a.href.startsWith("/editor") ? "Yazısını yaz →" : a.href.startsWith("/geo/karsilastir") ? "Sayfaları karşılaştır →" : "Ulaşma planı →"}</Link>}
+                  {a.href && <Link href={a.href} className="mt-0.5 inline-block text-sm font-medium text-accent hover:underline print:hidden">{actionLabel(a.href)}</Link>}
                 </div>
               </li>
             ))}
