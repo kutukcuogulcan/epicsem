@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
     article.bodyMarkdown = appendAuthor(finalizeArticleBody(article.title, article.bodyMarkdown), project?.settings.author, project?.settings.authorBio);
     const draft = await saveContentDraft(user.id, `keyword:${keyword}`, article, null, site || null);
-    return NextResponse.json({ id: draft.id, demo: article.demoMode, incomplete: Boolean(article.incomplete), quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised } });
+    return NextResponse.json({ id: draft.id, demo: article.demoMode, incomplete: Boolean(article.incomplete), quality: { seo: quality.seo, geo: quality.geo, overall: quality.overall, revised }, sources: research ? { found: research.found, verified: research.verified, rounds: research.calls } : null });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Yazı yazılamadı, tekrar dene." }, { status: 500 });
   }

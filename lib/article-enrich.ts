@@ -36,6 +36,9 @@ export interface ResearchResult {
   /** Arama niyeti: bilgi / karşılaştırma / satın alma / nasıl yapılır. */
   intent: string | null;
   model: string;
+  /** Bulunan / doğrulamadan geçen bilgi sayısı (şeffaflık ve hata ayıklama). */
+  found: number;
+  verified: number;
   /** Harcanan web aramalı AI çağrısı (1; doğrulanan bilgi azsa ikinci tur ile 2). Çağıran kotadan bu kadar düşer. */
   calls: number;
 }
@@ -123,8 +126,15 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
     .slice(0, 6);
   // Kaynak sayfası açılıyor mu ve bilginin rakamı o sayfada gerçekten geçiyor mu? (Yanlış sayfaya bağlanmış bilgi atılır.)
   // 403: bazı siteler botlara kapalı — doğrulanamaz, kabul edilir.
+  let found = 0;
   const verify = async (raw: ResearchFact[]) => {
+    found += raw.length;
     const checks = await Promise.all(raw.map((f) => pageTextOf(f.url)));
+    raw.forEach((f, i) => {
+      const c = checks[i];
+      const ok = c.status === 403 || c.unverifiable || (c.text != null && factOnPage(f.fact, c.text));
+      if (!ok) console.warn(`[research] elendi: ${f.url} (HTTP ${c.status}${c.text != null ? ", rakam sayfada yok" : ""})`);
+    });
     return raw.filter((f, i) => checks[i].status === 403 || checks[i].unverifiable || (checks[i].text != null && factOnPage(f.fact, checks[i].text!)));
   };
   let facts = await verify(toFacts(parsed.facts));
@@ -153,7 +163,8 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   const imageQueries = (Array.isArray(parsed.imageQueries) ? parsed.imageQueries : []).map((q: unknown) => String(q).trim().slice(0, 60)).filter(Boolean).slice(0, 2);
   const list = (v: unknown, n: number, len: number) => (Array.isArray(v) ? v : []).map((x) => String(x ?? "").trim().slice(0, len)).filter((x) => x.length > 2).slice(0, n);
   const intent = String(parsed.intent ?? "").trim().slice(0, 60) || null;
-  return { facts, youtube, imageQueries, coverage: list(parsed.coverage, 8, 120), questions: list(parsed.questions, 6, 160), intent, model: r.model, calls };
+  console.info(`[research] "${topic.slice(0, 60)}": ${found} bilgi bulundu, ${facts.length} doğrulandı, ${calls} tur`);
+  return { facts, youtube, imageQueries, coverage: list(parsed.coverage, 8, 120), questions: list(parsed.questions, 6, 160), intent, model: r.model, calls, found, verified: facts.length };
 }
 
 /** Araştırma sonucunu yazı talimatına çevirir. */
