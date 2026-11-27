@@ -63,8 +63,8 @@ export function isPlanId(v: string): v is PlanId {
 }
 
 /** Açık erişimde tarayıcı başına açılan misafir alanları: çerezini silen yeni alan açabildiği için AI kotası küçük
- * (yaklaşık bir kurulum testi). Kalıcı kullanıcıya plan elle verilir (users.plan). */
-export const GUEST_LIMITS: PlanLimits = { engineQueries: 40, contentGenerations: 3, promptSuggestions: 5, onboardingSetup: 3 };
+ * (20 soruluk bir kurulum testi × 2 motor + AI özeti sığar). Kalıcı kullanıcıya plan elle verilir (users.plan). */
+export const GUEST_LIMITS: PlanLimits = { engineQueries: 50, contentGenerations: 3, promptSuggestions: 5, onboardingSetup: 3 };
 
 /** Bütün misafir alanlarının ayda TOPLAM harcayabileceği (sahibin API bütçesini korur). GUEST_POOL_QUERIES ile değişir. */
 export function guestPoolLimits(): PlanLimits {
