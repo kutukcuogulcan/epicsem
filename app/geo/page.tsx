@@ -23,6 +23,7 @@ import SavedPromptsPanel from "@/components/SavedPromptsPanel";
 import ScoreBadge from "@/components/ScoreBadge";
 import GeoOverview from "@/components/tool/GeoOverview";
 import GeoDashboard from "@/components/tool/GeoDashboard";
+import GeoSummaryCard from "@/components/tool/GeoSummaryCard";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
@@ -726,6 +727,7 @@ export default function GeoPage() {
         );
       })()}
 
+      {resultsTab === "overview" && runs && runs.length > 0 && !demoMode && <GeoSummaryCard testAt={`${restoredAt}-${overviewKey}`} />}
       {resultsTab === "overview" &&
         (runs && runs.length && brand.domain ? (
           <GeoDashboard
