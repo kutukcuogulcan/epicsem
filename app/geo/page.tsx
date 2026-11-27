@@ -1030,7 +1030,23 @@ export default function GeoPage() {
                     >
                       {d.domain}
                     </a>
-                    <span className="text-xs text-ink/60 shrink-0">{DOMAIN_TYPE_LABEL[d.type]}</span>
+                    <select
+                      aria-label={`${d.domain} kaynak tipi`}
+                      title="Tip yanlışsa düzelt; projenin bütün testlerinde böyle sayılır"
+                      value={d.type}
+                      onChange={async (e) => {
+                        const type = e.target.value as SourceDomainType;
+                        const prev = sourceDistribution;
+                        setSourceDistribution(sourceDistribution.map((x) => (x.domain === d.domain ? { ...x, type } : x)));
+                        const r = await fetch("/api/project/source-type", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: d.domain, type }) }).catch(() => null);
+                        if (!r?.ok) setSourceDistribution(prev);
+                      }}
+                      className="shrink-0 rounded-md border border-border bg-panel px-1 py-0.5 text-xs text-ink/70"
+                    >
+                      {DOMAIN_TYPE_ORDER.filter((t) => t !== "You" && t !== "Competitor").map((t) => (
+                        <option key={t} value={t}>{DOMAIN_TYPE_LABEL[t]}</option>
+                      ))}
+                    </select>
                   </div>
                   <span className="text-xs text-ink/60 shrink-0">{d.count} atıf</span>
                 </div>

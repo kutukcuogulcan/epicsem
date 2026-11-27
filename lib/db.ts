@@ -9,6 +9,7 @@ import type {
   GeoVisibilitySummary,
   SeoAuditResult,
   SourceDomainStat,
+  SourceDomainType,
   TopicVisibility,
 } from "@/types";
 import type { ContentBrief } from "@/lib/content-brief";
@@ -758,6 +759,35 @@ export async function getLatestAuditForHost(
 
 // ---------------- geo runs ----------------
 
+/** Kullanıcının elle verdiği kaynak tipleri (proje ayarı sourceTypes) koddan gelen tipin önüne geçer. */
+export function applySourceTypes(dist: SourceDomainStat[], types: Record<string, SourceDomainType>): SourceDomainStat[] {
+  const key = (d: string) => d.toLowerCase().replace(/^www\./, "");
+  return Object.keys(types).length ? dist.map((x) => (types[key(x.domain)] ? { ...x, type: types[key(x.domain)] } : x)) : dist;
+}
+
+async function sourceTypesFor(userId: number, brandDomain: string): Promise<Record<string, SourceDomainType>> {
+  const d = brandDomain.toLowerCase().replace(/^www\./, "");
+  const row = await one<any>(`SELECT settings_json FROM clients WHERE user_id = $1 AND lower(regexp_replace(domain, '^(https?://)?(www\\.)?', '')) = $2 LIMIT 1`, [userId, d]).catch(() => null);
+  try {
+    return (JSON.parse(row?.settings_json || "{}") as ProjectSettings).sourceTypes ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** Bir kaynağın tipini elle değiştir (type null → koddan gelen tipe dön) ve projenin eski testlerini yeniden hesapla. */
+export async function setSourceType(userId: number, clientId: number, domain: string, type: SourceDomainType | null): Promise<void> {
+  const c = await getClient(userId, clientId);
+  if (!c) return;
+  const s = await getClientSettings(userId, clientId);
+  const types = { ...(s.sourceTypes ?? {}) };
+  const key = domain.toLowerCase().replace(/^www\./, "");
+  if (type) types[key] = type;
+  else delete types[key];
+  await saveClientSettings(userId, clientId, { ...s, sourceTypes: types });
+  await rebuildGeoRuns(userId, c);
+}
+
 export async function saveGeoRun(userId: number, params: {
   brandName: string;
   brandDomain: string;
@@ -782,7 +812,7 @@ export async function saveGeoRun(userId: number, params: {
       params.brandDomain,
       params.demoMode ? 1 : 0,
       JSON.stringify(params.summaries),
-      JSON.stringify(params.sourceDistribution),
+      JSON.stringify(applySourceTypes(params.sourceDistribution, await sourceTypesFor(userId, params.brandDomain))),
       JSON.stringify(params.topicBreakdown),
       runsJson,
       params.competitors ? JSON.stringify(params.competitors) : null,
@@ -2924,6 +2954,7 @@ async function rebuildGeoRuns(userId: number, c: Client): Promise<void> {
     [userId, d, `www.${d}`]
   );
   const comps = c.competitors.filter((x) => x.name && x.domain);
+  const types = await sourceTypesFor(userId, c.domain);
   for (const r of rows) {
     const own = { name: r.brand_name || c.name, domain: r.brand_domain, aliases: c.aliases ?? [] };
     const runs = recountWithAliases(JSON.parse(r.runs_json), own);
@@ -2933,7 +2964,7 @@ async function rebuildGeoRuns(userId: number, c: Client): Promise<void> {
       .map((x, i) => ({ ...x, rank: i + 1 }));
     await exec(
       `UPDATE geo_runs SET runs_json = $1, summaries_json = $2, topic_breakdown_json = $3, source_distribution_json = $4, competitors_json = $5 WHERE id = $6 AND user_id = $7`,
-      [JSON.stringify(runs), JSON.stringify(summaries), JSON.stringify(summarizeByTopic(runs)), JSON.stringify(computeSourceDistribution(runs, own, comps)), JSON.stringify(comps), r.id, userId]
+      [JSON.stringify(runs), JSON.stringify(summaries), JSON.stringify(summarizeByTopic(runs)), JSON.stringify(applySourceTypes(computeSourceDistribution(runs, own, comps), types)), JSON.stringify(comps), r.id, userId]
     );
   }
 }
@@ -3030,6 +3061,8 @@ export interface ProjectSettings {
   knowledge?: string;
   /** Sektör (lib/sector-sources.ts id'si) — Backlinkler → Sektör kaynak haritası. */
   sector?: string;
+  /** Elle düzeltilmiş kaynak tipleri: alan adı (www'suz) → tip (ör. petlebi.com → Retail). */
+  sourceTypes?: Record<string, SourceDomainType>;
 }
 
 async function ensureClientSettings() {
