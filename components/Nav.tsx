@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled } from "@/lib/auth";
+import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled, isGuestAccount } from "@/lib/auth";
 import { NAV_GROUPS } from "@/lib/nav-groups";
 import LogoutButton from "./LogoutButton";
 import { TOOL_ICONS } from "./ToolIcons";
@@ -12,7 +12,8 @@ import { TOOL_ICONS } from "./ToolIcons";
  */
 export default async function Nav() {
   const user = await getCurrentUser();
-  const isDemoFallback = isOpenAccessEnabled() && user?.email === DEMO_EMAIL;
+  // Açık erişimde misafir ve sahip hesabı "giriş yapmış" gibi gösterilmez (çıkış düğmesi misafire düşürür).
+  const isDemoFallback = isOpenAccessEnabled() && !!user && (user.email === DEMO_EMAIL || isGuestAccount(user.email));
 
   return (
     <header className="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-20">
@@ -78,8 +79,7 @@ export default async function Nav() {
         <div className="flex items-center gap-4 shrink-0">
           {isDemoFallback ? (
             <div className="hidden lg:flex items-center gap-3 text-xs">
-              <span className="text-warn-ink font-medium">Demo modu · giriş şart değil</span>
-              <Link href="/login" className="text-accent hover:underline">Hesapla gir</Link>
+              <span className="text-warn-ink font-medium">Giriş şart değil · çalışma alanın bu tarayıcıya özel</span>
             </div>
           ) : user ? (
             <div className="hidden lg:flex items-center gap-3 text-xs">

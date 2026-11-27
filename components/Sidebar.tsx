@@ -1,4 +1,4 @@
-import { DEMO_EMAIL, getCurrentUser, isOpenAccessEnabled } from "@/lib/auth";
+import { DEMO_EMAIL, getCurrentUser, isGuestAccount, isOpenAccessEnabled } from "@/lib/auth";
 import SidebarClient from "./SidebarClient";
 
 /**
@@ -9,6 +9,8 @@ import SidebarClient from "./SidebarClient";
  */
 export default async function Sidebar() {
   const user = await getCurrentUser();
-  const isDemoFallback = isOpenAccessEnabled() && user?.email === DEMO_EMAIL;
-  return <SidebarClient email={user?.email ?? null} isDemoFallback={isDemoFallback} />;
+  const open = isOpenAccessEnabled();
+  // Açık erişimde: misafir = tarayıcıya özel deneme alanı; sahip = eski ortak (demo) hesabı, çıkış düğmesi gösterilmez (çıkarsa misafire düşer).
+  const mode = !user ? null : open && isGuestAccount(user.email) ? "guest" : open && user.email === DEMO_EMAIL ? "owner" : "user";
+  return <SidebarClient email={user?.email ?? null} mode={mode} />;
 }

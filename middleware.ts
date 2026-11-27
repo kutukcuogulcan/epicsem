@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/auth-cookie-name";
+import { GUEST_COOKIE, SESSION_COOKIE } from "@/lib/auth-cookie-name";
 
 /**
  * Cheap, Edge-safe gate: redirect to /login if the session cookie is simply absent.
@@ -54,7 +54,24 @@ export function middleware(req: NextRequest) {
   if (pathname === "/" && req.cookies.has(SESSION_COOKIE)) return NextResponse.redirect(new URL("/dashboard", req.url));
   const isAppShell = APP_SHELL_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   requestHeaders.set("x-shell", isAppShell ? "app" : "marketing");
-  const passthrough = () => NextResponse.next({ request: { headers: requestHeaders } });
+  // Açık erişim: oturumu olmayan her tarayıcıya kendi çalışma alanı kimliği (lib/auth.ts misafir hesabına bağlar).
+  // Botlara verilmez: her istekte çerezsiz gelen tarayıcılar sınırsız hesap açtırmasın.
+  let newGuest: string | null = null;
+  if (
+    process.env.DEMO_OPEN_ACCESS === "true" &&
+    !req.cookies.has(SESSION_COOKIE) &&
+    !req.cookies.has(GUEST_COOKIE) &&
+    !/bot|crawl|spider|slurp|preview|fetch|curl|wget|python|headless|lighthouse/i.test(req.headers.get("user-agent") ?? "")
+  ) {
+    newGuest = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    // Aynı isteğin sunucu tarafı da yeni kimliği görsün.
+    requestHeaders.set("cookie", `${req.headers.get("cookie") ? `${req.headers.get("cookie")}; ` : ""}${GUEST_COOKIE}=${newGuest}`);
+  }
+  const passthrough = () => {
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    if (newGuest) res.cookies.set(GUEST_COOKIE, newGuest, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
+    return res;
+  };
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (!isProtected) return passthrough();

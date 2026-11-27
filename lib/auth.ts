@@ -7,8 +7,9 @@ import {
   createSession as dbCreateSession,
   getSession as dbGetSession,
   deleteSession as dbDeleteSession,
+  setUserPlan,
 } from "@/lib/db";
-import { SESSION_COOKIE } from "@/lib/auth-cookie-name";
+import { GUEST_COOKIE, SESSION_COOKIE } from "@/lib/auth-cookie-name";
 
 /**
  * Minimal self-hosted auth — email + password, scrypt hashing (node:crypto, no extra
@@ -97,9 +98,9 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   return { id: user.id, email: user.email, name: user.name };
 }
 
-export async function createSessionCookie(userId: number) {
+export async function createSessionCookie(userId: number, days = SESSION_DAYS) {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   await dbCreateSession(token, userId, expiresAt.toISOString());
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -134,10 +135,58 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       if (user) return { id: user.id, email: user.email, name: user.name };
     }
   }
-  // No valid real session. In open-access mode, fall back to the shared demo account
-  // instead of treating the visitor as signed out — see isOpenAccessEnabled() above.
-  if (isOpenAccessEnabled()) return getOrCreateDemoUser();
+  // Oturum yok. Açık erişimde tarayıcı başına çalışma alanı: middleware'in verdiği misafir kimliği kendi hesabına bağlanır,
+  // böylece ziyaretçiler birbirinin projelerini görmez. Kimliksiz istekler (bot, doğrudan API) boş ortak hesaba düşer.
+  if (isOpenAccessEnabled()) {
+    const guest = store.get(GUEST_COOKIE)?.value;
+    if (guest && /^[a-f0-9]{32}$/.test(guest)) return getOrCreateGuestUser(guest);
+    return getOrCreatePublicUser();
+  }
   return null;
+}
+
+const guestEmail = (id: string) => `guest-${id}@guest.epicsem.local`;
+
+async function getOrCreateGuestUser(id: string): Promise<AuthUser> {
+  const email = guestEmail(id);
+  const found = await findUserByEmail(email);
+  if (found) return { id: found.id, email: found.email, name: found.name };
+  try {
+    const u = await dbCreateUser(email, hashPassword(randomBytes(24).toString("hex")), "Misafir");
+    await setUserPlan(u.id, "guest");
+    return { id: u.id, email: u.email, name: u.name };
+  } catch {
+    // Aynı tarayıcının eşzamanlı ilk istekleri: diğeri oluşturmuş olabilir (e-posta tekil).
+    const again = await findUserByEmail(email);
+    if (again) return { id: again.id, email: again.email, name: again.name };
+    throw new Error("Çalışma alanı açılamadı");
+  }
+}
+
+/** Çerezsiz istekler için boş, misafir kotalı ortak hesap (eskiden sahibin demo hesabıydı). */
+const PUBLIC_EMAIL = "public@guest.epicsem.local";
+/** Paylaşılan tek hesap: buraya anahtar/site bağlantısı kaydedilmez. */
+export const isSharedAccount = (email: string) => email === PUBLIC_EMAIL;
+export const isGuestAccount = (email: string) => email.endsWith("@guest.epicsem.local");
+let publicUserPromise: Promise<AuthUser> | null = null;
+function getOrCreatePublicUser(): Promise<AuthUser> {
+  if (!publicUserPromise)
+    publicUserPromise = (async () => {
+      const found = await findUserByEmail(PUBLIC_EMAIL);
+      if (found) return { id: found.id, email: found.email, name: found.name };
+      const u = await dbCreateUser(PUBLIC_EMAIL, hashPassword(randomBytes(24).toString("hex")), "Ziyaretçi");
+      await setUserPlan(u.id, "guest");
+      return { id: u.id, email: u.email, name: u.name };
+    })().catch((e) => {
+      publicUserPromise = null;
+      throw e;
+    });
+  return publicUserPromise;
+}
+
+/** Sahibin eski ortak (demo) hesabı: projelerinin durduğu hesap. Yalnızca gizli sahiplenme bağlantısıyla açılır. */
+export async function demoOwnerUser(): Promise<AuthUser> {
+  return getOrCreateDemoUser();
 }
 
 /** Use at the top of any API route that touches user data. Returns null if not signed in. */

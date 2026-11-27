@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DEMO_EMAIL, requireUser } from "@/lib/auth";
+import { isSharedAccount, requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { deleteIntegration, getIntegration, listIntegrations, saveIntegration } from "@/lib/db";
 import { providerById, type ProviderId } from "@/lib/integration-providers";
@@ -17,7 +17,7 @@ export async function GET() {
   return NextResponse.json({
     integrations: await listIntegrations(user.id),
     envSerpApi: !!process.env.SERPAPI_API_KEY,
-    sharedDemo: user.email === DEMO_EMAIL,
+    sharedDemo: isSharedAccount(user.email),
     isOwner: await isAppOwner(user.id),
   });
 }
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   // Açık erişim modunda girişsiz herkes aynı demo hesabını paylaşır — oraya anahtar kaydetmek
   // anahtarı diğer ziyaretçilere açar. Bu yüzden ortak demo hesabında kayıt kapalı.
-  if (user.email === DEMO_EMAIL) return NextResponse.json({ error: "Ortak demo hesabında anahtar kaydedilemez — kendi hesabınla giriş yap (Kayıt ol / Giriş)." }, { status: 403 });
+  if (isSharedAccount(user.email)) return NextResponse.json({ error: "Ortak ziyaretçi hesabında anahtar kaydedilemez — siteyi tarayıcıdan açıp kendi çalışma alanında dene." }, { status: 403 });
   const rl = rateLimit(`integrations:${user.id}`, 30, 60 * 60 * 1000);
   if (!rl.allowed) return NextResponse.json({ error: "Çok fazla deneme — biraz sonra tekrar dene." }, { status: 429 });
   const b = await req.json().catch(() => ({}));

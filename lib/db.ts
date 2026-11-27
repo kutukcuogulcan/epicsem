@@ -646,6 +646,11 @@ export async function findUserByEmail(email: string): Promise<UserRow | null> {
   return row ? rowToUser(row) : null;
 }
 
+export async function setUserPlan(userId: number, plan: string): Promise<void> {
+  await ensureSchema();
+  await exec(`UPDATE users SET plan = $1 WHERE id = $2`, [plan, userId]);
+}
+
 export async function findUserById(id: number): Promise<UserRow | null> {
   await ensureSchema();
   const row = await one<any>(`SELECT * FROM users WHERE id = $1`, [id]);

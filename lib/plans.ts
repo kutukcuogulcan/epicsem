@@ -62,10 +62,16 @@ export function isPlanId(v: string): v is PlanId {
   return v === "free" || v === "pro" || v === "agency";
 }
 
+/** Açık erişimde tarayıcı başına açılan misafir alanları: çerezini silen yeni alan açabildiği için AI kotası küçük
+ * (yaklaşık bir kurulum testi). Kalıcı kullanıcıya plan elle verilir (users.plan). */
+export const GUEST_LIMITS: PlanLimits = { engineQueries: 40, contentGenerations: 3, promptSuggestions: 5, onboardingSetup: 3 };
+
 export function limitsForPlan(plan: string): PlanLimits {
+  if (plan === "guest") return GUEST_LIMITS;
   return PLAN_LIMITS[plan as PlanId] ?? PLAN_LIMITS[DEFAULT_PLAN];
 }
 
 export function planLabel(plan: string): string {
+  if (plan === "guest") return "Deneme";
   return PLAN_META[plan as PlanId]?.label ?? PLAN_META.free.label;
 }

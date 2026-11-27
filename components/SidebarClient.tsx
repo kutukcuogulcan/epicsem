@@ -14,7 +14,7 @@ const Chevron = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-export default function SidebarClient({ email, isDemoFallback }: { email: string | null; isDemoFallback: boolean }) {
+export default function SidebarClient({ email, mode }: { email: string | null; mode: "guest" | "owner" | "user" | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -125,13 +125,12 @@ export default function SidebarClient({ email, isDemoFallback }: { email: string
         <ProjectSwitcher />
       </div>
       <div className="px-4 py-3 space-y-2 shrink-0">
-        {isDemoFallback ? (
-          <div className="text-xs">
-            <span className="text-warn-ink font-medium">Demo modu</span>
-            <Link href="/login" className="text-accent hover:underline ml-2">
-              Hesapla gir
-            </Link>
+        {mode === "guest" ? (
+          <div className="text-xs text-sub" title="Projelerin yalnızca bu tarayıcıda görünür; başka ziyaretçiler göremez.">
+            <span className="font-medium text-warn-ink">Deneme alanı</span> · bu tarayıcıya özel
           </div>
+        ) : mode === "owner" ? (
+          <div className="text-xs text-sub">Sahip hesabı</div>
         ) : email ? (
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="text-ink/60 truncate">{email}</span>

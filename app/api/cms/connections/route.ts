@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createCmsConnection, deleteCmsConnection, listCmsConnections } from "@/lib/db";
-import { DEMO_EMAIL, requireUser } from "@/lib/auth";
+import { isSharedAccount, requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
 
 const bodySchema = z
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   // Ortak demo hesabını girişsiz herkes paylaşır: oraya kaydedilen site şifresini başkası kullanabilir/silebilir.
-  if (user.email === DEMO_EMAIL) return NextResponse.json({ error: "Ortak demo hesabında site bağlantısı kurulamaz — kendi hesabınla giriş yap (Kayıt ol / Giriş)." }, { status: 403 });
+  if (isSharedAccount(user.email)) return NextResponse.json({ error: "Ortak ziyaretçi hesabında site bağlantısı kurulamaz — siteyi tarayıcıdan açıp kendi çalışma alanında dene." }, { status: 403 });
 
   let parsed;
   try {
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   // Ortak demo hesabını girişsiz herkes paylaşır: oraya kaydedilen site şifresini başkası kullanabilir/silebilir.
-  if (user.email === DEMO_EMAIL) return NextResponse.json({ error: "Ortak demo hesabında site bağlantısı kurulamaz — kendi hesabınla giriş yap (Kayıt ol / Giriş)." }, { status: 403 });
+  if (isSharedAccount(user.email)) return NextResponse.json({ error: "Ortak ziyaretçi hesabında site bağlantısı kurulamaz — siteyi tarayıcıdan açıp kendi çalışma alanında dene." }, { status: 403 });
 
   const idParam = req.nextUrl.searchParams.get("id");
   const id = Number(idParam);
