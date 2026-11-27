@@ -10,8 +10,8 @@ const ENGINE_SHORT: Record<string, string> = { openai: "ChatGPT", anthropic: "Cl
 
 /* ============================== Rakip kartları ============================== */
 
-export function BattlecardsTab({ runs, own, competitors }: { runs: GeoRunResult[]; own: BrandRef; competitors: BrandRef[] }) {
-  const cards = useMemo(() => buildBattlecards(runs, own, competitors), [runs, own, competitors]);
+export function BattlecardsTab({ runs, own, competitors, retail = [] }: { runs: GeoRunResult[]; own: BrandRef; competitors: BrandRef[]; retail?: string[] }) {
+  const cards = useMemo(() => buildBattlecards(runs, own, competitors, retail), [runs, own, competitors, retail]);
   const [open, setOpen] = useState<string | null>(null);
   if (!competitors.length)
     return <p className="rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(13,18,28,0.05)] p-6 text-sm text-ink/60">Rakip kartları için testte en az bir rakip olmalı. Ayarlar&apos;dan rakip ekleyip testi tekrar çalıştır.</p>;

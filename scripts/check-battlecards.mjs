@@ -8,4 +8,10 @@ const [b] = buildBattlecards(runs, { name: "Purina", domain: "purina.com.tr" }, 
 assert.deepEqual(b.theirSources, [{ domain: "trendyol.com", count: 2 }], "rakip siteleri (alt alan adları dahil) kaynak listesinde yok");
 assert.ok(!b.actions.some((a) => a.includes("royalcanin.com")), "rakibin kendi sitesine ulaş denmez");
 assert.ok(b.actions.some((a) => a.includes("trendyol.com (mağaza")), "mağazaya ürün listeleme önerisi");
+{
+  const shop = [r("Royal Canin iyi", ["petlebi.com"]), r("Royal Canin çok iyi", ["petlebi.com"])];
+  const own = { name: "Purina", domain: "purina.com.tr" }, rv = [{ name: "Royal Canin", domain: "royalcanin.com" }];
+  assert.ok(buildBattlecards(shop, own, rv)[0].actions.some((a) => a.includes("petlebi.com rakibi alıntılıyor")), "otomatik tanınmıyorsa ortaklık önerisi");
+  assert.ok(buildBattlecards(shop, own, rv, ["petlebi.com"])[0].actions.some((a) => a.includes("petlebi.com (mağaza")), "elle E-ticaret işaretlenince mağaza önerisi");
+}
 console.log("check-battlecards: ok");

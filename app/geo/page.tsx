@@ -449,6 +449,8 @@ export default function GeoPage() {
   // AI-visibility dashboards (e.g. Arvow's LLM Visibility Tracker) lead with, instead
   // of making you read them out of the comparison table below.
   const ownSummary = summaries?.find((s) => s.domain === brand.domain) ?? summaries?.[0] ?? null;
+  // Kaynak dağılımında E-ticaret olanlar (elle işaretlenenler dahil) — rakip kartı mağaza önerisini buna göre verir.
+  const retailDomains = useMemo(() => (sourceDistribution ?? []).filter((d) => d.type === "Retail").map((d) => d.domain.toLowerCase().replace(/^www\./, "")), [sourceDistribution]);
   const ownRef = useMemo(() => ({ name: ownSummary?.brand ?? brand.name, domain: ownSummary?.domain ?? brand.domain, aliases: brand.aliases }), [ownSummary, brand]);
   const competitorRefs = useMemo(
     () => (summaries ?? []).filter((s) => s.domain !== ownRef.domain).map((s) => ({ name: s.brand, domain: s.domain })),
@@ -765,7 +767,7 @@ export default function GeoPage() {
       {restoredAt && summaries && !["overview", "library", "entity", "impact", "readiness", "botlog"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/60">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
-      {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} />}
+      {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} retail={retailDomains} />}
       {resultsTab === "impact" && <ImpactTab />}
       {resultsTab === "facts" && runs && <FactsTab runs={runs} brand={ownRef.name} />}
       {resultsTab === "analyst" && ownRef.domain && <AnalystTab domain={ownRef.domain} brand={ownRef.name} />}

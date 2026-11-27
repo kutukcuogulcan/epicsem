@@ -70,7 +70,8 @@ export interface Battlecard {
   verdict: "önde" | "başa baş" | "geride";
 }
 
-export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitors: BrandRef[]): Battlecard[] {
+/** retail: elle "E-ticaret" işaretlenmiş alan adları (kaynak dağılımından); otomatik tanınanlara eklenir. */
+export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitors: BrandRef[], retail: string[] = []): Battlecard[] {
   const total = runs.length || 1;
   const groups = groupByPrompt(runs);
   // Takip edilen markaların kendi siteleri (alt alan adlarıyla) "ulaşılacak kaynak" sayılmaz.
@@ -135,7 +136,7 @@ export function buildBattlecards(runs: GeoRunResult[], own: BrandRef, competitor
     const editorial = theirSources.find((s) => s !== ugc);
     if (editorial)
       actions.push(
-        isRetailSource(editorial.domain, [])
+        (retail.includes(editorial.domain) || isRetailSource(editorial.domain, []))
           ? `${editorial.domain} (mağaza/pazar yeri) rakibin cevaplarında kaynak; ürünlerinin burada listelendiğini, açıklama ve yorumlarının güncel olduğunu kontrol et.`
           : `${editorial.domain} rakibi alıntılıyor; bu siteye haber/içerik ortaklığı ya da listeye girme için ulaş.`
       );
