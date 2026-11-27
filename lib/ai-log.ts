@@ -1,4 +1,4 @@
-import { AI_BOTS, type AiBotDef } from "./ai-bots";
+import { AI_BOTS, type AiBotDef } from "./ai-bots.ts";
 
 /**
  * Sunucu erişim kaydından (Apache/Nginx "combined" biçimi) AI botu ziyaretleri ve AI'dan gelen ziyaretçiler.
