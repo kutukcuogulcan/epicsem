@@ -21,5 +21,6 @@ assert.deepEqual(missingHeadings(rival, own), ["MÜKEMMEL LEZZET", "Ürünlerimi
 assert.ok(missingHeadings(rival, own).includes("Analitik bileşenler"));
 
 const urls = ["https://www.purina.com.tr/sozlesme/renal-kedi.pdf", "https://www.purina.com.tr/kedi/urunler", "https://www.purina.com.tr/pro-plan-veterinary-diets/kedi/nf-renal-function", "https://www.purina.com.tr/blog/kedi-oyunlari"];
-assert.equal(suggestOwnUrls(rival, urls)[0], urls[1]);
+assert.equal(suggestOwnUrls(rival, urls)[0], urls[2]);
+assert.ok(!suggestOwnUrls(rival, urls).some((u) => u.endsWith(".pdf")), "PDF önerilmez");
 console.log("check-page-compare: ok");
