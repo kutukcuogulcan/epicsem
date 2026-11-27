@@ -1,5 +1,5 @@
 import { getUsageCount, getUserPlan, incrementUsage, tryIncrementUsage } from "@/lib/db";
-import { limitsForPlan, type UsageMetric } from "@/lib/plans";
+import { guestPoolLimits, limitsForPlan, type UsageMetric } from "@/lib/plans";
 
 /**
  * Thin wrapper around lib/db.ts's usage_counters table — the enforcement half of the
@@ -14,17 +14,32 @@ export interface QuotaCheck {
   used: number;
   limit: number;
   plan: string;
+  /** Misafir alanlarının ortak aylık havuzu doldu (kişisel kota değil). */
+  pool?: boolean;
+}
+
+const POOL = (m: UsageMetric) => `pool:${m}`;
+async function poolUser(): Promise<number> {
+  return (await import("@/lib/auth")).guestPoolUserId();
 }
 
 export async function checkQuota(userId: number, metric: UsageMetric, amount: number): Promise<QuotaCheck> {
   const plan = await getUserPlan(userId);
   const limit = limitsForPlan(plan)[metric];
   const used = await getUsageCount(userId, metric);
-  return { allowed: used + amount <= limit, used, limit, plan };
+  if (used + amount > limit) return { allowed: false, used, limit, plan };
+  if (plan === "guest") {
+    // shortcut: kontrol ve düşme ayrı adımlar (atomik değil); yeni rotalar reserveQuota kullanmalı.
+    const poolLimit = guestPoolLimits()[metric];
+    const poolUsed = await getUsageCount(await poolUser(), POOL(metric));
+    if (poolUsed + amount > poolLimit) return { allowed: false, used: poolUsed, limit: poolLimit, plan, pool: true };
+  }
+  return { allowed: true, used, limit, plan };
 }
 
 export async function consumeQuota(userId: number, metric: UsageMetric, amount: number) {
   await incrementUsage(userId, metric, amount);
+  if ((await getUserPlan(userId)) === "guest") await incrementUsage(await poolUser(), POOL(metric), amount);
 }
 
 /**
@@ -35,12 +50,23 @@ export async function reserveQuota(userId: number, metric: UsageMetric, amount: 
   const plan = await getUserPlan(userId);
   const limit = limitsForPlan(plan)[metric];
   const after = await tryIncrementUsage(userId, metric, amount, limit);
-  if (after != null) return { allowed: true, used: after - amount, limit, plan };
-  return { allowed: false, used: await getUsageCount(userId, metric), limit, plan };
+  if (after == null) return { allowed: false, used: await getUsageCount(userId, metric), limit, plan };
+  if (plan === "guest") {
+    // Misafirler ayrıca ortak havuzdan düşer: çerez silip yeni alan açmak sınırsız harcama sağlamasın.
+    const pid = await poolUser();
+    const poolLimit = guestPoolLimits()[metric];
+    if ((await tryIncrementUsage(pid, POOL(metric), amount, poolLimit)) == null) {
+      await incrementUsage(userId, metric, -amount);
+      return { allowed: false, used: await getUsageCount(pid, POOL(metric)), limit: poolLimit, plan, pool: true };
+    }
+  }
+  return { allowed: true, used: after - amount, limit, plan };
 }
 
 export async function refundQuota(userId: number, metric: UsageMetric, amount: number) {
-  if (amount > 0) await incrementUsage(userId, metric, -amount);
+  if (amount <= 0) return;
+  await incrementUsage(userId, metric, -amount);
+  if ((await getUserPlan(userId)) === "guest") await incrementUsage(await poolUser(), POOL(metric), -amount);
 }
 
 const METRIC_LABEL: Record<UsageMetric, string> = {
@@ -52,5 +78,6 @@ const METRIC_LABEL: Record<UsageMetric, string> = {
 
 export function quotaExceededMessage(metric: UsageMetric, quota: QuotaCheck, requested: number): string {
   const label = METRIC_LABEL[metric] ?? metric;
+  if (quota.pool) return `Deneme alanlarının bu ayki ortak ${label} hakkı doldu. Ayın başında (UTC) yenilenir; daha fazlası için bizimle iletişime geç.`;
   return `Aylık kullanım limitine ulaşıldı: ${quota.used}/${quota.limit} ${label} (bu işlem ${requested} daha gerektiriyor). Kota her ayın başında (UTC) sıfırlanır.`;
 }

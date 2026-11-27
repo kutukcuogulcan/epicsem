@@ -66,6 +66,12 @@ export function isPlanId(v: string): v is PlanId {
  * (yaklaşık bir kurulum testi). Kalıcı kullanıcıya plan elle verilir (users.plan). */
 export const GUEST_LIMITS: PlanLimits = { engineQueries: 40, contentGenerations: 3, promptSuggestions: 5, onboardingSetup: 3 };
 
+/** Bütün misafir alanlarının ayda TOPLAM harcayabileceği (sahibin API bütçesini korur). GUEST_POOL_QUERIES ile değişir. */
+export function guestPoolLimits(): PlanLimits {
+  const q = Number(process.env.GUEST_POOL_QUERIES) || 200;
+  return { engineQueries: q, contentGenerations: Math.ceil(q / 7), promptSuggestions: Math.ceil(q / 4), onboardingSetup: Math.ceil(q / 4) };
+}
+
 export function limitsForPlan(plan: string): PlanLimits {
   if (plan === "guest") return GUEST_LIMITS;
   return PLAN_LIMITS[plan as PlanId] ?? PLAN_LIMITS[DEFAULT_PLAN];

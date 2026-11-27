@@ -184,6 +184,11 @@ function getOrCreatePublicUser(): Promise<AuthUser> {
   return publicUserPromise;
 }
 
+/** Misafir havuz sayacının tutulduğu hesap (usage_counters kullanıcıya bağlı olduğu için boş ortak hesap kullanılır). */
+export async function guestPoolUserId(): Promise<number> {
+  return (await getOrCreatePublicUser()).id;
+}
+
 /** Sahibin eski ortak (demo) hesabı: projelerinin durduğu hesap. Yalnızca gizli sahiplenme bağlantısıyla açılır. */
 export async function demoOwnerUser(): Promise<AuthUser> {
   return getOrCreateDemoUser();
