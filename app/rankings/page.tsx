@@ -231,7 +231,7 @@ export default function RankingsPage() {
         title={site ? `${site} Google'da kaçıncı sırada?` : "Sıralama Takibi"}
         description={
           list.length
-            ? `${list.length} kelime takipte${lastCheck ? ` · son kontrol ${new Date(lastCheck).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""} · her gün otomatik`
+            ? `${list.length} kelime takipte${lastCheck ? ` · son kontrol ${new Date(lastCheck).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""} · ${serpAvailable || serpbear ? "her gün otomatik" : "kaynak bağlanmadığı için kontrol edilmiyor"}`
             : "Takip ettiğin kelimelerde sitenin Google'daki sırasını her gün kontrol eder; yükselen ve düşen kelimeleri gösterir."
         }
         actions={
