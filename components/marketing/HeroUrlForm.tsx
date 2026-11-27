@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-/** Ana sayfa hero'sundaki "sitenin adresini yaz" kutusu — arvow'daki e-posta kutusunun
- * karşılığı; doğrudan ücretsiz SEO + AXO denetimine (/audit?url=…) götürür. */
+/** Ana sayfa hero'sundaki "sitenin adresini yaz" kutusu: kurulumu başlatır (/onboarding?url=…&go=1) —
+ * site taranır, marka/rakip/sorular çıkarılır, ilk test ve AI özeti hazırlanır. */
 export default function HeroUrlForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
@@ -13,7 +13,7 @@ export default function HeroUrlForm() {
       onSubmit={(e) => {
         e.preventDefault();
         const v = url.trim();
-        router.push(v ? `/audit?url=${encodeURIComponent(v)}` : "/audit");
+        router.push(v ? `/onboarding?url=${encodeURIComponent(v)}&go=1` : "/onboarding");
       }}
       className="mx-auto flex w-full max-w-xl flex-col sm:flex-row gap-2 rounded-2xl border border-border bg-panel/90 p-2 shadow-xl shadow-accent/10 backdrop-blur"
     >

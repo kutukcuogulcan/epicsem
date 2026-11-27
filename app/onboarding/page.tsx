@@ -100,8 +100,20 @@ export default function OnboardingPage() {
     if (q && Number.isInteger(Number(q))) setSid(Number(q));
     // Ücretsiz AI testinden gelindiyse site adresini önceden doldur.
     const pre = qs.get("url");
-    if (pre && !q) setUrl(pre.slice(0, 200));
+    if (pre && !q) {
+      setUrl(pre.slice(0, 200));
+      // Ana sayfadaki kutudan gelindiyse (?go=1) taramayı kendiliğinden başlat; adres ikinci kez onaylatılmaz.
+      if (qs.get("go") === "1") autoStart.current = true;
+    }
   }, []);
+  const autoStart = useRef(false);
+  useEffect(() => {
+    if (autoStart.current && url && sid == null) {
+      autoStart.current = false;
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
 
   // Oturumu yokla
   useEffect(() => {
@@ -170,8 +182,8 @@ export default function OnboardingPage() {
     }
   }, [s]);
 
-  async function start(e: React.FormEvent) {
-    e.preventDefault();
+  async function start(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!url.trim()) return;
     setErr(null);
     setStarting(true);
