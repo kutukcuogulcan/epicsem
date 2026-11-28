@@ -19,5 +19,14 @@ assert.deepEqual(d.rivals, [{ name: "BizimHesap", before: 0, after: 2 }, { name:
 assert.deepEqual(d.newSources, ["z.com"]);
 assert.deepEqual(d.goneSources, ["x.com"]);
 assert.equal(diffRuns([], cur).compared, 0);
+// Neden değişti: openai'de A kazanıldı, B kaybedildi → oran aynı (1/2 → 1/2), listede yok; google değişmedi.
+assert.deepEqual(d.byEngine, []);
+{
+  const p2 = [c("A", "openai", "lost"), c("B", "google", "won")].map((x) => ({ ...x, topic: x.prompt === "A" ? "Kasko" : "Ekspertiz" }));
+  const c2 = [c("A", "openai", "won"), c("B", "google", "lost")].map((x) => ({ ...x, topic: x.prompt === "A" ? "Kasko" : "Ekspertiz" }));
+  const d2 = diffRuns(p2, c2);
+  assert.deepEqual(d2.byEngine.map((x) => [x.key, x.before, x.after]), [["openai", 0, 1], ["google", 1, 0]]);
+  assert.deepEqual(d2.byTopic.map((x) => [x.key, x.before, x.after]), [["Kasko", 0, 1], ["Ekspertiz", 1, 0]]);
+}
 
 console.log("check-geo-diff: ok");

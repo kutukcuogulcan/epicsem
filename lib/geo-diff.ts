@@ -13,6 +13,8 @@ export interface Cell {
   ownRank: number | null;
   rivals: string[];
   sources: string[];
+  /** Sorunun konusu (konu bazında değişim için); yoksa "Genel". */
+  topic?: string;
 }
 
 export interface RunDiff {
@@ -25,6 +27,9 @@ export interface RunDiff {
   rivals: { name: string; before: number; after: number }[];
   newSources: string[];
   goneSources: string[];
+  /** "Neden değişti" (Maya'daki gibi): motor ve konu bazında görünürlük, önce → sonra (yalnızca değişenler, en çok değişen önce). */
+  byEngine: { key: string; n: number; before: number; after: number }[];
+  byTopic: { key: string; n: number; before: number; after: number }[];
 }
 
 const seen = (s: CellStatus) => s === "won" || s === "mentioned";
@@ -45,6 +50,20 @@ export function diffRuns(prev: Cell[], cur: Cell[]): RunDiff {
     .map((name) => ({ name, before: pairs.filter(([a]) => a.rivals.includes(name)).length, after: pairs.filter(([, b]) => b.rivals.includes(name)).length }))
     .filter((r) => r.before !== r.after)
     .sort((x, y) => Math.abs(y.after - y.before) - Math.abs(x.after - x.before));
+  const breakdown = (keyOf: (c: Cell) => string) => {
+    const m = new Map<string, { n: number; b: number; a: number }>();
+    for (const [a, b] of pairs) {
+      const e = m.get(keyOf(b)) ?? { n: 0, b: 0, a: 0 };
+      e.n++;
+      if (seen(a.status)) e.b++;
+      if (seen(b.status)) e.a++;
+      m.set(keyOf(b), e);
+    }
+    return [...m.entries()]
+      .map(([key, e]) => ({ key, n: e.n, before: e.b / e.n, after: e.a / e.n }))
+      .filter((x) => x.before !== x.after)
+      .sort((x, y) => Math.abs(y.after - y.before) - Math.abs(x.after - x.before));
+  };
   const srcA = new Set(pairs.flatMap(([a]) => a.sources));
   const srcB = new Set(pairs.flatMap(([, b]) => b.sources));
   const n = pairs.length || 1;
@@ -57,5 +76,7 @@ export function diffRuns(prev: Cell[], cur: Cell[]): RunDiff {
     rivals,
     newSources: [...srcB].filter((s) => !srcA.has(s)).slice(0, 10),
     goneSources: [...srcA].filter((s) => !srcB.has(s)).slice(0, 10),
+    byEngine: breakdown((c) => c.engine),
+    byTopic: breakdown((c) => c.topic || "Genel"),
   };
 }

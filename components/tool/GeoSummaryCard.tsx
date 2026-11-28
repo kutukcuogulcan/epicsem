@@ -132,6 +132,7 @@ export default function GeoSummaryCard({ testAt }: { testAt?: string | null }) {
                 </div>
               ) : null;
             })()}
+            {diff && prevAt && diff.compared > 0 && <WhyChanged diff={diff} />}
             <div className="grid gap-4 border-t border-border pt-3 sm:grid-cols-2">
               {diff && prevAt && diff.compared ? (
                 [
@@ -204,5 +205,71 @@ function Since({ item }: { item: ActionItem & { since?: { tests: number; from: n
         </>
       )}
     </p>
+  );
+}
+
+const ENG: Record<string, string> = { openai: "ChatGPT", anthropic: "Claude", google: "Gemini", perplexity: "Perplexity", deepseek: "DeepSeek", xai: "Grok", meta: "Meta AI", microsoft: "Copilot" };
+
+/** Maya'daki "skor neden değişti": iki testin aynı soru × motor çiftlerinden motor, konu, rakip ve kaynak değişimi (kodla). */
+function WhyChanged({ diff }: { diff: RunDiff }) {
+  const pct = (v: number) => `%${Math.round(v * 100)}`;
+  const delta = Math.round((diff.visibilityAfter - diff.visibilityBefore) * 100);
+  const row = (label: string, before: number, after: number, n: number) => {
+    const d = Math.round((after - before) * 100);
+    return (
+      <li key={label} className="flex items-baseline justify-between gap-3 text-sm">
+        <span className="text-ink">{label}</span>
+        <span className="tabular-nums text-sub">
+          {pct(before)} → {pct(after)} <b className={d > 0 ? "text-seo-ink" : "text-danger-ink"}>{d > 0 ? "+" : ""}{d}</b> <span className="text-xs">({n} cevap)</span>
+        </span>
+      </li>
+    );
+  };
+  const hasDetail = diff.byEngine?.length || diff.byTopic?.length || diff.rivals.length || diff.newSources.length;
+  return (
+    <div className="border-t border-border pt-3">
+      <p className="text-xs font-medium text-sub">
+        Neden değişti? · görünürlük {pct(diff.visibilityBefore)} → {pct(diff.visibilityAfter)}{" "}
+        <span className={delta > 0 ? "text-seo-ink" : delta < 0 ? "text-danger-ink" : ""}>({delta > 0 ? "+" : ""}{delta} puan)</span> · aynı {diff.compared} soru × motor
+      </p>
+      {!hasDetail ? (
+        <p className="mt-1 text-sm text-sub">Motor, konu, rakip ve kaynaklarda değişim yok.</p>
+      ) : (
+        <div className="mt-2 grid gap-4 sm:grid-cols-2">
+          {diff.byEngine?.length ? (
+            <div>
+              <p className="text-xs text-sub">Motor bazında</p>
+              <ul className="mt-1 space-y-1">{diff.byEngine.slice(0, 4).map((x) => row(ENG[x.key] ?? x.key, x.before, x.after, x.n))}</ul>
+            </div>
+          ) : null}
+          {diff.byTopic?.length ? (
+            <div>
+              <p className="text-xs text-sub">Konu bazında</p>
+              <ul className="mt-1 space-y-1">{diff.byTopic.slice(0, 4).map((x) => row(x.key, x.before, x.after, x.n))}</ul>
+            </div>
+          ) : null}
+          {diff.rivals.length ? (
+            <div>
+              <p className="text-xs text-sub">Rakipler (anıldığı cevap)</p>
+              <ul className="mt-1 space-y-1 text-sm">
+                {diff.rivals.slice(0, 4).map((x) => (
+                  <li key={x.name} className="flex justify-between gap-3">
+                    <span className="text-ink">{x.name}</span>
+                    <span className="tabular-nums text-sub">{x.before} → <b className={x.after > x.before ? "text-danger-ink" : "text-seo-ink"}>{x.after}</b></span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {diff.newSources.length || diff.goneSources.length ? (
+            <div className="text-sm">
+              <p className="text-xs text-sub">Kaynaklar</p>
+              {diff.newSources.length > 0 && <p className="mt-1 text-ink"><span className="text-sub">Yeni: </span>{diff.newSources.slice(0, 5).join(", ")}</p>}
+              {diff.goneSources.length > 0 && <p className="mt-0.5 text-ink"><span className="text-sub">Artık yok: </span>{diff.goneSources.slice(0, 5).join(", ")}</p>}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 }

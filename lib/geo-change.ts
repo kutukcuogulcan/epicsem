@@ -19,7 +19,7 @@ export function toCells(runs: GeoRunResult[], own: BrandRef, rivals: BrandRef[])
     .filter((r) => !isDemoRun(r))
     .map((r) => {
       const a = analyzeRun(r, own, rivals);
-      return { prompt: r.promptText, engine: r.engine, status: a.status, ownRank: a.ownRank, rivals: a.rivals.map((x) => x.name), sources: a.sources };
+      return { prompt: r.promptText, engine: r.engine, status: a.status, ownRank: a.ownRank, rivals: a.rivals.map((x) => x.name), sources: a.sources, topic: r.topic || "Genel" };
     });
 }
 

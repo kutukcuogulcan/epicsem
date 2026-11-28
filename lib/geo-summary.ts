@@ -33,7 +33,7 @@ export function summaryFacts(brand: string, r: GeoReport, diff: RunDiff | null, 
     r.gapSources.length ? `Kaybedilen cevaplarda AI'ın baktığı dış kaynaklar: ${r.gapSources.slice(0, 6).map((g) => `${g.domain} (${g.count})`).join(", ")}.` : "",
     r.perception.negatives.length ? `Marka cümlelerinde olumsuz ifadeler: ${r.perception.negatives.map((t) => t.term).join(", ")}.` : "",
     diff && diff.compared
-      ? `Önceki teste göre (${diff.compared} ortak cevap): görünürlük ${pct(diff.visibilityBefore)} → ${pct(diff.visibilityAfter)}; kazanılan ${diff.gained.length}, kaybedilen ${diff.lost.length}${diff.rivals.length ? `; rakip değişimi: ${diff.rivals.slice(0, 4).map((x) => `${x.name} ${x.before}→${x.after}`).join(", ")}` : ""}${diff.newSources.length ? `; yeni kaynaklar: ${diff.newSources.slice(0, 5).join(", ")}` : ""}.`
+      ? `Önceki teste göre (${diff.compared} ortak cevap): görünürlük ${pct(diff.visibilityBefore)} → ${pct(diff.visibilityAfter)}; kazanılan ${diff.gained.length}, kaybedilen ${diff.lost.length}${diff.rivals.length ? `; rakip değişimi: ${diff.rivals.slice(0, 4).map((x) => `${x.name} ${x.before}→${x.after}`).join(", ")}` : ""}${diff.newSources.length ? `; yeni kaynaklar: ${diff.newSources.slice(0, 5).join(", ")}` : ""}${diff.byEngine?.length ? `; motor bazında: ${diff.byEngine.slice(0, 4).map((x) => `${x.key} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}${diff.byTopic?.length ? `; konu bazında: ${diff.byTopic.slice(0, 4).map((x) => `${x.key} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}.`
       : "Karşılaştırılacak önceki test yok.",
     excerpts.length ? `Kaybedilen cevaplardan alıntılar:\n${excerpts.map((e) => `- ${e}`).join("\n")}` : "",
   ];
