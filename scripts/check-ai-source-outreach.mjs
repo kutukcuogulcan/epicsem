@@ -21,4 +21,6 @@ assert.equal(outreachPlan("Editorial", { rivals: ["Logo"], you: false, linksYou:
 assert.match(outreachPlan("UGC", { rivals: [], you: false, linksYou: false }).action, /marka hesabıyla/);
 assert.match(outreachPlan("Editorial", { rivals: [], you: true, linksYou: false }).label, /link yok/);
 assert.equal(outreachPlan("Other", null).status, "okunamadi");
+assert.doesNotMatch(outreachPlan("Retail", { rivals: [], you: true, linksYou: false }).action, /yazar/i, "mağazada yazara ulaş denmez");
+assert.match(outreachPlan("Retail", { rivals: [], you: true, linksYou: false }).label, /listede/);
 console.log("check-ai-source-outreach: ok");

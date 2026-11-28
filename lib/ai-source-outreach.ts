@@ -54,6 +54,9 @@ export type OutreachStatus = "rakip-var-sen-yok" | "kimse-yok" | "aniliyorsun" |
 
 export function outreachPlan(type: SourceDomainType, page: { rivals: string[]; you: boolean; linksYou: boolean } | null): { status: OutreachStatus; label: string; action: string } {
   if (!page) return { status: "okunamadi", label: "Sayfa okunamadı", action: "Sayfayı tarayıcıda açıp kim anılıyor kendin kontrol et." };
+  // Mağaza / fiyat karşılaştırma sitesinde yazar yok, link beklenmez: ürünün listede ve bilgilerin güncel olması önemli.
+  if (page.you && type === "Retail")
+    return { status: "aniliyorsun", label: "Ürünlerin listede", action: "Link beklenmez; fiyat, stok, açıklama ve yorumların güncel mi kontrol et. AI ürün bilgisini buradan alıyor." };
   if (page.you)
     return {
       status: "aniliyorsun",
