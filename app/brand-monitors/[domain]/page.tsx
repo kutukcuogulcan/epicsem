@@ -40,7 +40,7 @@ interface Detail {
   engines: { engine: string; visibility: number; sentiment: number | null; total: number }[];
   timeline: { at: string; visibility: number; sentiment: number | null }[];
   legacy?: boolean;
-  schedule?: { active: boolean; intervalDays: number; lastAutoAt: string | null; lastError: string | null } | null;
+  schedule?: { active: boolean; intervalDays: number; lastAutoAt: string | null; lastError: string | null; prompts?: { text: string; topic: string }[] | null } | null;
 }
 
 type Tab = "prompts" | "visibility" | "sentiment" | "rivals" | "sources";
@@ -126,7 +126,9 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
   const active = !!sch?.active;
   const every = sch?.intervalDays ?? 7;
   const nextAt = new Date(new Date(d.lastRunAt).getTime() + every * 864e5);
-  const queries = d.prompts.length * Math.max(1, d.engines.length);
+  // Otomatik testte sabit soru seti sorulur (açılırken en önemli 5 soru seçilir); henüz seçilmediyse 5 varsayılır.
+  const tracked = sch?.prompts?.length ?? Math.min(5, d.prompts.length);
+  const queries = tracked * Math.max(1, d.engines.length);
   const net = netSentiment(d.sentiment);
   const timeline = d.timeline.map((t) => ({ ...t, label: new Date(t.at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }), v: Math.round(t.visibility * 100) }));
 
@@ -162,6 +164,12 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
                 Her {every === 1 ? "gün" : `${every} günde bir`} otomatik çalışır · sonraki çalışma {nextAt.getTime() < Date.now() ? "sıradaki kontrolde" : fmt(nextAt.toISOString())} · her çalışma {queries} AI sorgusu (ayda ~{Math.round((queries * 30) / every)})
                 {sch?.lastError && <span className="text-danger-ink"> · son otomatik çalışma hatası: {sch.lastError}</span>}
               </div>
+              {sch?.prompts?.length ? (
+                <details className="mt-1 text-xs text-sub">
+                  <summary className="cursor-pointer">Her seferinde aynı {sch.prompts.length} soru izleniyor (kaybedilen ve rakibin önde olduğu sorular)</summary>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">{sch.prompts.map((q) => <li key={q.text}>{q.text}</li>)}</ul>
+                </details>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -184,7 +192,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
             <div>
               <div className="text-sm font-medium text-warn-ink">İzleme duraklatıldı</div>
               <div className="text-xs text-sub">
-                Veri toplama duruyor. Markanı AI modellerinde takip etmeye devam etmek için izlemeyi başlat ({queries} AI sorgusu / çalışma).
+                Başlatınca en önemli {tracked} soru (kaybedilen ve rakibin önde olduğu) her hafta aynı biçimde sorulur; trend ve kazanım/kayıplar böyle oluşur ({queries} AI sorgusu / çalışma, ayda ~{Math.round((queries * 30) / 7)}).
               </div>
             </div>
           </div>

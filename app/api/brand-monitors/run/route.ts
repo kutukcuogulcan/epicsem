@@ -11,16 +11,18 @@ import type { EngineId } from "@/types";
 export const maxDuration = 300;
 
 /** Bir markanın son testindeki prompt/motor/rakip setiyle testi yeniden çalıştırır. */
-async function rerun(userId: number, domain: string) {
+async function rerun(userId: number, domain: string, fixed?: { text: string; topic: string }[] | null) {
   const last = await getLatestGeoRunFull(userId, domain);
   if (!last || !last.runs.length) throw new Error("Bu marka için tekrar çalıştırılacak bir test yok — önce GEO testini bir kez çalıştır.");
   const seen = new Set<string>();
-  const prompts: { text: string; topic: string }[] = [];
-  for (const r of last.runs) {
-    if (seen.has(r.promptText)) continue;
-    seen.add(r.promptText);
-    prompts.push({ text: r.promptText, topic: r.topic || "Genel" });
-  }
+  // Otomatik izlemede sabit soru seti (schedule.prompts); yoksa son testin bütün soruları.
+  let prompts: { text: string; topic: string }[] = fixed?.length ? fixed : [];
+  if (!prompts.length)
+    for (const r of last.runs) {
+      if (seen.has(r.promptText)) continue;
+      seen.add(r.promptText);
+      prompts.push({ text: r.promptText, topic: r.topic || "Genel" });
+    }
   const engines = [...new Set(last.runs.map((r) => r.engine))] as EngineId[];
   // Projenin güncel rakipleri ve alt markaları (son testten sonra eklenmiş olabilir) kullanılır.
   const proj = await getActiveProject(userId, domain).catch(() => null);
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     const results = [];
     for (const s of due) {
       try {
-        results.push({ ok: true, ...(await rerun(s.userId, s.brandDomain)) });
+        results.push({ ok: true, ...(await rerun(s.userId, s.brandDomain, s.prompts)) });
         await markMonitorRun(s.userId, s.brandDomain, null);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Çalıştırılamadı";

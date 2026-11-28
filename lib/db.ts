@@ -2989,6 +2989,8 @@ export interface MonitorSchedule {
   intervalDays: number;
   lastAutoAt: string | null;
   lastError: string | null;
+  /** Otomatik testin sabit soru seti (izleme açılırken seçilir); yoksa son testin bütün soruları. */
+  prompts: { text: string; topic: string }[] | null;
 }
 
 async function ensureMonitorSchedules() {
@@ -3002,6 +3004,7 @@ async function ensureMonitorSchedules() {
     last_error TEXT,
     PRIMARY KEY (user_id, brand_domain)
   )`, []);
+  await exec(`ALTER TABLE brand_monitor_schedules ADD COLUMN IF NOT EXISTS prompts_json TEXT`, []);
 }
 const rowToSchedule = (r: any): MonitorSchedule => ({
   userId: r.user_id,
@@ -3010,6 +3013,7 @@ const rowToSchedule = (r: any): MonitorSchedule => ({
   intervalDays: Number(r.interval_days),
   lastAutoAt: r.last_auto_at ? toIso(r.last_auto_at) : null,
   lastError: r.last_error ?? null,
+  prompts: r.prompts_json ? JSON.parse(r.prompts_json) : null,
 });
 
 export async function listMonitorSchedules(userId: number): Promise<MonitorSchedule[]> {
@@ -3017,13 +3021,14 @@ export async function listMonitorSchedules(userId: number): Promise<MonitorSched
   return (await many<any>(`SELECT * FROM brand_monitor_schedules WHERE user_id = $1`, [userId])).map(rowToSchedule);
 }
 
-export async function setMonitorSchedule(userId: number, brandDomain: string, p: { active?: boolean; intervalDays?: number }): Promise<MonitorSchedule> {
+export async function setMonitorSchedule(userId: number, brandDomain: string, p: { active?: boolean; intervalDays?: number; prompts?: { text: string; topic: string }[] }): Promise<MonitorSchedule> {
   await ensureMonitorSchedules();
   const row = await one<any>(
-    `INSERT INTO brand_monitor_schedules (user_id, brand_domain, active, interval_days) VALUES ($1, $2, COALESCE($3, false), COALESCE($4, 7))
-     ON CONFLICT (user_id, brand_domain) DO UPDATE SET active = COALESCE($3, brand_monitor_schedules.active), interval_days = COALESCE($4, brand_monitor_schedules.interval_days)
+    `INSERT INTO brand_monitor_schedules (user_id, brand_domain, active, interval_days, prompts_json) VALUES ($1, $2, COALESCE($3, false), COALESCE($4, 7), $5)
+     ON CONFLICT (user_id, brand_domain) DO UPDATE SET active = COALESCE($3, brand_monitor_schedules.active), interval_days = COALESCE($4, brand_monitor_schedules.interval_days),
+       prompts_json = COALESCE($5, brand_monitor_schedules.prompts_json)
      RETURNING *`,
-    [userId, brandDomain, p.active ?? null, p.intervalDays ?? null]
+    [userId, brandDomain, p.active ?? null, p.intervalDays ?? null, p.prompts ? JSON.stringify(p.prompts) : null]
   );
   return rowToSchedule(row);
 }
