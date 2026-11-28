@@ -21,6 +21,8 @@ import { safeFetch } from "@/lib/safe-fetch";
  * sonuç döner (kısmi tarama `filename`'de "(kısmi)" diye işaretlenir).
  */
 
+import { isBrokenStatus } from "@/lib/link-status";
+
 const UA = "Mozilla/5.0 (compatible; EpicsemBot/1.0; +https://epicsem.com/bot)";
 const PAGE_TIMEOUT_MS = 10000;
 const CONCURRENCY = 8;
@@ -521,7 +523,9 @@ export async function crawlSiteBulk(input: string, maxPages = 150): Promise<Bulk
     m.orphan = hasSitemap && sitemapSet.has(r.url) && r.url !== home && m.inlinks === 0;
     m.brokenOutlinks = (outlinks.get(r.url) ?? []).filter((to) => {
       const t = byUrl.get(to);
-      return !!t && t.statusCode !== null && (t.statusCode >= 400 || t.statusCode === 0);
+      // Zaman aşımı (0) ve bot engeli kırık değil, doğrulanamadı: yoksa tarama sırasında zaman aşımına uğrayan tek bir
+      // footer sayfası, ona link veren bütün sayfaları "kırık iç link" diye işaretler (Purina'da 133 sayfa).
+      return !!t && isBrokenStatus(t.statusCode);
     });
     if (m.redirectTarget) {
       const t = byUrl.get(m.redirectTarget);
