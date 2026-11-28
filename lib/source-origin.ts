@@ -4,6 +4,8 @@
  */
 const GENERIC = new Set(["ve", "ile", "research", "center", "centre", "institute", "report", "group", "global", "international", "association", "university", "company", "inc", "ltd", "the", "and", "of", "for", "araştırma", "merkezi", "enstitüsü", "raporu", "derneği", "üniversitesi"]);
 
+const STOP = new Set(["ve", "ile", "and", "of", "the", "for", "et", "de", "la", "del", "und", "des", "du"]);
+
 const fold = (s: string) =>
   s
     .toLocaleLowerCase("tr")
@@ -27,7 +29,8 @@ export function isOriginHost(origin: string, url: string): boolean {
   if (!host || !origin.trim()) return true; // kurum bilinmiyorsa aktarım iddiası kurulmaz
   const words = fold(origin).split(/[^a-z0-9]+/).filter(Boolean);
   const tokens = words.filter((w) => w.length >= 3 && !GENERIC.has(w));
-  const initials = words.filter((w) => !GENERIC.has(w) || words.length > 2).map((w) => w[0]).join("");
+  // Baş harflerde bağlaçlar atlanır (Acta Orthopaedica et Traumatologica Turcica → aott); kurum kelimeleri sayılır.
+  const initials = words.filter((w) => !STOP.has(w) && (!GENERIC.has(w) || words.length > 2)).map((w) => w[0]).join("");
   const label = host.split(".").slice(0, -1).join(".");
   return tokens.some((t) => label.includes(t)) || (initials.length >= 2 && label.split(".").includes(initials)) || (words.length === 1 && label.includes(words[0]));
 }

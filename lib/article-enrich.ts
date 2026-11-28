@@ -120,7 +120,10 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
       const url = String(f?.url ?? "").trim();
       const origin = String(f?.origin ?? f?.source ?? "").trim().slice(0, 80);
       // Rakamı üreten kurumun sitesi değilse (aktaran blog), yazıda "X'e göre (aktaran: site)" diye atıf yapılır.
-      return { fact: String(f?.fact ?? "").trim().slice(0, 300), source: String(f?.source ?? "").trim().slice(0, 80), url, origin, via: isOriginHost(origin, url) ? undefined : hostOf(url) };
+      const source = String(f?.source ?? "").trim().slice(0, 80);
+      // Asıl kaynak: rakamı üreten kurum ya da yayıncı o sitenin sahibi (yazar adı "kurum" yazılırsa yayıncıya bakılır).
+      const primary = isOriginHost(origin, url) || (!!source && isOriginHost(source, url));
+      return { fact: String(f?.fact ?? "").trim().slice(0, 300), source, url, origin, via: primary ? undefined : hostOf(url) };
     })
     .filter((f: ResearchFact) => f.fact && publicUrl(f.url) && !isRival(f.url, f.source))
     .slice(0, 6);

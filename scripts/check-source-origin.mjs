@@ -11,6 +11,8 @@ assert.equal(isOriginHost("TÜİK", "https://data.tuik.gov.tr/Bulten/Index?p=1")
 assert.equal(isOriginHost("World Health Organization", "https://www.who.int/news"), true, "baş harfler");
 assert.equal(isOriginHost("Bilgi Teknolojileri ve İletişim Kurumu", "https://www.btk.gov.tr/raporlar"), false, "bilinen sınır: kısaltması adından türemiyor");
 assert.equal(isOriginHost("", "https://x.com"), true, "kurum bilinmiyorsa iddia yok");
+assert.equal(isOriginHost("Acta Orthopaedica et Traumatologica Turcica", "https://aott.org.tr/index.php/pub/article/view/4072"), true, "bağlaç atlanır: aott");
+assert.equal(isOriginHost("Hünkar Cagdas Bayrak, Bekir Karagöz", "https://aott.org.tr/x"), false, "yazar adı kurum değil (yayıncıya bakılır)");
 console.log("check-source-origin: ok");
 {
   const { factNumbers, factOnPage } = await import("../lib/source-origin.ts");
