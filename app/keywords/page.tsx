@@ -196,7 +196,13 @@ export default function KeywordsPage() {
       .then(async (r) => {
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || "Harita çıkarılamadı");
-        if (!off) setCmap({ busy: false, err: null, rows: j.rows, scanned: j.pagesScanned });
+        // Sitenin hiç sayfası okunamadıysa (bot koruması, sitemap yok) "sayfa yok" denemez: karşılaştırma yapılmadı.
+        if (!off)
+          setCmap(
+            j.pagesScanned
+              ? { busy: false, err: null, rows: j.rows, scanned: j.pagesScanned }
+              : { busy: false, err: "Sitenin sayfaları okunamadı (bot koruması ya da sitemap yok), bu yüzden konuların sitende olup olmadığı karşılaştırılamadı. Site Gezgini'nden sayfaları içe aktarınca harita çıkar.", rows: [], scanned: 0 }
+          );
       })
       .catch((e) => !off && setCmap({ busy: false, err: e instanceof Error ? e.message : "Harita çıkarılamadı", rows: [], scanned: 0 }));
     return () => {

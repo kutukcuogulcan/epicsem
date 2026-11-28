@@ -1,6 +1,6 @@
 // Türkçe anahtar kelime niyet sınıflandırmasını doğrular. Çalıştır: node --experimental-strip-types scripts/check-keyword-intent.mjs
 import assert from "node:assert/strict";
-import { intentOf } from "../lib/keyword-research.ts";
+import { intentOf, clusterLabels } from "../lib/keyword-research.ts";
 
 const cases = {
   "ön muhasebe programı fiyatları": "commercial",
@@ -18,3 +18,17 @@ const cases = {
 };
 for (const [k, want] of Object.entries(cases)) assert.equal(intentOf(k), want, k);
 console.log("check-keyword-intent: ok");
+
+// Küme adları: tek kelime yerine kümedeki en kısa gerçek arama.
+{
+  const labels = clusterLabels([
+    { keyword: "ikinci el araba fiyatları sahibinden", cluster: "fiyatları" },
+    { keyword: "ikinci el araba fiyatları", cluster: "fiyatları" },
+    { keyword: "ikinci el araba ne zaman alınır", cluster: "zaman" },
+    { keyword: "ikinci el araba", cluster: "genel" },
+  ]);
+  assert.equal(labels.get("fiyatları"), "ikinci el araba fiyatları");
+  assert.equal(labels.get("zaman"), "ikinci el araba ne zaman alınır");
+  assert.equal(labels.has("genel"), false, "genel kümesi adlandırılmaz");
+  console.log("check-keyword-intent (küme adları): ok");
+}

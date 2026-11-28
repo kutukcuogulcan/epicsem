@@ -96,6 +96,18 @@ function clusterOf(k: string, seed: string): string {
   return w ?? "genel";
 }
 
+/** Küme anahtarı (tek kelime) → okunur ad: kümedeki en az kelimeli, sonra en kısa arama. */
+export function clusterLabels(ideas: { keyword: string; cluster: string }[]): Map<string, string> {
+  const best = new Map<string, string>();
+  for (const i of ideas) {
+    if (i.cluster === "genel") continue;
+    const cur = best.get(i.cluster);
+    const w = (k: string) => k.split(/\s+/).length;
+    if (!cur || w(i.keyword) < w(cur) || (w(i.keyword) === w(cur) && i.keyword.length < cur.length)) best.set(i.cluster, i.keyword);
+  }
+  return best;
+}
+
 /** Dış kaynaktan gelen bir kelimeyi aynı niyet/küme kurallarıyla sınıflandırır. */
 export function classifyKeyword(keyword: string, seed: string): Pick<KeywordIdea, "intent" | "cluster" | "words"> {
   return { intent: intentOf(keyword), cluster: clusterOf(keyword, seed), words: keyword.split(/\s+/).length };
@@ -135,6 +147,9 @@ export async function researchKeywords(seed: string, opts: { lang?: string; coun
   const ideas: KeywordIdea[] = [...hits.entries()]
     .map(([keyword, h]) => ({ keyword, hits: h, intent: intentOf(keyword), words: keyword.split(/\s+/).length, cluster: clusterOf(keyword, s) }))
     .sort((a, b) => b.hits - a.hits || a.words - b.words);
+  // Küme adı: kümedeki en kısa gerçek arama ("fiyatları" değil "ikinci el araba fiyatları"); kümelerin kendisi değişmez.
+  const label = clusterLabels(ideas);
+  for (const i of ideas) i.cluster = label.get(i.cluster) ?? i.cluster;
   const cm = new Map<string, number>();
   for (const i of ideas) cm.set(i.cluster, (cm.get(i.cluster) ?? 0) + 1);
   const clusters = [...cm.entries()]
