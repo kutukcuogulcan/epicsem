@@ -25,6 +25,7 @@ import GeoOverview from "@/components/tool/GeoOverview";
 import GeoDashboard from "@/components/tool/GeoDashboard";
 import GeoSummaryCard from "@/components/tool/GeoSummaryCard";
 import PromptSuggestions from "@/components/tool/PromptSuggestions";
+import ProductVisibility from "@/components/tool/ProductVisibility";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
@@ -770,6 +771,7 @@ export default function GeoPage() {
       {restoredAt && summaries && !["overview", "library", "entity", "impact", "readiness", "botlog"].includes(resultsTab) && (
         <p className="-mt-2 text-xs text-ink/60">Son test: {new Date(restoredAt).toLocaleString("tr-TR")} — yeni test çalıştırınca güncellenir.</p>
       )}
+      {resultsTab === "rivals" && runs && runs.length > 0 && !demoMode && <ProductVisibility testAt={`${restoredAt}-${overviewKey}`} />}
       {resultsTab === "rivals" && runs && <BattlecardsTab runs={runs} own={ownRef} competitors={competitorRefs} retail={retailDomains} />}
       {resultsTab === "impact" && <ImpactTab />}
       {resultsTab === "facts" && runs && <FactsTab runs={runs} brand={ownRef.name} />}
