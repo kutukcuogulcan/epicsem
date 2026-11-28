@@ -42,8 +42,8 @@ export async function POST() {
   if (cached) return NextResponse.json({ suggestions: cached });
   try {
     const competitors = (l.p.competitors.length ? l.p.competitors : l.geo.competitors).map((c) => c.name);
-    const raw = await runSmallAiJson(user.id, suggestionPrompt(l.geo.brand.name, l.geo.runs, competitors, l.p.settings.language || "tr"));
-    const suggestions = parseSuggestions(raw, l.geo.brand.name, [...new Set(l.geo.runs.map((r) => r.promptText))]);
+    const raw = await runSmallAiJson(user.id, suggestionPrompt(l.geo.brand.name, l.geo.runs, competitors, l.p.settings.language || "tr", l.p.aliases));
+    const suggestions = parseSuggestions(raw, l.geo.brand.name, [...new Set(l.geo.runs.map((r) => r.promptText))], l.p.aliases);
     await saveGeoOpportunities(user.id, l.geo.brand.domain, key, suggestions);
     return NextResponse.json({ suggestions });
   } catch (e) {

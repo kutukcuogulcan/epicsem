@@ -18,4 +18,5 @@ const out = parseSuggestions(
   ["En iyi kedi maması hangisi?"]
 );
 assert.deepEqual(out.map((x) => x.text), ["Tahılsız kedi maması gerçekten daha sağlıklı mı?"], "takip edilen, markalı, kısa ve tekrar edenler atılır");
+assert.equal(parseSuggestions({ suggestions: [{ text: "Royal Canin, Pro Plan ve Brit arasında fark var mı?", topic: "Köpek" }] }, "Purina", [], ["Pro Plan"]).length, 0, "alt marka geçen soru markasız değildir");
 console.log("check-prompt-suggest: ok");
