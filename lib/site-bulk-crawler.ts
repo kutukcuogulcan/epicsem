@@ -605,6 +605,28 @@ async function collectAssets(rows: RawBulkRow[], sigs: Map<string, number[]>, or
     deadline
   );
 
+  // 1b) Yavaş görünen sayfaları sırayla (eşzamansız değil) yeniden ölç: paralel tarama ve HTML ayrıştırma bizim işlemi
+  // meşgul ederken ölçülen süre sitenin değil kuyruğun gecikmesidir (Purina'da 134 sayfa yanlışlıkla "yavaş" çıkmıştı).
+  const slow = rows.filter((x) => (x.metrics?.responseMs ?? 0) > 1500);
+  const sample = slow.slice(0, 20);
+  let fastAgain = 0;
+  let measured = 0;
+  for (const r of sample) {
+    if (Date.now() > deadline) break;
+    const t = Date.now();
+    try {
+      const res = await safeFetch(r.url, { method: "GET", redirect: "manual", headers: { "User-Agent": UA } }, { timeoutMs: 8000 });
+      r.metrics!.responseMs = Date.now() - t; // başlıklar gelince ölç
+      res.body?.cancel().catch(() => {});
+      measured++;
+      if (r.metrics!.responseMs <= 1500) fastAgain++;
+    } catch {
+      /* ölçülemedi: ilk değer kalır */
+    }
+  }
+  // Örneğin çoğu tek başına hızlıysa, yeniden ölçülemeyen yavaşlar da büyük olasılıkla kuyruk gecikmesidir: süre bilinmiyor say.
+  if (measured >= 5 && fastAgain / measured >= 0.75) for (const r of slow.slice(sample.length)) r.metrics!.responseMs = null;
+
   // 2) Dış linkler (benzersiz, en fazla 150).
   const ext = [...new Set(rows.flatMap((r) => (r.metrics?.outLinks ?? []).filter((l) => l.external).map((l) => l.to)))].slice(0, 150);
   const externalLinks: Record<string, number> = {};

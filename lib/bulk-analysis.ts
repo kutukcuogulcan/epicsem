@@ -1,5 +1,6 @@
 import type { BulkCrawlAssets, BulkImportResult, BulkImportRow, BulkImportSummary } from "@/types";
 import { ISSUE_SEVERITY, THEMES } from "@/lib/bulk-labels";
+import { isBrokenStatus } from "@/lib/link-status";
 
 /** Bir taramadan (kendi tarayıcımız ya da içe aktarılan CSV) gelen ham sayfa satırı. */
 export type RawBulkRow = Omit<BulkImportRow, "issues">;
@@ -108,12 +109,11 @@ export function buildBulkResult(raw: RawBulkRow[], filename: string, columns: st
       if (statusCode === 302 || statusCode === 307) issues.push("redirect-temporary");
       if (hops.some((h, i) => i > 0 && /^http:/i.test(h.url) && /^https:/i.test(hops[i - 1].url))) issues.push("https-to-http");
       // Dış linkler / görseller
-      const brokenExt = (m.outLinks ?? []).filter((l) => l.external && (assets.externalLinks[l.to] ?? 200) >= 400);
+      const brokenExt = (m.outLinks ?? []).filter((l) => l.external && isBrokenStatus(assets.externalLinks[l.to]));
       if (brokenExt.length) issues.push("broken-external-links");
       const imgs = m.images ?? [];
       if (imgs.some((i) => {
-        const st = assets.images[i.src]?.status;
-        return st !== undefined && (st >= 400 || st === 0);
+        return isBrokenStatus(assets.images[i.src]?.status);
       })) issues.push("broken-images");
       if (imgs.some((i) => (assets.images[i.src]?.kb ?? 0) > 100)) issues.push("large-images");
       if (is2xx && imgs.some((i) => !i.hasSize)) issues.push("images-no-dimensions");
