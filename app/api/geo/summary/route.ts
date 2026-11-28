@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { getGeoOpportunities, saveGeoOpportunities } from "@/lib/db";
+import { getGeoOpportunities, saveGeoOpportunities, upsertActionItems } from "@/lib/db";
+import { actionKey } from "@/lib/action-items";
 import { loadReportData } from "@/lib/geo-report-data";
 import { parseSummary, summaryFacts, summaryPrompt, type GeoSummary } from "@/lib/geo-summary";
 import { QuotaError, runSmallAiJson } from "@/lib/ai-small";
@@ -15,7 +16,10 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Giriş yapmalısınız" }, { status: 401 });
   const d = await loadReportData(user.id);
   if (!d) return NextResponse.json({ summary: null });
-  return NextResponse.json({ summary: await getGeoOpportunities<GeoSummary>(user.id, d.domain, keyOf(d.createdAt)), createdAt: d.createdAt, diff: d.diff, prevAt: d.prevAt });
+  const summary = await getGeoOpportunities<GeoSummary>(user.id, d.domain, keyOf(d.createdAt));
+  // Takip listesi bu özellikten önce üretilmiş özetler için de dolsun (aynı iş tekrar eklenmez).
+  if (summary) await upsertActionItems(user.id, d.domain, summary.actions.map((x) => ({ title: x.action, why: x.why, impact: x.impact, effort: x.effort, key: actionKey(x.action) }))).catch(() => undefined);
+  return NextResponse.json({ summary, createdAt: d.createdAt, diff: d.diff, prevAt: d.prevAt });
 }
 
 export async function POST() {
@@ -30,6 +34,8 @@ export async function POST() {
     const summary = parseSummary(await runSmallAiJson(user.id, summaryPrompt(summaryFacts(d.brand, d.report, d.diff, d.excerpts))));
     if (!summary) return NextResponse.json({ error: "Özet üretilemedi, tekrar dene." }, { status: 502 });
     await saveGeoOpportunities(user.id, d.domain, keyOf(d.createdAt), summary);
+    // Öncelikli işler takip listesine girer (yapılıyor / yapıldı işaretlenebilsin).
+    await upsertActionItems(user.id, d.domain, summary.actions.map((x) => ({ title: x.action, why: x.why, impact: x.impact, effort: x.effort, key: actionKey(x.action) }))).catch((e) => console.error("[geo-summary] işler kaydedilemedi", e));
     return NextResponse.json({ summary });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Özet üretilemedi" }, { status: e instanceof QuotaError ? 402 : 500 });

@@ -18,6 +18,7 @@ import type { PageChange, PageSnap } from "@/lib/page-diff";
 import { citabilityOfMarkdown } from "@/lib/citability";
 import { openSecret, sealSecret } from "./secret-box";
 import { recountWithAliases } from "@/lib/alias-recount";
+import type { ActionItem, ActionStatus } from "@/lib/action-items";
 
 /**
  * Persistence layer — Postgres via `pg` (node-postgres), connected through DATABASE_URL.
@@ -3266,4 +3267,68 @@ export async function getGeoRunForCompare(userId: number, brandDomain: string, b
     [userId, brandDomain, beforeIso]
   );
   return row ? { createdAt: toIso(row.created_at), runs: JSON.parse(row.runs_json || "[]") } : null;
+}
+
+// ---------------- GEO iş takibi (öncelikli işler: yapılıyor / yapıldı) ----------------
+
+async function ensureActionItems() {
+  await ensureSchema();
+  await exec(`CREATE TABLE IF NOT EXISTS geo_action_items (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    brand_domain TEXT NOT NULL,
+    key TEXT NOT NULL,
+    title TEXT NOT NULL,
+    why TEXT NOT NULL DEFAULT '',
+    impact TEXT NOT NULL DEFAULT 'orta',
+    effort TEXT NOT NULL DEFAULT 'orta',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    done_at TIMESTAMPTZ,
+    done_visibility REAL,
+    UNIQUE (user_id, brand_domain, key)
+  )`, []);
+}
+
+const rowToAction = (r: any): ActionItem => ({
+  id: r.id,
+  domain: r.brand_domain,
+  key: r.key,
+  title: r.title,
+  why: r.why,
+  impact: r.impact,
+  effort: r.effort,
+  status: r.status,
+  createdAt: toIso(r.created_at),
+  doneAt: r.done_at ? toIso(r.done_at) : null,
+  doneVisibility: r.done_visibility == null ? null : Number(r.done_visibility),
+});
+
+/** AI özetinin işlerini listeye ekler; aynı iş (anahtar) varsa durumuna dokunmaz, metni günceller. */
+export async function upsertActionItems(userId: number, domain: string, actions: { title: string; why: string; impact: string; effort: string; key: string }[]): Promise<void> {
+  await ensureActionItems();
+  for (const a of actions)
+    await exec(
+      `INSERT INTO geo_action_items (user_id, brand_domain, key, title, why, impact, effort) VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (user_id, brand_domain, key) DO UPDATE SET title = EXCLUDED.title, why = EXCLUDED.why, impact = EXCLUDED.impact, effort = EXCLUDED.effort`,
+      [userId, domain, a.key, a.title, a.why, a.impact, a.effort]
+    );
+}
+
+export async function listActionItems(userId: number, domain: string): Promise<ActionItem[]> {
+  await ensureActionItems();
+  return (await many<any>(`SELECT * FROM geo_action_items WHERE user_id = $1 AND brand_domain = $2 ORDER BY created_at DESC LIMIT 200`, [userId, domain])).map(rowToAction);
+}
+
+/** Durum değiştir; "yapıldı"da o anki görünürlük ve tarih kaydedilir, geri alınınca silinir. */
+export async function setActionStatus(userId: number, id: number, status: ActionStatus, visibilityNow: number | null): Promise<ActionItem | null> {
+  await ensureActionItems();
+  const row = await one<any>(
+    `UPDATE geo_action_items SET status = $3,
+       done_at = CASE WHEN $3 = 'done' THEN now() ELSE NULL END,
+       done_visibility = CASE WHEN $3 = 'done' THEN $4::real ELSE NULL END
+     WHERE id = $1 AND user_id = $2 RETURNING *`,
+    [id, userId, status, visibilityNow]
+  );
+  return row ? rowToAction(row) : null;
 }
