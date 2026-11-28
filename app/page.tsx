@@ -144,7 +144,7 @@ export default function Home() {
             <Reveal delay={300} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-ink/60">
               <span>✓ Kart bilgisi gerekmez</span>
               <span>✓ Hesap açmadan dene</span>
-              <span>✓ 8 AI motoru</span>
+              <span>✓ 8 AI motoruna destek</span>
             </Reveal>
           </div>
 
@@ -153,11 +153,11 @@ export default function Home() {
             <Reveal variant="tilt" delay={200} className="relative">
               <HeroDashboardPreview />
             </Reveal>
-            <span className="absolute -left-6 top-1/4 hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" aria-hidden>
+            <span className="absolute -left-10 top-[58%] hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" aria-hidden>
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-seo/15 text-seo-ink">↑</span>
               ChatGPT&apos;de görünüyorsun
             </span>
-            <span className="absolute -right-6 bottom-1/4 hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" style={{ animationDelay: "1.5s" }} aria-hidden>
+            <span className="absolute -right-10 -bottom-6 hidden lg:inline-flex items-center gap-2 rounded-2xl border border-border bg-panel px-4 py-3 text-xs font-bold shadow-xl animate-float" style={{ animationDelay: "1.5s" }} aria-hidden>
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-danger/10 text-danger-ink">!</span>
               GPTBot robots.txt&apos;te engelli
             </span>
