@@ -57,9 +57,10 @@ export function middleware(req: NextRequest) {
   // Açık erişim: oturumu olmayan her tarayıcıya kendi çalışma alanı kimliği (lib/auth.ts misafir hesabına bağlar).
   // Botlara verilmez: her istekte çerezsiz gelen tarayıcılar sınırsız hesap açtırmasın.
   let newGuest: string | null = null;
+  // Oturum çerezi olsa da verilir: oturum geçersizse (silinmiş/süresi dolmuş) kullanıcı ortak hesaba değil kendi alanına düşer;
+  // geçerli oturum her zaman önce gelir (lib/auth.ts), misafir hesabı yalnızca gerekirse açılır.
   if (
     process.env.DEMO_OPEN_ACCESS === "true" &&
-    !req.cookies.has(SESSION_COOKIE) &&
     !req.cookies.has(GUEST_COOKIE) &&
     !/bot|crawl|spider|slurp|preview|fetch|curl|wget|python|headless|lighthouse/i.test(req.headers.get("user-agent") ?? "")
   ) {

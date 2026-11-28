@@ -29,17 +29,18 @@ export async function checkQuota(userId: number, metric: UsageMetric, amount: nu
   const used = await getUsageCount(userId, metric);
   if (used + amount > limit) return { allowed: false, used, limit, plan };
   if (plan === "guest") {
-    // shortcut: kontrol ve düşme ayrı adımlar (atomik değil); yeni rotalar reserveQuota kullanmalı.
+    // Misafirlerde ortak havuz kontrol anında ATOMİK ayrılır (eşzamanlı istekler tavanı aşamasın); consumeQuota havuza
+    // tekrar eklemez. shortcut: iş yarıda kalırsa ayrılan pay iade edilmez (bütçe açısından güvenli taraf).
+    const pid = await poolUser();
     const poolLimit = guestPoolLimits()[metric];
-    const poolUsed = await getUsageCount(await poolUser(), POOL(metric));
-    if (poolUsed + amount > poolLimit) return { allowed: false, used: poolUsed, limit: poolLimit, plan, pool: true };
+    if ((await tryIncrementUsage(pid, POOL(metric), amount, poolLimit)) == null) return { allowed: false, used: await getUsageCount(pid, POOL(metric)), limit: poolLimit, plan, pool: true };
   }
   return { allowed: true, used, limit, plan };
 }
 
+/** checkQuota'dan sonra çağrılır; misafir havuzu checkQuota'da ayrıldığı için burada yalnızca kişisel sayaç artar. */
 export async function consumeQuota(userId: number, metric: UsageMetric, amount: number) {
   await incrementUsage(userId, metric, amount);
-  if ((await getUserPlan(userId)) === "guest") await incrementUsage(await poolUser(), POOL(metric), amount);
 }
 
 /**

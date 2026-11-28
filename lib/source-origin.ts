@@ -32,7 +32,7 @@ export function isOriginHost(origin: string, url: string): boolean {
   // Baş harflerde bağlaçlar atlanır (Acta Orthopaedica et Traumatologica Turcica → aott); kurum kelimeleri sayılır.
   const initials = words.filter((w) => !STOP.has(w) && (!GENERIC.has(w) || words.length > 2)).map((w) => w[0]).join("");
   const label = host.split(".").slice(0, -1).join(".");
-  return tokens.some((t) => label.includes(t)) || (initials.length >= 2 && label.split(".").includes(initials)) || (words.length === 1 && label.includes(words[0]));
+  return tokens.some((t) => label.includes(t)) || (initials.length >= 2 && label.split(".").includes(initials)) || (words.length === 1 && words[0].length >= 3 && label.includes(words[0]));
 }
 
 /** Bilgideki ayırt edici rakamlar (%28, 1.609, 32.556 — tek haneliler ve yıllar hariç). */

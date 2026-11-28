@@ -7,7 +7,9 @@ import { createSessionCookie, demoOwnerUser } from "@/lib/auth";
 export async function GET(req: NextRequest) {
   const want = process.env.OWNER_CLAIM_KEY ?? "";
   const got = req.nextUrl.searchParams.get("key") ?? "";
-  const ok = want.length >= 24 && got.length === want.length && timingSafeEqual(Buffer.from(got), Buffer.from(want));
+  const g = Buffer.from(got);
+  const w = Buffer.from(want);
+  const ok = w.length >= 24 && g.length === w.length && timingSafeEqual(g, w);
   if (!ok) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
   const owner = await demoOwnerUser();
   await createSessionCookie(owner.id, 3650);

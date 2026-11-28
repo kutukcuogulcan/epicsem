@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { projectContextBlock } from "@/lib/project-context";
+import { brandContextFor } from "@/lib/ai-small";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const brand = { name: parsed.brandName, domain: parsed.brandDomain };
-    // Projenin ton, hitap, ürün ve bilgi bankası — yazılar ve AI özetiyle aynı marka bağlamı (proje yoksa boş).
-    const context = demoMode ? "" : await projectContextBlock(user.id, parsed.brandDomain).catch(() => "");
+    // Projenin ton, hitap, ürün ve bilgi bankası — yalnızca bu alan adı kayıtlı bir projeyse (başka markanın bilgisi karışmasın).
+    const context = demoMode ? "" : await brandContextFor(user.id, parsed.brandDomain).catch(() => "");
     const result =
       parsed.kind === "gbp-post"
         ? await generateGbpPost(brand, parsed.topic, context)
