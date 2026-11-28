@@ -22,13 +22,22 @@ export async function PUT(req: NextRequest) {
     // promptCount verilirse soru seti o sayıyla yeniden seçilir (soru sayısını artır/azalt).
     const count = [5, 10, 20].includes(Number(b.promptCount)) ? Number(b.promptCount) : null;
     let prompts: { text: string; topic: string }[] | undefined;
-    if (count || (b.active === true && !(await listMonitorSchedules(user.id)).find((x) => x.brandDomain === domain)?.prompts)) {
+    const pick = async (n: number) => {
       const last = await getLatestGeoRunFull(user.id, domain);
-      if (last?.runs.length) {
-        const proj = await getActiveProject(user.id, domain).catch(() => null);
-        const own = { ...last.brand, aliases: proj?.aliases ?? [] };
-        prompts = pickTrackedPrompts(last.runs, buildGeoReport(last.runs, own, proj?.competitors.length ? proj.competitors : last.competitors), count ?? TRACKED_PROMPTS);
-      }
+      if (!last?.runs.length) return undefined;
+      const proj = await getActiveProject(user.id, domain).catch(() => null);
+      const own = { ...last.brand, aliases: proj?.aliases ?? [] };
+      return pickTrackedPrompts(last.runs, buildGeoReport(last.runs, own, proj?.competitors.length ? proj.competitors : last.competitors), n);
+    };
+    if (count || (b.active === true && !(await listMonitorSchedules(user.id)).find((x) => x.brandDomain === domain)?.prompts)) prompts = await pick(count ?? TRACKED_PROMPTS);
+    // addPrompt: önerilen bir soruyu sabit izleme setine ekle (en fazla 20; aynısı tekrar eklenmez).
+    const add = b.addPrompt && typeof b.addPrompt.text === "string" && b.addPrompt.text.trim().length >= 8 ? { text: b.addPrompt.text.trim().slice(0, 300), topic: String(b.addPrompt.topic ?? "Genel").slice(0, 60) } : null;
+    if (add && !prompts) {
+      // Set henüz seçilmemişse önce en önemli sorular seçilir, öneri onlara eklenir (tek soruluk set kalmasın).
+      const cur = (await listMonitorSchedules(user.id)).find((x) => x.brandDomain === domain)?.prompts ?? (await pick(TRACKED_PROMPTS)) ?? [];
+      if (cur.some((x) => x.text === add.text)) prompts = cur;
+      else if (cur.length >= 20) return NextResponse.json({ error: "İzleme setinde en fazla 20 soru olabilir." }, { status: 400 });
+      else prompts = [...cur, add];
     }
     const s = await setMonitorSchedule(user.id, domain, { active: typeof b.active === "boolean" ? b.active : undefined, intervalDays, prompts });
     return NextResponse.json({ schedule: s });

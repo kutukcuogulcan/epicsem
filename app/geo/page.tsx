@@ -24,6 +24,7 @@ import ScoreBadge from "@/components/ScoreBadge";
 import GeoOverview from "@/components/tool/GeoOverview";
 import GeoDashboard from "@/components/tool/GeoDashboard";
 import GeoSummaryCard from "@/components/tool/GeoSummaryCard";
+import PromptSuggestions from "@/components/tool/PromptSuggestions";
 import QuickGeoAnalyze from "@/components/tool/QuickGeoAnalyze";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PersonaPrompts from "@/components/tool/PersonaPrompts";
@@ -1132,6 +1133,7 @@ export default function GeoPage() {
         </div>
       )}
 
+      {resultsTab === "prompts" && runs && runs.length > 0 && !demoMode && <PromptSuggestions testAt={`${restoredAt}-${overviewKey}`} />}
       {resultsTab === "prompts" && runs && (
         <PromptResults
           prompts={groupRuns(runs, [brand.name, ...competitors.map((c) => c.name), ...(summaries ?? []).map((x) => x.brand)])}
