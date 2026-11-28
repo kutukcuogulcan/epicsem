@@ -1,5 +1,6 @@
 import type { EngineId } from "@/types";
 import { PROVIDERS, isDemoMode } from "@/lib/geo-providers";
+import { clampPost } from "@/lib/clamp-post";
 
 /**
  * Draft generation for local-business Google visibility — a Google Business Profile
@@ -33,7 +34,10 @@ export interface LocalDraftResult {
   model: string;
 }
 
-export async function generateGbpPost(brand: BrandRef, topic: string): Promise<LocalDraftResult> {
+const ctxBlock = (context?: string) =>
+  context?.trim() ? `\nBRAND CONTEXT (match this tone and form of address; take facts ONLY from here):\n${context.trim().slice(0, 3000)}\n` : "";
+
+export async function generateGbpPost(brand: BrandRef, topic: string, context?: string): Promise<LocalDraftResult> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) {
     return {
@@ -44,14 +48,14 @@ export async function generateGbpPost(brand: BrandRef, topic: string): Promise<L
   }
 
   const prompt = `You are writing a short Google Business Profile "What's new" update post for the local business "${brand.name}" (${brand.domain}). Topic/occasion: "${topic}".
-Constraints: write in Turkish, maximum 1500 characters (Google Business Profile's post limit), do not invent facts (no fake prices, fake awards, fake customer counts, fake dates, fake promotions) — if the post would naturally need a specific detail you weren't given, phrase it generically instead of making one up. End with a short, natural call to action.
+${ctxBlock(context)}Constraints: write in Turkish, maximum 1500 characters (Google Business Profile's post limit), do not invent facts (no fake prices, fake awards, fake customer counts, fake dates, fake promotions) — if the post would naturally need a specific detail you weren't given, phrase it generically instead of making one up. End with a short, natural call to action.
 Respond with ONLY the post text — no quotes, no markdown formatting, no commentary before or after it.`;
 
   const { text, model } = await provider.run(prompt);
-  return { text: text.trim(), demoMode: false, model };
+  return { text: clampPost(text), demoMode: false, model };
 }
 
-export async function generateReviewReply(brand: BrandRef, reviewText: string, rating?: number): Promise<LocalDraftResult> {
+export async function generateReviewReply(brand: BrandRef, reviewText: string, rating?: number, context?: string): Promise<LocalDraftResult> {
   const provider = isDemoMode() ? null : pickProvider();
   if (!provider) {
     return {
@@ -65,7 +69,7 @@ export async function generateReviewReply(brand: BrandRef, reviewText: string, r
     rating ? ` The review's star rating: ${rating}/5.` : ""
   }
 Review text: """${reviewText}"""
-Constraints: write in Turkish, warm and professional tone, 2-4 sentences, do not invent facts about the business (no fake promises, fake discounts, fake staff names, fake policies), do not admit legal liability. If the review is negative or critical, acknowledge the specific concern without being defensive and invite the reviewer to continue the conversation privately (phone/email) rather than arguing in public.
+${ctxBlock(context)}Constraints: write in the SAME LANGUAGE as the review (Turkish if unclear), warm and professional tone, 2-4 sentences, do not invent facts about the business (no fake promises, fake discounts, fake staff names, fake policies), do not admit legal liability. If the review is negative or critical, acknowledge the specific concern without being defensive and invite the reviewer to continue the conversation privately (phone/email) rather than arguing in public.
 Respond with ONLY the reply text — no quotes, no markdown formatting, no commentary before or after it.`;
 
   const { text, model } = await provider.run(prompt);

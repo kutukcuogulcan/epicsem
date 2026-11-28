@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { projectContextBlock } from "@/lib/project-context";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { readableZodError } from "@/lib/zod-error";
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   const limitResult = rateLimit(`local-gen:${user.id}`, 30, 60 * 60 * 1000);
   if (!limitResult.allowed) {
     return NextResponse.json(
-      { error: "Rate limit reached. Try again shortly." },
+      { error: "Saatte en fazla 30 taslak üretilebilir. Biraz sonra tekrar dene." },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitResult.resetAt)) } }
     );
   }
@@ -55,10 +56,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const brand = { name: parsed.brandName, domain: parsed.brandDomain };
+    // Projenin ton, hitap, ürün ve bilgi bankası — yazılar ve AI özetiyle aynı marka bağlamı (proje yoksa boş).
+    const context = demoMode ? "" : await projectContextBlock(user.id, parsed.brandDomain).catch(() => "");
     const result =
       parsed.kind === "gbp-post"
-        ? await generateGbpPost(brand, parsed.topic)
-        : await generateReviewReply(brand, parsed.reviewText, parsed.rating);
+        ? await generateGbpPost(brand, parsed.topic, context)
+        : await generateReviewReply(brand, parsed.reviewText, parsed.rating, context);
 
     if (!demoMode) await consumeQuota(user.id, "contentGenerations", 1);
     await saveLocalGeneration(user.id, {
