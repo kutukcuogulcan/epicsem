@@ -200,13 +200,13 @@ export async function answer(userId: number, message: string, site: string | nul
       return {
         intent: "content",
         blocks: [
-          { type: "text", text: d.geo && d.geo.topics.length ? `**${site}** için AI testinde zayıf bir konu çıkmadı. Yeni yazı fikirleri için **Rakip Boşluğu** çalıştır — rakiplerin anılıp senin anılmadığın soruları başlığa çevirir.` : `Yazı fikri çıkarmak için **${site}** adına **Rakip Boşluğu** sonucu lazım — rakiplerin anılıp senin anılmadığın soruları başlığa çevirir. (Ya da ilk önce siteyi tara; zayıf sayfaları gösteririm.)` || `İçerik fikri çıkarmak için **${site}** adına Rakip Boşluğu ya da GEO testi sonucu lazım.` },
+          { type: "text", text: d.geo && d.geo.topics.length ? `**${site}** için yazı fikirleri GEO raporundaki kaybedilen sorulardan çıkar: her sorunun yanında "Yazısını yaz" bağlantısı var.` : `Yazı fikri çıkarmak için **${site}** adına önce bir GEO testi çalıştır; AI'da kaybettiğin sorular yazı başlığına çevrilir. (Ya da siteyi tara; zayıf sayfaları gösteririm.)` },
           { type: "actions", items: [{ label: "GEO testi", href: "/geo" }] },
         ],
       };
     }
     if (ideas.length) {
-      blocks.push({ type: "text", text: "AI'da **kaybettiğin sorulardan** çıkan yazı başlıkları (Rakip Boşluğu):" });
+      blocks.push({ type: "text", text: "AI'da **kaybettiğin sorulardan** çıkan yazı başlıkları:" });
       blocks.push({ type: "list", items: ideas, ordered: true });
     }
     if (weakTopics.length) {
@@ -302,7 +302,7 @@ export async function answer(userId: number, message: string, site: string | nul
       if (weak && weak.visibility < 0.5) steps.push(`**AI görünürlüğü:** "${weak.topic}" konusunda ${weak.mentionedCount}/${weak.totalCount} soruda anılıyorsun — bu konuya cevap-önce bir rehber sayfa yaz.`);
     }
     const idea = d.gap?.contentBriefs?.[0]?.suggestedHeadings?.[0];
-    if (idea) steps.push(`**Yeni içerik:** "${idea}" başlıklı bir yazı (Rakip Boşluğu'nda kaybettiğin soru).`);
+    if (idea) steps.push(`**Yeni içerik:** "${idea}" başlıklı bir yazı (AI'da kaybettiğin soru).`);
     blocks.push({ type: "text", text: `**${site}** için bu haftanın öncelik listesi:` });
     blocks.push({ type: "list", items: steps.length ? steps : ["Kritik bir sorun görünmüyor — yeni içerik ve AI görünürlüğüne odaklan."], ordered: true });
     if (d.crawlAt) blocks.push({ type: "text", text: `_Son tarama: ${new Date(d.crawlAt).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}_` });
