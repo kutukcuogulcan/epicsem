@@ -20,11 +20,14 @@ export interface GeoSummary {
 }
 
 const pct = (x: number) => `%${Math.round(x * 100)}`;
+// AI'a motorların kullanıcının bildiği adı gider ("anthropic" değil "Claude").
+const ENG: Record<string, string> = { openai: "ChatGPT", anthropic: "Claude", google: "Gemini", perplexity: "Perplexity", deepseek: "DeepSeek", xai: "Grok", meta: "Meta AI", microsoft: "Copilot" };
+const eng = (e: string) => ENG[e] ?? e;
 
 /** AI'a gidecek olgular — hepsi testten sayılmış; AI bunların dışına çıkamaz. */
 export function summaryFacts(brand: string, r: GeoReport, diff: RunDiff | null, excerpts: string[] = []): string {
   const lines = [
-    `Marka: ${brand}. Son test: ${r.questions} soru, ${r.answers} AI cevabı (${r.engines.join(", ")}).`,
+    `Marka: ${brand}. Son test: ${r.questions} soru, ${r.answers} AI cevabı (${r.engines.map(eng).join(", ")}).`,
     `Görünürlük ${pct(r.visibility)}${r.confidence ? ` (±${r.confidence.margin} puan)` : ""}, ilk sırada ${pct(r.winRate)}. Kendi sitesi ${r.sourcedAnswers ? `${r.ownCitedIn}/${r.sourcedAnswers} kaynaklı cevapta kaynak` : "hiçbir cevap kaynak göstermedi"}.`,
     `Markalar (görünürlük, ilk sıra sayısı): ${r.brands.map((b) => `${b.name}${b.own ? " (kendisi)" : ""} ${pct(b.visibility)}/${b.firsts}`).join("; ")}.`,
     r.leader ? `Lider rakip ${r.leader.name}: ${r.leader.aheadIn} cevapta markadan önce, ${r.leader.citedIn} cevapta kendi sitesi kaynak. En çok kaynak gösterilen sayfası: ${r.leader.pages[0]?.url ?? "yok"}.` : "",
@@ -33,7 +36,7 @@ export function summaryFacts(brand: string, r: GeoReport, diff: RunDiff | null, 
     r.gapSources.length ? `Kaybedilen cevaplarda AI'ın baktığı dış kaynaklar: ${r.gapSources.slice(0, 6).map((g) => `${g.domain} (${g.count})`).join(", ")}.` : "",
     r.perception.negatives.length ? `Marka cümlelerinde olumsuz ifadeler: ${r.perception.negatives.map((t) => t.term).join(", ")}.` : "",
     diff && diff.compared
-      ? `Önceki teste göre (${diff.compared} ortak cevap): görünürlük ${pct(diff.visibilityBefore)} → ${pct(diff.visibilityAfter)}; kazanılan ${diff.gained.length}, kaybedilen ${diff.lost.length}${diff.rivals.length ? `; rakip değişimi: ${diff.rivals.slice(0, 4).map((x) => `${x.name} ${x.before}→${x.after}`).join(", ")}` : ""}${diff.newSources.length ? `; yeni kaynaklar: ${diff.newSources.slice(0, 5).join(", ")}` : ""}${diff.byEngine?.length ? `; motor bazında: ${diff.byEngine.slice(0, 4).map((x) => `${x.key} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}${diff.byTopic?.length ? `; konu bazında: ${diff.byTopic.slice(0, 4).map((x) => `${x.key} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}.`
+      ? `Önceki teste göre (${diff.compared} ortak cevap): görünürlük ${pct(diff.visibilityBefore)} → ${pct(diff.visibilityAfter)}; kazanılan ${diff.gained.length}, kaybedilen ${diff.lost.length}${diff.rivals.length ? `; rakip değişimi: ${diff.rivals.slice(0, 4).map((x) => `${x.name} ${x.before}→${x.after}`).join(", ")}` : ""}${diff.newSources.length ? `; yeni kaynaklar: ${diff.newSources.slice(0, 5).join(", ")}` : ""}${diff.byEngine?.length ? `; motor bazında: ${diff.byEngine.slice(0, 4).map((x) => `${eng(x.key)} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}${diff.byTopic?.length ? `; konu bazında: ${diff.byTopic.slice(0, 4).map((x) => `${x.key} ${pct(x.before)}→${pct(x.after)} (${x.n} cevap)`).join(", ")}` : ""}.`
       : "Karşılaştırılacak önceki test yok.",
     excerpts.length ? `Kaybedilen cevaplardan alıntılar:\n${excerpts.map((e) => `- ${e}`).join("\n")}` : "",
   ];
