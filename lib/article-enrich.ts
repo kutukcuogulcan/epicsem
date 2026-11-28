@@ -107,12 +107,19 @@ Find:
 4. Two short ENGLISH stock-photo search queries (2–3 concrete, visual words, e.g. "laptop analytics dashboard", "marketing team meeting") that would illustrate this topic. Avoid abstract terms and acronyms.
 Never invent a URL or a number. If unsure, leave it out.
 Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"publisher name","origin":"organization that produced the number","url":"https://..."}],"youtube":{"title":"","url":"https://www.youtube.com/watch?v=..."},"imageQueries":["",""],"coverage":["subtopic"],"questions":["question?"],"intent":""}`;
-  const r = await runWebSearchPrompt(prompt);
-  if (!r) return null;
+  const r = await runWebSearchPrompt(prompt).catch((e) => {
+    console.warn(`[research] web araması hata verdi: ${e instanceof Error ? e.message : e}`);
+    return null;
+  });
+  if (!r) {
+    console.warn(`[research] "${topic.slice(0, 60)}": web aramalı sağlayıcı cevap vermedi; yazı kaynaksız yazılacak`);
+    return null;
+  }
   let parsed: Record<string, any>;
   try {
     parsed = extractJsonObject(r.text);
   } catch {
+    console.warn(`[research] "${topic.slice(0, 60)}": cevap JSON değil (${r.model}): ${r.text.slice(0, 160).replace(/\s+/g, " ")}`);
     return null;
   }
   const toFacts = (arr: unknown): ResearchFact[] => (Array.isArray(arr) ? arr : [])
