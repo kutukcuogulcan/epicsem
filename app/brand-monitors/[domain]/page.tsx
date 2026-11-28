@@ -90,7 +90,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
     }
   }
 
-  async function saveSchedule(p: { active?: boolean; intervalDays?: number }) {
+  async function saveSchedule(p: { active?: boolean; intervalDays?: number; promptCount?: number }) {
     setBusy("schedule");
     setNote(null);
     try {
@@ -173,6 +173,13 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ domain
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <select value={tracked} disabled={!!busy} aria-label="İzlenen soru sayısı" onChange={(e) => saveSchedule({ promptCount: Number(e.target.value) })} className="h-8 rounded-[10px] border border-border bg-panel px-2 text-sm outline-none">
+              {[5, 10, 20].map((n) => (
+                <option key={n} value={n} disabled={n > d.prompts.length && n !== 5}>
+                  {n} soru
+                </option>
+              ))}
+            </select>
             <select value={every} disabled={!!busy} onChange={(e) => saveSchedule({ intervalDays: Number(e.target.value) })} className="h-8 rounded-[10px] border border-border bg-panel px-2 text-sm outline-none">
               <option value={1}>Günlük</option>
               <option value={3}>3 günde bir</option>
