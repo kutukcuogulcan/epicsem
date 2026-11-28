@@ -7,6 +7,7 @@ import {
   listUsedContentUrls,
   claimCampaignRun,
   markCampaignRun,
+  appendCampaignKeywords,
   saveContentDraft,
   saveDraftCover,
   type Campaign,
@@ -18,6 +19,8 @@ import { aiCover, brandedCover } from "./covers";
 import { checkLinks, comparisonBrief, wantsComparison, findImages, insertMedia, internalLinkBrief, researchBrief, researchTopic, sitePagesForLinks, type ResearchResult } from "./article-enrich";
 import { publishDraftToConnection } from "./publish-draft";
 import { isDemoMode } from "./geo-providers";
+import { parseRefill, refillPrompt } from "./keyword-refill";
+import { runSmallAiJson } from "./ai-small";
 import { fetchFeed, matchesFilter } from "./rss";
 import { checkQuota, consumeQuota } from "./usage-guard";
 import type { GeneratedArticle } from "@/types";
@@ -84,7 +87,19 @@ async function nextTopics(campaign: Campaign, used: Set<string>, count: number):
 
   if (campaign.source === "keywords") {
     const list = (campaign.config.keywords ?? []).map((k) => k.trim()).filter(Boolean);
-    const fresh = list.filter((k) => !used.has(keywordKey(k)));
+    let fresh = list.filter((k) => !used.has(keywordKey(k)));
+    // Kuyruk bittiyse durmak yerine yakın yeni konular bul (Arvow'daki otomatik anahtar kelime araştırması; 1 AI sorgusu).
+    if (!fresh.length && list.length && !isDemoMode()) {
+      try {
+        const more = parseRefill(await runSmallAiJson(campaign.userId, refillPrompt(campaign.brandName, campaign.brandDomain, list, campaign.options.language ?? "tr")), list).filter((k) => !used.has(keywordKey(k)));
+        if (more.length) {
+          await appendCampaignKeywords(campaign.id, more);
+          fresh = more;
+        }
+      } catch (e) {
+        console.warn(`[campaign ${campaign.id}] yeni anahtar kelime bulunamadı:`, e instanceof Error ? e.message : e);
+      }
+    }
     return {
       topics: fresh.slice(0, count).map((kw) => ({
         key: keywordKey(kw),
@@ -94,7 +109,7 @@ async function nextTopics(campaign: Campaign, used: Set<string>, count: number):
       emptyReason:
         list.length === 0
           ? "Bu kampanyanın anahtar kelime listesi boş — Düzenle'den anahtar kelime ekle."
-          : "Kuyruktaki tüm anahtar kelimeler taslağa dönüştü — Düzenle'den yeni anahtar kelime ekle.",
+          : "Kuyruktaki tüm anahtar kelimeler taslağa dönüştü ve otomatik yeni konu bulunamadı (AI kotası dolmuş olabilir) — Düzenle'den yeni anahtar kelime ekle.",
     };
   }
 

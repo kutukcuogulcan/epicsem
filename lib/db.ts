@@ -2066,6 +2066,16 @@ export async function claimCampaignRun(id: number, nextRunAt: Date, cron: boolea
   return !!row;
 }
 
+/** Autoblog anahtar kelime kuyruğuna ekle (kuyruk bitince otomatik bulunan yeni konular). */
+export async function appendCampaignKeywords(id: number, keywords: string[]): Promise<void> {
+  await ensureSchema();
+  const row = await one<any>(`SELECT config_json FROM campaigns WHERE id = $1`, [id]);
+  if (!row) return;
+  const cfg = JSON.parse(row.config_json || "{}");
+  cfg.keywords = [...(Array.isArray(cfg.keywords) ? cfg.keywords : []), ...keywords].slice(-200);
+  await exec(`UPDATE campaigns SET config_json = $1 WHERE id = $2`, [JSON.stringify(cfg), id]);
+}
+
 export async function markCampaignRun(id: number, note: string, nextRunAt?: Date | null): Promise<void> {
   await ensureSchema();
   await exec(`UPDATE campaigns SET last_run_at = now(), last_run_note = $1, next_run_at = $2 WHERE id = $3`, [note, nextRunAt ?? null, id]);
