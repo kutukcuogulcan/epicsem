@@ -1,5 +1,5 @@
 import { runWebSearchPrompt } from "./competitor-discovery";
-import { factOnPage, hostOf, isOriginHost } from "./source-origin";
+import { factOnPage, hostOf, isOriginHost, rankSources, sourceTier } from "./source-origin";
 import { extractJsonObject } from "./llm-json";
 import { fetchPageSummary } from "./content-fetch";
 import * as cheerio from "cheerio";
@@ -143,7 +143,8 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
   let facts = await verify(toFacts(parsed.facts));
   let calls = 1;
   // Doğrulamadan az bilgi geçtiyse ya da hepsi tek siteden geliyorsa yazı tek kaynağa yaslanmasın: farklı kurumlardan ikinci tur (+1 çağrı).
-  if (facts.length < 3 || new Set(facts.map((f) => hostOf(f.url))).size < 2) {
+  // Güçlü/haber kaynağı (sourceTier ≥ 1) azsa da: blog ve araç sitelerine yaslanmasın.
+  if (facts.length < 3 || new Set(facts.map((f) => hostOf(f.url))).size < 2 || facts.filter((f) => sourceTier(f.url) > 0).length < 2) {
     const usedHosts = [...new Set(facts.map((f) => hostOf(f.url)))];
     const usedOrgs = [...new Set(facts.map((f) => f.origin || f.source).filter(Boolean))];
     const r2 = await runWebSearchPrompt(`SEARCH THE WEB. Topic: "${topic}"${tr ? " (Turkish audience)" : ""}.
@@ -159,7 +160,7 @@ Return ONLY JSON: {"facts":[{"fact":"one sentence with the number","source":"pub
       }
     }
   }
-  facts = facts.slice(0, 5);
+  facts = rankSources(facts).slice(0, 5);
   const ytUrl = String(parsed.youtube?.url ?? "");
   const yt = ytUrl ? await verifyYoutube(ytUrl) : null;
   const youtube = yt && !isRival("", yt.title) ? yt : null;

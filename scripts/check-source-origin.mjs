@@ -25,3 +25,17 @@ console.log("check-source-origin: ok");
   assert.equal(factOnPage("Kullanıcı sayısı arttı", "herhangi bir metin"), true, "rakamsız bilgi doğrulanamaz, kabul");
   console.log("check-source-origin (rakam doğrulama): ok");
 }
+{
+  const { sourceTier, rankSources } = await import("../lib/source-origin.ts");
+  assert.equal(sourceTier("https://data.tuik.gov.tr/Bulten"), 2);
+  assert.equal(sourceTier("https://www.pewresearch.org/x"), 2);
+  assert.equal(sourceTier("https://dergipark.org.tr/tr/pub/x"), 2);
+  assert.equal(sourceTier("https://www.aa.com.tr/tr/x"), 1);
+  assert.equal(sourceTier("https://www.openaitoolshub.org/en/blog/x"), 0);
+  assert.equal(sourceTier("https://notgov.example.com"), 0, "'.gov' yalnızca sonek olarak");
+  const f = (u) => ({ url: u });
+  const all = [f("https://blog.example.com/a"), f("https://www.aa.com.tr/b"), f("https://www.pewresearch.org/c"), f("https://www.oecd.org/d")];
+  assert.deepEqual(rankSources(all).map((x) => x.url), ["https://www.pewresearch.org/c", "https://www.oecd.org/d", "https://www.aa.com.tr/b"], "3 iyi kaynak varken blog atılır");
+  assert.equal(rankSources([f("https://blog.example.com/a"), f("https://www.oecd.org/d")]).length, 2, "iyi kaynak azsa blog tutulur");
+  console.log("check-source-origin (otorite): ok");
+}
